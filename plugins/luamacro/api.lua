@@ -92,6 +92,8 @@ mf.usermenu = function(mode, filename)
 end
 
 mf.GetMacroCopy = utils.GetMacroCopy
+
+mf.ProcessEvent = utils.ProcessEvent
 --------------------------------------------------------------------------------
 
 Object = {
