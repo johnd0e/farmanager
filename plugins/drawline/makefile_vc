@@ -1,8 +1,8 @@
 !include ../makefile_vc_base
 
 NAME = DrawLine
+
 LINK_OBJS = $(OBJDIR)\DrawLine.obj
-DOCS = DrawEng.hlf DrawRus.hlf DrawEng.lng DrawRus.lng DrawSky.lng DrawSpa.lng
 
 !include ..\makefile_vc_def_inc
 

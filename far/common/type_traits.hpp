@@ -32,36 +32,55 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-template<class type, template<class> class operation, class = void>
-struct is_valid: std::false_type {};
+//----------------------------------------------------------------------------
 
-template<class type, template<class> class operation>
-struct is_valid<type, operation, std::void_t<operation<type>>>: std::true_type {};
+namespace detail
+{
+	template<typename void_type, template<typename...> typename operation, typename... args>
+	struct is_detected : std::false_type{};
 
-template<typename type, template<class> class operation>
-constexpr bool is_valid_v = is_valid<type, operation>::value;
+	template<template<typename...> typename operation, typename... args>
+	struct is_detected<std::void_t<operation<args...>>, operation, args...> : std::true_type{};
+}
+
+template <template<typename...> typename operation, typename... args>
+using is_detected = typename detail::is_detected<void, operation, args...>::type;
+
+template<template<typename...> typename operation, typename... args>
+inline constexpr bool is_detected_v = is_detected<operation, args...>::value;
 
 
 template<typename type, typename... args>
 using is_one_of = std::disjunction<std::is_same<type, args>...>;
 
 template<typename type, typename... args>
-constexpr bool is_one_of_v = is_one_of<type, args...>::value;
+inline constexpr bool is_one_of_v = is_one_of<type, args...>::value;
 
 namespace detail
 {
-	template<typename type>
-	using try_begin = decltype(std::begin(std::declval<type&>()));
+#define DETAIL_TRY_(What) \
+	template<typename type> \
+	using try_ ## What = decltype(std::What(std::declval<type&>()))
 
-	template<typename type>
-	using try_end = decltype(std::end(std::declval<type&>()));
+	DETAIL_TRY_(begin);
+	DETAIL_TRY_(end);
+	DETAIL_TRY_(data);
+	DETAIL_TRY_(size);
+
+#undef DETAIL_TRY_
 }
 
 template<class type>
-using is_range = std::conjunction<is_valid<type, detail::try_begin>, is_valid<type, detail::try_end>>;
+using is_range = std::conjunction<is_detected<detail::try_begin, type>, is_detected<detail::try_end, type>>;
 
 template<class type>
-constexpr bool is_range_v = is_range<type>::value;
+inline constexpr bool is_range_v = is_range<type>::value;
+
+template<class type>
+using is_span = std::conjunction<is_detected<detail::try_data, type>, is_detected<detail::try_size, type>>;
+
+template<class type>
+inline constexpr bool is_span_v = is_span<type>::value;
 
 
 #endif // TYPE_TRAITS_HPP_CC9B8497_9AF0_4882_A470_81FF9CBF6D7C

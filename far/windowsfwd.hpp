@@ -33,6 +33,16 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
+
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
+
 class window;
 class desktop;
 class FilePanels;
@@ -45,7 +55,7 @@ class Help;
 class FolderTree;
 class Grabber;
 class HMenu;
-class Search;
+class FastFind;
 
 using window_ptr = std::shared_ptr<window>;
 using desktop_ptr = std::shared_ptr<desktop>;
@@ -59,6 +69,6 @@ using help_ptr = std::shared_ptr<Help>;
 using foldertree_ptr = std::shared_ptr<FolderTree>;
 using grabber_ptr = std::shared_ptr<Grabber>;
 using hmenu_ptr = std::shared_ptr<HMenu>;
-using search_ptr = std::shared_ptr<Search>;
+using fastfind_ptr = std::shared_ptr<FastFind>;
 
 #endif // WINDOWSFWD_HPP_5F5E7997_B435_44BD_83DF_300F2E8BB155

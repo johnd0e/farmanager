@@ -34,20 +34,27 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "transactional.hpp"
 #include "bitflags.hpp"
 
+// Platform:
 #include "platform.chrono.hpp"
 
+// Common:
+#include "common/bytes_view.hpp"
 #include "common/enumerator.hpp"
 #include "common/keep_alive.hpp"
+#include "common/noncopyable.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 struct FarColor;
 struct VersionInfo;
 class representation_source;
 class representation_destination;
-class bytes;
-class bytes_view;
 
 namespace os
 {
@@ -70,39 +77,67 @@ public:
 class GeneralConfig : public representable, virtual public transactional
 {
 public:
-	virtual bool SetValue(string_view Key, string_view Name, string_view Value) = 0;
-	virtual bool SetValue(string_view Key, string_view Name, unsigned long long Value) = 0;
-	virtual bool SetValue(string_view Key, string_view Name, const bytes_view& Value) = 0;
+	virtual void SetValue(string_view Key, string_view Name, string_view Value) = 0;
+	virtual void SetValue(string_view Key, string_view Name, unsigned long long Value) = 0;
+	virtual void SetValue(string_view Key, string_view Name, bytes_view Value) = 0;
 
-	virtual bool GetValue(string_view Key, string_view Name, bool& Value, bool Default) const = 0;
-	virtual bool GetValue(string_view Key, string_view Name, long long& Value, long long Default) const = 0;
-	virtual bool GetValue(string_view Key, string_view Name, string& Value, const string& Default) const = 0;
-	virtual bool GetValue(string_view Key, string_view Name, string& Value, const wchar_t* Default) const = 0;
+	[[nodiscard]]
+	virtual bool GetValue(string_view Key, string_view Name, bool& Value) const = 0;
+	[[nodiscard]]
+	virtual bool GetValue(string_view Key, string_view Name, long long& Value) const = 0;
+	[[nodiscard]]
+	virtual bool GetValue(string_view Key, string_view Name, string& Value) const = 0;
 
-	virtual bool DeleteValue(string_view Key, string_view Name) = 0;
-	virtual bool EnumValues(string_view Key, bool Reset, string& strName, string& strValue) const = 0;
-	virtual bool EnumValues(string_view Key, bool Reset, string& strName, long long& Value) const = 0;
+	template<typename value_type, typename default_type = value_type>
+	[[nodiscard]]
+	value_type GetValue(string_view Key, string_view const Name, const default_type& Default = {}) const
+	{
+		value_type Value;
+		return GetValue(Key, Name, Value)? Value : value_type{ Default };
+	}
 
-	template<typename T, typename key_type, REQUIRES(std::is_convertible_v<key_type, string_view>)>
+	virtual void DeleteValue(string_view Key, string_view Name) = 0;
+
+	template<typename T, typename key_type>
+	[[nodiscard]]
 	auto ValuesEnumerator(key_type&& Key) const
 	{
+		static_assert(std::is_convertible_v<key_type, string_view>);
+
 		using value_type = std::pair<string, T>;
 		return make_inline_enumerator<value_type>([this, Key = keep_alive(FWD(Key))](const bool Reset, value_type& Value)
 		{
 			return EnumValues(Key.get(), Reset, Value.first, Value.second);
+		},
+		[this]
+		{
+			CloseEnum();
 		});
 	}
 
 protected:
 	GeneralConfig() = default;
+
+private:
+	[[nodiscard]]
+	virtual bool EnumValues(string_view Key, bool Reset, string& strName, string& strValue) const = 0;
+	[[nodiscard]]
+	virtual bool EnumValues(string_view Key, bool Reset, string& strName, long long& Value) const = 0;
+
+	virtual void CloseEnum() const = 0;
 };
 
 class async_delete
 {
 public:
-	virtual ~async_delete() = default;
 	virtual void finish() = 0;
+
+protected:
+	virtual ~async_delete() = default;
 };
+
+class async_delete_impl;
+
 
 class HierarchicalConfig: public representable, virtual public async_delete, virtual public transactional
 {
@@ -110,63 +145,107 @@ public:
 	class key
 	{
 	public:
+		key() = default;
 		explicit key(unsigned long long Key): m_Key(Key) {}
 
-		unsigned long long get() const { return m_Key; }
+		unsigned long long get() const noexcept { return m_Key; }
 		explicit operator bool() const noexcept { return m_Key != 0; }
 
 	private:
-		unsigned long long m_Key;
+		unsigned long long m_Key{};
 	};
 
-	static key root_key() { return key(0); }
+	static inline const key root_key{0};
 
-	virtual key CreateKey(const key& Root, string_view Name, const string* Description = nullptr) = 0;
+	[[nodiscard]]
+	virtual key CreateKey(const key& Root, string_view Name) = 0;
+	[[nodiscard]]
 	virtual key FindByName(const key& Root, string_view Name) const = 0;
-	virtual bool SetKeyDescription(const key& Root, string_view Description) = 0;
+	[[nodiscard]]
+	virtual bool GetKeyName(const key& Root, const key& Key, string& Name) const = 0;
+	virtual void SetKeyDescription(const key& Root, string_view Description) = 0;
 
-	virtual bool SetValue(const key& Root, string_view Name, string_view Value) = 0;
-	virtual bool SetValue(const key& Root, string_view Name, unsigned long long Value) = 0;
-	virtual bool SetValue(const key& Root, string_view Name, const bytes_view& Value) = 0;
+	virtual void SetValue(const key& Root, string_view Name, string_view Value) = 0;
+	virtual void SetValue(const key& Root, string_view Name, unsigned long long Value) = 0;
+	virtual void SetValue(const key& Root, string_view Name, bytes_view Value) = 0;
 
 	virtual bool GetValue(const key& Root, string_view Name, unsigned long long& Value) const = 0;
 	virtual bool GetValue(const key& Root, string_view Name, string& strValue) const = 0;
 	virtual bool GetValue(const key& Root, string_view Name, bytes& Value) const = 0;
-	bool GetValue(const key& Root, string_view Name, bytes&& Value) const { return GetValue(Root, Name, Value); }
 
-	virtual bool DeleteKeyTree(const key& Key) = 0;
-	virtual bool DeleteValue(const key& Root, string_view Name) = 0;
-	virtual bool EnumKeys(const key& Root, bool Reset, string& strName) const = 0;
-	virtual bool EnumValues(const key& Root, bool Reset, string& strName, int& Type) const = 0;
-	virtual bool Flush() = 0;
-
-	auto KeysEnumerator(key const Root) const
+	bool GetValue(const key& Root, string_view const Name, bool& Value) const
 	{
-		using value_type = string;
-		return make_inline_enumerator<value_type>([this, Root](const bool Reset, value_type& Value)
+		unsigned long long iValue;
+		if (!GetValue(Root, Name, iValue))
+			return false;
+
+		Value = iValue != 0;
+		return true;
+	}
+
+	template<typename value_type, typename default_type = value_type>
+	value_type GetValue(const key& Root, string_view const Name, const default_type& Default = {})
+	{
+		value_type Value;
+		return GetValue(Root, Name, Value)? Value : value_type{ Default };
+	}
+
+
+	virtual void DeleteKeyTree(const key& Key) = 0;
+	virtual void DeleteValue(const key& Root, string_view Name) = 0;
+	virtual void Flush() = 0;
+
+	[[nodiscard]]
+	virtual const string& GetName() const = 0;
+
+	[[nodiscard]]
+	auto KeysEnumerator(key const Root, string_view const Pattern = {}) const
+	{
+		using value_type = key;
+		return make_inline_enumerator<value_type>([this, Root, Pattern = string{Pattern}](const bool Reset, value_type& Value)
 		{
-			return EnumKeys(Root, Reset, Value);
+			return EnumKeys(Root, Reset, Value, Pattern);
+		},
+		[this, Pattern = string{Pattern}]
+		{
+			CloseEnumKeys(Pattern);
 		});
 	}
 
-	auto ValuesEnumerator(key const Root) const
+	[[nodiscard]]
+	auto ValuesEnumerator(key const Root, string_view const Pattern = {}) const
 	{
 		using value_type = std::pair<string, int>;
-		return make_inline_enumerator<value_type>([this, Root](const bool Reset, value_type& Value)
+		return make_inline_enumerator<value_type>([this, Root, Pattern = string{Pattern}](const bool Reset, value_type& Value)
 		{
-			return EnumValues(Root, Reset, Value.first, Value.second);
+			return EnumValues(Root, Reset, Value.first, Value.second, Pattern);
+		},
+		[this, Pattern = string{Pattern}]
+		{
+			CloseEnumValues(Pattern);
 		});
 	}
+
+	[[nodiscard]]
+	static int ToSettingsType(int Type);
 
 protected:
 	HierarchicalConfig() = default;
+
+private:
+	[[nodiscard]]
+	virtual bool EnumKeys(const key& Root, bool Reset, key& Key, string_view Pattern = {}) const = 0;
+	virtual void CloseEnumKeys(string_view Pattern) const = 0;
+	[[nodiscard]]
+	virtual bool EnumValues(const key& Root, bool Reset, string& Name, int& Type, string_view Pattern = {}) const = 0;
+	virtual void CloseEnumValues(string_view Pattern) const = 0;
 };
 
 namespace detail
 {
 	struct async_deleter
 	{
-		void operator()(async_delete* Ptr) const
+		void operator()(async_delete* Ptr) const noexcept
 		{
 			Ptr->finish();
 		}
@@ -178,7 +257,7 @@ using HierarchicalConfigUniquePtr = std::unique_ptr<HierarchicalConfig, detail::
 class ColorsConfig: public representable, virtual public transactional
 {
 public:
-	virtual bool SetValue(string_view Name, const FarColor& Value) = 0;
+	virtual void SetValue(string_view Name, const FarColor& Value) = 0;
 	virtual bool GetValue(string_view Name, FarColor& Value) const = 0;
 
 protected:
@@ -188,34 +267,52 @@ protected:
 class AssociationsConfig: public representable, virtual public transactional
 {
 public:
-	virtual bool EnumMasks(bool Reset, unsigned long long *id, string &strMask) = 0;
-	virtual bool EnumMasksForType(bool Reset, int Type, unsigned long long *id, string &strMask) = 0;
 	virtual bool GetMask(unsigned long long id, string &strMask) = 0;
 	virtual bool GetDescription(unsigned long long id, string &strDescription) = 0;
 	virtual bool GetCommand(unsigned long long id, int Type, string &strCommand, bool *Enabled=nullptr) = 0;
-	virtual bool SetCommand(unsigned long long id, int Type, string_view Command, bool Enabled) = 0;
+	virtual void SetCommand(unsigned long long id, int Type, string_view Command, bool Enabled) = 0;
+	[[nodiscard]]
 	virtual bool SwapPositions(unsigned long long id1, unsigned long long id2) = 0;
+	[[nodiscard]]
 	virtual unsigned long long AddType(unsigned long long after_id, string_view Mask, string_view Description) = 0;
-	virtual bool UpdateType(unsigned long long id, string_view Mask, string_view Description) = 0;
-	virtual bool DelType(unsigned long long id) = 0;
+	virtual void UpdateType(unsigned long long id, string_view Mask, string_view Description) = 0;
+	virtual void DelType(unsigned long long id) = 0;
 
+	[[nodiscard]]
 	auto MasksEnumerator()
 	{
 		using value_type = std::pair<unsigned long long, string>;
 		return make_inline_enumerator<value_type>([this](const bool Reset, value_type& Value)
 		{
 			return EnumMasks(Reset, &Value.first, Value.second);
+		},
+		[this]
+		{
+			CloseEnumMasks();
 		});
 	}
 
+	[[nodiscard]]
 	auto TypedMasksEnumerator(int Type)
 	{
 		using value_type = std::pair<unsigned long long, string>;
 		return make_inline_enumerator<value_type>([this, Type](const bool Reset, value_type& Value)
 		{
 			return EnumMasksForType(Reset, Type, &Value.first, Value.second);
+		},
+		[this]
+		{
+			CloseEnumMasksForType();
 		});
 	}
+
+private:
+	[[nodiscard]]
+	virtual bool EnumMasks(bool Reset, unsigned long long *id, string &strMask) const = 0;
+	virtual void CloseEnumMasks() const = 0;
+	[[nodiscard]]
+	virtual bool EnumMasksForType(bool Reset, int Type, unsigned long long *id, string &strMask) const = 0;
+	virtual void CloseEnumMasksForType() const = 0;
 
 protected:
 	AssociationsConfig() = default;
@@ -224,39 +321,56 @@ protected:
 class PluginsCacheConfig: public representable, virtual public transactional
 {
 public:
+	[[nodiscard]]
 	virtual unsigned long long CreateCache(string_view CacheName) = 0;
+	[[nodiscard]]
 	virtual unsigned long long GetCacheID(string_view CacheName) const = 0;
-	virtual bool DeleteCache(string_view CacheName) = 0;
+	[[nodiscard]]
 	virtual bool IsPreload(unsigned long long id) const = 0;
+	[[nodiscard]]
 	virtual string GetSignature(unsigned long long id) const = 0;
+	[[nodiscard]]
 	virtual bool GetExportState(unsigned long long id, string_view ExportName) const = 0;
-	virtual string GetGuid(unsigned long long id) const = 0;
+	[[nodiscard]]
+	virtual string GetUuid(unsigned long long id) const = 0;
+	[[nodiscard]]
 	virtual string GetTitle(unsigned long long id) const = 0;
+	[[nodiscard]]
 	virtual string GetAuthor(unsigned long long id) const = 0;
+	[[nodiscard]]
 	virtual string GetDescription(unsigned long long id) const = 0;
-	virtual bool GetMinFarVersion(unsigned long long id, VersionInfo *Version) const = 0;
-	virtual bool GetVersion(unsigned long long id, VersionInfo *Version) const = 0;
-	virtual bool GetDiskMenuItem(unsigned long long id, size_t index, string &Text, GUID& Guid) const = 0;
-	virtual bool GetPluginsMenuItem(unsigned long long id, size_t index, string &Text, GUID& Guid) const = 0;
-	virtual bool GetPluginsConfigMenuItem(unsigned long long id, size_t index, string &Text, GUID& Guid) const = 0;
+	[[nodiscard]]
+	virtual bool GetMinFarVersion(unsigned long long id, VersionInfo& Version) const = 0;
+	[[nodiscard]]
+	virtual bool GetVersion(unsigned long long id, VersionInfo& Version) const = 0;
+	[[nodiscard]]
+	virtual bool GetDiskMenuItem(unsigned long long id, size_t index, string &Text, UUID& Uuid) const = 0;
+	[[nodiscard]]
+	virtual bool GetPluginsMenuItem(unsigned long long id, size_t index, string &Text, UUID& Uuid) const = 0;
+	[[nodiscard]]
+	virtual bool GetPluginsConfigMenuItem(unsigned long long id, size_t index, string &Text, UUID& Uuid) const = 0;
+	[[nodiscard]]
 	virtual string GetCommandPrefix(unsigned long long id) const = 0;
+	[[nodiscard]]
 	virtual unsigned long long GetFlags(unsigned long long id) const = 0;
-	virtual bool SetPreload(unsigned long long id, bool Preload) = 0;
-	virtual bool SetSignature(unsigned long long id, string_view Signature) = 0;
-	virtual bool SetDiskMenuItem(unsigned long long id, size_t index, string_view Text, const GUID& Guid) = 0;
-	virtual bool SetPluginsMenuItem(unsigned long long id, size_t index, string_view Text, const GUID& Guid) = 0;
-	virtual bool SetPluginsConfigMenuItem(unsigned long long id, size_t index, string_view Text, const GUID& Guid) = 0;
-	virtual bool SetCommandPrefix(unsigned long long id, string_view Prefix) = 0;
-	virtual bool SetFlags(unsigned long long id, unsigned long long Flags) = 0;
-	virtual bool SetExportState(unsigned long long id, string_view ExportName, bool Exists) = 0;
-	virtual bool SetMinFarVersion(unsigned long long id, const VersionInfo *Version) = 0;
-	virtual bool SetVersion(unsigned long long id, const VersionInfo *Version) = 0;
-	virtual bool SetGuid(unsigned long long id, string_view Guid) = 0;
-	virtual bool SetTitle(unsigned long long id, string_view Title) = 0;
-	virtual bool SetAuthor(unsigned long long id, string_view Author) = 0;
-	virtual bool SetDescription(unsigned long long id, string_view Description) = 0;
-	virtual bool EnumPlugins(DWORD index, string &CacheName) const = 0;
-	virtual bool DiscardCache() = 0;
+	virtual void SetPreload(unsigned long long id, bool Preload) = 0;
+	virtual void SetSignature(unsigned long long id, string_view Signature) = 0;
+	virtual void SetDiskMenuItem(unsigned long long id, size_t index, string_view Text, const UUID& Uuid) = 0;
+	virtual void SetPluginsMenuItem(unsigned long long id, size_t index, string_view Text, const UUID& Uuid) = 0;
+	virtual void SetPluginsConfigMenuItem(unsigned long long id, size_t index, string_view Text, const UUID& Uuid) = 0;
+	virtual void SetCommandPrefix(unsigned long long id, string_view Prefix) = 0;
+	virtual void SetFlags(unsigned long long id, unsigned long long Flags) = 0;
+	virtual void SetExportState(unsigned long long id, string_view ExportName, bool Exists) = 0;
+	virtual void SetMinFarVersion(unsigned long long id, const VersionInfo& Version) = 0;
+	virtual void SetVersion(unsigned long long id, const VersionInfo& Version) = 0;
+	virtual void SetUuid(unsigned long long id, string_view Uuid) = 0;
+	virtual void SetTitle(unsigned long long id, string_view Title) = 0;
+	virtual void SetAuthor(unsigned long long id, string_view Author) = 0;
+	virtual void SetDescription(unsigned long long id, string_view Description) = 0;
+	[[nodiscard]]
+	virtual bool EnumPlugins(size_t Index, string &CacheName) const = 0;
+	virtual void DiscardCache() = 0;
+	[[nodiscard]]
 	virtual bool IsCacheEmpty() const = 0;
 
 protected:
@@ -273,10 +387,12 @@ enum class hotkey_type: int
 class PluginsHotkeysConfig: public representable, virtual public transactional
 {
 public:
+	[[nodiscard]]
 	virtual bool HotkeysPresent(hotkey_type HotKeyType) = 0;
-	virtual string GetHotkey(string_view PluginKey, const GUID& MenuGuid, hotkey_type HotKeyType) = 0;
-	virtual bool SetHotkey(string_view PluginKey, const GUID& MenuGuid, hotkey_type HotKeyType, string_view HotKey) = 0;
-	virtual bool DelHotkey(string_view PluginKey, const GUID& MenuGuid, hotkey_type HotKeyType) = 0;
+	[[nodiscard]]
+	virtual string GetHotkey(string_view PluginKey, const UUID& MenuUuid, hotkey_type HotKeyType) = 0;
+	virtual void SetHotkey(string_view PluginKey, const UUID& MenuUuid, hotkey_type HotKeyType, string_view HotKey) = 0;
+	virtual void DelHotkey(string_view PluginKey, const UUID& MenuUuid, hotkey_type HotKeyType) = 0;
 
 protected:
 	PluginsHotkeysConfig() = default;
@@ -288,31 +404,38 @@ class HistoryConfig: public representable, virtual public transactional
 {
 public:
 	//command,view,edit,folder,dialog history
-	virtual bool Enum(bool Reset, unsigned int TypeHistory, string_view HistoryName, unsigned long long& id, string& strName, history_record_type& Type, bool& Lock, os::chrono::time_point& Time, string& strGuid, string& strFile, string& strData, bool Reverse = false) = 0;
-	virtual bool Delete(unsigned long long id) = 0;
-	virtual bool DeleteAndAddAsync(unsigned long long DeleteId, unsigned int TypeHistory, string_view HistoryName, string_view Name, int Type, bool Lock, string_view Guid, string_view File, string_view Data) = 0;
-	virtual bool DeleteOldUnlocked(unsigned int TypeHistory, string_view HistoryName, int DaysToKeep, int MinimumEntries) = 0;
-	virtual bool EnumLargeHistories(bool Reset, unsigned int TypeHistory, int MinimumEntries, string& strHistoryName) = 0;
-	virtual bool GetNewest(unsigned int TypeHistory, string_view HistoryName, string &strName) = 0;
-	virtual bool Get(unsigned long long id, string &strName) = 0;
-	virtual bool Get(unsigned long long id, string &strName, history_record_type& Type, string &strGuid, string &strFile, string &strData) = 0;
+	virtual void Delete(unsigned long long id) = 0;
+
+	virtual void DeleteAndAddAsync(unsigned long long DeleteId, unsigned int TypeHistory, string_view HistoryName, string_view Name, int Type, bool Lock, os::chrono::time_point Time, string_view Uuid, string_view File, string_view Data) = 0;
+	virtual void DeleteOldUnlocked(unsigned int TypeHistory, string_view HistoryName, int DaysToKeep, int MinimumEntries) = 0;
+	[[nodiscard]]
+	virtual bool Get(unsigned long long id, string* Name, history_record_type* Type, os::chrono::time_point* Time, string* Uuid, string* File, string* Data) = 0;
+	[[nodiscard]]
 	virtual DWORD Count(unsigned int TypeHistory, string_view HistoryName) = 0;
-	virtual bool FlipLock(unsigned long long id) = 0;
+	virtual void FlipLock(unsigned long long id) = 0;
+	[[nodiscard]]
 	virtual bool IsLocked(unsigned long long id) = 0;
-	virtual bool DeleteAllUnlocked(unsigned int TypeHistory, string_view HistoryName) = 0;
-	virtual unsigned long long GetNext(unsigned int TypeHistory, string_view HistoryName, unsigned long long id, string &strName) = 0;
-	virtual unsigned long long GetPrev(unsigned int TypeHistory, string_view HistoryName, unsigned long long id, string &strName) = 0;
-	virtual unsigned long long CyclicGetPrev(unsigned int TypeHistory, string_view HistoryName, unsigned long long id, string &strName) = 0;
+	virtual void DeleteAllUnlocked(unsigned int TypeHistory, string_view HistoryName) = 0;
+	[[nodiscard]]
+	virtual unsigned long long GetNext(unsigned int TypeHistory, string_view HistoryName, unsigned long long id, string &strName, os::chrono::time_point& Time) = 0;
+	[[nodiscard]]
+	virtual unsigned long long GetPrev(unsigned int TypeHistory, string_view HistoryName, unsigned long long id, string &strName, os::chrono::time_point& Time) = 0;
+	[[nodiscard]]
+	virtual unsigned long long CyclicGetPrev(unsigned int TypeHistory, string_view HistoryName, unsigned long long id, string &strName, os::chrono::time_point& Time) = 0;
 
 	//view,edit file positions and bookmarks history
-	virtual unsigned long long SetEditorPos(string_view Name, int Line, int LinePos, int ScreenLine, int LeftPos, uintptr_t CodePage) = 0;
-	virtual unsigned long long GetEditorPos(string_view Name, int *Line, int *LinePos, int *ScreenLine, int *LeftPos, uintptr_t *CodePage) = 0;
-	virtual bool SetEditorBookmark(unsigned long long id, size_t i, int Line, int LinePos, int ScreenLine, int LeftPos) = 0;
-	virtual bool GetEditorBookmark(unsigned long long id, size_t i, int *Line, int *LinePos, int *ScreenLine, int *LeftPos) = 0;
-	virtual unsigned long long SetViewerPos(string_view Name, long long FilePos, long long LeftPos, int Hex_Wrap, uintptr_t CodePage) = 0;
-	virtual unsigned long long GetViewerPos(string_view Name, long long *FilePos, long long *LeftPos, int *Hex, uintptr_t *CodePage) = 0;
-	virtual bool SetViewerBookmark(unsigned long long id, size_t i, long long FilePos, long long LeftPos) = 0;
-	virtual bool GetViewerBookmark(unsigned long long id, size_t i, long long *FilePos, long long *LeftPos) = 0;
+	[[nodiscard]]
+	virtual unsigned long long SetEditorPos(string_view Name, os::chrono::time_point Time, int Line, int LinePos, int ScreenLine, int LeftPos, uintptr_t CodePage) = 0;
+	[[nodiscard]]
+	virtual unsigned long long GetEditorPos(string_view Name, int& Line, int& LinePos, int& ScreenLine, int& LeftPos, uintptr_t& CodePage) = 0;
+	virtual void SetEditorBookmark(unsigned long long id, size_t i, int Line, int LinePos, int ScreenLine, int LeftPos) = 0;
+	virtual bool GetEditorBookmark(unsigned long long id, size_t i, int& Line, int& LinePos, int& ScreenLine, int& LeftPos) = 0;
+	[[nodiscard]]
+	virtual unsigned long long SetViewerPos(string_view Name, os::chrono::time_point Time, long long FilePos, long long LeftPos, int HexWrap, uintptr_t CodePage) = 0;
+	[[nodiscard]]
+	virtual unsigned long long GetViewerPos(string_view Name, long long& FilePos, long long& LeftPos, int& HexWrap, uintptr_t& CodePage) = 0;
+	virtual void SetViewerBookmark(unsigned long long id, size_t i, long long FilePos, long long LeftPos) = 0;
+	virtual bool GetViewerBookmark(unsigned long long id, size_t i, long long& FilePos, long long& LeftPos) = 0;
 	virtual void DeleteOldPositions(int DaysToKeep, int MinimumEntries) = 0;
 
 	struct enum_data
@@ -322,32 +445,53 @@ public:
 		history_record_type Type;
 		bool Lock;
 		os::chrono::time_point Time;
-		string Guid;
+		string Uuid;
 		string File;
 		string Data;
 	};
 
-	template<typename type, REQUIRES(std::is_convertible_v<type, string_view>)>
+	template<typename type>
+	[[nodiscard]]
 	auto Enumerator(unsigned int HistoryType, type&& HistoryName, bool Reverse = false)
 	{
+		static_assert(std::is_convertible_v<type, string_view>);
+
 		using value_type = enum_data;
 		return make_inline_enumerator<value_type>([this, HistoryType, HistoryName = keep_alive(FWD(HistoryName)), Reverse](const bool Reset, value_type& Value)
 		{
-			return Enum(Reset, HistoryType, HistoryName.get(), Value.Id, Value.Name, Value.Type, Value.Lock, Value.Time, Value.Guid, Value.File, Value.Data, Reverse);
+			return Enum(Reset, HistoryType, HistoryName.get(), Value.Id, Value.Name, Value.Type, Value.Lock, Value.Time, Value.Uuid, Value.File, Value.Data, Reverse);
+		},
+		[this, Reverse]
+		{
+			CloseEnum(Reverse);
 		});
 	}
 
+	[[nodiscard]]
 	auto LargeHistoriesEnumerator(unsigned int HistoryType, int MinimumEntries)
 	{
 		using value_type = string;
 		return make_inline_enumerator<value_type>([this, HistoryType, MinimumEntries](const bool Reset, value_type& Value)
 		{
 			return EnumLargeHistories(Reset, HistoryType, MinimumEntries, Value);
+		},
+		[this]
+		{
+			CloseEnumLargeHistories();
 		});
 	}
 
 protected:
 	HistoryConfig() = default;
+
+private:
+	//command,view,edit,folder,dialog history
+	[[nodiscard]]
+	virtual bool Enum(bool Reset, unsigned int TypeHistory, string_view HistoryName, unsigned long long& id, string& strName, history_record_type& Type, bool& Lock, os::chrono::time_point& Time, string& strUuid, string& strFile, string& strData, bool Reverse) = 0;
+	virtual void CloseEnum(bool Reverse) const = 0;
+	[[nodiscard]]
+	virtual bool EnumLargeHistories(bool Reset, unsigned int TypeHistory, int MinimumEntries, string& strHistoryName) = 0;
+	virtual void CloseEnumLargeHistories() const = 0;
 };
 
 enum dbcheck: int;
@@ -356,45 +500,79 @@ class config_provider: noncopyable
 {
 public:
 	enum class mode { m_default, m_import, m_export };
+	struct clear_cache{};
 
 	explicit config_provider(mode Mode = mode::m_default);
+	explicit config_provider(clear_cache);
 	~config_provider();
+	[[nodiscard]]
 	bool ShowProblems() const;
-	bool ServiceMode(const string& File);
+	void ServiceMode(string_view File);
 
-	void AsyncCall(const std::function<void()>& Routine);
+	class async_key
+	{
+		friend async_delete_impl;
+		async_key() = default;
+	};
 
-	static void ClearPluginsCache();
+	void AsyncCall(async_key, const std::function<void()>& Routine);
 
+	[[nodiscard]]
 	const auto& GeneralCfg() const { return m_GeneralCfg; }
+	[[nodiscard]]
 	const auto& LocalGeneralCfg() const { return m_LocalGeneralCfg; }
+	[[nodiscard]]
 	const auto& ColorsCfg() const { return m_ColorsCfg; }
+	[[nodiscard]]
 	const auto& AssocConfig() const { return m_AssocConfig; }
+	[[nodiscard]]
 	const auto& PlCacheCfg() const { return m_PlCacheCfg; }
+	[[nodiscard]]
 	const auto& PlHotkeyCfg() const { return m_PlHotkeyCfg; }
+	[[nodiscard]]
 	const auto& HistoryCfg() const { return m_HistoryCfg; }
+	[[nodiscard]]
 	const auto& HistoryCfgMem() const { return m_HistoryCfgMem; }
 
-	HierarchicalConfigUniquePtr CreatePluginsConfig(string_view guid, bool Local=false);
+	HierarchicalConfigUniquePtr CreatePluginsConfig(string_view Uuid, bool Local = false, bool UseFallback = true);
 	HierarchicalConfigUniquePtr CreateFiltersConfig();
 	HierarchicalConfigUniquePtr CreateHighlightConfig();
 	HierarchicalConfigUniquePtr CreateShortcutsConfig();
 	HierarchicalConfigUniquePtr CreatePanelModesConfig();
 
 private:
-	template<class T> void CheckAndImportDatabase(T* Database, const char* ImportNodeName, bool IsPlugin);
-	template<class T> std::unique_ptr<T> CreateDatabase();
-	template<class T> HierarchicalConfigUniquePtr CreateHierarchicalConfig(dbcheck DbId, string_view DbName, const char* ImportNodeName, bool IsLocal = false, bool IsPlugin = false);
-	bool Import(const string& File);
-	bool Export(const string& File);
-	void TryImportDatabase(representable* p, const char* NodeName = nullptr, bool IsPlugin = false);
-	void CheckDatabase(class SQLiteDb const* pDb);
+	template<class T>
+	void ImportDatabase(T& Database, const char* ImportNodeName, bool IsPlugin);
 
-	int m_LoadResult;
+	template<class T>
+	[[nodiscard]]
+	std::unique_ptr<T> CreateWithFallback(string_view Name);
+
+	template<class T>
+	[[nodiscard]]
+	std::unique_ptr<T> CreateDatabase(string_view Name, bool Local);
+
+	template<class T>
+	[[nodiscard]]
+	HierarchicalConfigUniquePtr CreateHierarchicalConfig(dbcheck DbId, string_view DbName, const char* ImportNodeName, bool Local = false, bool IsPlugin = false, bool UseFallback = true);
+
+	void Import(string_view File);
+	void Export(string_view File);
+	void TryImportDatabase(representable& p, const char* NodeName = nullptr, bool IsPlugin = false);
+
+	struct implementation
+	{
+		NONCOPYABLE(implementation);
+
+		implementation();
+		~implementation();
+	}
+	m_Impl;
+
 	std::vector<os::thread> m_Threads;
-	std::vector<string> m_Problems;
+	mutable std::vector<string> m_Problems;
 	std::unique_ptr<representation_source> m_TemplateSource;
-	mode m_Mode;
+	mode m_Mode{ mode::m_default };
 
 	std::unique_ptr<GeneralConfig> m_GeneralCfg;
 	std::unique_ptr<GeneralConfig> m_LocalGeneralCfg;
@@ -408,6 +586,7 @@ private:
 	BitFlags m_CheckedDb;
 };
 
+[[nodiscard]]
 config_provider& ConfigProvider();
 
 #endif // CONFIGDB_HPP_552309E5_DEA6_42FD_BD7B_0F59C839FE62

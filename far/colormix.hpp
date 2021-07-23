@@ -34,12 +34,25 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "farcolor.hpp"
+
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
 
 struct FarColor;
 
 namespace colors
 {
+	COLORREF index_bits(COLORREF Colour);
+	COLORREF color_bits(COLORREF Colour);
+	COLORREF alpha_bits(COLORREF Colour);
+
 	COLORREF index_value(COLORREF Colour);
 	COLORREF color_value(COLORREF Colour);
 	COLORREF alpha_value(COLORREF Colour);
@@ -53,26 +66,28 @@ namespace colors
 	void make_opaque(COLORREF& Colour);
 	void make_transparent(COLORREF& Colour);
 
-	struct color_hash
-	{
-		size_t operator()(const FarColor& Key) const;
-	};
+	COLORREF invert(COLORREF Colour, bool IsIndex);
+	void make_invert(COLORREF& Colour, bool IsIndex);
+
+	size_t color_hash(const FarColor& Value);
 
 	FarColor merge(const FarColor& Bottom, const FarColor& Top);
 	WORD FarColorToConsoleColor(const FarColor& Color);
 	FarColor ConsoleColorToFarColor(WORD Color);
+	COLORREF ConsoleIndexToTrueColor(COLORREF Color);
 	const FarColor& PaletteColorToFarColor(PaletteColors ColorIndex);
 	const FarColor* StoreColor(const FarColor& Value);
+	COLORREF ARGB2ABGR(int Color);
 	// ([[T]FFFFFFFF][:[T]BBBBBBBB])
-	string_view::const_iterator ExtractColorInNewFormat(string_view::const_iterator Begin, string_view::const_iterator End, FarColor& Color, bool& Stop);
+	string_view ExtractColorInNewFormat(string_view Str, FarColor& Color, bool& Stop);
 }
 
 template<>
 struct std::hash<FarColor>
 {
-	std::size_t operator()(const FarColor& Value) const
+	size_t operator()(const FarColor& Value) const noexcept
 	{
-		return colors::color_hash{}(Value);
+		return colors::color_hash(Value);
 	}
 };
 

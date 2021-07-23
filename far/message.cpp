@@ -31,8 +31,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "message.hpp"
 
+// Internal:
 #include "ctrlobj.hpp"
 #include "farcolor.hpp"
 #include "dialog.hpp"
@@ -48,31 +53,16 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "lang.hpp"
 #include "strmix.hpp"
 #include "global.hpp"
+#include "eol.hpp"
 
+// Platform:
+
+// Common:
+
+// External:
 #include "format.hpp"
 
-static string GetWin32ErrorString(const error_state_ex& ErrorState)
-{
-	return os::GetErrorString(false, ErrorState.Win32Error);
-}
-
-static string GetNtErrorString(const error_state_ex& ErrorState)
-{
-	return os::GetErrorString(true, ErrorState.NtError);
-}
-
-string GetErrorString(const error_state_ex& ErrorState)
-{
-	auto Str = ErrorState.What;
-	if (!Str.empty())
-		append(Str, L": "sv);
-
-	const auto UseNtMessages = false;
-
-	Str += (UseNtMessages? GetNtErrorString : GetWin32ErrorString)(ErrorState);
-
-	return Str;
-}
+//----------------------------------------------------------------------------
 
 intptr_t Message::MsgDlgProc(Dialog* Dlg,intptr_t Msg,intptr_t Param1,void* Param2)
 {
@@ -111,15 +101,24 @@ intptr_t Message::MsgDlgProc(Dialog* Dlg,intptr_t Msg,intptr_t Param1,void* Para
 			const auto record = static_cast<const INPUT_RECORD *>(Param2);
 			if (record->EventType==KEY_EVENT)
 			{
-				int key = InputRecordToKey(record);
+				const auto key = InputRecordToKey(record);
 				switch(key)
 				{
 				case KEY_F3:
 					if(IsErrorType)
 					{
+						const auto Errors = m_ErrorState.format_errors();
+						const auto MaxStr = std::max(Errors[0].size(), Errors[1].size());
+						const auto SysArea = 5 * 2;
+						const auto FieldsWidth = std::max(80 - SysArea, std::min(static_cast<int>(MaxStr), ScrX - SysArea));
+
 						DialogBuilder Builder(lng::MError);
-						Builder.AddConstEditField(format(L"LastError: 0x{0:0>8X} - {1}", as_unsigned(m_ErrorState.Win32Error), GetWin32ErrorString(m_ErrorState)), 65);
-						Builder.AddConstEditField(format(L"NTSTATUS: 0x{0:0>8X} - {1}", as_unsigned(m_ErrorState.NtError), GetNtErrorString(m_ErrorState)), 65);
+						Builder.AddText(L"errno:");
+						Builder.AddConstEditField(Errors[0], FieldsWidth);
+						Builder.AddText(L"LastError:");
+						Builder.AddConstEditField(Errors[1], FieldsWidth);
+						Builder.AddText(L"NTSTATUS:");
+						Builder.AddConstEditField(Errors[2], FieldsWidth);
 						Builder.AddOK();
 						Builder.ShowDialog();
 					}
@@ -166,8 +165,7 @@ intptr_t Message::MsgDlgProc(Dialog* Dlg,intptr_t Msg,intptr_t Param1,void* Para
 	return Dlg->DefProc(Msg,Param1,Param2);
 }
 
-Message::Message(DWORD const Flags, string_view const Title, std::vector<string> Strings, const std::vector<lng>& Buttons, string_view const HelpTopic, const GUID* const Id):
-	m_ExitCode(0)
+Message::Message(unsigned const Flags, string_view const Title, std::vector<string> Strings, span<lng const> const Buttons, string_view const HelpTopic, const UUID* const Id)
 {
 	std::vector<string> StrButtons;
 	StrButtons.reserve(Buttons.size());
@@ -175,8 +173,7 @@ Message::Message(DWORD const Flags, string_view const Title, std::vector<string>
 	Init(Flags, Title, std::move(Strings), std::move(StrButtons), nullptr, {}, HelpTopic, nullptr, Id);
 }
 
-Message::Message(DWORD const Flags, const error_state_ex& ErrorState, string_view  const Title, std::vector<string> Strings, const std::vector<lng>& Buttons, string_view const HelpTopic, const GUID* const Id, const std::vector<string>& Inserts):
-	m_ExitCode(0)
+Message::Message(unsigned const Flags, const error_state_ex& ErrorState, string_view  const Title, std::vector<string> Strings, span<lng const> const Buttons, string_view const HelpTopic, const UUID* const Id, span<string const> const Inserts)
 {
 	std::vector<string> StrButtons;
 	StrButtons.reserve(Buttons.size());
@@ -184,22 +181,21 @@ Message::Message(DWORD const Flags, const error_state_ex& ErrorState, string_vie
 	Init(Flags, Title, std::move(Strings), std::move(StrButtons), &ErrorState, Inserts, HelpTopic, nullptr, Id);
 }
 
-Message::Message(DWORD const Flags, const error_state_ex* const ErrorState, string_view const Title, std::vector<string> Strings, std::vector<string> Buttons, string_view const HelpTopic, const GUID* const Id, Plugin* const PluginNumber):
-	m_ExitCode(0)
+Message::Message(unsigned const Flags, const error_state_ex* const ErrorState, string_view const Title, std::vector<string> Strings, std::vector<string> Buttons, string_view const HelpTopic, const UUID* const Id, Plugin* const PluginNumber)
 {
 	Init(Flags, Title, std::move(Strings), std::move(Buttons), ErrorState, {}, HelpTopic, PluginNumber, Id);
 }
 
 void Message::Init(
-	DWORD const Flags,
+	unsigned const Flags,
 	string_view const Title,
 	std::vector<string>&& Strings,
 	std::vector<string>&& Buttons,
 	const error_state_ex* const ErrorState,
-	const std::vector<string>& Inserts,
+	span<string const> const Inserts,
 	string_view const HelpTopic,
 	Plugin* const PluginNumber,
-	const GUID* const Id
+	const UUID* const Id
 	)
 {
 	IsWarningStyle = (Flags&MSG_WARNING) != 0;
@@ -210,13 +206,13 @@ void Message::Init(
 	if (IsErrorType)
 	{
 		m_ErrorState = *ErrorState;
-		strErrStr = GetErrorString(m_ErrorState);
+		strErrStr = m_ErrorState.format_error();
 		if (!strErrStr.empty())
 		{
 			size_t index = 1;
 			for (const auto& i: Inserts)
 			{
-				ReplaceStrings(strErrStr, L'%' + str(index), i);
+				replace(strErrStr, L'%' + str(index), i);
 				++index;
 			}
 		}
@@ -226,15 +222,17 @@ void Message::Init(
 
 	string strClipText;
 
+	const auto Eol = eol::system.str();
+
 	if (!Title.empty())
 	{
 		MaxLength = std::max(MaxLength, Title.size() + 2); // 2 for surrounding spaces
-		append(strClipText, Title, L"\r\n\r\n"sv);
+		append(strClipText, Title, Eol, Eol);
 	}
 
-	size_t BtnLength = std::accumulate(Buttons.cbegin(), Buttons.cend(), size_t(0), [](size_t Result, const auto& i)
+	size_t BtnLength = std::accumulate(ALL_CONST_RANGE(Buttons), size_t{}, [](size_t Result, const auto& i)
 	{
-		return Result + HiStrlen(i.c_str()) + 2 + 2 + 1; // "[ ", " ]", " "
+		return Result + HiStrlen(i) + 2 + 2 + 1; // "[ ", " ]", " "
 	});
 
 	if (BtnLength)
@@ -248,15 +246,12 @@ void Message::Init(
 
 	MaxLength = std::min(MaxLength, MAX_MESSAGE_WIDTH);
 
-	for (const auto& i : Strings)
-	{
-		append(strClipText, i, L"\r\n"sv);
-	}
-	append(strClipText, L"\r\n"sv);
+	join(strClipText, Strings, Eol);
+	append(strClipText, Eol, Eol);
 
 	if (!strErrStr.empty())
 	{
-		append(strClipText, strErrStr, L"\r\n\r\n"sv);
+		append(strClipText, strErrStr, Eol, Eol);
 
 		// вычисление "красивого" размера
 		auto LenErrStr = strErrStr.size();
@@ -276,35 +271,30 @@ void Message::Init(
 				LenErrStr = MAX_MESSAGE_WIDTH;
 		}
 
-		MaxLength = std::max(MaxLength, LenErrStr);
-
 		if (!Strings.empty())
-			Strings.emplace_back(L"\1"s);
+			Strings.emplace_back(L"\x1"sv);
 
-		for (const auto& i : wrapped_text(strErrStr, LenErrStr))
+		for (const auto& i: wrapped_text(strErrStr, LenErrStr))
 		{
-			Strings.emplace_back(ALL_CONST_RANGE(i));
+			Strings.emplace_back(i);
+			MaxLength = std::max(MaxLength, i.size());
 		}
 	}
 
 	join(strClipText, Buttons, L" "sv);
 
-	int X1;
-
 	int MessageWidth = static_cast<int>(MaxLength + 6 + 2 + 2); // 6 for frame, 2 for border, 2 for inner margin
 	if (MessageWidth < ScrX)
 	{
-		X1 = (ScrX - MessageWidth) / 2 + 1;
+		m_Position.left = (ScrX - MessageWidth) / 2 + 1;
 	}
 	else
 	{
-		X1 = 0;
+		m_Position.left = 0;
 	}
 
-	int X2 = X1 + MessageWidth - 1;
+	m_Position.right = m_Position.left + MessageWidth - 1;
 
-	MessageX1 = X1;
-	MessageX2 = X2; 
 
 	int MessageHeight = static_cast<int>(Strings.size() + 2 + 2); // 2 for frame, 2 for border
 	if (!Buttons.empty())
@@ -312,24 +302,19 @@ void Message::Init(
 		MessageHeight += 2; // 1 for separator, 1 for buttons line
 	}
 
-	int Y1;
-
 	if (MessageHeight < ScrY)
 	{
 		// Should be +1 here to center the message properly,
 		// but it was shifted up one position for years
 		// and some buggy plugins depends on it
-		Y1 = (ScrY - MessageHeight) / 2; // + 1;
+		m_Position.top = (ScrY - MessageHeight) / 2; // + 1;
 	}
 	else
 	{
-		Y1 = 0;
+		m_Position.top = 0;
 	}
 
-	int Y2 = Y1 + MessageHeight - 1;
-
-	MessageY1 = Y1;
-	MessageY2 = Y2;
+	m_Position.bottom = m_Position.top + MessageHeight - 1;
 
 	// *** Вариант с Диалогом ***
 
@@ -343,9 +328,9 @@ void Message::Init(
 			Item.Type = DI_DOUBLEBOX;
 			Item.X1 = 3;
 			Item.Y1 = 1;
-			Item.X2 = X2 - X1 - 3;
-			Item.Y2 = Y2 - Y1 - 1;
-			assign(Item.strData, Title);
+			Item.X2 = m_Position.width() - 4;
+			Item.Y2 = m_Position.height() - 2;
+			Item.strData = Title;
 			MsgDlg.emplace_back(std::move(Item));
 		}
 
@@ -361,7 +346,7 @@ void Message::Init(
 			Item.X1 = (Flags & MSG_LEFTALIGN) ? 5 : -1;
 			Item.Y1 = i + 2;
 
-			if (!Strings[i].empty() && (Strings[i].front() == L'\1' || Strings[i].front() == L'\2'))
+			if (!Strings[i].empty() && any_of(Strings[i].front(), L'\1', L'\2'))
 			{
 				Item.Flags |= (Strings[i].front() == L'\2' ? DIF_SEPARATOR2 : DIF_SEPARATOR);
 				if(i == Strings.size() - 1)
@@ -376,7 +361,7 @@ void Message::Init(
 					Item.Type = DI_EDIT;
 					Item.Flags |= DIF_READONLY | DIF_BTNNOCLOSE | DIF_SELECTONENTRY;
 					Item.X1 = 5;
-					Item.X2 = X2-X1-5;
+					Item.X2 = m_Position.width() - 6;
 				}
 
 				Item.strData = std::move(Strings[i]);
@@ -399,8 +384,7 @@ void Message::Init(
 		{
 			// BUGBUG
 			--MessageHeight;
-			--Y2;
-			--MessageY2;
+			--m_Position.bottom;
 			--MsgDlg[0].Y2;
 		}
 
@@ -414,7 +398,7 @@ void Message::Init(
 			Item.Type = DI_BUTTON;
 			Item.Flags = DIF_CENTERGROUP;
 
-			Item.Y1 = Y2 - Y1 - 2;
+			Item.Y1 = m_Position.height() - 3;
 			Item.strData = std::move(Buttons[i]);
 
 			if (!i)
@@ -429,10 +413,13 @@ void Message::Init(
 		clear_and_shrink(Buttons);
 
 		const auto Dlg = Dialog::create(MsgDlg, &Message::MsgDlgProc, this, &strClipText);
-		if (X1 == -1) X1 = 0;
-		if (Y1 == -1) Y1 = 0;
-		Dlg->SetPosition(X1,Y1,X2,Y2);
-		if(Id) Dlg->SetId(*Id);
+		if (m_Position.left == -1)
+			m_Position.left = 0;
+		if (m_Position.top == -1)
+			m_Position.top = 0;
+		Dlg->SetPosition(m_Position);
+		if(Id)
+			Dlg->SetId(*Id);
 
 		if (!HelpTopic.empty())
 			Dlg->SetHelp(HelpTopic);
@@ -444,9 +431,9 @@ void Message::Init(
 			Dlg->SetDialogMode(DMODE_WARNINGSTYLE);
 		}
 
-		Dlg->SetDialogMode(DMODE_MSGINTERNAL);
 		if (Flags & MSG_NOPLUGINS)
 			Dlg->SetDialogMode(DMODE_NOPLUGINS);
+
 		FlushInputBuffer();
 
 		if (Flags & MSG_KILLSAVESCREEN)
@@ -466,10 +453,9 @@ void Message::Init(
 
 	if (!(Flags & MSG_KEEPBACKGROUND))
 	{
-		SetScreen(X1,Y1,X2,Y2,L' ',colors::PaletteColorToFarColor((Flags & MSG_WARNING)?COL_WARNDIALOGTEXT:COL_DIALOGTEXT));
-		MakeShadow(X1+2,Y2+1,X2+2,Y2+1);
-		MakeShadow(X2+1,Y1+1,X2+2,Y2+1);
-		Box(X1+3,Y1+1,X2-3,Y2-1,colors::PaletteColorToFarColor((Flags & MSG_WARNING)?COL_WARNDIALOGBOX:COL_DIALOGBOX),DOUBLE_BOX);
+		SetScreen(m_Position, L' ', colors::PaletteColorToFarColor((Flags & MSG_WARNING)? COL_WARNDIALOGTEXT : COL_DIALOGTEXT));
+		DropShadow(m_Position, true);
+		Box({ m_Position.left + 3, m_Position.top + 1, m_Position.right - 3, m_Position.bottom - 1 }, colors::PaletteColorToFarColor((Flags & MSG_WARNING)? COL_WARNDIALOGBOX : COL_DIALOGBOX), DOUBLE_BOX);
 	}
 
 	SetColor((Flags & MSG_WARNING)?COL_WARNDIALOGTEXT:COL_DIALOGTEXT);
@@ -478,7 +464,7 @@ void Message::Init(
 	{
 		const auto strTempTitle = cut_right(Title, MaxLength);
 
-		GotoXY(X1+(X2-X1-1-(int)strTempTitle.size())/2,Y1+1);
+		GotoXY(m_Position.left + (m_Position.width() - 2 - static_cast<int>(strTempTitle.size())) / 2, m_Position.top + 1);
 		Text(concat(L' ', strTempTitle, L' '));
 	}
 
@@ -486,17 +472,17 @@ void Message::Init(
 	{
 		const auto& SrcItem = Strings[i];
 
-		if (!SrcItem.empty() && (SrcItem.front() == L'\1' || SrcItem.front() == L'\2'))
+		if (!SrcItem.empty() && any_of(SrcItem.front(), L'\1', L'\2'))
 		{
-			int Length = X2 - X1;
+			int Length = m_Position.width() - 1;
 			if (Length > 5)
 				Length -= 5;
 
 			if (Length>1)
 			{
 				SetColor((Flags & MSG_WARNING)?COL_WARNDIALOGBOX:COL_DIALOGBOX);
-				GotoXY(X1 + 3, Y1 + static_cast<int>(i) + 2);
-				DrawLine(Length, SrcItem.front() == L'\2'? 3 : 1);
+				GotoXY(m_Position.left + 3, m_Position.top + static_cast<int>(i) + 2);
+				DrawLine(Length, SrcItem.front() == L'\2'? line_type::h2_to_v2 : line_type::h1_to_v2);
 				string SeparatorText = SrcItem.substr(1);
 				if (!SeparatorText.empty())
 				{
@@ -508,7 +494,7 @@ void Message::Init(
 
 				if (SeparatorText.size() < static_cast<size_t>(Length))
 				{
-					GotoXY(X1 + 3 + static_cast<int>(Length - SeparatorText.size()) / 2, Y1 + static_cast<int>(i)+2);
+					GotoXY(m_Position.left + 3 + static_cast<int>(Length - SeparatorText.size()) / 2, m_Position.top + static_cast<int>(i)+2);
 					Text(SeparatorText);
 				}
 
@@ -518,9 +504,8 @@ void Message::Init(
 			continue;
 		}
 
-		const auto Width = X2 - X1 + 1;
-		GotoXY(X1 + 5, Y1 + static_cast<int>(i) + 2);
-		Text((Flags & MSG_LEFTALIGN? fit_to_left : fit_to_center)(SrcItem, Width - 10));
+		GotoXY(m_Position.left + 5, m_Position.top + static_cast<int>(i) + 2);
+		Text((Flags & MSG_LEFTALIGN? fit_to_left : fit_to_center)(SrcItem, m_Position.width() - 10));
 	}
 
 	/* $ 13.01.2003 IS
@@ -541,12 +526,9 @@ void Message::Init(
 }
 
 
-void Message::GetMessagePosition(int &X1,int &Y1,int &X2,int &Y2) const
+rectangle Message::GetPosition() const
 {
-	X1=MessageX1;
-	Y1=MessageY1;
-	X2=MessageX2;
-	Y2=MessageY2;
+	return m_Position;
 }
 
 /* $ 12.03.2002 VVM
@@ -563,7 +545,8 @@ bool AbortMessage()
 		return true;
 	}
 
-	SCOPED_ACTION(TaskbarPause);
+	// BUGBUG MSG_WARNING overrides TBPF_PAUSED with TBPF_ERROR
+	SCOPED_ACTION(taskbar::state)(TBPF_PAUSED);
 	const auto Result = Message(MSG_WARNING | MSG_KILLSAVESCREEN,
 		msg(lng::MKeyESCWasPressed),
 		{

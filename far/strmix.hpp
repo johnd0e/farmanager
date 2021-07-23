@@ -35,73 +35,174 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "panelctype.hpp"
 #include "string_utils.hpp"
 
+// Platform:
+
+// Common:
+#include "common/bytes_view.hpp"
 #include "common/enum_tokens.hpp"
 
-class bytes;
-class bytes_view;
+// External:
+
+//----------------------------------------------------------------------------
+
 class RegExp;
 struct RegExpMatch;
 struct MatchHash;
 
-wchar_t* QuoteSpace(wchar_t *Str);
-wchar_t* InsertQuote(wchar_t *Str);
-wchar_t* QuoteSpaceOnly(wchar_t *Str);
+namespace legacy
+{
+	wchar_t* QuoteSpace(wchar_t* Str);
+	wchar_t* InsertQuotes(wchar_t* Str);
+	wchar_t* QuoteSpaceOnly(wchar_t* Str);
+}
 
-string &QuoteSpace(string &strStr);
-
+[[nodiscard]]
 string InsertRegexpQuote(string strStr);
-string& RemoveUnprintableCharacters(string &strStr);
-string& QuoteSpaceOnly(string &strStr);
-string& QuoteOuterSpace(string &strStr);
-inline string QuoteOuterSpace(string&& strStr) { QuoteOuterSpace(strStr); return strStr; }
 
-size_t ReplaceStrings(string &strStr, string_view FindStr, string_view ReplStr, bool IgnoreCase = false, size_t Count = string::npos);
+namespace inplace
+{
+	void QuoteSpace(string& Str);
+	void QuoteOuterSpace(string& Str);
+}
 
-class wrapped_text : public enumerator<wrapped_text, string_view>
+[[nodiscard]]
+inline string QuoteSpace(string Str) { inplace::QuoteSpace(Str); return Str; }
+
+[[nodiscard]]
+inline string QuoteSpace(string_view const Str) { return QuoteSpace(string(Str)); }
+
+[[nodiscard]]
+inline string QuoteOuterSpace(string Str) { inplace::QuoteOuterSpace(Str); return Str; }
+
+[[nodiscard]]
+inline string QuoteOuterSpace(string_view const Str) { return QuoteOuterSpace(string(Str)); }
+
+bool ReplaceStrings(string& strStr, string_view FindStr, string_view ReplStr, bool IgnoreCase = false, size_t Count = string::npos);
+
+inline void replace(string& Str, string_view const Find, string_view const Replace)
+{
+	ReplaceStrings(Str, Find, Replace, false);
+}
+
+inline void replace_icase(string& Str, string_view const Find, string_view const Replace)
+{
+	ReplaceStrings(Str, Find, Replace, true);
+}
+
+void remove_duplicates(string& Str, wchar_t Char, bool IgnoreCase = false);
+
+class [[nodiscard]] wrapped_text : public enumerator<wrapped_text, string_view>
 {
 	IMPLEMENTS_ENUMERATOR(wrapped_text);
 
 public:
-	explicit wrapped_text(string_view Str, size_t Width, string_view Break = L"\n"sv, bool BreakWords = true);
-	explicit wrapped_text(string&& Str, size_t Width, string_view Break = L"\n"sv, bool BreakWords = true);
+	template<typename string_type>
+	explicit wrapped_text(string_type&& Str, size_t const Width):
+		m_Str(FWD(Str)),
+		m_Tail(m_Str),
+		m_Width(Width? Width : m_Tail.size())
+	{
+	}
 
 private:
+	[[nodiscard]]
 	bool get(bool Reset, string_view& Value) const;
 
-	string m_StrBuffer;
-	string_view m_Str;
+	string_copyref m_Str;
 	string_view mutable m_Tail;
-	string_view mutable m_Break;
 	size_t m_Width;
-	bool m_BreakWords;
 };
 
 void PrepareUnitStr();
-string FileSizeToStr(unsigned long long Size, int Width = -1, unsigned long long ViewFlags = COLUMN_GROUPDIGITS);
-bool CheckFileSizeStringFormat(const string& FileSizeStr);
-unsigned long long ConvertFileSizeString(const string& FileSizeStr);
+
+[[nodiscard]]
+string FileSizeToStr(unsigned long long FileSize, int WidthWithSign = -1, unsigned long long ViewFlags = COLFLAGS_GROUPDIGITS);
+
+[[nodiscard]]
+bool CheckFileSizeStringFormat(string_view FileSizeStr);
+
+[[nodiscard]]
+unsigned long long ConvertFileSizeString(string_view FileSizeStr);
+
+[[nodiscard]]
 string GroupDigits(unsigned long long Value);
 
-inline bool IsWordDiv(const string& WordDiv, wchar_t Chr) { return !Chr || contains(WordDiv, Chr); }
+[[nodiscard]]
+inline bool IsWordDiv(string_view const WordDiv, wchar_t const Chr)
+{
+	return !Chr || contains(WordDiv, Chr);
+}
 
-bool FindWordInString(const string& Str, size_t CurPos, size_t& Begin, size_t& End, const string& WordDiv);
+[[nodiscard]]
+bool FindWordInString(string_view Str, size_t CurPos, size_t& Begin, size_t& End, string_view WordDiv0);
 
-wchar_t* TruncStr(wchar_t *Str,int MaxLength);
-wchar_t* TruncStrFromCenter(wchar_t *Str, int MaxLength);
-wchar_t* TruncStrFromEnd(wchar_t *Str,int MaxLength);
-wchar_t* TruncPathStr(wchar_t *Str, int MaxLength);
+namespace legacy
+{
+	wchar_t* truncate_left(wchar_t* Str, int MaxLength);
+	wchar_t* truncate_center(wchar_t* Str, int MaxLength);
+	wchar_t* truncate_right(wchar_t* Str, int MaxLength);
+	wchar_t* truncate_path(wchar_t* Str, int MaxLength);
+}
 
-string& TruncStr(string &strStr,int MaxLength);
-string& TruncStrFromEnd(string &strStr, int MaxLength);
-string& TruncStrFromCenter(string &strStr, int MaxLength);
-string& TruncPathStr(string &strStr, int MaxLength);
+namespace inplace
+{
+	void truncate_left(string& Str, size_t MaxLength);
+	void truncate_right(string& Str, size_t MaxLength);
+	void truncate_center(string& Str, size_t MaxLength);
+	void truncate_path(string& Str, size_t MaxLength);
+}
 
-bool IsCaseMixed(string_view strStr);
+[[nodiscard]]
+string truncate_left(string Str, size_t MaxLength);
 
+[[nodiscard]]
+string truncate_left(string_view Str, size_t MaxLength);
+
+[[nodiscard]]
+string truncate_right(string Str, size_t MaxLength);
+
+[[nodiscard]]
+string truncate_right(string_view Str, size_t MaxLength);
+
+[[nodiscard]]
+string truncate_center(string Str, size_t MaxLength);
+
+[[nodiscard]]
+string truncate_center(string_view Str, size_t MaxLength);
+
+[[nodiscard]]
+string truncate_path(string Str, size_t MaxLength);
+
+[[nodiscard]]
+string truncate_path(string_view Str, size_t MaxLength);
+
+[[nodiscard]]
+bool IsCaseMixed(string_view Str);
+
+[[nodiscard]]
 bool SearchString(
+	string_view Haystack,
+	string_view Needle,
+	string_view NeedleUpper,
+	string_view NeedleLower,
+	const RegExp& re,
+	RegExpMatch* pm,
+	MatchHash* hm,
+	int& CurPos,
+	bool Case,
+	bool WholeWords,
+	bool Reverse,
+	bool Regexp,
+	int* SearchLength,
+	string_view WordDiv
+);
+
+[[nodiscard]]
+bool SearchAndReplaceString(
 	string_view Haystack,
 	string_view Needle,
 	string_view NeedleUpper,
@@ -117,22 +218,27 @@ bool SearchString(
 	bool Regexp,
 	bool PreserveStyle,
 	int* SearchLength,
-	string_view WordDiv = {}
+	string_view WordDiv
 );
 
-inline wchar_t* UNSAFE_CSTR(const string& s) {return const_cast<wchar_t*>(s.c_str());}
+[[nodiscard]]
+inline wchar_t* UNSAFE_CSTR(const string& s) noexcept {return const_cast<wchar_t*>(s.c_str());}
+
+[[nodiscard]]
+inline wchar_t* UNSAFE_CSTR(null_terminated const& s) noexcept {return const_cast<wchar_t*>(s.c_str());}
 
 template<class container>
+[[nodiscard]]
 auto FlagsToString(unsigned long long Flags, const container& From, wchar_t Separator = L' ')
 {
 	string strFlags;
-	std::for_each(CONST_RANGE(From, i)
+	for (const auto& [Value, Name]: From)
 	{
-		if (Flags & i.first)
+		if (Flags & Value)
 		{
-			append(strFlags, i.second, Separator);
+			append(strFlags, Name, Separator);
 		}
-	});
+	}
 
 	if (!strFlags.empty())
 	{
@@ -143,7 +249,8 @@ auto FlagsToString(unsigned long long Flags, const container& From, wchar_t Sepa
 }
 
 template<class container>
-auto StringToFlags(const string& strFlags, const container& From, const string_view Separators = L"|;, "sv)
+[[nodiscard]]
+auto StringToFlags(string_view const strFlags, const container& From, const string_view Separators = L"|;, "sv)
 {
 	decltype(std::begin(From)->first) Flags {};
 
@@ -160,39 +267,36 @@ auto StringToFlags(const string& strFlags, const container& From, const string_v
 	return Flags;
 }
 
+[[nodiscard]]
 char IntToHex(int h);
+
+[[nodiscard]]
 int HexToInt(char h);
 
-std::string BlobToHexString(const void* Blob, size_t Size, char Separator = ',');
-std::string BlobToHexString(const bytes_view& Blob, char Separator = ',');
-bytes HexStringToBlob(std::string_view Hex, char Separator = ',');
+[[nodiscard]]
+string BlobToHexString(bytes_view Blob, wchar_t Separator = L',');
 
-string BlobToHexWString(const void* Blob, size_t Size, wchar_t Separator = L',');
-string BlobToHexWString(const bytes_view& Blob, char Separator = ',');
+[[nodiscard]]
 bytes HexStringToBlob(string_view Hex, wchar_t Separator = L',');
 
-template<class S, class T>
-auto to_hex_string_t(T Value)
+template<class T>
+[[nodiscard]]
+auto to_hex_wstring(T Value)
 {
 	static_assert(std::is_integral_v<T>);
-	S Result(sizeof(T) * 2, '0');
+	string Result(sizeof(T) * 2, '0');
 	for (int i = sizeof(T) * 2 - 1; i >= 0; --i, Value >>= 4)
 		Result[i] = IntToHex(Value & 0xF);
 	return Result;
 }
 
-template<class T>
-auto to_hex_string(T Value) { return to_hex_string_t<std::string>(Value); }
+[[nodiscard]]
+string ExtractHexString(string_view HexString);
 
-template<class T>
-auto to_hex_wstring(T Value) { return to_hex_string_t<string>(Value); }
+[[nodiscard]]
+string ConvertHexString(string_view From, uintptr_t Codepage, bool FromHex);
 
-string ExtractHexString(const string& HexString);
-string ConvertHexString(const string& From, uintptr_t Codepage, bool FromHex);
-
-char* xstrncpy(char* dest, const char* src, size_t DestSize);
-wchar_t* xwcsncpy(wchar_t* dest, const wchar_t* src, size_t DestSize);
-
-std::pair<string_view, string_view> split_name_value(string_view Str);
+void xstrncpy(char* dest, const char* src, size_t DestSize);
+void xwcsncpy(wchar_t* dest, const wchar_t* src, size_t DestSize);
 
 #endif // STRMIX_HPP_66F8DC2A_61A6_4C06_9B54_E0513A9735FA

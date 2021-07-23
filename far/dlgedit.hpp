@@ -42,8 +42,17 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   Это пока только шаблон, заготовка для будущего перехода
 */
 
+// Internal:
 #include "scrobj.hpp"
 #include "farcolor.hpp"
+
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
 
 struct FarColor;
 class History;
@@ -63,7 +72,7 @@ class DlgEdit: public SimpleScreenObject
 public:
 	// for CtrlEnd
 	string strLastStr;
-	int LastPartLength;
+	int LastPartLength{-1};
 
 	BitFlags& Flags() const;
 
@@ -74,8 +83,8 @@ public:
 	bool ProcessMouse(const MOUSE_EVENT_RECORD *MouseEvent) override;
 
 	void Show() override;
-	void SetPosition(int X1,int Y1,int X2,int Y2) override;
-	void GetPosition(int& X1,int& Y1,int& X2,int& Y2) const override;
+	void SetPosition(rectangle Where) override;
+	rectangle GetPosition() const override;
 
 	void Hide() override;
 	void ShowConsoleTitle() override;
@@ -92,7 +101,7 @@ public:
 	int   GetLength() const;
 	int   GetStrSize(int Row = -1) const;
 
-	void  SetInputMask(const string& InputMask);
+	void  SetInputMask(string_view InputMask);
 	string GetInputMask() const;
 
 	void  SetOvertypeMode(bool Mode);
@@ -104,9 +113,9 @@ public:
 	bool  GetClearFlag() const;
 
 	void  Changed();
-	void  SetString(const string& Str);
-	void  InsertString(const string& Str);
-	void  SetHiString(const string& Str);
+	void  SetString(string_view Str);
+	void  InsertString(string_view Str);
+	void  SetHiString(string_view Str);
 	const string& GetString(int Row = -1) const;            // Row==-1 - current line
 
 	void  SetCurPos(int NewCol, int NewRow=-1); // Row==-1 - current line
@@ -118,7 +127,7 @@ public:
 
 	void  SetPersistentBlocks(bool Mode);
 	int   GetPersistentBlocks() const;
-	void  SetDelRemovesBlocks(bool NewMode);
+	void  SetDelRemovesBlocks(bool Mode);
 	int   GetDelRemovesBlocks() const;
 
 	void  SetObjectColor(PaletteColors Color,PaletteColors SelColor=COL_COMMANDLINESELECTED,PaletteColors ColorUnChanged=COL_DIALOGEDITUNCHANGED);
@@ -137,8 +146,8 @@ public:
 
 	void Xlat(bool All=false);
 
-	void SetCursorType(bool Visible, DWORD Size);
-	void GetCursorType(bool& Visible, DWORD& Size) const;
+	void SetCursorType(bool Visible, size_t Size);
+	void GetCursorType(bool& Visible, size_t& Size) const;
 
 	bool GetReadOnly() const;
 	void SetReadOnly(bool NewReadOnly);
@@ -149,7 +158,7 @@ public:
 	bool HistoryGetSimilar(string &strStr, int LastCmdPartLength, bool bAppend=false) const;
 
 	const std::unique_ptr<History>& GetHistory() const { return iHistory; }
-	void SetHistory(const string& Name);
+	void SetHistory(string_view Name);
 
 private:
 	friend class SetAutocomplete;
@@ -164,7 +173,7 @@ private:
 	std::unique_ptr<History> iHistory;
 	std::unique_ptr<EditControl> lineEdit;
 #if defined(PROJECT_DI_MEMOEDIT)
-	Editor *multiEdit;
+	Editor *multiEdit{};
 #endif
 };
 

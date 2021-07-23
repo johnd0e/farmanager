@@ -35,87 +35,99 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "platform.fwd.hpp"
+
+// Platform:
+
+// Common:
+#include "common/preprocessor.hpp"
+#include "common/string_utils.hpp"
+#include "common/utility.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 class FileListItem;
 struct PluginPanelItem;
 
 namespace path
 {
-	inline auto separators()
-	{
-		return L"\\/"sv;
-	}
+	inline constexpr wchar_t separator = L'\\';
+	inline constexpr auto separators = L"\\/"sv;
+	constexpr bool is_separator(wchar_t x) noexcept { return contains(separators, x); }
 
 	namespace detail
 	{
-		inline void append_one(string& Str, wchar_t const Arg, size_t const, size_t const Size) { Str.append(&Arg, Size); }
-		inline void append_one(string& Str, const wchar_t* const Arg, size_t const Offset, size_t const Size) { Str.append(Arg + Offset, Size); }
-		inline void append_one(string& Str, const string& Arg, size_t const Offset, size_t const Size) { Str.append(Arg, Offset, Size); }
-		inline void append_one(string& Str, string_view const Arg, size_t const Offset, size_t const Size) { Str.append(Arg.data() + Offset, Size); }
-
-		inline void append_impl(string&, size_t, size_t, const size_t*, const size_t*) {}
-
-		template<typename arg, typename... args>
-		void append_impl(string& Str, size_t const Index, size_t const Count, const size_t* const Offsets, const size_t* const Sizes, arg&& Arg, args&&... Args)
+		class append_arg: public string_view
 		{
-			if (!Str.empty() && (*Sizes || Index + 1 == Count))
-				Str += separators().front();
+		public:
+			explicit append_arg(string_view const Str):
+				string_view(process(Str))
+			{
+			}
 
-			append_one(Str, FWD(Arg), *Offsets, *Sizes);
-			append_impl(Str, Index + 1, Count, Offsets + 1, Sizes + 1, FWD(Args)...);
-		}
+			explicit append_arg(const wchar_t& Char):
+				string_view(&Char, contains(separators, Char)? 0 : 1)
+			{
+			}
 
-		inline size_t size_one(size_t&, wchar_t const Char)
+		private:
+			string_view process(string_view Str)
+			{
+				const auto Begin = Str.find_first_not_of(separators);
+				if (Begin == Str.npos)
+					return {};
+
+				Str.remove_prefix(Begin);
+
+				const auto LastCharPos = Str.find_last_not_of(separators);
+				if (LastCharPos == Str.npos)
+					return {};
+
+				Str.remove_suffix(Str.size() - LastCharPos - 1);
+
+				return Str;
+			}
+		};
+
+		inline void append_impl(string& Str, const std::initializer_list<append_arg>& Args)
 		{
-			return separators().find(Char) == string_view::npos? 1 : 0;
-		}
+			const auto LastCharPos = Str.find_last_not_of(separators);
+			Str.resize(LastCharPos == string::npos? 0 : LastCharPos + 1);
 
-		inline size_t size_one(size_t& Offset, string_view Str)
-		{
-			const auto Begin = Str.find_first_not_of(separators());
-			if (Begin == string_view::npos)
-				return 0;
+			const auto TotalSize = std::accumulate(ALL_RANGE(Args), Str.size() + (Args.size() - 1), [](size_t const Value, const append_arg& Element)
+			{
+				return Value + Element.size();
+			});
 
-			Str.remove_prefix(Offset = Begin);
+			reserve_exp_noshrink(Str, TotalSize);
 
-			const auto LastCharPos = Str.find_last_not_of(separators());
-			if (LastCharPos == string_view::npos)
-				return 0;
+			for (const auto& i: Args)
+			{
+				if (!Str.empty() && (!i.empty() || &i + 1 == Args.end()))
+					Str += separators.front();
 
-			Str.remove_suffix(Str.size() - LastCharPos - 1);
-
-			return Str.size();
-		}
-
-		inline size_t size_impl(size_t*, size_t*) { return 0; }
-
-		template<typename arg, typename... args>
-		size_t size_impl(size_t* const Offsets, size_t* const Sizes, arg&& Arg, args&&... Args)
-		{
-			*Sizes = size_one(*Offsets, FWD(Arg));
-			return *Sizes + size_impl(Offsets + 1, Sizes + 1, FWD(Args)...);
+				Str += i;
+			}
 		}
 	}
 
 	template<typename... args>
-	void append(string& Str, args&&... Args)
+	void append(string& Str, args const&... Args)
 	{
-		const auto LastCharPos = string_view(Str).find_last_not_of(separators());
-		Str.resize(LastCharPos == string::npos? 0 : LastCharPos + 1);
-
-		size_t Sizes[sizeof...(Args)];
-		size_t Offsets[sizeof...(Args)]{};
-		reserve_exp_noshrink(Str, Str.size() + detail::size_impl(Offsets, Sizes, FWD(Args)...) + sizeof...(Args) - 1);
-		detail::append_impl(Str, 0, sizeof...(Args), Offsets, Sizes, FWD(Args)...);
+		detail::append_impl(Str, { detail::append_arg(Args)... });
 	}
 
 	template<typename arg, typename... args>
 	[[nodiscard]]
-	string join(arg&& Arg, args&&... Args)
+	string join(arg&& Arg, const args&... Args)
 	{
-		auto Str = string(FWD(Arg));
-		path::append(Str, FWD(Args)...);
+		static_assert(sizeof...(Args));
+
+		string Str(FWD(Arg));
+		detail::append_impl(Str, { detail::append_arg(Args)... });
 		return Str;
 	}
 }
@@ -132,50 +144,59 @@ public:
 };
 
 
-string KernelPath(const string& NtPath);
-string KernelPath(string&& NtPath);
-
-inline bool IsSlash(wchar_t x) { return x==L'\\' || x==L'/'; }
+string KernelPath(string_view NtPath);
+string KernelPath(string NtPath);
 
 enum class root_type
 {
 	unknown,
 	drive_letter,
-	unc_drive_letter,
+	win32nt_drive_letter,
 	remote,
 	unc_remote,
 	volume,
 	pipe,
+	unknown_rootlike
 };
 
-root_type ParsePath(string_view Path, size_t* DirectoryOffset = nullptr, bool* Root = nullptr);
+root_type ParsePath(string_view Path, size_t* RootSize = {}, bool* RootOnly = {});
 
-inline bool IsRelativeRoot(string_view Path) { return Path.size() == 1 && IsSlash(Path.front()); }
+inline bool IsRelativeRoot(string_view Path) { return Path.size() == 1 && path::is_separator(Path.front()); }
 bool IsAbsolutePath(string_view Path);
 bool IsRootPath(string_view Path);
 bool HasPathPrefix(string_view Path);
+string_view ExtractPathPrefix(string_view Path);
 bool PathStartsWith(string_view Path, string_view Start);
-bool PathCanHoldRegularFile(const string& Path);
-bool IsPluginPrefixPath(const string &Path);
-bool CutToSlash(string &strStr, bool bInclude = false); // BUGBUG, deprecated. Use CutToParent.
+bool PathCanHoldRegularFile(string_view Path);
+bool IsPluginPrefixPath(string_view Path);
+bool CutToSlash(string& Str, bool RemoveSlash = false); // BUGBUG, deprecated. Use CutToParent.
+bool CutToSlash(string_view& Str, bool RemoveSlash = false); // BUGBUG, deprecated. Use CutToParent.
 bool CutToParent(string_view& Str);
 bool CutToParent(string& Str);
+[[nodiscard]]
 string_view PointToName(string_view Path);
+[[nodiscard]]
 string_view PointToFolderNameIfFolder(string_view Path);
-string_view PointToExt(string_view Path);
+[[nodiscard]]
+std::pair<string_view, string_view> name_ext(string_view Path);
 
 void AddEndSlash(string &strPath, wchar_t TypeSlash);
 void AddEndSlash(string &strPath);
 bool AddEndSlash(wchar_t *Path, wchar_t TypeSlash);
 bool AddEndSlash(wchar_t *Path);
+[[nodiscard]]
+string AddEndSlash(string_view Path);
 void DeleteEndSlash(wchar_t* Path);
 void DeleteEndSlash(string& Path);
-void DeleteEndSlash(string_view& Path);
+[[nodiscard]]
+string_view DeleteEndSlash(string_view Path);
 inline void ReplaceSlashToBackslash(string &strStr) { std::replace(ALL_RANGE(strStr), L'/', L'\\'); }
 inline void ReplaceBackslashToSlash(string &strStr) { std::replace(ALL_RANGE(strStr), L'\\', L'/'); }
 
 bool ContainsSlash(string_view Str);
+[[nodiscard]]
 size_t FindSlash(string_view Str);
+[[nodiscard]]
 size_t FindLastSlash(string_view Str);
 
 bool IsParentDirectory(string_view Str);
@@ -185,11 +206,9 @@ bool IsParentDirectory(const PluginPanelItem& Data);
 
 bool IsCurrentDirectory(string_view Str);
 
-string ExtractPathRoot(string_view Path);
-string ExtractFileName(string_view Path);
+string_view extract_root_device(string_view Path);
+string extract_root_directory(string_view Path);
+string_view ExtractFileName(string_view Path);
 string ExtractFilePath(string_view Path);
-
-void TestPathParser();
-
 
 #endif // PATHMIX_HPP_4A60B3C3_4328_407E_A0E8_F55A9A9BE343

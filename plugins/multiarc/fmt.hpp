@@ -25,6 +25,11 @@
 #define PACK_CHECK(type, n) static_assert(alignof(type) == n, "Wrong alignment")
 #endif
 
+#if defined(_MSC_VER) && _MSC_VER < 1800
+#undef PACK_CHECK
+#define PACK_CHECK(t,n)
+#endif
+
 #if !defined(_WIN64)
 PACK_PUSH(2)
 #endif

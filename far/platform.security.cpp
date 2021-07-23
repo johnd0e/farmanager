@@ -29,41 +29,49 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "platform.security.hpp"
 
-#include "lasterror.hpp"
+// Internal:
+#include "exception.hpp"
+#include "log.hpp"
 
+// Platform:
+#include "platform.hpp"
 #include "platform.concurrency.hpp"
-#include "platform.reg.hpp"
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
 
 namespace
 {
-	static os::handle OpenCurrentProcessToken(DWORD DesiredAccess)
+	static const auto& lookup_privilege_value(const wchar_t* Name)
 	{
-		HANDLE Handle;
-		return os::handle(OpenProcessToken(GetCurrentProcess(), DesiredAccess, &Handle)? Handle : nullptr);
-	}
-
-	static bool lookup_privilege_value(const wchar_t* Name, LUID& Value)
-	{
-		using value_type = std::pair<LUID, bool>;
-		static std::unordered_map<string, value_type> s_Cache;
+		static std::unordered_map<string, std::optional<LUID>> s_Cache;
 		static os::critical_section s_CS;
 
-		SCOPED_ACTION(os::critical_section_lock)(s_CS);
+		SCOPED_ACTION(std::lock_guard)(s_CS);
 
-		auto Result = s_Cache.emplace(Name, value_type{});
+		const auto [Iterator, IsEmplaced] = s_Cache.try_emplace(Name);
 
-		const auto& MapKey = Result.first->first;
-		auto& MapValue = Result.first->second;
+		auto& [MapKey, MapValue] = *Iterator;
 
-		if (Result.second)
+		if (IsEmplaced)
 		{
-			MapValue.second = LookupPrivilegeValue(nullptr, MapKey.c_str(), &MapValue.first) != FALSE;
+			LUID Luid;
+			if (LookupPrivilegeValue(nullptr, MapKey.c_str(), &Luid))
+				MapValue = Luid;
+			else
+				LOGWARNING(L"LookupPrivilegeValue({}): {}"sv, MapKey, last_error());
 		}
 
-		Value = MapValue.first;
-		return MapValue.second;
+		return MapValue;
 	}
 
 	static bool operator==(const LUID& a, const LUID& b)
@@ -101,7 +109,16 @@ namespace os::security
 		return Result;
 	}
 
-	privilege::privilege(range<const wchar_t* const*> const Names)
+	handle open_current_process_token(DWORD const DesiredAccess)
+	{
+		HANDLE Handle;
+		if (!OpenProcessToken(GetCurrentProcess(), DesiredAccess, &Handle))
+			return {};
+
+		return handle(Handle);
+	}
+
+	privilege::privilege(span<const wchar_t* const> const Names)
 	{
 		if (Names.empty())
 			return;
@@ -109,26 +126,28 @@ namespace os::security
 		block_ptr<TOKEN_PRIVILEGES> NewState(sizeof(TOKEN_PRIVILEGES) + sizeof(LUID_AND_ATTRIBUTES) * (Names.size() - 1));
 		NewState->PrivilegeCount = 0;
 
-		for (const auto& i : Names)
+		for (const auto& i: Names)
 		{
-			LUID_AND_ATTRIBUTES laa = { {}, SE_PRIVILEGE_ENABLED };
-			if (lookup_privilege_value(i, laa.Luid))
-			{
-				NewState->Privileges[NewState->PrivilegeCount++] = laa;
-			}
-			// TODO: log if failed
+			const auto& Luid = lookup_privilege_value(i);
+			if (!Luid)
+				continue;
+
+			NewState->Privileges[NewState->PrivilegeCount++] = { *Luid, SE_PRIVILEGE_ENABLED };
 		}
 
-		m_SavedState.reset(NewState.size());
-
-		const auto Token = OpenCurrentProcessToken(TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY);
+		const auto Token = open_current_process_token(TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY);
 		if (!Token)
-			// TODO: log
+		{
+			LOGWARNING(L"open_current_process_token: {}"sv, last_error());
 			return;
+		}
 
 		DWORD ReturnLength;
-		m_Changed = AdjustTokenPrivileges(Token.native_handle(), FALSE, NewState.get(), static_cast<DWORD>(m_SavedState.size()), m_SavedState.get(), &ReturnLength) && m_SavedState->PrivilegeCount;
-		// TODO: log if failed
+		m_SavedState.reset(NewState.size());
+		m_Changed = AdjustTokenPrivileges(Token.native_handle(), FALSE, NewState.data(), static_cast<DWORD>(m_SavedState.size()), m_SavedState.data(), &ReturnLength) && m_SavedState->PrivilegeCount;
+
+		if (m_SavedState->PrivilegeCount != NewState->PrivilegeCount)
+			LOGWARNING(L"AdjustTokenPrivileges(): {}"sv, last_error());
 	}
 
 	privilege::~privilege()
@@ -136,61 +155,71 @@ namespace os::security
 		if (!m_Changed)
 			return;
 
-		const auto Token = OpenCurrentProcessToken(TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY);
+		const auto Token = open_current_process_token(TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY);
 		if (!Token)
-			// TODO: log
-			return;
-
-		SCOPED_ACTION(GuardLastError);
-		AdjustTokenPrivileges(Token.native_handle(), FALSE, m_SavedState.get(), 0, nullptr, nullptr);
-		// TODO: log if failed
-	}
-
-	bool privilege::check(range<const wchar_t* const*> const Names)
-	{
-		const auto Token = OpenCurrentProcessToken(TOKEN_QUERY);
-		if (!Token)
-			return false;
-
-		DWORD TokenInformationLength = 0;
-		if (!GetTokenInformation(Token.native_handle(), TokenPrivileges, nullptr, 0, &TokenInformationLength) || TokenInformationLength)
-			return false;
-
-		block_ptr<TOKEN_PRIVILEGES> TokenInformation{ TokenInformationLength };
-		if (!GetTokenInformation(Token.native_handle(), TokenPrivileges, TokenInformation.get(), TokenInformationLength, &TokenInformationLength))
-			return false;
-
-		const auto Privileges = make_range(TokenInformation->Privileges, TokenInformation->PrivilegeCount);
-
-		for (const auto& Name: Names)
 		{
-			LUID Luid;
-			if (!lookup_privilege_value(Name, Luid))
-				return false;
-
-			const auto ItemIterator = std::find_if(ALL_CONST_RANGE(Privileges), [&](const auto& Item) { return Item.Luid == Luid; });
-			if (ItemIterator == Privileges.end() || !(ItemIterator->Attributes & (SE_PRIVILEGE_ENABLED | SE_PRIVILEGE_ENABLED_BY_DEFAULT)))
-				return false;
+			LOGWARNING(L"open_current_process_token: {}"sv, last_error());
+			return;
 		}
 
-		return true;
+		SCOPED_ACTION(os::last_error_guard);
+
+		if (!AdjustTokenPrivileges(Token.native_handle(), FALSE, m_SavedState.data(), 0, nullptr, nullptr))
+			LOGWARNING(L"AdjustTokenPrivileges(): {}"sv, last_error());
 	}
 
-	fs::drives_set allowed_drives_mask()
+	static auto get_token_privileges(HANDLE TokenHandle)
 	{
-		// It's good enough to read it once.
-		static const auto AllowedDrivesMask = []
-		{
-			for (const auto& i: { &os::reg::key::local_machine, &os::reg::key::current_user })
+		block_ptr<TOKEN_PRIVILEGES> Result(1024);
+
+		if (!os::detail::ApiDynamicReceiver(Result,
+			[&](span<TOKEN_PRIVILEGES> Buffer)
 			{
-				unsigned NoDrives;
-				if (i->get(L"Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer"sv, L"NoDrives"sv, NoDrives))
-					return ~NoDrives;
-			}
+				DWORD LengthNeeded = 0;
+				if (!GetTokenInformation(TokenHandle, TokenPrivileges, Buffer.data(), static_cast<DWORD>(Buffer.size()), &LengthNeeded))
+					return static_cast<size_t>(LengthNeeded);
+				return Buffer.size();
+			},
+			[](size_t ReturnedSize, size_t AllocatedSize)
+			{
+				return ReturnedSize > AllocatedSize;
+			},
+			[](span<const TOKEN_PRIVILEGES>)
+			{}
+		))
+		{
+			Result.reset();
+		}
 
-			return ~0u;
-		}();
+		return Result;
+	}
 
-		return AllowedDrivesMask;
+	bool privilege::check(span<const wchar_t* const> const Names)
+	{
+		const auto Token = open_current_process_token(TOKEN_QUERY);
+		if (!Token)
+		{
+			LOGWARNING(L"open_current_process_token: {}"sv, last_error());
+			return false;
+		}
+
+		const auto TokenPrivileges = get_token_privileges(Token.native_handle());
+		if (!TokenPrivileges)
+		{
+			LOGWARNING(L"get_token_privileges: {}"sv, last_error());
+			return false;
+		}
+
+		const span Privileges(TokenPrivileges->Privileges, TokenPrivileges->PrivilegeCount);
+
+		return std::all_of(ALL_CONST_RANGE(Names), [&](const wchar_t* const Name)
+		{
+			const auto& Luid = lookup_privilege_value(Name);
+			if (!Luid)
+				return false;
+
+			const auto ItemIterator = std::find_if(ALL_CONST_RANGE(Privileges), [&](const auto& Item) { return Item.Luid == *Luid; });
+			return ItemIterator != Privileges.end() && ItemIterator->Attributes & (SE_PRIVILEGE_ENABLED | SE_PRIVILEGE_ENABLED_BY_DEFAULT);
+		});
 	}
 }

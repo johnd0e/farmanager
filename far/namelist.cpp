@@ -31,36 +31,48 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "namelist.hpp"
 
-void NamesList::AddName(const string& Name)
+// Internal:
+
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
+
+void NamesList::AddName(string_view const Name)
 {
 	Names.emplace_back(Name);
 	CurPos = Names.begin();
 }
 
-bool NamesList::GetNextName(string &strName)
+std::optional<string_view> NamesList::GetNextName()
 {
 	const auto NewPos = std::next(CurPos);
 	if (NewPos == Names.end())
-		return false;
+		return {};
 
 	CurPos = NewPos;
-	strName = *CurPos;
-	return true;
+	return *CurPos;
 }
 
-bool NamesList::GetPrevName(string &strName)
+std::optional<string_view> NamesList::GetPrevName()
 {
 	if (CurPos == Names.begin())
-		return false;
+		return {};
 
 	--CurPos;
-	strName = *CurPos;
-	return true;
+	return *CurPos;
 }
 
-bool NamesList::SetCurName(const string& Name)
+bool NamesList::SetCurName(string_view const Name)
 {
 	const auto ItemIterator = std::find(ALL_CONST_RANGE(Names), Name);
 	if (ItemIterator == Names.cend())

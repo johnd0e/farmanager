@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 #include <windows.h>
 #include <signal.h>
 #include "luafar.h"
@@ -178,12 +178,13 @@ void LUAPLUG SetStartupInfoW(const struct PluginStartupInfo *aInfo)
 {
 	if (G.LS && G.InitStage==1)
 	{
-		G.StartupInfo = (struct PluginStartupInfo *) malloc(aInfo->StructSize + aInfo->FSF->StructSize);
-		if (G.StartupInfo)
+		char *ptr = (char*) malloc(aInfo->StructSize + aInfo->FSF->StructSize);
+		if (ptr)
 		{
-			memcpy(G.StartupInfo, aInfo, aInfo->StructSize);
-			memcpy(G.StartupInfo+1, aInfo->FSF, aInfo->FSF->StructSize);
-			G.StartupInfo->FSF = (struct FarStandardFunctions *) (G.StartupInfo+1);
+			memcpy(ptr, aInfo, aInfo->StructSize);
+			memcpy(ptr+aInfo->StructSize, aInfo->FSF, aInfo->FSF->StructSize);
+			G.StartupInfo = (struct PluginStartupInfo*) ptr;
+			G.StartupInfo->FSF = (struct FarStandardFunctions*) (ptr+aInfo->StructSize);
 			G.PluginData.Info = G.StartupInfo;
 			G.PluginData.FSF = G.StartupInfo->FSF;
 
@@ -441,7 +442,15 @@ intptr_t LUAPLUG GetContentFieldsW(const struct GetContentFieldsInfo *Info)
 
 intptr_t LUAPLUG GetContentDataW(struct GetContentDataInfo *Info)
 {
-	EXP_INTPTR(Info, LF_GetContentData)
+	static int nest = 0; //prevent stack overflow on message/error box display
+	intptr_t ret = 0;
+	if (0==nest++ && IS_PLUGIN_READY(G))
+	{
+		ret = LF_GetContentData(G.LS, Info);
+		LEAVE_CS(G);
+	}
+	nest--;
+	return ret;
 }
 
 void LUAPLUG FreeContentDataW(const struct GetContentDataInfo *Info)

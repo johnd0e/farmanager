@@ -34,10 +34,22 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "matrix.hpp"
+// Internal:
 #include "plugin.hpp"
 
+// Platform:
+#include "platform.hpp"
+
+// Common:
+#include "common/2d/matrix.hpp"
+#include "common/2d/point.hpp"
+#include "common/2d/rectangle.hpp"
 #include "common/nifty_counter.hpp"
+#include "common/range.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 enum CLEAR_REGION
 {
@@ -45,6 +57,9 @@ enum CLEAR_REGION
 	CR_RIGHT=0x2,
 	CR_BOTH=CR_TOP|CR_RIGHT,
 };
+
+wchar_t ReplaceControlCharacter(wchar_t Char);
+void sanitise_pair(FAR_CHAR_INFO& First, FAR_CHAR_INFO& Second);
 
 namespace console_detail
 {
@@ -67,17 +82,19 @@ namespace console_detail
 
 		HWND GetWindow() const;
 
-		bool GetSize(COORD& Size) const;
-		bool SetSize(COORD Size) const;
+		bool GetSize(point& Size) const;
+		bool SetSize(point Size) const;
 
-		bool GetWindowRect(SMALL_RECT& ConsoleWindow) const;
-		bool SetWindowRect(const SMALL_RECT& ConsoleWindow) const;
+		bool SetScreenBufferSize(point Size) const;
 
-		bool GetWorkingRect(SMALL_RECT& WorkingRect) const;
+		bool GetWindowRect(rectangle& ConsoleWindow) const;
+		bool SetWindowRect(rectangle const& ConsoleWindow) const;
+
+		bool GetWorkingRect(rectangle& WorkingRect) const;
 
 		string GetPhysicalTitle() const;
 		string GetTitle() const;
-		bool SetTitle(const string& Title) const;
+		bool SetTitle(string_view Title) const;
 
 		bool GetKeyboardLayoutName(string &strName) const;
 
@@ -92,14 +109,18 @@ namespace console_detail
 		bool GetMode(HANDLE ConsoleHandle, DWORD& Mode) const;
 		bool SetMode(HANDLE ConsoleHandle, DWORD Mode) const;
 
-		bool PeekInput(INPUT_RECORD* Buffer, size_t Length, size_t& NumberOfEventsRead) const;
-		bool ReadInput(INPUT_RECORD* Buffer, size_t Length, size_t& NumberOfEventsRead) const;
-		bool WriteInput(INPUT_RECORD* Buffer, size_t Length, size_t& NumberOfEventsWritten) const;
-		bool ReadOutput(matrix<FAR_CHAR_INFO>& Buffer, COORD BufferCoord, SMALL_RECT& ReadRegion) const;
-		bool ReadOutput(matrix<FAR_CHAR_INFO>& Buffer, SMALL_RECT& ReadRegion) const { return ReadOutput(Buffer, {}, ReadRegion); }
-		bool WriteOutput(const matrix<FAR_CHAR_INFO>& Buffer, COORD BufferCoord, SMALL_RECT& WriteRegion) const;
-		bool WriteOutput(const matrix<FAR_CHAR_INFO>& Buffer, SMALL_RECT& WriteRegion) const { return WriteOutput(Buffer, {}, WriteRegion); }
-		bool Read(std::vector<wchar_t>& Buffer, size_t& Size) const;
+		bool IsVtSupported() const;
+
+		bool PeekInput(span<INPUT_RECORD> Buffer, size_t& NumberOfEventsRead) const;
+		bool PeekOneInput(INPUT_RECORD& Record) const;
+		bool ReadInput(span<INPUT_RECORD> Buffer, size_t& NumberOfEventsRead) const;
+		bool ReadOneInput(INPUT_RECORD& Record) const;
+		bool WriteInput(span<INPUT_RECORD> Buffer, size_t& NumberOfEventsWritten) const;
+		bool ReadOutput(matrix<FAR_CHAR_INFO>& Buffer, point BufferCoord, rectangle const& ReadRegionRelative) const;
+		bool ReadOutput(matrix<FAR_CHAR_INFO>& Buffer, const rectangle& ReadRegion) const { return ReadOutput(Buffer, {}, ReadRegion); }
+		bool WriteOutput(matrix<FAR_CHAR_INFO>& Buffer, point BufferCoord, rectangle const& WriteRegionRelative) const;
+		bool WriteOutput(matrix<FAR_CHAR_INFO>& Buffer, rectangle const& WriteRegion) const { return WriteOutput(Buffer, {}, WriteRegion); }
+		bool Read(string& Buffer, size_t& Size) const;
 		bool Write(string_view Str) const;
 		bool Commit() const;
 
@@ -109,14 +130,14 @@ namespace console_detail
 		bool GetCursorInfo(CONSOLE_CURSOR_INFO& ConsoleCursorInfo) const;
 		bool SetCursorInfo(const CONSOLE_CURSOR_INFO& ConsoleCursorInfo) const;
 
-		bool GetCursorPosition(COORD& Position) const;
-		bool SetCursorPosition(COORD Position) const;
+		bool GetCursorPosition(point& Position) const;
+		bool SetCursorPosition(point Position) const;
 
 		bool FlushInputBuffer() const;
 
 		bool GetNumberOfInputEvents(size_t& NumberOfEvents) const;
 
-		bool GetAlias(string_view Source, wchar_t* TargetBuffer, size_t TargetBufferLength, string_view ExeName) const;
+		bool GetAlias(string_view Name, string& Value, string_view ExeName) const;
 
 		std::unordered_map<string, std::unordered_map<string, string>> GetAllAliases() const;
 
@@ -124,9 +145,11 @@ namespace console_detail
 
 		bool GetDisplayMode(DWORD& Mode) const;
 
-		COORD GetLargestWindowSize() const;
+		point GetLargestWindowSize() const;
 
-		bool SetActiveScreenBuffer(HANDLE ConsoleOutput) const;
+		bool SetActiveScreenBuffer(HANDLE ConsoleOutput);
+
+		HANDLE GetActiveScreenBuffer() const;
 
 		bool ClearExtraRegions(const FarColor& Color, int Mode) const;
 
@@ -139,42 +162,52 @@ namespace console_detail
 		bool IsFullscreenSupported() const;
 
 		bool ResetPosition() const;
+		bool ResetViewportPosition() const;
 
-		bool GetColorDialog(FarColor& Color, bool Centered = false, bool AddTransparent = false) const;
+		bool GetColorDialog(FarColor& Color, bool Centered = false, const FarColor* BaseColor = nullptr) const;
 
 		bool ScrollNonClientArea(size_t NumLines, const FAR_CHAR_INFO& Fill) const;
 
+		bool IsViewportVisible() const;
+		bool IsViewportShifted() const;
+		bool IsPositionVisible(point Position) const;
+		bool IsScrollbackPresent() const;
+
+		[[nodiscard]]
+		bool IsVtEnabled() const;
+
+		[[nodiscard]]
+		bool ExternalRendererLoaded() const;
+
+		[[nodiscard]]
+		bool IsWidePreciseExpensive(unsigned int Codepoint, bool ClearCacheOnly = false);
+
+		bool GetPalette(std::array<COLORREF, 16>& Palette) const;
+
+		static void EnableWindowMode(bool Value);
+		static void EnableVirtualTerminal(bool Value);
+
 	private:
+		class implementation;
+		friend class implementation;
+
 		short GetDelta() const;
-		bool ScrollScreenBuffer(const SMALL_RECT& ScrollRectangle, const SMALL_RECT* ClipRectangle, COORD DestinationOrigin, const FAR_CHAR_INFO& Fill) const;
+		bool ScrollScreenBuffer(rectangle const& ScrollRectangle, point DestinationOrigin, const FAR_CHAR_INFO& Fill) const;
+		bool GetCursorRealPosition(point& Position) const;
+		bool SetCursorRealPosition(point Position) const;
 
 		HANDLE m_OriginalInputHandle;
+		HANDLE m_ActiveConsoleScreenBuffer{};
 		mutable string m_Title;
 		mutable int m_FileHandle{ -1 };
+
+		class stream_buffers_overrider;
+		std::unique_ptr<stream_buffers_overrider> m_StreamBuffersOverrider;
+
+		os::handle m_WidthTestScreen;
 	};
 }
 
 NIFTY_DECLARE(console_detail::console, console);
-
-class consolebuf : public std::wstreambuf
-{
-public:
-	NONCOPYABLE(consolebuf);
-
-	consolebuf();
-
-	void color(const FarColor& Color);
-
-protected:
-	int_type underflow() override;
-	int_type overflow(int_type Ch) override;
-	int sync() override;
-
-private:
-	bool Write(string_view Str);
-
-	std::vector<wchar_t> m_InBuffer, m_OutBuffer;
-	std::pair<FarColor, bool> m_Colour;
-};
 
 #endif // CONSOLE_HPP_DB857D87_FD76_4E96_A9EE_4C06712C6B6D

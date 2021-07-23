@@ -32,111 +32,71 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "xlat.hpp"
 
+// Internal:
 #include "config.hpp"
 #include "console.hpp"
 #include "configdb.hpp"
 #include "global.hpp"
+#include "log.hpp"
 
+// Platform:
+
+// Common:
 #include "common/enum_tokens.hpp"
-#include "common/zip_view.hpp"
+#include "common/from_string.hpp"
 
-/*
-Flags: 1
-Layouts: "04090409;04190419"
-Table1: "№АВГДЕЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЯавгдезийклмнопрстуфхцчшщъыьэяёЁБЮ"
-Table2: "#FDULTPBQRKVYJGHCNEA{WXIO}SMZfdultpbqrkvyjghcnea[wxio]sm'z`~<>"
-Rules1: ",??&./б,ю.:^Ж:ж;;$\"@Э\""
-Rules2: "?,&?/.,б.ю^::Ж;ж$;@\"\"Э"
-Rules3: "^::ЖЖ^$;;жж$@\"\"ЭЭ@&??,,бб&/..юю/"
-*/
+// External:
+
+//----------------------------------------------------------------------------
 
 void xlat_initialize()
 {
 	auto& XLat = Global->Opt->XLat;
-	std::vector<HKL> Layouts;
 
-	// Инициализация XLat для русской раскладки qwerty<->йцукен
-	if (std::any_of(ALL_CONST_RANGE(XLat.Table), std::mem_fn(&StringOption::empty)) ||
-	    std::any_of(ALL_CONST_RANGE(XLat.Rules), std::mem_fn(&StringOption::empty)))
+	if (XLat.strLayouts.empty())
+		return;
+
+	size_t I = 0;
+	for (const auto& i: enum_tokens(XLat.strLayouts.Get(), L";"sv))
 	{
-		if (const auto Count = GetKeyboardLayoutList(0, nullptr))
+		unsigned long res;
+		if (!from_string(i, res, nullptr, 16))
 		{
-			Layouts.resize(Count);
-			if (GetKeyboardLayoutList(static_cast<int>(Layouts.size()), Layouts.data()))
-			{
-				const WORD RussianLanguageId = MAKELANGID(LANG_RUSSIAN, SUBLANG_RUSSIAN_RUSSIA);
-				if (std::any_of(CONST_RANGE(Layouts, i){ return LOWORD(i) == RussianLanguageId; }))
-				{
-					static const string_view Tables[] =
-					{
-						L"\x2116\x0410\x0412\x0413\x0414\x0415\x0417\x0418\x0419\x041a\x041b\x041c\x041d\x041e\x041f\x0420\x0421\x0422\x0423\x0424\x0425\x0426\x0427\x0428\x0429\x042a\x042b\x042c\x042f\x0430\x0432\x0433\x0434\x0435\x0437\x0438\x0439\x043a\x043b\x043c\x043d\x043e\x043f\x0440\x0441\x0442\x0443\x0444\x0445\x0446\x0447\x0448\x0449\x044a\x044b\x044c\x044d\x044f\x0451\x0401\x0411\x042e"sv,
-						L"#FDULTPBQRKVYJGHCNEA{WXIO}SMZfdultpbqrkvyjghcnea[wxio]sm'z`~<>"sv,
-					};
-
-					static const string_view Rules[] =
-					{
-						L",??&./\x0431,\x044e.:^\x0416:\x0436;;$\"@\x042d\""sv,
-						L"?,&?/.,\x0431.\x044e^::\x0416;\x0436$;@\"\"\x042d"sv,
-						L"^::\x0416\x0416^$;;\x0436\x0436$@\"\"\x042d\x042d@&??,,\x0431\x0431&/..\x044e\x044e/"sv,
-					};
-
-					const auto& SetIfEmpty = [](StringOption& opt, string_view const table) { if (opt.empty()) opt = string(table); };
-
-					for (const auto& i: zip(XLat.Table, Tables)) std::apply(SetIfEmpty, i);
-					for (const auto& i: zip(XLat.Rules, Rules)) std::apply(SetIfEmpty, i);
-				}
-			}
+			LOGWARNING(L"Unsupported layout: {}"sv, i);
+			continue;
 		}
 
+		XLat.Layouts[I] = reinterpret_cast<HKL>(static_cast<intptr_t>(HIWORD(res)? res : MAKELONG(res, res)));
+		++I;
+
+		if (I >= std::size(XLat.Layouts))
+			break;
 	}
 
-	if (!XLat.strLayouts.empty())
-	{
-		size_t I = 0;
-		for (const auto& i: enum_tokens(XLat.strLayouts.Get(), L";"sv))
-		{
-			unsigned long res;
-			if (!from_string(string(i), res, nullptr, 16))
-			{
-				// TODO: log
-				continue;
-			}
-
-			XLat.Layouts[I] = (HKL)(intptr_t)(HIWORD(res)? res : MAKELONG(res, res));
-			++I;
-
-			if (I >= std::size(XLat.Layouts))
-				break;
-		}
-
-		if (I <= 1) // если указано меньше двух - "отключаем" эту
-			XLat.Layouts[0] = nullptr;
-	}
+	if (I < 2) // если указано меньше двух - "отключаем" эту
+		XLat.Layouts[0] = nullptr;
 }
 
-wchar_t* Xlat(wchar_t *Line, int StartPos, int EndPos, unsigned long long Flags)
+void Xlat(span<wchar_t> const Data, unsigned long long const Flags)
 {
 	const auto& XLat = Global->Opt->XLat;
 
 	int CurLang=2; // unknown
 	size_t LangCount[2]={};
 
-	if (!Line || !*Line)
-		return nullptr;
-
-	int Length = static_cast<int>(wcslen(Line));
-	EndPos=std::min(EndPos,Length);
-	StartPos=std::max(StartPos,0);
-
-	if (StartPos > EndPos || StartPos >= Length)
-		return Line;
+	if (Data.empty())
+		return;
 
 	if (XLat.Table[0].empty() || XLat.Table[1].empty())
-		return Line;
+		return;
 
-	size_t MinLenTable=std::min(XLat.Table[0].size(),XLat.Table[1].size());
+	const auto MinLenTable = std::min(XLat.Table[0].size(), XLat.Table[1].size());
 	string strLayoutName;
 	bool ProcessLayoutName=false;
 	StringOption RulesNamed;
@@ -170,19 +130,15 @@ wchar_t* Xlat(wchar_t *Line, int StartPos, int EndPos, unsigned long long Flags)
 		      руками переключили раскладку,
 		      снова конвертим и...
 		*/
-		string XlatRules;
-		ConfigProvider().GeneralCfg()->GetValue(L"XLat"sv, strLayoutName, XlatRules, L"");
-		RulesNamed = XlatRules;
+		RulesNamed = ConfigProvider().GeneralCfg()->GetValue<string>(L"XLat"sv, strLayoutName);
 		if (!RulesNamed.empty())
 			ProcessLayoutName=true;
 	}
 
 	// цикл по всей строке
-	for (int j=StartPos; j < EndPos; j++)
+	for (auto& Chr: Data)
 	{
-		wchar_t Chr = Line[j];
-		wchar_t ChrOld = Line[j];
-		// ChrOld - пред символ
+		const auto ChrOld = Chr;
 		int IsChange=0;
 
 		// цикл по просмотру Chr в таблицах
@@ -244,38 +200,8 @@ wchar_t* Xlat(wchar_t *Line, int StartPos, int EndPos, unsigned long long Flags)
 						break;
 					}
 				}
-
-#if 0
-
-				// Если в таблице не найдено и таблица была Unknown...
-				if (I >= XLat.Rules[CurLang][0] && CurLang == 2)
-				{
-					// ...смотрим сначала в первой таблице...
-					for (I=1; I < XLat.Rules[0][0]; I+=2)
-						if (ChrOld == (BYTE)XLat.Rules[0][I])
-							break;
-
-					for (J=1; J < XLat.Rules[1][0]; J+=2)
-						if (ChrOld == (BYTE)XLat.Rules[1][J])
-							break;
-
-					if (I >= XLat.Rules[0][0])
-						CurLang=1;
-
-					if (J >= XLat.Rules[1][0])
-						CurLang=0;
-
-					if ()//???
-					{
-						Chr=(BYTE)XLat.Rules[CurLang][J+1];
-					}
-				}
-
-#endif
 			}
 		}
-
-		Line[j]=Chr;
 	}
 
 	// переключаем раскладку клавиатуры?
@@ -287,19 +213,17 @@ wchar_t* Xlat(wchar_t *Line, int StartPos, int EndPos, unsigned long long Flags)
 
 			if (XLat.Layouts[0])
 			{
-				if (++XLat.CurrentLayout >= (int)std::size(XLat.Layouts) || !XLat.Layouts[XLat.CurrentLayout])
+				if (++XLat.CurrentLayout >= static_cast<int>(std::size(XLat.Layouts)) || !XLat.Layouts[XLat.CurrentLayout])
 					XLat.CurrentLayout = 0;
 
 				if (XLat.Layouts[XLat.CurrentLayout])
 					Next = XLat.Layouts[XLat.CurrentLayout];
 			}
 
-			PostMessage(hWnd,WM_INPUTLANGCHANGEREQUEST, Next?0:INPUTLANGCHANGE_FORWARD, (LPARAM)Next);
+			PostMessage(hWnd,WM_INPUTLANGCHANGEREQUEST, Next?0:INPUTLANGCHANGE_FORWARD, reinterpret_cast<LPARAM>(Next));
 
 			if (Flags & XLAT_SWITCHKEYBBEEP)
 				MessageBeep(0);
 		}
 	}
-
-	return Line;
 }

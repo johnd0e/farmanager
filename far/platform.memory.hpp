@@ -33,6 +33,17 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
+
+// Platform:
+
+// Common:
+#include "common/utility.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
+
 namespace os::memory
 {
 	namespace global
@@ -41,38 +52,43 @@ namespace os::memory
 		{
 			struct deleter
 			{
-				void operator()(HGLOBAL MemoryBlock) const;
+				void operator()(HGLOBAL MemoryBlock) const noexcept;
 			};
 
 			struct unlocker
 			{
-				void operator()(const void* MemoryBlock) const;
+				void operator()(const void* MemoryBlock) const noexcept;
 			};
-		};
+		}
 
 		using ptr = std::unique_ptr<std::remove_pointer_t<HGLOBAL>, detail::deleter>;
 
-		ptr alloc(UINT Flags, size_t size);
+		ptr alloc(unsigned Flags, size_t Size);
 
 		template<class T>
 		using lock_t = std::unique_ptr<std::remove_pointer_t<T>, detail::unlocker>;
 
 		template<class T>
-		auto lock(HGLOBAL Ptr)
+		[[nodiscard]]
+		auto lock(HGLOBAL Ptr) noexcept
 		{
 			return lock_t<T>(static_cast<T>(GlobalLock(Ptr)));
 		}
 
 		template<class T>
-		auto lock(const ptr& Ptr)
+		[[nodiscard]]
+		auto lock(const ptr& Ptr) noexcept
 		{
 			return lock<T>(Ptr.get());
 		}
 
+		ptr copy(HGLOBAL Ptr);
+
 		template<class T>
+		[[nodiscard]]
 		ptr copy(const T& Object)
 		{
-			static_assert(std::is_pod_v<T>);
+			static_assert(std::is_trivially_copyable_v<T>);
 
 			auto Memory = alloc(GMEM_MOVEABLE, sizeof(Object));
 			if (!Memory)
@@ -86,7 +102,8 @@ namespace os::memory
 			return Memory;
 		}
 
-		ptr copy(const wchar_t* Data, size_t Size);
+		[[nodiscard]]
+		ptr copy(string_view Str);
 	}
 
 	namespace local
@@ -95,21 +112,30 @@ namespace os::memory
 		{
 			struct deleter
 			{
-				void operator()(const void* MemoryBlock) const;
+				void operator()(const void* MemoryBlock) const noexcept;
 			};
+		}
+
+		template<class T>
+		class ptr: public base<std::unique_ptr<T, detail::deleter>>
+		{
+			using ptr::base_ctor::base_ctor;
 		};
 
 		template<class T>
-		using ptr = std::unique_ptr<T, detail::deleter>;
+		ptr(T*) -> ptr<T>;
 
 		template<class T>
-		auto alloc(UINT Flags, size_t size)
+		ptr<T> to_ptr(T* Ptr)
 		{
-			return ptr<T>(static_cast<T*>(LocalAlloc(Flags, size)));
+			return ptr<T>{ Ptr };
 		}
-	};
+	}
 
+	[[nodiscard]]
 	bool is_pointer(const void* Address);
+
+	void enable_low_fragmentation_heap();
 }
 
 #endif // PLATFORM_MEMORY_HPP_87E958A6_C4DE_4F53_A9F6_337D97D664E6

@@ -32,101 +32,109 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "movable.hpp"
 #include "range.hpp"
 
-class bytes_view: public range<const char*>
+//----------------------------------------------------------------------------
+
+namespace detail
 {
-public:
-	bytes_view(const void* Data, size_t Size):
-		range<const char*>(reinterpret_cast<const char*>(Data), reinterpret_cast<const char*>(Data) + Size)
+	template<typename T, bool Add>
+	using add_const_if_t = std::conditional_t<Add, T const, T>;
+
+	template<typename return_type, typename T, REQUIRES((std::disjunction_v<std::is_void<T>, std::is_trivially_copyable<T>>))>
+	return_type bytes_impl(T* const Data, size_t const Size)
 	{
+		constexpr auto IsConst = std::is_const_v<T>;
+		using void_type = add_const_if_t<void, IsConst>;
+		using byte_type = add_const_if_t<std::byte, IsConst>;
+		return { static_cast<byte_type*>(static_cast<void_type*>(Data)), Size };
 	}
 
-	template<typename T>
-	explicit bytes_view(const T& Object):
-		bytes_view(&Object, sizeof(Object))
+	template<typename return_type, typename T>
+	auto bytes_impl(T& Object)
 	{
-		static_assert(std::is_trivially_copyable_v<T>);
-	}
-};
-
-class bytes: public range<char*>
-{
-public:
-	NONCOPYABLE(bytes);
-	MOVABLE(bytes);
-
-	bytes() = default;
-
-	[[nodiscard]]
-	static bytes copy(const bytes_view& Object)
-	{
-		bytes Bytes;
-		Bytes = Object;
-		return Bytes;
-	}
-
-	template<typename T>
-	[[nodiscard]]
-	static bytes copy(const T& Object)
-	{
-		return copy(bytes_view(Object));
-	}
-
-	template<typename T>
-	[[nodiscard]]
-	static bytes reference(T& Object)
-	{
-		static_assert(std::is_trivially_copyable_v<T>);
-
-		bytes Bytes;
-		static_cast<range<char*>&>(Bytes) =
+		if constexpr (is_span_v<T>)
 		{
-			static_cast<char*>(static_cast<void*>(&Object)),
-			static_cast<char*>(static_cast<void*>(&Object)) + sizeof(Object)
-		};
-		return Bytes;
-	}
+			using value_type = std::remove_reference_t<decltype(*std::data(std::declval<T&>()))>;
+			static_assert(std::is_trivially_copyable_v<value_type>);
 
-	~bytes()
-	{
-		if (m_Allocated)
-			delete[] static_cast<const char*>(data());
-	}
-
-	bytes& operator=(const bytes_view& rhs)
-	{
-		if (data())
+			return bytes_impl<return_type>(std::data(Object), std::size(Object) * sizeof(value_type));
+		}
+		else if constexpr (std::is_trivially_copyable_v<T>)
 		{
-			if (size() != rhs.size())
-				throw std::runtime_error("Incorrect blob size: "s + std::to_string(rhs.size()) + ", expected "s + std::to_string(size()));
+			return bytes_impl<return_type>(&Object, sizeof(Object));
 		}
 		else
 		{
-			static_cast<range<char*>&>(*this) = make_range(new char[rhs.size()], rhs.size());
-			m_Allocated = true;
+			static_assert(!sizeof(T), "The type is not serialisable");
 		}
-		std::copy(ALL_CONST_RANGE(rhs), begin());
-		return *this;
 	}
+}
 
-	operator bytes_view() const
-	{
-		return { data(), size() };
-	}
 
-private:
-	movable<bool> m_Allocated{ false };
-};
+using bytes_view = std::basic_string_view<std::byte>;
+
+[[nodiscard]]
+constexpr bytes_view operator "" _bv(const char* Str, std::size_t Size) noexcept
+{
+	return { static_cast<std::byte const*>(static_cast<void const*>(Str)), Size };
+}
+
+
+using bytes = std::basic_string<std::byte>;
+
+[[nodiscard]]
+/*constexpr*/ inline bytes operator "" _b(const char* Str, std::size_t Size) noexcept
+{
+	return bytes{ operator ""_bv(Str, Size) };
+}
+
 
 template<typename T>
 [[nodiscard]]
-T deserialise(const bytes_view& Bytes)
+auto view_bytes(T const* const Data, size_t const Size)
 {
-	T Value;
-	bytes::reference(Value) = Bytes;
-	return Value;
+	return detail::bytes_impl<bytes_view>(Data, Size);
+}
+
+template<typename T>
+[[nodiscard]]
+auto view_bytes(T const& Object)
+{
+	return detail::bytes_impl<bytes_view>(Object);
+}
+
+template<typename T>
+[[nodiscard]]
+auto edit_bytes(T* const Data, size_t const Size)
+{
+	return detail::bytes_impl<span<std::byte>>(Data, Size);
+}
+
+template<typename T>
+[[nodiscard]]
+auto edit_bytes(T& Object)
+{
+	return detail::bytes_impl<span<std::byte>>(Object);
+}
+
+[[nodiscard]]
+inline std::string_view to_string_view(bytes_view const Bytes)
+{
+	return { static_cast<char const*>(static_cast<void const*>(Bytes.data())), Bytes.size() };
+}
+
+template<typename T>
+[[nodiscard]]
+bool deserialise(bytes_view const Bytes, T& Value) noexcept
+{
+	const auto ValueBytes = edit_bytes(Value);
+
+	if (ValueBytes.size() != Bytes.size())
+		return false;
+
+	std::copy(ALL_CONST_RANGE(Bytes), ValueBytes.begin());
+	return true;
 }
 
 #endif // BYTES_VIEW_HPP_3707377A_7C4B_4B2E_89EC_6411A1988FB3

@@ -1,20 +1,26 @@
 NAME = Proclist
-SRCS = Proclist.cpp \
-fileio.cpp \
-handles.cpp \
-Pcfg.cpp \
-Pclass.cpp \
-perfthread.cpp \
-Plist.cpp \
-Pmix.cpp \
-wmi.cpp
-DOCS = ProcEng.hlf ProcRus.hlf ProcEng.lng ProcRus.lng
 
-USERCPP = -I ./WMI
-USERLIBS = -lversion -lmpr -lole32 -loleaut32
+SRCS = \
+	Proclist.cpp \
+	fileio.cpp \
+	format.cpp \
+	handles.cpp \
+	Pcfg.cpp \
+	Pclass.cpp \
+	perfthread.cpp \
+	Plist.cpp \
+	Pmix.cpp \
+	wmi.cpp \
+	wmi_init.cpp
 
-include ../../far/makefile_gcc_common
+ifndef FARDIR
+FAR_DIRECTORY=../../far
+else
+FAR_DIRECTORY=$(FARDIR)
+endif
+
+USERCPP = -I "$(FAR_DIRECTORY)/common" -I "$(FAR_DIRECTORY)/thirdparty/fmt"
+USERLIBS = -lversion -lmpr -lole32 -loleaut32 -lpsapi
 
 include ../makefile_gcc_def_inc
-
 include ../makefile_gcc_target_inc

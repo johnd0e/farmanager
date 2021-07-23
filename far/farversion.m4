@@ -1,24 +1,47 @@
-m4_include(`vbuild.m4')m4_dnl
-m4_include(`tools.m4')m4_dnl
-m4_define(FROMBIT,m4_ifelse(FARBIT,`64',`$2',FARBIT,`IA64',`$3',`$1'))m4_dnl
-m4_define(BUILDTYPE,`')m4_dnl
-m4_define(MAJOR,3)m4_dnl
-m4_define(MINOR,0)m4_dnl
-m4_define(REVISION,0)m4_dnl
-m4_define(STAGE,VS_RELEASE)m4_dnl
-m4_define(BLD_DATE,m4_esyscmd(CMDAWK -f CMDDATE))m4_dnl
-m4_define(BLD_YEAR,m4_substr(BLD_DATE,6,4))m4_dnl
-m4_define(BLD_MONTH,m4_substr(BLD_DATE,3,2))m4_dnl
-m4_define(BLD_DAY,m4_substr(BLD_DATE,0,2))m4_dnl
-m4_define(COPYRIGHTYEARS,m4_ifelse(`2000',BLD_YEAR,`2000',`2000-'BLD_YEAR))m4_dnl
-m4_define(MAKEFULLVERSION,`m4_ifelse(
-`',$1,`MAJOR.MINOR (build BUILD) $2',
-`RC',$1,`MAJOR.MINOR RC (build BUILD) $2',
-`alpha',$1,`MAJOR.MINOR alpha (build BUILD) $2',
-`beta',$1,`MAJOR.MINOR beta (build BUILD) $2',
-`MAJOR.MINOR alpha ($1 based on build BUILD) $2')')m4_dnl
-m4_define(FULLVERSION32,MAKEFULLVERSION(BUILDTYPE,`x86'))m4_dnl
-m4_define(FULLVERSION64,MAKEFULLVERSION(BUILDTYPE,`x64'))m4_dnl
-m4_define(FULLVERSIONIA64,MAKEFULLVERSION(BUILDTYPE,`IA64'))m4_dnl
-m4_define(FULLVERSION,FROMBIT(FULLVERSION32,FULLVERSION64,FULLVERSIONIA64))m4_dnl
-m4_define(FULLVERSIONNOBRACES,`m4_patsubst(FULLVERSION,`[\(\)]',`')')m4_dnl
+m4_divert(`-1')
+
+# Uncomment to create a special version
+#m4_define(`SPECIAL_VERSION', epic feature)
+
+m4_define(VERSION_MAJOR, 3)
+m4_define(VERSION_MINOR, 0)
+m4_define(VERSION_REVISION, 0)
+m4_define(VERSION_BUILD, m4_patsubst(m4_include(`vbuild.m4'),`
+',`'))
+
+m4_define(`VERSION_TYPE', m4_ifdef(`SPECIAL_VERSION', VS_SPECIAL, m4_ifelse(BUILD_TYPE, `', VS_PRIVATE, BUILD_TYPE)))
+
+m4_define(BUILD_SPECIAL, m4_ifelse(VERSION_TYPE, VS_SPECIAL, 1, 0))
+m4_define(BUILD_PRIVATE, m4_ifelse(VERSION_TYPE, VS_PRIVATE, 1, 0))
+m4_define(BUILD_PRERELEASE, m4_ifelse(
+	VERSION_TYPE, VS_ALPHA,   1,
+	VERSION_TYPE, VS_PRIVATE, 1,
+	VERSION_TYPE, VS_SPECIAL, 1,
+	0))
+
+m4_include(`tools.m4')
+
+m4_define(BUILD_PLATFORM, m4_ifelse(
+	FARBIT, 64, x64,
+	FARBIT, 32, x86,
+	FARBIT))
+
+m4_define(BUILD_SCM_REVISION, m4_ifelse(SCM_REVISION, `', m4_patsubst(m4_esyscmd(git rev-parse HEAD 2>nul),`
+',`'), SCM_REVISION))
+
+m4_define(BUILD_DATE, m4_esyscmd(CMDAWK -f ./scripts/gendate.awk))
+m4_define(BUILD_YEAR, m4_substr(BUILD_DATE,6,4))
+m4_define(BUILD_MONTH, m4_substr(BUILD_DATE,3,2))
+m4_define(BUILD_DAY, m4_substr(BUILD_DATE,0,2))
+m4_define(COPYRIGHTYEAR, BUILD_YEAR)
+
+m4_define(FULLVERSION, VERSION_MAJOR.VERSION_MINOR.VERSION_BUILD.VERSION_REVISION`'m4_ifelse(
+	VERSION_TYPE, VS_SPECIAL, ` (Special: 'SPECIAL_VERSION`)',
+	VERSION_TYPE, VS_PRIVATE, ` (Private)',
+	VERSION_TYPE, VS_ALPHA,   ` (Alpha)',
+	VERSION_TYPE, VS_BETA,    ` (Beta)',
+	VERSION_TYPE, VS_RC,      ` (RC)',
+	VERSION_TYPE, VS_RELEASE, `',
+	` (Unknown)') BUILD_PLATFORM)
+
+m4_divert(0)m4_dnl

@@ -1,9 +1,13 @@
-﻿m4_include(`farversion.m4')m4_dnl
+#
+# Note: https://www.microsoft.com/language is a good source of system- and UI-specific translations.
+#
+
+m4_include(`farversion.m4')m4_dnl
 #hpp file name
-bootstrap\lang.inc
+lang.inc
 
 #number of languages
-10
+12
 
 #language file name, language name, language description
 FarRus.lng Russian "Russian (Русский)"
@@ -16,6 +20,8 @@ FarSpa.lng Spanish "Spanish (Español)"
 FarSky.lng Slovak "Slovak (Slovenčina)"
 FarIta.lng Italian "Italian (Italiano)"
 FarUkr.lng Ukrainian "Ukrainian (Українська)"
+FarBel.lng Belarusian "Belarusian (Беларуская)"
+FarLit.lng Lithuanian "Lithuanian (Lietuvių)"
 
 #enum name
 enum:class lng:int
@@ -53,7 +59,7 @@ enum:class lng:int
 
 
 MYes
-`l://Version: 'MAJOR`.'MINOR` build 'BUILD
+`l://Version: 'FULLVERSION`
 l:
 "Да"
 "Yes"
@@ -65,6 +71,8 @@ l:
 "Áno"
 "&Si"
 "Так"
+"Так"
+"Taip"
 
 MNo
 "Нет"
@@ -77,6 +85,8 @@ MNo
 "Nie"
 "&No"
 "Ні"
+"Не"
+"Ne"
 
 MOk
 "OK"
@@ -89,6 +99,8 @@ MOk
 "OK"
 "O&k"
 "OK"
+"OK"
+"Gerai"
 
 MHYes
 l:
@@ -102,6 +114,8 @@ l:
 "&Áno"
 "&Si"
 "&Так"
+"&Так"
+"&Taip"
 
 MHNo
 "&Нет"
@@ -114,6 +128,8 @@ MHNo
 "&Nie"
 "&No"
 "&Ні"
+"&Не"
+"&Ne"
 
 MHOk
 "&OK"
@@ -126,6 +142,8 @@ MHOk
 "&OK"
 "&Ok"
 "&OK"
+"&OK"
+"&Gerai"
 
 MCancel
 l:
@@ -139,6 +157,8 @@ l:
 "Storno"
 "&Annulla"
 "Скасувати"
+"Адмена"
+"Atšaukti"
 
 MReset
 "&Сбросить"
@@ -146,11 +166,13 @@ MReset
 "&Reset"
 "&Rücksetzen"
 upd:"&Reset"
-upd:"&Reset"
+"&Reset"
 "&Reiniciar"
 "&Reset"
 "Rese&tta"
 "&Скинути"
+"&Зкінуць"
+upd:"&Reset"
 
 MRetry
 "Повторить"
@@ -163,6 +185,8 @@ MRetry
 "Znova"
 "&Riprova"
 "Повторити"
+"Паўтарыць"
+"Bandyti vėl"
 
 MSkip
 "Пропустить"
@@ -175,6 +199,8 @@ MSkip
 "Preskočiť"
 "&Salta"
 "Пропустити"
+"Прапусціць"
+"Praleisti"
 
 MAbort
 "Прервать"
@@ -187,6 +213,8 @@ MAbort
 "Zrušiť"
 "&Abbandona"
 "Перервати"
+"Перапыніць"
+upd:"Abort"
 
 MIgnore
 "Игнорировать"
@@ -199,6 +227,8 @@ MIgnore
 "Ignorovať"
 "&Ignora"
 "Ігнорувати"
+"Ігнараваць"
+upd:"Ignore"
 
 MDelete
 "Удалить"
@@ -211,18 +241,8 @@ MDelete
 "Zmazať"
 "&Elimina"
 "Видалити"
-
-MSplit
-"Разделить"
-"Split"
-"Rozdělit"
-"Zerteilen"
-"Feloszt"
-"Podziel"
-"Dividir"
-"Rozdeliť"
-"&Dividi"
-"Розділити"
+"Выдаліць"
+"Trinti"
 
 MHCancel
 l:
@@ -236,6 +256,8 @@ l:
 "&Storno"
 "&Annulla"
 "&Скасувати"
+"&Адмена"
+"&Atšaukti"
 
 MHRetry
 "&Повторить"
@@ -248,6 +270,8 @@ MHRetry
 "&Znova"
 "&Riprova"
 "&Повторити"
+"&Паўтарыць"
+"&Bandyti vėl"
 
 MHSkip
 "П&ропустить"
@@ -260,6 +284,8 @@ MHSkip
 "&Preskočiť"
 "&Salta"
 "П&ропустити"
+"П&рапусціць"
+"&Praleisti"
 
 MHSkipAll
 "Пропустить &все"
@@ -272,6 +298,8 @@ MHSkipAll
 "Preskočiť &všetko"
 "Salta &Tutti"
 "Пропустити &все"
+"Прапусціць &усё"
+upd:"S&kip all"
 
 MHAbort
 "Прер&вать"
@@ -284,6 +312,8 @@ MHAbort
 "Zr&ušiť"
 "&Abbandona"
 "Перер&вати"
+"Перап&ыніць"
+upd:"&Abort"
 
 MHIgnore
 "&Игнорировать"
@@ -296,6 +326,8 @@ MHIgnore
 "&Ignorovať"
 "&Ignora"
 "&Ігнорувати"
+"&Ігнараваць"
+upd:"&Ignore"
 
 MHDelete
 "&Удалить"
@@ -308,6 +340,8 @@ MHDelete
 "Z&mazať"
 "&Elimina"
 "&Видалити"
+"&Выдаліць"
+"&Trinti"
 
 MHRemove
 "&Удалить"
@@ -320,6 +354,8 @@ MHRemove
 "&Odstrániť"
 "Rimuo&vi"
 "&Видалити"
+"В&ыдаліць"
+upd:"R&emove"
 
 MHSplit
 "Раз&делить"
@@ -332,6 +368,8 @@ MHSplit
 "&Rozdeliť"
 "&Dividi"
 "Роз&ділити"
+"Па&дзяліць"
+"Padalinti"
 
 MWarning
 l:
@@ -345,6 +383,8 @@ l:
 "Varovanie"
 "Attenzione"
 "Попередження"
+"Папярэджанне"
+"Įspėjimas"
 
 MError
 "Ошибка"
@@ -357,6 +397,8 @@ MError
 "Chyba"
 "Errore"
 "Помилка"
+"Памылка"
+"Klaida"
 
 MQuit
 l:
@@ -370,22 +412,26 @@ l:
 "Koniec"
 "Uscita"
 "Вихід"
+"Выйсці"
+"Išeiti"
 
 MAskQuit
-"Вы хотите завершить работу в FAR?"
-"Do you want to quit FAR?"
-"Chcete ukončit FAR?"
-"Wollen Sie FAR beenden?"
-"Biztosan kilép a FAR-ból?"
-"Czy chcesz zakończyć pracę z FARem?"
-"Desea salir de FAR?"
-"Chcete ukončiť FAR?"
-"Vuoi Uscire Da FAR?"
+"Вы хотите завершить работу в Far?"
+"Do you want to quit Far?"
+"Chcete ukončit Far?"
+"Wollen Sie Far beenden?"
+"Biztosan kilép a Far-ból?"
+"Czy chcesz wyjść z Far'a"
+"Desea salir de Far?"
+"Chcete ukončiť Far?"
+"Vuoi Uscire Da Far?"
 "Ви бажаєте завершити роботу в Far?"
+"Вы маеце намер завяршыць працу ў Far?"
+"Ar norite išeiti iš Far?"
 
 MF1
 l:
-l://functional keys - 6 characters max
+l:// Panels: functional keys
 "Помощь"
 "Help"
 "Nápověda"
@@ -396,6 +442,8 @@ l://functional keys - 6 characters max
 "Pomoc"
 "Aiuto"
 "Допомг"
+"Дапамога"
+"Pagalb"
 
 MF2
 "ПользМ"
@@ -408,6 +456,8 @@ MF2
 "Menu"
 "MenuUt"
 "КорисМ"
+"Карыст. меню"
+"Meniu"
 
 MF3
 "Просм"
@@ -415,11 +465,13 @@ MF3
 "Zobraz"
 "Betr."
 "Megnéz"
-"Zobacz"
+"Podgląd"
 "Ver"
 "Zobraz"
 "Vista"
 "Перегл"
+"Глядзець"
+"Žiūrėt"
 
 MF4
 "Редакт"
@@ -432,6 +484,8 @@ MF4
 "Uprav"
 "Edita"
 "Редаг"
+"Меняць"
+"Redag"
 
 MF5
 "Копир"
@@ -444,6 +498,8 @@ MF5
 "Kopír."
 "Copia"
 "Копіюв"
+"Капіяваць"
+"Kopij"
 
 MF6
 "Перен"
@@ -456,6 +512,8 @@ MF6
 "Premen"
 "RinSpo"
 "Перем"
+"Перанесці"
+"Perkel"
 
 MF7
 "Папка"
@@ -468,6 +526,8 @@ MF7
 "VytvAd"
 "FaiDir"
 "Папка"
+"Каталог"
+"Katal"
 
 MF8
 "Удален"
@@ -480,6 +540,8 @@ MF8
 "Zmazať"
 "Elimin"
 "Видал"
+"Выдаліць"
+"Trinti"
 
 MF9
 "КонфМн"
@@ -492,6 +554,8 @@ MF9
 "KonfMn"
 "Config"
 "КонфМн"
+"КанфМеню"
+"KonfMn"
 
 MF10
 "Выход"
@@ -504,6 +568,8 @@ MF10
 "Koniec"
 "Uscita"
 "Вихід"
+"Выйсці"
+"Išeiti"
 
 MF11
 "Плагины"
@@ -511,11 +577,13 @@ MF11
 "Moduly"
 "Plugin"
 "Plugin"
-"Plugin"
+"Wtyczki"
 "Comple"
 "Moduly"
 "PlugIN"
 "Плагіни"
+"Дадатак"
+"Pried"
 
 MF12
 "Экраны"
@@ -528,6 +596,8 @@ MF12
 "Okno"
 "Video"
 "Екрани"
+"Экраны"
+"Ekran"
 
 MShiftF1
 l:
@@ -541,6 +611,8 @@ l:
 "Spakov"
 "Compri"
 "Додав."
+"Дадаць"
+"Supak"
 
 MShiftF2
 "Распак"
@@ -553,6 +625,8 @@ MShiftF2
 "Rozpak"
 "Estrai"
 "Розпак"
+"Распакаваць"
+"Išpak"
 
 MShiftF3
 "АрхКом"
@@ -565,18 +639,22 @@ MShiftF3
 "PríkPk"
 "ArcCmd"
 "АрхКом"
+"АрхКам"
+"ArcKmd"
 
 MShiftF4
-"Редак."
-"Edit.."
-"Úpravy"
-"Erst.."
-"ÚjFájl"
-"Edytuj"
-"Editar"
-"Úpravy"
-"Edita"
-"Редаг."
+"Редак…"
+"Edit…"
+"Úpravy…"
+"Erst…"
+"ÚjFájl…"
+"Edytuj…"
+"Editar…"
+"Úpravy…"
+"Edita…"
+"Редаг…"
+"Меняць…"
+"Reda…"
 
 MShiftF5
 "Копир"
@@ -589,6 +667,8 @@ MShiftF5
 "Kopír."
 "Copia"
 "Копіюв"
+"Капіяваць"
+"Kopij"
 
 MShiftF6
 "Переим"
@@ -601,8 +681,12 @@ MShiftF6
 "Premen"
 "Rinomi"
 "Перейм"
+"Пераназваць"
+"Pervad"
 
 MShiftF7
+""
+""
 ""
 ""
 ""
@@ -625,6 +709,8 @@ MShiftF8
 "Zmazať"
 "Elimin"
 "Видал."
+"Выдаліць"
+"Trinti"
 
 MShiftF9
 "Сохран"
@@ -637,6 +723,8 @@ MShiftF9
 "Uložiť"
 "Salva"
 "Збереж"
+"Захаваць"
+"Išsaug"
 
 MShiftF10
 "Послдн"
@@ -649,6 +737,8 @@ MShiftF10
 "Posled"
 "Ultimo"
 "Остан."
+"Апошні"
+"Paskut"
 
 MShiftF11
 "Группы"
@@ -661,6 +751,8 @@ MShiftF11
 "Skupin"
 "Gruppo"
 "Групи"
+"Суполкі"
+"Grupė"
 
 MShiftF12
 "Выбран"
@@ -673,6 +765,8 @@ MShiftF12
 "VybPrv"
 "SeleSu"
 "Вибран"
+"Выбраныя"
+upd:"SelUp"
 
 MAltF1
 l:
@@ -686,6 +780,8 @@ l:
 "Ľavý"
 "Sinist"
 "Ліва"
+"Левая"
+"Kairė"
 
 MAltF2
 "Правая"
@@ -698,30 +794,36 @@ MAltF2
 "Pravý"
 "Destra"
 "Права"
+"Правая"
+"Dešinė"
 
 MAltF3
-"Смотр."
-"View.."
-"Zobr.."
-"Betr.."
-"Néző.."
-"Zobacz"
-"Ver..."
-"Zobr.."
-"Vista"
-"Перегл"
+"Смотр…"
+"View…"
+"Zobr…"
+"Betr…"
+"Néző…"
+"Podgląd…"
+"Ver…"
+"Zobr…"
+"Vista…"
+"Перегл…"
+"Глядзець…"
+"Žiūr"
 
 MAltF4
-"Редак."
-"Edit.."
-"Uprav."
-"Bear.."
-"Szrk.."
-"Edytuj"
-"Edita."
-"Uprav."
-"Edita"
-"Редаг."
+"Редак…"
+"Edit…"
+"Uprav…"
+"Bear…"
+"Szrk…"
+"Edytuj…"
+"Edita…"
+"Uprav…"
+"Edita…"
+"Редаг…"
+"Меняць…"
+"Reda…"
 
 MAltF5
 "Печать"
@@ -734,6 +836,8 @@ MAltF5
 "Tlač"
 "Stampa"
 "Друк"
+"Друкаваць"
+"Spausd"
 
 MAltF6
 "Ссылка"
@@ -746,6 +850,8 @@ MAltF6
 "Prepoj"
 "Linka"
 "Посил."
+"Спасылак"
+"Saitas"
 
 MAltF7
 "Искать"
@@ -758,6 +864,8 @@ MAltF7
 "Hľadať"
 "Cerca"
 "Пошук"
+"Шукаць"
+"Rasti"
 
 MAltF8
 "Истор"
@@ -770,6 +878,8 @@ MAltF8
 "Histor"
 "Storia"
 "Істор"
+"Гісторыя"
+"Istor"
 
 MAltF9
 "Видео"
@@ -782,6 +892,8 @@ MAltF9
 "Video"
 "Video"
 "Відео"
+"Відэа"
+"Video"
 
 MAltF10
 "Дерево"
@@ -794,6 +906,8 @@ MAltF10
 "Strom"
 "Albero"
 "Дерево"
+"Дрэва"
+"Medis"
 
 MAltF11
 "ИстПр"
@@ -806,6 +920,8 @@ MAltF11
 "HsZobr"
 "Vista+"
 "ІстПер"
+"Гіст. прагляду"
+"ŽiūrIs"
 
 MAltF12
 "ИстПап"
@@ -818,6 +934,8 @@ MAltF12
 "HsAdrs"
 "Carte+"
 "ІстПап"
+"Гіст. каталогаў"
+"KatIs"
 
 MCtrlF1
 l:
@@ -831,6 +949,8 @@ l:
 "Ľavý"
 "Sinist"
 "Ліва"
+"Левая"
+"Kairė"
 
 MCtrlF2
 "Правая"
@@ -843,6 +963,8 @@ MCtrlF2
 "Pravý"
 "Destra"
 "Права"
+"Правая"
+"Dešinė"
 
 MCtrlF3
 "Имя"
@@ -855,6 +977,8 @@ MCtrlF3
 "Názov"
 "Nome"
 "Ім'я"
+"Імя"
+"Vardą"
 
 MCtrlF4
 "Расшир"
@@ -867,6 +991,8 @@ MCtrlF4
 "Prípon"
 "Estens"
 "Тип"
+"Пашырэнне"
+"Plėtin"
 
 MCtrlF5
 "Запись"
@@ -874,11 +1000,13 @@ MCtrlF5
 "Změna"
 "Schr."
 upd:"Write"
-upd:"Write"
+"Zapis"
 "Fecha"
 "Zmena"
 "DataMo"
 "Запис"
+"Запіс"
+"Modif"
 
 MCtrlF6
 "Размер"
@@ -891,6 +1019,8 @@ MCtrlF6
 "Veľkos"
 "Lunghe"
 "Розмір"
+"Памер"
+"Dydį"
 
 MCtrlF7
 "Несорт"
@@ -903,6 +1033,8 @@ MCtrlF7
 "Netrie"
 "Disord"
 "Несорт"
+"Несартавана"
+"Nerūš"
 
 MCtrlF8
 "Создан"
@@ -915,6 +1047,8 @@ MCtrlF8
 "Vytvor"
 "Creazi"
 "Створ."
+"Створана"
+"Sukūr"
 
 MCtrlF9
 "Доступ"
@@ -927,6 +1061,8 @@ MCtrlF9
 "Prístu"
 "Access"
 "Доступ"
+"Доступ"
+"Naudoj"
 
 MCtrlF10
 "Описан"
@@ -939,6 +1075,8 @@ MCtrlF10
 "Popis"
 "Descri"
 "Опис"
+"Апісанне"
+"Aprašy"
 
 MCtrlF11
 "Владел"
@@ -951,6 +1089,8 @@ MCtrlF11
 "Vlastn"
 "Utente"
 "Власн."
+"Уладальнік"
+"Savin"
 
 MCtrlF12
 "Сорт"
@@ -963,10 +1103,14 @@ MCtrlF12
 "Tried"
 "Ordina"
 "Сорт"
+"Сартаваць"
+"Rušiuot"
 
 MAltShiftF1
 l:
 l:// Main AltShift
+""
+""
 ""
 ""
 ""
@@ -989,8 +1133,12 @@ MAltShiftF2
 ""
 ""
 ""
+""
+""
 
 MAltShiftF3
+""
+""
 ""
 ""
 ""
@@ -1013,8 +1161,12 @@ MAltShiftF4
 ""
 ""
 ""
+""
+""
 
 MAltShiftF5
+""
+""
 ""
 ""
 ""
@@ -1037,8 +1189,12 @@ MAltShiftF6
 ""
 ""
 ""
+""
+""
 
 MAltShiftF7
+""
+""
 ""
 ""
 ""
@@ -1061,6 +1217,8 @@ MAltShiftF8
 ""
 ""
 ""
+""
+""
 
 MAltShiftF9
 "КонфПл"
@@ -1068,13 +1226,17 @@ MAltShiftF9
 "KonfPl"
 "KonfPn"
 "PluKnf"
-"KonfPl"
+"KonfWt"
 "CfgCmp"
 "KonfPl"
 "Plugin"
 "КонфПл"
+"Канф. дадатак"
+upd:"ConfPl"
 
 MAltShiftF10
+""
+""
 ""
 ""
 ""
@@ -1097,8 +1259,12 @@ MAltShiftF11
 ""
 ""
 ""
+""
+""
 
 MAltShiftF12
+""
+""
 ""
 ""
 ""
@@ -1123,8 +1289,12 @@ l://Main CtrlShift
 ""
 ""
 ""
+""
+""
 
 MCtrlShiftF2
+""
+""
 ""
 ""
 ""
@@ -1147,6 +1317,8 @@ MCtrlShiftF3
 "Zobraziť"
 "Vista"
 "Перегл"
+"Глядзець"
+"Žiūrėt"
 
 MCtrlShiftF4
 "Редакт"
@@ -1159,8 +1331,12 @@ MCtrlShiftF4
 "Upraviť"
 "Edita"
 "Редаг."
+"Меняць"
+"Redag"
 
 MCtrlShiftF5
+""
+""
 ""
 ""
 ""
@@ -1183,8 +1359,12 @@ MCtrlShiftF6
 ""
 ""
 ""
+""
+""
 
 MCtrlShiftF7
+""
+""
 ""
 ""
 ""
@@ -1207,8 +1387,12 @@ MCtrlShiftF8
 ""
 ""
 ""
+""
+""
 
 MCtrlShiftF9
+""
+""
 ""
 ""
 ""
@@ -1231,6 +1415,8 @@ MCtrlShiftF10
 ""
 ""
 ""
+""
+""
 
 MCtrlShiftF11
 ""
@@ -1243,8 +1429,12 @@ MCtrlShiftF11
 ""
 ""
 ""
+""
+""
 
 MCtrlShiftF12
+""
+""
 ""
 ""
 ""
@@ -1269,8 +1459,12 @@ l:// Main CtrlAlt
 ""
 ""
 ""
+""
+""
 
 MCtrlAltF2
+""
+""
 ""
 ""
 ""
@@ -1293,8 +1487,12 @@ MCtrlAltF3
 ""
 ""
 ""
+""
+""
 
 MCtrlAltF4
+""
+""
 ""
 ""
 ""
@@ -1317,8 +1515,12 @@ MCtrlAltF5
 ""
 ""
 ""
+""
+""
 
 MCtrlAltF6
+""
+""
 ""
 ""
 ""
@@ -1341,8 +1543,12 @@ MCtrlAltF7
 ""
 ""
 ""
+""
+""
 
 MCtrlAltF8
+""
+""
 ""
 ""
 ""
@@ -1365,8 +1571,12 @@ MCtrlAltF9
 ""
 ""
 ""
+""
+""
 
 MCtrlAltF10
+""
+""
 ""
 ""
 ""
@@ -1389,8 +1599,12 @@ MCtrlAltF11
 ""
 ""
 ""
+""
+""
 
 MCtrlAltF12
+""
+""
 ""
 ""
 ""
@@ -1415,8 +1629,12 @@ l:// Main CtrlAltShift
 ""
 ""
 ""
+""
+""
 
 MCtrlAltShiftF2
+""
+""
 ""
 ""
 ""
@@ -1439,8 +1657,12 @@ MCtrlAltShiftF3
 ""
 ""
 ""
+""
+""
 
 MCtrlAltShiftF4
+""
+""
 ""
 ""
 ""
@@ -1463,8 +1685,12 @@ MCtrlAltShiftF5
 ""
 ""
 ""
+""
+""
 
 MCtrlAltShiftF6
+""
+""
 ""
 ""
 ""
@@ -1487,8 +1713,12 @@ MCtrlAltShiftF7
 ""
 ""
 ""
+""
+""
 
 MCtrlAltShiftF8
+""
+""
 ""
 ""
 ""
@@ -1511,8 +1741,12 @@ MCtrlAltShiftF9
 ""
 ""
 ""
+""
+""
 
 MCtrlAltShiftF10
+""
+""
 ""
 ""
 ""
@@ -1535,9 +1769,13 @@ MCtrlAltShiftF11
 ""
 ""
 ""
+""
+""
 
 MCtrlAltShiftF12
-l://End of functional keys
+l:// Panels: end of functional keys
+""
+""
 ""
 ""
 ""
@@ -1561,6 +1799,36 @@ l:
 "História"
 "Cronologia"
 "Історія команд"
+"Гісторыя"
+"Istorija"
+
+MHistoryInfoTitle
+"Информация"
+"Information"
+"Informace"
+"Informationen"
+"Információk"
+"Informacja"
+"Información"
+"Informácie"
+"Informazioni"
+"Інформація"
+"Даведка"
+upd:"Information"
+
+MHistoryInfoFolder
+"Папка:"
+"Folder:"
+"Adresář:"
+"Verzeichnis:"
+"Mappa:"
+"Folder:"
+"Directorio:"
+"Priečinok:"
+"Cartella:"
+"Папка:"
+"Каталог:"
+upd:"Folder:"
 
 MFolderHistoryTitle
 "История папок"
@@ -1568,11 +1836,13 @@ MFolderHistoryTitle
 "Historie adresářů"
 "Zuletzt besuchte Ordner"
 "Mappa előzmények"
-"Historia katalogów"
+"Historia folderów"
 "Historial de directorios"
 "História priečinkov"
-"Cartella Visitate..."
+"Cartella Visitate"
 "Історія папок"
+"Гісторыя каталогаў"
+"Katalogų istorija"
 
 MViewHistoryTitle
 "История просмотра и редактирования"
@@ -1580,15 +1850,17 @@ MViewHistoryTitle
 "Historie prohlížení a úprav souborů"
 "Zuletzt betrachtete Dateien"
 upd:"Fájl előzmények"
-upd:"Historia podglądu plików"
+"Historia podglądu i edycji plików"
 "Historial de visor y editor de archivos"
 "História zobrazení a úprav súborov"
-"Files Già Visti..."
+"Files Già Visti"
 "Історія перегляду і редагування"
+"Гісторыя праглядаў і зменаў"
+"Failų peržiūros istorija"
 
 MViewHistoryIsCreate
 "Создать файл?"
-"Create file?"
+"Create the file?"
 "Vytvořit soubor?"
 "Datei erstellen?"
 "Fájl létrehozása?"
@@ -1597,6 +1869,8 @@ MViewHistoryIsCreate
 "Vytvoriť súbor?"
 "Crea File?"
 "Створити файл?"
+"Стварыць файл?"
+upd:"Create the file?"
 
 MHistoryView
 "Просмотр"
@@ -1609,6 +1883,8 @@ MHistoryView
 "Zobrazenie"
 "Vedi"
 "Перегляд"
+"Глядзець"
+"Žiūrėti"
 
 MHistoryEdit
 "Редактор"
@@ -1621,6 +1897,8 @@ MHistoryEdit
 "Úpravy"
 "Edita"
 "Редактор"
+"Меняць"
+"Redaguoti"
 
 MHistoryExt
 "Внешний"
@@ -1633,6 +1911,8 @@ MHistoryExt
 "Prípona"
 "Ext."
 "Зовнішній"
+"Знешні"
+upd:"Ext."
 
 MHistoryClear
 l:
@@ -1646,6 +1926,8 @@ l:
 "Všetky záznamy v histórii budú zmazané. Pokračovať?"
 "La Cronologia Sarà Cancellata! Continuare?"
 "Історію буде повністю очищено. Продовжити?"
+"Гісторыя будзе ачышчана. Працягнуць?"
+upd:"All records in the history will be deleted. Continue?"
 
 MClear
 "&Очистить"
@@ -1658,6 +1940,8 @@ MClear
 "&Vymazať históriu"
 "&Azzera Cronologia"
 "&Очистити"
+"&Ачысціць гісторыю"
+upd:"&Clear history"
 
 MConfigSystemTitle
 l:
@@ -1671,6 +1955,8 @@ l:
 "Systémové nastavenia"
 "Configurazione"
 "Системні параметри"
+"Сістэмныя параметры"
+"Sisteminiai nuostatai"
 
 MConfigRecycleBin
 "Удалять в &Корзину"
@@ -1683,6 +1969,8 @@ MConfigRecycleBin
 "&Mazať do Koša"
 "Elimina Attributo &Sola Lettura Da CD/DVD"
 "Видаляти в &Кошик"
+"Выдаліць у &Сметнік"
+"&Trinti į Recycle Bin"
 
 MConfigSystemCopy
 "Использовать систе&мную функцию копирования"
@@ -1695,6 +1983,8 @@ MConfigSystemCopy
 "Kopírovať pomocou sys&témovej rutiny"
 "Usa Le &Procedure Di Copia Del Sistema"
 "Використовувати систе&мну функцію копіювання"
+"Ужываць сістэ&мны метад капіявання"
+"Naudoti &sistemos kopijavimo rutiną"
 
 MConfigCopySharing
 "Копировать открытые для &записи файлы"
@@ -1707,6 +1997,8 @@ MConfigCopySharing
 "Kopírovať súbory otvorené pre &zápis"
 "C&opia Files Aperti In Scrittura"
 "Копіювати відкриті для &запису файли"
+"Капіяваць адчыненыя да &запісу файлы"
+"Kopijuoti failus at&vertus įrašymui"
 
 MConfigScanJunction
 "Ск&анировать символические ссылки"
@@ -1719,18 +2011,22 @@ MConfigScanJunction
 "Prehľadávať s&ymbolické odkazy"
 "Controlla Lin&ks Simbolici"
 "Ск&анувати символічні посилання"
+"Пр&аглядаць сімвалічныя спасылкі"
+upd:"Scan s&ymbolic links"
 
 MConfigSmartFolderMonitor
 "Обновление панелей только если Far активен"
-"Update panels only when Far is active"
-upd:"Update panels only when Far is active"
+"&Update panels only when Far is active"
+"Aktualizovat panely pouze pokud je Far aktivní"
 "Aktualisierung der Panels ist möglich, nur wenn Far aktiv ist"
 upd:"Update panels only when Far is active"
-upd:"Update panels only when Far is active"
+"&Aktualizuj panele tylko gdy Far jest aktywny"
 "Actualizar paneles solo cuando Far está activo"
-"Aktualizovať panely, len ak je FAR aktívny"
-"Aggiorna Pannelli Solo Se &FAR Attivo"
+"Aktualizovať panely, len ak je Far aktívny"
+"Aggiorna Pannelli Solo Se &Far Attivo"
 "Оновлення панелей тільки якщо Far активний"
+"Абнавіць панэлі толькі калі Far актыўны"
+upd:"&Update panels only when Far is active"
 
 MConfigSaveHistory
 "Сохранять &историю команд"
@@ -1743,6 +2039,8 @@ MConfigSaveHistory
 "Ukladať históriu &príkazov"
 "Salva La C&ronologia Dei Comandi"
 "Зберігати &історію команд"
+"Захоўваць г&історыю камандаў"
+"Išsaugoti komandų &istoriją"
 
 MConfigSaveFoldersHistory
 "Сохра&нять историю папок"
@@ -1750,11 +2048,13 @@ MConfigSaveFoldersHistory
 "Ukládat historii &adresářů"
 "&Ordnerhistorie speichern"
 "M&appa előzmények mentése"
-"Zapisz historię &katalogów"
+"Zapisz historię &folderów"
 "Guardar historial de directorios"
 "Ukladať históriu prie&činkov"
 "Salva Elenco &Cartella Visitate"
 "Збері&гати історію папок"
+"Захоўваць гісторыю ката&логаў"
+"Išsaugoti &katalogų istoriją"
 
 MConfigSaveViewHistory
 "Сохранять историю п&росмотра и редактора"
@@ -1767,10 +2067,12 @@ MConfigSaveViewHistory
 "Ukladať históriu &zobrazení a úprav"
 "Salva Elenco Files Già &Visti/Editati"
 "Зберігати історію пе&регляду і редагування"
+"Захоўваць гісторыю п&раглядаў і зменаў"
+"Išsaugoti &žiūrėjimo ir redagavimo istoriją"
 
 MConfigRegisteredTypes
 "Использовать стандартные &типы файлов"
-"Use Windows &registered types"
+"Use Windows re&gistered types"
 "Používat typy souborů regi&strované ve Windows"
 "&Registrierte Windows-Dateitypen verwenden"
 "&Windows reg. fájltípusok használata"
@@ -1779,126 +2081,148 @@ MConfigRegisteredTypes
 "Použiť typy súborov regi&strované vo Windows"
 "Usa &Associazioni Di Sistema Per I Files"
 "Використовувати стандартні &типи файлів"
+"Ужываць стандартныя &тыпы файлаў"
+"Naudoti Windows &registruotus tipus"
 
 MConfigUpdateEnvironment
 "Автообновл&ение переменных окружения"
-"Automatic update of environment variables"
+"Automatic update of &environment variables"
 "Automaticky aktualizovat proměnné prostředí"
 "Automatische Updates für Umgebungsvariablen"
 upd:"Automatic update of environment variables"
-upd:"Automatic update of environment variables"
+"Automa&tyczna aktualizacja zmiennych systemowych"
 "Actualización automática de variables de entorno"
 "Automaticky aktualizovať premenné prostredia"
 "Aggiorna Varia&bili Ambiente Automaticamente"
 "Автооновл&ення змінних оточення"
+"Самаабнаўл&енне пераменных асяроддзя"
+upd:"Automatic update of &environment variables"
 
 MConfigElevation
 "Запрос прав администратора:"
 "Request administrator rights:"
 "Vyžádat práva administrátora:"
 "Anforderung von Administratorrechte:"
-upd:"request administrator rights:"
-upd:"request administrator rights:"
+upd:"Request administrator rights:"
+"Wymagane uprawnienia administratora:"
 "Requerir derechos de administrador:"
 "Vyžiadať práva správcu:"
 "Richiesta Permessi Amministrativi:"
 "Запит прав адміністратора:"
+"Запыт патрэб адміністратара:"
+upd:"Request administrator rights:"
 
 MConfigElevationModify
-"д&ля изменения"
-"for modification"
-"na úpravy"
-"für Bearbeitung"
-upd:"for modification"
-upd:"for modification"
-"para modificación"
-"na úpravy"
+"Д&ля изменения"
+"For &modification"
+"Na úpravy"
+"Für Bearbeitung"
+upd:"For modification"
+"Do modyfikacji"
+"Para modificación"
+"Na úpravy"
 "Per La Modifica"
-"д&ля змінення"
+"Д&ля змінення"
+"Д&ля зменаў"
+upd:"For &modification"
 
 MConfigElevationRead
-"для &чтения"
-"for read"
-"na čtení"
-"für Lesen"
-upd:"for read"
-upd:"for read"
-"para lectura"
-"na čítanie"
+"Для &чтения"
+"For &reading"
+"Na čtení"
+"Für Lesen"
+upd:"For reading"
+"Do odczytu"
+"Para lectura"
+"Na čítanie"
 "Per La Lettura"
-"для &читання"
+"Для &читання"
+"Для &чытання"
+upd:"For &reading"
 
 MConfigElevationUsePrivileges
-"исп&ользовать дополнительные привилегии"
-"use additional privileges"
-"použít další privilegia"
-"für Nutzung zusätzlicher Vorrechten"
-upd:"use additional privileges"
-upd:"use additional privileges"
-"usar privilegios adicionales"
-"použiť ďalšie privilégiá"
+"Исп&ользовать дополнительные привилегии"
+"Use additional &privileges"
+"Použít další privilegia"
+"Für Nutzung zusätzlicher Vorrechten"
+upd:"Use additional privileges"
+"Użyj dodatkowych uprawnień"
+"Usar privilegios adicionales"
+"Použiť ďalšie privilégiá"
 "Usa Permessi Aggiuntivi"
 "Вик&ористовувати додаткові привілеї"
+"Ужываць дадатк&овыя прывілеі"
+upd:"Use additional &privileges"
 
 MConfigSortingCollation
 "Сортировочное сравнение:"
-"Sorting collation:"
+"Sorti&ng collation:"
+"Řazení:"
 upd:"Sorting collation:"
 upd:"Sorting collation:"
-upd:"Sorting collation:"
-upd:"Sorting collation:"
+"Sposoby sortowania:"
 "Ordenamiento de colación:"
 "Spôsob triedenia:"
-upd:"Sorting collation:"
+"Ordinamento Collation:"
 "Сортувальне порівняння:"
+"Параўненне сартыроўкі:"
+upd:"Sorti&ng collation:"
 
 MConfigSortingOrdinal
 "порядковое"
 "ordinal"
+"ordinal"
 upd:"ordinal"
 upd:"ordinal"
-upd:"ordinal"
-upd:"ordinal"
+"porządkowo"
 "ordinal"
 "poradový"
-upd:"ordinal"
+"Ordinale"
 "порядкове"
+"парадкавы"
+upd:"ordinal"
 
 MConfigSortingInvariant
 "инвариантное"
 "invariant"
+"invariant"
 upd:"invariant"
 upd:"invariant"
-upd:"invariant"
-upd:"invariant"
+"bez zmian"
 "invariante"
 "invariantný"
-upd:"invariant"
+"Invariante"
 "інваріантне"
+"інварыянтны"
+upd:"invariant"
 
 MConfigSortingLinguistic
 "лингвистическое"
 "linguistic"
+"lingvistický"
 upd:"linguistic"
 upd:"linguistic"
-upd:"linguistic"
-upd:"linguistic"
+"językowo"
 "lingüístico"
 "slovný"
-upd:"linguistic"
+"Linguistico"
 "лінгвістичне"
+"лінгвістычны"
+upd:"linguistic"
 
 MConfigSortingDigitsAsNumbers
 "Трактовать цифры как числа"
-"Treat digits as numbers"
+"Treat digits &as numbers"
+"Pracovat s číslicemi jako s čísly"
 upd:"Treat digits as numbers"
 upd:"Treat digits as numbers"
-upd:"Treat digits as numbers"
-upd:"Treat digits as numbers"
+"Traktuj &cyfry jak liczby"
 "Tratar dígitos como números"
 "Považuj cifry za čísla"
-upd:"Treat digits as numbers"
+"Tratta Cifre Come Numeri"
 "Трактувати цифри як числа"
+"Ужываць лічбы як лікі"
+upd:"Treat digits &as numbers"
 
 MConfigSortingCase
 "&Учитывать регистр"
@@ -1906,23 +2230,27 @@ MConfigSortingCase
 "&Rozlišovat velikost písmen"
 "G&roß-/Kleinschrb."
 "&Nagy/kisbetű érz."
-"&Uwzględnij wielkość liter"
-"Sensible min./ma&y."
+"Uwzględnij wielkość &liter"
+"Sensible minúsculas/ma&yúsculas"
 "&malé a VEĽKÉ"
 "&Minuscole/MAIUSCOLE"
 "&Враховувати регістр"
+"&Улічваць рэгістр"
+upd:"&Case sensitive"
 
 MConfigAutoSave
 "Автозапись кон&фигурации"
 "Auto &save setup"
 "Automaticky ukládat &nastavení"
-"Setup automatisch &"speichern"
+"Setup automatisch &speichern"
 "B&eállítások automatikus mentése"
 "Automatycznie &zapisuj ustawienia"
 "Auto&guardar configuración"
 "Automaticky ukladať &nastavenia"
 "Salvataggio A&utomatico Impostazioni"
 "Автозапис кон&фігурації"
+"А&ўтазапіс наладаў"
+"&Auto išsaugoti nuostatus"
 
 MConfigTreeTitle
 l:
@@ -1931,11 +2259,13 @@ l:
 "Nastavení stromu"
 "Einstellungen des Ordnerbaumes"
 upd:"Tree settings"
-upd:"Tree settings"
+"Ustawienia drzewa"
 "Arbol de directorios"
 "Nastavenia stromu"
-"Impostazioni  Albero"
+"Impostazioni ► Albero"
 "Налаштування дерева папок"
+"Налады дрэва каталогаў"
+upd:"Tree settings"
 
 MConfigTreeAutoChange
 "&Автосмена папки"
@@ -1943,11 +2273,13 @@ MConfigTreeAutoChange
 "&Automaticky měnit adresář"
 "Ordner &automatisch wechseln (Baumansicht)"
 "&Automatikus mappaváltás"
-"&Automatycznie zmieniaj katalog"
+"&Automatycznie zmieniaj folder"
 "&Autocambiar directorio"
 "&Automaticky meniť priečinok"
 "&Cambia Automaticamente"
 "&Автозміна папки"
+"&Самастойная змена каталога"
+"&Auto keisti katalogą"
 
 MConfigTreeLabelMinFolder
 "&Минимальное количество папок:"
@@ -1955,119 +2287,139 @@ MConfigTreeLabelMinFolder
 "&Minimální počet adresářů:"
 "&Minimale Anzahl der Ordners:"
 upd:"&Minimum number of folders:"
-upd:"&Minimum number of folders:"
+"&Minimalna liczba folderów:"
 "&Mínimo número de carpetas:"
 "&Minimálny počet priečinkov:"
 "&Numero Minimo Di Cartelle:"
 "&Мінімальна кількість папок:"
+"Най&меньшая колькасць каталогаў:"
+upd:"&Minimum number of folders:"
 
 MConfigTreeLabel1
 "Хранить файл структуры папок для:"
 "Store a file with folder structure for:"
-upd:"Store a file with folder structure for:"
+"Uložit soubor se strukturou složek jako:"
 "Datei für die Ordnerstruktur speichern:"
 upd:"Store a file with folder structure for:"
-upd:"Store a file with folder structure for:"
+"Zapisz plik ze strukturą folderów dla:"
 "Almacenar un archivo con estructura de carpeta para:"
 "Ulož súbor aj s adresárovou štruktúrou pre:"
 "Mantieni Struttura Cartelle Per:"
 "Зберігати файл структури папок для:"
+"Захоўваць файл структуры каталогаў для:"
+upd:"Store a file with folder structure for:"
 
 MConfigTreeLabelLocalDisk
 "локальных дисков"
 "local drives"
-upd:"local drives"
+"místní disky"
 "für lokale Festplatten"
 upd:"local drives"
-upd:"local drives"
+"dysków lokalnych"
 "unidades locales"
 "lokálne disky"
 "Dischi Locali"
 "локальних дисків"
+"мясцовыя дыскі"
+upd:"local drives"
 
 MConfigTreeLabelNetDisk
 "сетевых дисков"
 "network drives"
-upd:"network drives"
+"síťové disky"
 "für Netzlaufwerke"
 upd:"network drives"
-upd:"network drives"
+"dysków sieciowych"
 "unidades de red"
 "sieťové disky"
 "Dichi Di Rete"
 "мережевих дисків"
+"сеткавыя дыскі"
+upd:"network drives"
 
 MConfigTreeLabelNetPath
 "сетевых путей"
 "network paths"
-upd:"network paths"
+"síťové cesty"
 "für Netzwerkpfade"
 upd:"network paths"
-upd:"network paths"
+"ścieżek sieciowych"
 "rutas de red"
 "sieťové cesty"
 "Percordi Di Rete"
 "мережевих шляхів"
+"сеткавыя шляхі"
+upd:"network paths"
 
 MConfigTreeLabelRemovableDisk
 "сменных дисков"
 "removable drives"
-upd:"removable drives"
+"vyměnitelné disky"
 "für Wechselplatten"
 upd:"removable drives"
-upd:"removable drives"
+"dysków wyjmowalnych"
 "unidades removibles"
 "odpojiteľné disky"
 "Dischi Rimovibili"
 "змінних дисків"
+"зменныя дыскі"
+upd:"removable drives"
 
 MConfigTreeLabelCDDisk
 "оптических дисков"
 "optical drives"
-upd:"optical drives"
+"optické disky"
 "für CD-Platten"
 upd:"optical drives"
-upd:"optical drives"
+"napędów optycznych"
 "unidades ópticas"
 "optické disky"
-upd:"optical drives"
+"Dischi Ottici"
 "оптичних дисків"
+"аптычныя дыскі"
+upd:"optical drives"
 
 MConfigTreeLabelExceptPath
 "Не создавать файл для следующих дисков и путей:"
 "Don't create the file for following drives and paths:"
-upd:"Don't create the file for following drives and paths:"
+"Nevytvářet soubor pro následující disky a cesty:"
 "Kein Datei für die folgenden Platten und Pfade erstellen:"
 upd:"Don't create the file for following drives and paths:"
-upd:"Don't create the file for following drives and paths:"
+"Nie twórz plików dla poniższych dysków i ścieżek:"
 "No crear el archivo para las unidades y rutas siguientes:"
 "Nevytvárať súbor pre nasledovné disky a cesty:"
 "Non Creare File Per I Seguenti Oggetti:"
 "Не створювати файл для таких дисків і шляхів:"
+"Не ствараць файл для наступных дыскаў і шляхоў:"
+upd:"Don't create the file for following drives and paths:"
 
 MConfigTreeLabelSaveLocalPath
 "Путь для локальных, сменных и оптических дисков:"
 "Path for local, removale and optical drives:"
-upd:"Path for local, removale and optical drives:"
+"Cesta pro místní, vyměnitelné a optické disky:"
 "Pfad für lokale Festplatten, Wechselplatten und CD-ROM:"
 upd:"Path for local, removale and optical drives:"
-upd:"Path for local, removale and optical drives:"
+"Ścieżka dla dysków lokalnych, wyjmowalnych i optycznych:"
 "Ruta para unidades locales, removibles y ópticas:"
 "Cesta pre lokálne, odpojiteľné a optické disky:"
-upd:"Path for local, removale and optical drives:"
+"Percorso Locale Per Supporti Ottici/Rimovibili:"
 "Шлях для локальних, змінних і оптичних дисків:"
+"Шлях для мясцовых, зменных і аптычных дыскаў:"
+upd:"Path for local, removale and optical drives:"
 
 MConfigTreeLabelSaveNetPath
 "Путь для сетевых дисков и путей:"
 "Path for network drives and paths:"
-upd:"Path for network drives and paths:"
+"Cesta pro síťové disky a cesty:"
 "Pfad für Netzlaufwerke und Netzwerkpfade:"
 upd:"Path for network drives and paths:"
-upd:"Path for network drives and paths:"
+"Ścieżka dla dysków i ścieżek sieciowych:"
 "Ruta para unidades y rutas de red:"
 "Cesta pre sieťové disky a cesty:"
 "Modo Per Unità Di Rete E Percorsi:"
 "Шлях для мережних дисків і шляхів:"
+"Шлях для сеткавых дыскаў і шляхоў:"
+upd:"Path for network drives and paths:"
 
 MConfigPanelTitle
 l:
@@ -2079,8 +2431,10 @@ l:
 "Ustawienia panelu"
 "Configuración de paneles"
 "Nastavenie panelov"
-"Impostazione  Dei Pannelli"
+"Impostazione ► Dei Pannelli"
 "Налаштування панелі"
+"Налады стужкі"
+"Langų parametrai"
 
 MConfigHidden
 "Показывать скр&ытые и системные файлы"
@@ -2093,6 +2447,8 @@ MConfigHidden
 "Zobraziť &skryté a systémové súbory"
 "Mostra Files &Nascosti"
 "Показувати пр&иховані та системні файли"
+"Адлюстраваць зхаваныя і сістэмныя файл&ы"
+"Rodyti &hidden ir system failus"
 
 MConfigHighlight
 "&Раскраска файлов"
@@ -2105,6 +2461,8 @@ MConfigHighlight
 "Zv&ýrazňovať súbory"
 "&Evidenzia Files"
 "&Розмальовка файлів"
+"&Размалёўка файлаў"
+"Par&yškinti failus"
 
 MConfigSelectFolders
 "Пометка &папок"
@@ -2112,23 +2470,27 @@ MConfigSelectFolders
 "Vybírat a&dresáře"
 "&Ordner auswählen"
 "A ma&ppák is kijelölhetők"
-"Zaznaczaj katalo&gi"
+"Zaznaczaj &foldery"
 "Seleccionar &directorios"
 "&Zvýrazňovať priečinky"
 "Sele&ziona Cartelle"
 "Помітка папок"
+"Адзнака ката&логаў"
+"Žymėti &katalogus"
 
 MConfigRightClickSelect
 "Правый клик помечает файлы"
-"Right click selects files"
-upd:"Right click selects files"
+"Right clic&k selects files"
+"Klik pravým tlačítkem vybere soubory"
 "Durch den Klick mit der rechten Maustaste wird die Datei ausgewählt"
 upd:"Right click selects files"
-upd:"Right click selects files"
+"Pr&awy klik zaznacza pliki"
 "Clic derecho selecciona archivos"
 "Voliť súbory pravým kliknutím"
 "Tasto Destro &Seleziona Files"
 "Правий клац помічає файли"
+"Правы пстрык адзначае файлы"
+upd:"Right clic&k selects files"
 
 MConfigSortFolderExt
 "Сортировать имена папок по рас&ширению"
@@ -2136,13 +2498,15 @@ MConfigSortFolderExt
 "Řadit adresáře podle přípony"
 "Ordner nach Er&weiterung sortieren"
 "Mappák is rendezhetők &kiterjesztés szerint"
-"Sortuj nazwy katalogów wg r&ozszerzeń"
+"Sortuj nazwy folderów wg r&ozszerzeń"
 "Ordenar directorios por extensión"
 "Triediť priečinky podľa prípony"
 "Ordina Cartelle Per &Estensione"
 "Сортувати імена папок за ти&пом"
+"Парадкаваць імёны каталогаў па па&шырэнню"
+upd:"Sort folder names by e&xtension"
 
-MConfigReverseSort
+MConfigAllowReverseSort
 "Разрешить &обратную сортировку"
 "Allow re&verse sort modes"
 "Po&volit změnu směru řazení"
@@ -2153,6 +2517,8 @@ MConfigReverseSort
 "Po&voliť opačné triedenie"
 "Permetti &Ordinamento Inverso"
 "Дозволити зв&оротнє сортування"
+"Дазволіць звар&отную сартыроўку"
+"Leisti at&virkštinį rūšiavimo būdą"
 
 MConfigAutoUpdateLimit
 "Отключать автооб&новление панелей,"
@@ -2165,10 +2531,12 @@ MConfigAutoUpdateLimit
 "Zrušiť a&utomatickú aktualizáciu panelov"
 "Disabilita Aggiornamento Automatico"
 "Не автоо&новлювати панелі,"
+"Забараніць самааб&наўленне стужак"
+upd:"&Disable automatic panel update"
 
 MConfigAutoUpdateLimit2
 "если объектов больше"
-"if object count exceeds"
+"if ob&ject count exceeds"
 "pokud počet objektů překročí"
 "wenn mehr Objekte als"
 "ha több elem van, mint:"
@@ -2177,6 +2545,8 @@ MConfigAutoUpdateLimit2
 "ak počet objektov prekročí"
 "Se Il Numero Di O&ggetti Eccede"
 "якщо об'єктів більше ніж"
+"калі аб'ектаў болей"
+upd:"if ob&ject count exceeds"
 
 MConfigAutoUpdateRemoteDrive
 "Автообновление с&етевых дисков"
@@ -2184,11 +2554,13 @@ MConfigAutoUpdateRemoteDrive
 "Automaticky obnovovat &síťové jednotky"
 "Netzw&erklauferke autom. aktualisieren"
 "Hálózati meghajtók autom. &frissítése"
-"Auto&odświeżanie dysków sieciowych"
+"Autoodświeżanie dysków &sieciowych"
 "Actualizar unidad&es de Red"
 "Automaticky obnovovať si&eťové disky"
 "Auto-Aggiorna &Unità Di Rete"
 "Автооновлення м&ережевих дисків"
+"Самаабнаўленне с&еткавых дыскаў"
+upd:"Network drives autor&efresh"
 
 MConfigShowColumns
 "Показывать &заголовки колонок"
@@ -2201,6 +2573,8 @@ MConfigShowColumns
 "Zobrazovať &názvy stĺpcov"
 "Mostra &Titolo Colonna"
 "Показувати &заголовки колонок"
+"Адлюстроўваць на&звы слупкоў"
+"Rodyti s&tulpelių antraštes"
 
 MConfigShowStatus
 "Показывать &строку статуса"
@@ -2213,18 +2587,22 @@ MConfigShowStatus
 "Zobrazovať sta&vový riadok"
 "Mostra &Barra Inferiore"
 "Показувати рядок статусу"
+"Адлюстроўваць радок &стану"
+"Rodyti &statuso juostą"
 
 MConfigDetailedJunction
 "Определять точки монтирования &диска"
 "Detect volume mount &points"
-upd:"Detect volume mount &points"
+"Detekovat připojovací &body"
 "Einhängepunkte des Volumes bestimmen"
 upd:"Detect volume mount &points"
-upd:"Detect volume mount &points"
+"Wykrywaj &punkty montowania wolumenów"
 "Determinar &punto Montaje Volumen"
 "Lokalizuj &body pripojenia diskových zväzkov."
 "Determnina Punto Di Montaggio &Volume"
 "Визначати точки монтування &диска"
+"Вызначыць кропку мацавання &дыску"
+upd:"Detect volume mount &points"
 
 MConfigShowTotal
 "Показывать су&ммарную информацию"
@@ -2237,6 +2615,8 @@ MConfigShowTotal
 "Zobrazovať &informácie o súboroch"
 "Mostra Informazioni Spazio Totale &Files"
 "Показувати су&марну інформацію"
+"Адлюстроўваць вы&ніковую даведку"
+"Rodyti failų dydžio su&minę informaciją"
 
 MConfigShowFree
 "Показывать с&вободное место"
@@ -2244,15 +2624,17 @@ MConfigShowFree
 "Zobrazovat vo&lné místo"
 "&Freien Speicher anzeigen"
 "Sza&bad lemezterület mutatva"
-"Wyświetl ilość &wolnego miejsca"
+"Wyświetl &ilość wolnego miejsca"
 "Mostrar espacio lib&re"
 "Zobrazovať vo&ľné miesto"
 "Mostra Spazio &Libero"
 "Показувати &вільне місце"
+"Адлюстроўваць &вольнае месца"
+"Rodyti &laisvos vietos kiekį"
 
 MConfigShowScrollbar
 "Показывать по&лосу прокрутки"
-"Show scroll&bar"
+"Show a scroll&bar"
 "Zobrazovat &posuvník"
 "Scroll&balken anzeigen"
 "Gördítősá&v mutatva"
@@ -2261,6 +2643,8 @@ MConfigShowScrollbar
 "Zobrazovať &posuvník"
 "Mostra Barre Di Scorri&mento"
 "Показувати смужку прокручування"
+"Ад&люстроўваць працяжнік"
+"Rodyti šlia&užiklį"
 
 MConfigShowScreensNumber
 "Показывать количество &фоновых экранов"
@@ -2268,11 +2652,13 @@ MConfigShowScreensNumber
 "Zobrazovat počet &obrazovek na pozadí"
 "&Nummer von Hintergrundseiten anzeigen"
 "&Háttérképernyők száma mutatva"
-"Wyświetl ilość &ekranów w tle"
+"Wyświetl &ilość ekranów w tle"
 "Mostrar &número de pantallas de fondo"
 "Zobrazovať počet &okien na pozadí"
 "Mostra Numero Finest&ra"
 "Показувати кількість &фонових екранів"
+"Адлюстроўваць колькасць &фонавых экранаў"
+"Rodyti nematomų ekra&nų skaičių"
 
 MConfigShowSortMode
 "Показывать букву режима сор&тировки"
@@ -2280,47 +2666,27 @@ MConfigShowSortMode
 "Zobrazovat písmeno &módu řazení"
 "Buchstaben der Sortier&modi anzeigen"
 "Rendezési mó&d betűjele mutatva"
-"Wyświetl l&iterę trybu sortowania"
+"Wyświetl li&terę trybu sortowania"
 "Mostrar letra para &modo de orden"
 "Zobrazovať písmeno &módu triedenia"
 "Mostra Lettera Per Ordi&namento"
 "Показувати букву режиму сор&тування"
+"Адлюстроўваць літару стану пара&дкавання"
+"Rodyti rūšiavimo &būdo raidę"
 
 MConfigShowDotsInRoot
 "Показывать \"..\" в корневых каталогах"
-"Show \"..\" in root folders"
+"Show \"&..\" in root folders"
 "Zobrazovat \"..\" v kořenových adresářích"
 "In Wurzelverzeichnis \"..\" zeigen"
 upd:"Show \"..\" in root folders"
-upd:"Show \"..\" in root folders"
+"Pokaż \"&..\" w głównych folderach"
 "Mostrar \"..\" en directorio raíz"
 "Zobrazovať \"..\" v koreňových priečinkoch"
 "Mostra \"..\" Nella Cartella Principale"
 "Показувати \"..\" в кореневих каталогах"
-
-MConfigHighlightColumnSeparator
-"Подсвечивать разделители колонок"
-"Highlight column separators"
-"Zvýrazňovat oddělovače sloupců"
-"Spaltentrennzeichen hinterlegen"
-upd:"Highlight column separators"
-upd:"Highlight column separators"
-"Resaltar separador de columnas"
-"Zvýrazňovať oddeľovače stĺpcov"
-"Evidenzia Separatori Di Colonna"
-"Підсвічувати роздільники колонок"
-
-MConfigDoubleStripeSeparator
-"Удваивать разделители полос"
-"Double stripe separators"
-upd:"Dvojité oddělovače hlavních sloupců"
-upd:"Globale Spaltentrennzeichen verdoppeln"
-upd:"Double stripe separators"
-upd:"Double stripe separators"
-upd:"Separador de columna doble"
-"Zdvojený oddeľovač pruhov"
-upd:"Raddoppia Il Separatore di Banda"
-"Подвоювати роздільники шпальт"
+"Адлюстроўваць \"..\" у каранёвым каталогу"
+upd:"Show \"&..\" in root folders"
 
 MConfigInterfaceTitle
 l:
@@ -2332,32 +2698,24 @@ l:
 "Ustawienia interfejsu"
 "Configuración de interfaz"
 "Nastavenie rozhrania"
-"Impostazioni  Interfaccia"
+"Impostazioni ► Interfaccia"
 "Налаштування інтерфейсу"
+"Налады знешняга выгляду"
+"Sąsajos nuostatai"
 
 MConfigClock
-"&Часы в панелях"
-"&Clock in panels"
-"&Hodiny v panelech"
-"&Uhr in Panels anzeigen"
-"Ór&a a paneleken"
+"&Часы"
+"&Clock"
+"&Hodiny"
+"&Uhr"
+"Ór&a"
 "&Zegar"
-"&Reloj en paneles"
-"&Hodiny v paneloch"
-"&Orologio Nei Pannelli"
-"&Годинник у панелях"
-
-MConfigViewerEditorClock
-"Ч&асы в редакторе и программе просмотра"
-"C&lock in viewer and editor"
-"H&odiny v prohlížeči a editoru"
-"U&hr in Betrachter und Editor anzeigen"
-"Ó&ra a nézőkében és szerkesztőben"
-"Zegar w &podglądzie i edytorze"
-"Re&loj en visor y editor"
-"H&odiny v zobrazovači a editore"
-"Orologio &In Editor/Visualizzatore"
-"Годинник у редакторі і програмі перегляду"
+"&Reloj"
+"&Hodiny"
+"&Orologio"
+"&Годинник"
+"Гадзіннік"
+"&Laikrodis"
 
 MConfigMouse
 "Мы&шь"
@@ -2370,6 +2728,8 @@ MConfigMouse
 "M&yš"
 "Mo&use"
 "Ми&ша"
+"Мы&ш"
+"&Pelė"
 
 MConfigKeyBar
 "Показывать &линейку клавиш"
@@ -2382,6 +2742,8 @@ MConfigKeyBar
 "Zobrazovať tlačidlá &funkčných klávesov"
 "Mostra &Tasti Funzione"
 "Показувати &лінійку клавіш"
+"Адлюстроўваць радок к&лавішаў"
+"Rodyti &funkcinių klavišų juostą"
 
 MConfigMenuBar
 "Всегда показывать &меню"
@@ -2394,6 +2756,8 @@ MConfigMenuBar
 "Zobrazovať horné &menu"
 "Mostra Sempre Il &Menu"
 "Завжди показувати &меню"
+"Заўсёды адлюстроўваць радок &меню"
+"Visada rodyti &meniu juostą"
 
 MConfigSaver
 "Экранная за&ставка"
@@ -2406,10 +2770,12 @@ MConfigSaver
 "Š&etrič obrazovky"
 "Sal&va Schermo"
 "Екранна за&ставка"
+"Ахоўнік &экрану"
+"&Ekrano užsklanda"
 
 MConfigSaverMinutes
 "минут"
-"minutes"
+"mi&nutes"
 "minut"
 "Minuten"
 "perc tétlenség után"
@@ -2418,6 +2784,8 @@ MConfigSaverMinutes
 "minút"
 "Mi&nuti"
 "хв."
+"хвілін"
+"minutės"
 
 MConfigCopyTotal
 "Показывать &общий индикатор копирования"
@@ -2430,6 +2798,8 @@ MConfigCopyTotal
 "Zobraziť indikátor celkového priebehu &kopírovania"
 "Mostra Indicatore Di Progre&ssione Copia"
 "Показувати &загальний індикатор копіювання"
+"Адлюстр&оўваць агульны індыкатар капіявання"
+"Rodyti &bendro progreso indikatorių"
 
 MConfigCopyTimeRule
 "Показывать информацию о времени &копирования"
@@ -2437,11 +2807,13 @@ MConfigCopyTimeRule
 "Zobrazovat informace o čase kopírování"
 "Zeige Rest&zeit beim Kopieren"
 "Má&solási idő mutatva"
-"Pokaż informację o c&zasie kopiowania"
+"Pokaż informację &o czasie kopiowania"
 "Mostrar información de tiempo de copiado"
 "Zobraziť informáciu o dobe kopírovania"
 "Mostra Informazioni Dei Tempi Di Copia"
 "Показувати інформацію про час &копіювання"
+"Адлюстроўваць даведку аб часу &капіявання"
+upd:"Show cop&ying time information"
 
 MConfigDeleteTotal
 "Показывать общий индикатор &удаления"
@@ -2449,11 +2821,13 @@ MConfigDeleteTotal
 "Zobrazit indikátor celkového průběhu ma&zání"
 "Gesamtfor&tschritt beim Löschen anzeigen"
 upd:"Show total delete progress indicator"
-upd:"Show total delete progress indicator"
+"Pok&aż całkowity postęp usuwania"
 "Mostrar indicador de progreso de borrado total"
 "Zobraziť indikátor celkového priebehu ma&zania"
 "Mostra Indicatore Di Cancella&zione"
 "Показувати загальний індикатор видалення"
+"Адлюстроўваць аг&ульны індыкатар выдалення"
+upd:"Show total &delete progress indicator"
 
 MConfigPgUpChangeDisk
 "Использовать Ctrl+PgUp для в&ыбора диска"
@@ -2464,44 +2838,80 @@ MConfigPgUpChangeDisk
 "Użyj Ctrl+Pg&Up do zmiany napędu"
 "Usar Ctrl+Pg&Up para cambiar unidad"
 "Použiť Ctrl+Pg&Up na zmenu disku"
-"Usa [CTRL-Pag&Su] Per Cambiare Unità"
+"Usa [CTRL+Pag&Su] Per Cambiare Unità"
 "Використовувати Ctrl+PgUp для вибору диска"
+"Ужываць Ctrl+PgUp для змены д&ыска"
+upd:"Use Ctrl+Pg&Up to change drive"
+
+MConfigUseVirtualTerminalForRendering
+"Использовать Virtual Terminal для рендеринга"
+"Use &Virtual Terminal for rendering"
+"Použít virtuální terminál pro vykreslování"
+upd:"Use Virtual Terminal for rendering"
+upd:"Use Virtual Terminal for rendering"
+"Użyj &Terminalu Wirtualnego do renderowania"
+"Usar Terminal Virtual para renderizado"
+upd:"Use Virtual Terminal for rendering"
+"Usa Terminale Virtuale Per Il Rendering"
+"Використовувати Virtual Terminal для рендерингу"
+"Ужываць Virtual Terminal для рэндэра"
+upd:"Use &Virtual Terminal for rendering"
+
+MConfigFullWidthAwareRendering
+"Fullwidth-aware rendering"
+upd:"Fullwidth-aware rendering"
+upd:"Fullwidth-aware rendering"
+upd:"Fullwidth-aware rendering"
+upd:"Fullwidth-aware rendering"
+upd:"Fullwidth-aware rendering"
+"R&enderowanie na pełnej szerokości"
+upd:"Fullwidth-aware rendering"
+upd:"Fullwidth-aware rendering"
+upd:"Fullwidth-aware rendering"
+upd:"Fullwidth-aware rendering"
+upd:"Fullwidth-aware rendering"
 
 MConfigClearType
 "Перер&исовка с поддержкой ClearType (может быть медленной)"
-"Cl&earType friendly redraw (can be slow)"
+"Cl&earType-friendly redraw (can be slow)"
 "Použít &ClearType (pomalejší)"
 "Neu mit der ClearType zeichnen (kann langsam sein)"
-upd:"ClearType friendly redraw (can be slow)"
-upd:"ClearType friendly redraw (can be slow)"
+upd:"ClearType-friendly redraw (can be slow)"
+"&Rysowanie zgodne z ClearType (może być wolniejsze)"
 "Limpiar rediseño (puede ser lento)"
 "Použiť &ClearType (pomalšie)"
 "Modalità ClearT&ype (può rallentare)"
 "Перемальовка з підтримкою ClearType (може бути повільною)"
+"Перамалёўка з падтрымкай ClearType (можа быць марудным)"
+upd:"Cl&earType-friendly redraw (can be slow)"
 
 MConfigSetConsoleIcon
-"Выставлять иконку консоли"
-"Set console icon"
-upd:"Set console icon"
-"Konsole anzeigen"
-upd:"Set console icon"
-upd:"Set console icon"
-"Poner ícono para ventana de consola"
-"Nastaviť ikonu konzoly"
-"Imposta Icona Far:"
-"Виставляти іконку консолі"
+"Иконка консоли:"
+"Console &icon:"
+"Ikona okna konzole:"
+"Konsole symbol:"
+upd:"Console icon:"
+"Iko&na konsoli:"
+"Icono de consola:"
+"Ikona konzoly:"
+"Icona di console:"
+"Іконка консолі:"
+"Гузік кансолі:"
+upd:"Console &icon:"
 
 MConfigSetAdminConsoleIcon
 "Альтернативная для администратора"
-"Alternate for Administrator"
-upd:"Alternate for Administrator"
+"Alternate for &Administrator"
+"Alternativní ikona pro správce"
 "Alternatives Konsolezeichen für Administrator"
 upd:"Alternate for Administrator"
-upd:"Alternate for Administrator"
+"Inna dla Administratora"
 "Alternar por Administrador"
 "Alternatívne pre správcu"
 "Diversa Quando Amministratore"
 "Альтернативна для адміністратора"
+"Дадаткова для Адміністратара"
+upd:"Alternate for &Administrator"
 
 MConfigTitleAddons
 "Дополнительная информация для &заголовка окна:"
@@ -2509,11 +2919,13 @@ MConfigTitleAddons
 "Far window title addons:"
 "Zusätzliche Information für die &Titelleiste der Fensters:"
 upd:"Far window title addons:"
-upd:"Far window title addons:"
-"Título de ventana de FAR:"
-"Doplnky názvu okna &FAR:"
+"Okno tytułowe &Far:"
+"Título de ventana de Far:"
+"Doplnky názvu okna &Far:"
 "Opzioni Barra Della &Finestra Far"
 "Додаткова інформація для заголовка вікна:"
+"Дадатковая даведка для на&звы акна:"
+upd:"Far &window title addons:"
 
 MConfigDlgSetsTitle
 l:
@@ -2525,8 +2937,10 @@ l:
 "Ustawienia okien dialogowych"
 "Configuración de diálogo"
 "Nastavenia dialógov"
-"Impostazioni  Finestre Di Dialogo"
+"Impostazioni ► Finestre Di Dialogo"
 "Налаштування діалогів"
+"Налады гутаркі"
+upd:"Dialog settings"
 
 MConfigDialogsEditHistory
 "&История в строках ввода диалогов"
@@ -2539,6 +2953,8 @@ MConfigDialogsEditHistory
 "H&istória v dialógoch"
 "Cronologia Dei &Dati Inseriti"
 "&Історія в рядках введення діалогів"
+"Г&історыя ў радках уводу гутаркі"
+"Dialogų teksto &istorija"
 
 MConfigDialogsEditBlock
 "&Постоянные блоки в строках ввода"
@@ -2551,6 +2967,8 @@ MConfigDialogsEditBlock
 "&Trvalé bloky v editačných poliach"
 "Blocchi Persistenti Nei Controlli"
 "&Постійні блоки в рядках введення"
+"&Сталыя блокі ў радках уводу"
+upd:"&Persistent blocks in edit controls"
 
 MConfigDialogsDelRemovesBlocks
 "Del удаляет б&локи в строках ввода"
@@ -2558,11 +2976,13 @@ MConfigDialogsDelRemovesBlocks
 "&Del maže položky v editačních polích"
 "&Entf löscht Markierungen"
 "A &Del törli a beviteli sorok blokkjait"
-"&Del usuwa blok podczas edycji"
+"&DEL usuwa blok podczas edycji"
 "&Del remueve bloques en controles de edición"
 "&Del vymaže položky v editačných poliach"
 "&Canc Elimina Blocchi Nei Controlli"
 "Del видаляє б&локи в рядках введення"
+"Del выдаляе б&локі ў радках уводу"
+upd:"&Del removes blocks in edit controls"
 
 MConfigDialogsAutoComplete
 "&Автозавершение в строках ввода"
@@ -2575,6 +2995,8 @@ MConfigDialogsAutoComplete
 "Automatické dokončovanie v editač&ných poliach"
 "Usa Autocompletamento Dove Possibile"
 "&Автозавершення в рядках введення"
+"С&амазавяршэнне ў радках уводу"
+upd:"&AutoComplete in edit controls"
 
 MConfigDialogsEULBsClear
 "Backspace &удаляет неизмененный текст"
@@ -2582,11 +3004,13 @@ MConfigDialogsEULBsClear
 "&Backspace vymaže nezměněný text"
 "&Rücktaste (BS) löscht unveränderten Text"
 "A Ba&ckspace törli a változatlan szöveget"
-"&Backspace usuwa nie zmieniony tekst"
+"&BACKSPACE usuwa nie zmieniony tekst"
 "&Backspace elimina texto no cambiado"
 "&Backspace vymaže nezmenený text"
 "&BS Elimina Testo Non Modificato"
 "Backspace &видаляє незмінений текст"
+"Backspace в&ыдаляе нязменны тэкст"
+upd:"&Backspace deletes unchanged text"
 
 MConfigDialogsMouseButton
 "Клик мыши &вне диалога закрывает диалог"
@@ -2599,6 +3023,8 @@ MConfigDialogsMouseButton
 "Kl&iknutie myšou mimo dialógového okna ho zavrie"
 "Chiudi &Finestra Se Clicchi Fuori Col Mouse"
 "Клац миші поза діалогом закриває діалог"
+"Пстрычка мышы за межамі гутаркі зачыне гутарку"
+upd:"Mouse click &outside a dialog closes it"
 
 MConfigVMenuTitle
 l:
@@ -2607,47 +3033,55 @@ l:
 "Nastavení menu"
 "Menü Einstellungen"
 upd:"Menu settings"
-upd:"Menu settings"
+"Ustawienia menu"
 "Configuración de menú"
 "Nastavenia menu"
-"Impostazioni  Menu"
+"Impostazioni ► Menu"
 "Налаштування меню"
+"Налады меню"
+upd:"Menu settings"
 
 MConfigVMenuLBtnClick
 "Клик левой кнопки мыши вне меню"
-"Left mouse click outside a menu"
+"&Left mouse click outside a menu"
 "Kliknutí levým tlačítkem myši mimo menu"
 "den Klick mit der linken Maustaste ausserhalb des Menüs"
 upd:"Left mouse click outside a menu"
-upd:"Left mouse click outside a menu"
+"Kliknięcie lewym przyciskiem myszy poza menu"
 "Clic izquierdo de ratón fuera de menú"
 "Kliknutie ľavým tlačidlom myši mimo menu"
 "Tasto Sinistro Clicca Fuori Menu"
 "Клац лівої кнопки миші поза меню"
+"Пстрычка левай кнопкі мышы за межамі меню"
+upd:"&Left mouse click outside a menu"
 
 MConfigVMenuRBtnClick
 "Клик правой кнопки мыши вне меню"
-"Right mouse click outside a menu"
+"&Right mouse click outside a menu"
 "Kliknutí pravým tlačítkem myši mimo menu"
 "den Klick mit der rechten Maustaste ausserhalb des Menüs"
 upd:"Right mouse click outside a menu"
-upd:"Right mouse click outside a menu"
+"Kliknięcie prawym przyciskiem myszy poza menu"
 "Clic derecho de ratón fuera de menú"
 "Kliknutie pravým tlačidlom myši mimo menu"
 "Tasto Destro Clicca Fuori Menu"
 "Клац правої кнопки миші поза меню"
+"Пстрычка правай кнопкі мышы за межамі меню"
+upd:"&Right mouse click outside a menu"
 
 MConfigVMenuMBtnClick
 "Клик средней кнопки мыши вне меню"
-"Middle mouse click outside a menu"
+"&Middle mouse click outside a menu"
 "Kliknutí prostředním tlačítkem myši mimo menu"
 "den Klick der mittlere Maustaste ausserhalb des Menüs"
 upd:"Middle mouse click outside a menu"
-upd:"Middle mouse click outside a menu"
+"Kliknięcie środkowym przyciskiem myszy poza menu"
 "Clic medio de ratón fuera de menú"
 "Kliknutie prostredným tlačidlom myši mimo menu"
 "Tasto Centrale Clicca Fuori Menu"
 "Клац середньої кнопки миші поза меню"
+"Пстрычка сярэдняй кнопкі мышы за межамі меню"
+upd:"&Middle mouse click outside a menu"
 
 MConfigVMenuClickCancel
 "Закрыть с отменой"
@@ -2655,11 +3089,13 @@ MConfigVMenuClickCancel
 "Zrušit menu"
 "Fenster mit Abbrechen schließen"
 upd:"Cancel menu"
-upd:"Cancel menu"
+"Anuluj menu"
 "Cancelar menú"
 "Zrušiť menu"
 "Annulla Menu"
 "Закрити зі скасуванням"
+"Закрыць з адменай"
+upd:"Cancel menu"
 
 MConfigVMenuClickApply
 "Выполнить текущий пункт"
@@ -2667,11 +3103,13 @@ MConfigVMenuClickApply
 "Spustit zvolenou položku"
 "markierten Objekt ablaufen"
 upd:"Execute selected item"
-upd:"Execute selected item"
+"Uruchom wybraną opcję"
 "Ejecutar ítem seleccionado"
 "Spustiť zvolenú položku"
 "Esegui Oggetto Selezionato"
 "Виконати поточний пункт"
+"Выканаць бягучы пункт"
+upd:"Execute selected item"
 
 MConfigVMenuClickIgnore
 "Ничего не делать"
@@ -2679,11 +3117,13 @@ MConfigVMenuClickIgnore
 "Neudělat nic"
 "nichts tun"
 upd:"Do nothing"
-upd:"Do nothing"
+"Nic nie rób"
 "No hacer nada"
 "Neurobiť nič"
 "Fai Niente"
 "Нічого не робити"
+"Нічога не рабіць"
+upd:"Do nothing"
 
 MConfigCmdlineTitle
 l:
@@ -2692,11 +3132,13 @@ l:
 "Nastavení příkazové řádky"
 "Einstellungen der Befehlszeile"
 upd:"Command line settings"
-upd:"Command line settings"
+"Ustawienia wiersza poleceń"
 "Configuración de línea de comando"
 "Nastavenia príkazového riadka"
-"Impostazioni  Linea Comando"
+"Impostazioni ► Linea Comando"
 "Налаштування командного рядка"
+"Налады каманднага радка"
+upd:"Command line settings"
 
 MConfigCmdlineEditBlock
 "&Постоянные блоки"
@@ -2704,11 +3146,13 @@ MConfigCmdlineEditBlock
 "&Trvalé bloky"
 "Dauer&hafte Markierungen"
 upd:"Persistent blocks"
-upd:"Persistent blocks"
+"&Trwałe bloki"
 "&Bloques persistentes"
 "Trvalé bloky"
 "&Blocchi Persistenti"
 "&Постійні блоки"
+"&Сталыя блокі"
+upd:"&Persistent blocks"
 
 MConfigCmdlineDelRemovesBlocks
 "Del удаляет б&локи"
@@ -2716,23 +3160,27 @@ MConfigCmdlineDelRemovesBlocks
 "&Del vymaže bloky"
 "Entf löscht dauer&hafte Markierungen"
 upd:"Del removes blocks"
-upd:"Del removes blocks"
+"Usuwaj bloki klawiszem &DEL"
 "&Del remueve bloques"
 "Del vymaže bloky"
 "&Canc Elimina Blocchi"
 "Del видаляє б&локи"
+"Del выдаляе б&локі"
+upd:"&Del removes blocks"
 
 MConfigCmdlineAutoComplete
 "&Автозавершение"
 "&AutoComplete"
-"&AutoComplete"
+upd:"&AutoComplete"
 "Autovervollständigung"
 upd:"AutoComplete"
-upd:"AutoComplete"
+"&AutoUzupełnianie"
 "&AutoCompletar"
 "AutoComplete"
 "&AutoCompleta"
 "&Автозавершення"
+"С&амазавяршэнне"
+upd:"&AutoComplete"
 
 MConfigCmdlineUsePromptFormat
 "Установить &формат командной строки"
@@ -2740,11 +3188,13 @@ MConfigCmdlineUsePromptFormat
 "Nastavit formát &příkazového řádku"
 "&Promptformat der Kommandozeile"
 "Parancssori &prompt formátuma"
-"Wy&gląd znaku zachęty linii poleceń"
+"&Format zachęty wiersza poleceń"
 "Formato línea de comando (&prompt)"
 "Nastaviť formát &príkazového riadka"
 "Imposta Formato &Linea Comando"
 "Встановити &формат командного рядка"
+"Прызначыць &фармат каманднага радка"
+"Nustatyti komandinės eilutės pr&ompt formatą"
 
 MConfigCmdlineUseHomeDir
 "Использовать &домашний каталог"
@@ -2752,23 +3202,27 @@ MConfigCmdlineUseHomeDir
 "&Použít domovský adresář"
 "&Hausverzeichnis benützen"
 upd:"Use &home dir"
-upd:"Use &home dir"
+"&Użyj folderu domowego"
 "Usar directorio &local"
 "Použiť &domovský priečinok"
 "Usa Cartella &Iniziale"
 "Використовувати &домашній каталог"
+"Ужыць &хатні каталог"
+upd:"Use &home dir"
 
 MConfigCmdlinePromptFormatAdmin
 "Администратор"
 "Administrator"
 "Administrátor"
-upd:"Administrator"
-upd:"Administrator"
-upd:"Administrator"
+"Administrator"
+"Adminisztrátor"
+"Administrator"
 "Administrador"
-"Administrátor"
-"A&mministratore"
+"Správca"
+"Amministratore"
 "Адміністратор"
+"Адміністратар"
+"Administratorius"
 
 MConfigAutoCompleteTitle
 l:
@@ -2777,11 +3231,13 @@ l:
 "Nastavení AutoComplete"
 "Einstellungen der Autovervollständigung"
 upd:"AutoComplete settings"
-upd:"AutoComplete settings"
+"Ustawienie AutoUzupełniania"
 "Configuración de autocompletar"
 "Nastavenia AutoComplete"
-"Impostazioni  AutoCompletamento"
+"Impostazioni ► AutoCompletamento"
 "Налаштування автозавершення"
+"Налады самазавяршэння"
+upd:"AutoComplete settings"
 
 MConfigAutoCompleteShowList
 l:
@@ -2790,11 +3246,13 @@ l:
 "&Zobrazit seznam"
 "&Liste anzeigen"
 upd:"&Show a list"
-upd:"&Show a list"
+"&Pokaż listę"
 "Mo&strar lista"
 "&Zobraziť zoznam"
 "&Mostra Lista"
 "Показувати &список"
+"Адлюстраваць &спіс"
+upd:"&Show a list"
 
 MConfigAutoCompleteModalList
 l:
@@ -2803,11 +3261,13 @@ l:
 "&Modální režim"
 "&Modal Modus"
 upd:"&Modal mode"
-upd:"&Modal mode"
+"Tryb &modalny"
 "Clase de &Modo"
 "&Modálny režim"
 "Modo &Modale"
 "&Модальний режим"
+"&Мадальны стан"
+upd:"&Modal mode"
 
 MConfigAutoCompleteAutoAppend
 l:
@@ -2816,11 +3276,13 @@ l:
 "&Připojit první nalezenou položku"
 "Erste passende Variante ein&setzen"
 upd:"&Append the first matched item"
-upd:"&Append the first matched item"
+"&Dołącz pierwszy pasujący element"
 "&Anexar primer ítem coincidente"
 "&Pripojiť prvú nájdenú položku"
 "&Accoda Primo Oggetto Corrispondente"
 "&Підставляти перший підхожий варіант"
+"&Падстаўляць першую прапанову"
+upd:"&Append the first matched item"
 
 MConfigInfoPanelTitle
 l:
@@ -2829,71 +3291,83 @@ l:
 "Nastavení informačního panelu"
 "Einstellungen der Informationsleiste"
 upd:"InfoPanel settings"
-upd:"InfoPanel settings"
+"Ustawienia panelu informacyjnego"
 "Configuración de panel de información"
 "Nastavenia InfoPanela"
-"Impostazioni  Panello Info"
+"Impostazioni ► Panello Info"
 "Налаштування інформаційної панелі"
+"Налады даведачнай панэлі"
+upd:"InfoPanel settings"
 
 MConfigInfoPanelCNTitle
 "Форма&т вывода имени компьютера"
 "Computer &name format"
-upd:"Computer &name format"
+"Formát &názvu počítače"
 "Format des Computer&names"
 upd:"Computer &name format"
-upd:"Computer &name format"
+"Format nazwy &komputera"
 "Formato nombre de &computadora"
 "Formát &názvu počítača"
 "Formato Nome Co&mputer"
 "Форма&т відображення імені комп'ютера"
+"Выгляд імі кампью&тара"
+upd:"Computer &name format"
 
 MConfigInfoPanelCNPhysicalNetBIOS
 "Физическое NetBIOS"
 "Physical NetBIOS"
-upd:"Physical NetBIOS"
+"Fyzický NetBIOS"
 "Physische NetBIOS"
 upd:"Physical NetBIOS"
-upd:"Physical NetBIOS"
+"Fizyczna nazwa z NetBIOS"
 "NetBios físico"
-"Physical NetBIOS"
+upd:"Physical NetBIOS"
 "NetBIOS"
 "Фізичне NetBIOS"
+"Фізічнае NetBIOS"
+upd:"Physical NetBIOS"
 
 MConfigInfoPanelCNPhysicalDnsHostname
 "Физическое имя хоста DNS"
 "Physical DNS hostname"
-upd:"Physical DNS hostname"
+"Fyzický DNS název hostitele"
 "Physische DNS Hostname"
 upd:"Physical DNS hostname"
-upd:"Physical DNS hostname"
+"Fizyczna nazwa z DNS"
 "DNS hostname físico"
-"Physical DNS hostname"
+upd:"Physical DNS hostname"
 "Nome DNS"
 "Фізичне ім'я хоста DNS"
+"Фізічнае імя DNS"
+upd:"Physical DNS hostname"
 
 MConfigInfoPanelCNPhysicalDnsDomain
 "Физическое имя домена DNS"
 "Physical DNS domain"
-upd:"Physical DNS domain"
+"Fyzická DNS doména"
 "Physische DNS Domain"
 upd:"Physical DNS domain"
-upd:"Physical DNS domain"
+"Fizyczna domena z DNS"
 "Dominio DNS físico"
-"Physical DNS domain"
+upd:"Physical DNS domain"
 "Nome Dominio DNS"
 "Фізичне ім'я домену DNS"
+"Фізічны дамен DNS"
+upd:"Physical DNS domain"
 
 MConfigInfoPanelCNPhysicalDnsFullyQualified
 "Физическое полное DNS имя"
 "Physical DNS fully-qualified"
-upd:"Physical DNS fully-qualified"
+"Fyzická DNS s celým názvem"
 "Physische DNS vollqualifiziert"
 upd:"Physical DNS fully-qualified"
-upd:"Physical DNS fully-qualified"
+"Fizyczny DNS (FQDN)"
 "DNS calificado físico"
-"Physical DNS fully-qualified"
+upd:"Physical DNS fully-qualified"
 "DNS Qualificato"
 "Фізичне повне DNS ім'я"
+"Поўнае фізічнае імя DNS"
+upd:"Physical DNS fully-qualified"
 
 MConfigInfoPanelCNNetBIOS
 "NetBIOS"
@@ -2902,7 +3376,9 @@ MConfigInfoPanelCNNetBIOS
 "NetBIOS"
 "NetBIOS"
 "NetBIOS"
-"NetBios"
+"NetBIOS"
+"NetBIOS"
+"NetBIOS"
 "NetBIOS"
 "NetBIOS"
 "NetBIOS"
@@ -2910,38 +3386,44 @@ MConfigInfoPanelCNNetBIOS
 MConfigInfoPanelCNDnsHostname
 "Имя хоста DNS"
 "DNS hostname"
-upd:"DNS hostname"
+"DNS název hostitele"
 "DNS Hostname"
 upd:"DNS hostname"
+"Nazwa z DNS"
 upd:"DNS hostname"
-"DNS hostname"
-"DNS hostname"
+upd:"DNS hostname"
 "Nome DNS"
 "Ім'я хоста DNS"
+"Імя DNS"
+upd:"DNS hostname"
 
 MConfigInfoPanelCNDnsDomain
 "Имя домена DNS"
 "DNS domain"
-upd:"DNS domain"
+"DNS doména"
 "DNS Domain"
 upd:"DNS domain"
+"Domena z DNS"
+"Dominio DNS"
 upd:"DNS domain"
 "Dominio DNS"
-"DNS domain"
-"Dominio DNS"
 "Ім'я домену DNS"
+"Дамен DNS"
+upd:"DNS domain"
 
 MConfigInfoPanelCNDnsFullyQualified
 "Полное DNS имя"
 "DNS fully-qualified"
-upd:"DNS fully-qualified"
+"DNS s celým názvem"
 "DNS vollqualifiziert"
 upd:"DNS fully-qualified"
-upd:"DNS fully-qualified"
+"Wpis z DNS (FQDN)"
 "DNS calificado"
-"DNS fully-qualified"
+upd:"DNS fully-qualified"
 "DNS Qualificato"
 "Повне DNS ім'я"
+"Поўнае імя DNS"
+upd:"DNS fully-qualified"
 
 MConfigInfoPanelUNTitle
 "Формат вывода имени &пользователя"
@@ -2949,71 +3431,97 @@ MConfigInfoPanelUNTitle
 upd:"&User name format"
 "Format des &Benutzernames"
 upd:"&User name format"
-upd:"&User name format"
+"Format nazwy &użytkownika"
 "Formato nombre de &usuario"
 "Formát &užívateľského mena"
 "&Formato Nome Utente"
 "Формат відображення імені &користувача"
+"Выгляд імі &карыстальніка"
+upd:"&User name format"
+
+MConfigInfoPanelUNLogon
+"Имя для входа"
+"Logon name"
+"Přihlašovací jméno"
+"Anmeldename"
+"Bejelentkezési név"
+"Nazwa logowania"
+"Nombre de inicio de sesión"
+"Prihlasovacie meno"
+"Nome di accesso"
+"Ім'я для входу"
+"Імя ўваходу"
+upd:"Logon name"
 
 MConfigInfoPanelUNFullyQualifiedDN
 "Полностью определённое имя домена"
 "Fully Qualified Domain Name"
-upd:"Fully Qualified Domain Name"
+"Plně kvalifikovaný doménový název"
 "Vollqualifizierte Domain Name"
 upd:"Fully Qualified Domain Name"
-upd:"Fully Qualified Domain Name"
+"Pełna nazwa domenowa (FQDN)"
 "Nombre dominio completamente calificado"
-"Fully Qualified Domain Name"
+upd:"Fully Qualified Domain Name"
 "Nome Dominio Completo"
 "Повне доменне ім'я"
+"Поўны вызначаны дамен"
+upd:"Fully Qualified Domain Name"
 
 MConfigInfoPanelUNSamCompatible
 "Совместимое с Sam"
 "Sam Compatible"
-upd:"Sam Compatible"
+"Sam kompatibilní"
 "Kompatibele Sicherheit Access-Management"
 upd:"Sam Compatible"
-upd:"Sam Compatible"
+"Zgodna z SAM"
 "Compatible con Sam"
-"Sam Compatible"
-"Sam Compatibile"
+upd:"Sam Compatible"
+"SAM Compatibile"
 "Совмісне з Sam"
+"Сумяшчальны з Sam"
+upd:"Sam Compatible"
 
 MConfigInfoPanelUNDisplay
 "Отображаемое имя"
 "Display Name"
-upd:"Display Name"
+"Zobrazované jméno"
 "Anzeigename"
 upd:"Display Name"
-upd:"Display Name"
+"Nazwa wyświetlana"
 "Mostrar Nombre"
-"Display Name"
+upd:"Display Name"
 "Visualizza Nome"
 "Коротке ім'я"
+"Адлюстраванае імя"
+upd:"Display Name"
 
 MConfigInfoPanelUNUniqueId
 "Уникальный идентификатор"
 "Unique Id"
-upd:"Unique Id"
+"Unikátní Id"
 "Eindeutige ID"
 upd:"Unique Id"
-upd:"Unique Id"
+"Unikalne ID"
 "ID único"
-"Unique Id"
+upd:"Unique Id"
 "ID Unico"
 "Унікальний ідентифікатор"
+"Адзіны нумар"
+upd:"Unique Id"
 
 MConfigInfoPanelUNCanonical
 "Каноническое имя"
 "Canonical Name"
-upd:"Canonical Name"
+"Kanonický název"
 "Vorgeschriebene Sicht"
 upd:"Canonical Name"
-upd:"Canonical Name"
+"Nazwa kanoniczna (z domeny)"
 "Nombre Canónico"
-"Canonical Name"
+upd:"Canonical Name"
 "Nome Caononico"
 "Канонічне ім'я"
+"Кананічнае імя"
+upd:"Canonical Name"
 
 MConfigInfoPanelUNUserPrincipal
 "Основное имя пользователя"
@@ -3021,35 +3529,69 @@ MConfigInfoPanelUNUserPrincipal
 upd:"User Principial Name"
 "Hauptbenutzername"
 upd:"User Principial Name"
-upd:"User Principial Name"
+"Nazwa zalogowanego użytkownika (UPN)"
 "Nombre principal usuario"
-"User Principial Name"
+upd:"User Principial Name"
 "Nome Utente Principale"
 "Основне ім'я користувача"
+"Галоўнае імя карыстальніка"
+upd:"User Principial Name"
 
 MConfigInfoPanelUNServicePrincipal
-"Сбъект-служба"
+"Субъект-служба"
 "Service Principal"
 upd:"Service Principal"
 "Dienstleister"
 upd:"Service Principal"
-upd:"Service Principal"
+"Główna usługa"
 "Servicio principal"
-"Service Principal"
+upd:"Service Principal"
 "Servizio Principale"
 "Учасник служби"
+"Суб'ект-служба"
+upd:"Service Principal"
 
 MConfigInfoPanelUNDnsDomain
 "Имя домена DNS"
 "DNS Domain"
 upd:"DNS Domain"
-"Dns Domain"
 upd:"DNS Domain"
 upd:"DNS Domain"
+"Domena DNS"
 "Dominio DNS"
-"DNS Domain"
+upd:"DNS Domain"
 "Dominio DNS"
 "Ім'я домену DNS"
+"Дамен DNS"
+upd:"DNS Domain"
+
+MConfigInfoPanelUNGivenName
+"Собственное имя"
+"Given name"
+"Křestní jméno"
+"Vorname"
+"Utónév"
+"Imię"
+"Nombre dado"
+"Meno"
+"Nome"
+"Дане ім’я"
+"Названае імя"
+upd:"Given name"
+
+MConfigInfoPanelUNSurname
+"Фамилия"
+"Surname"
+"Příjmení"
+"Nachname"
+"Vezetéknév"
+"Nazwisko"
+"Apellido"
+"Priezvisko"
+"Cognome"
+"Прізвище"
+"Прозвішча"
+upd:"Surname"
 
 MConfigInfoPanelShowPowerStatus
 "Показывать состояние п&итания"
@@ -3057,11 +3599,13 @@ MConfigInfoPanelShowPowerStatus
 "Zobrazit stav na&pájení"
 "&Power-Status anzeigen"
 upd:"Show &power status"
-upd:"Show &power status"
+"Pokaż status &zasilania"
 "Mostrar estado de &encendido"
 "Zobraziť stav na&pájania"
 "Mostra Stato &Energetico"
 "Показувати стан ж&ивлення"
+"Адлюстраваць стан с&ілкавання"
+upd:"Show &power status"
 
 MConfigInfoPanelShowCDInfo
 "Показывать параметры &компакт-дисков"
@@ -3069,11 +3613,13 @@ MConfigInfoPanelShowCDInfo
 "Zobrazit parametry &CD jednotky"
 "&CD-Platte Parameter anzeigen"
 upd:"Show &CD drive parameters"
-upd:"Show &CD drive parameters"
+"Pokaż parametry dysku &CD"
 "Mostrar parámetros de uni&dad de CD\DVD\BD"
 "Zobraziť parametre jednotky &CD"
 "Mostra Parametri C&D"
 "Показувати параметри &компакт-дисків"
+"Адлюстраваць налады &кампакт-дыска"
+upd:"Show &CD drive parameters"
 
 MMenuInfoShowModeTitle
 l:
@@ -3082,11 +3628,13 @@ l:
 "Zobrazit informace"
 "Information anzeigen"
 upd:"Show Info"
-upd:"Show Info"
+"Pokaż Info"
 "Mostrar Info"
 "Zobraziť Info"
 "Mostra Informazioni"
 "Показати інформацію"
+"Адлюстраваць інфармацыю"
+upd:"Show Info"
 
 MMenuInfoShowModeDisk
 "&Диск"
@@ -3094,11 +3642,13 @@ MMenuInfoShowModeDisk
 "&Disk"
 "&Festplatte"
 upd:"&Disk"
-upd:"&Disk"
+"&Dysk"
 "&Disco"
 "&Disk"
 "&Disco"
 "&Диск"
+"&Дыск"
+upd:"&Disk"
 
 MMenuInfoShowModeMemory
 "&Память"
@@ -3106,11 +3656,13 @@ MMenuInfoShowModeMemory
 "Pa&měť"
 "&Speicher"
 upd:"&Memory"
-upd:"&Memory"
+"&Pamięć"
 "&Memoria"
 "Pa&mäť"
 "&Memoria"
 "&Пам'ять"
+"&Памяць"
+upd:"&Memory"
 
 MMenuInfoShowModeDirDiz
 "&Описание папки"
@@ -3118,11 +3670,13 @@ MMenuInfoShowModeDirDiz
 "&Popis"
 "&Beschreibung des Ordners"
 upd:"&Description"
-upd:"&Description"
+"&Opis"
 "&Descripción"
 "&Popis"
 "&Descrizione"
 "&Опис папки"
+"&Апісанне каталога"
+upd:"&Description"
 
 MMenuInfoShowModePluginDiz
 "Пла&гиновая панель"
@@ -3130,11 +3684,13 @@ MMenuInfoShowModePluginDiz
 "Panel modu&lů"
 "Plu&ginleiste"
 upd:"Plu&gin panel"
-upd:"Plu&gin panel"
+"Panel &wtyczek"
 "Panel de Complemento"
 "Panel modu&lov"
 "&Pannello Plugin"
 "Пла&гінова панель"
+"Панэл&ь дадаткаў"
+upd:"Plu&gin panel"
 
 MMenuInfoShowModePower
 "Состояние п&итания"
@@ -3142,11 +3698,13 @@ MMenuInfoShowModePower
 "Stav na&pájení"
 "&Power-Status"
 upd:"&Power status"
-upd:"&Power status"
+"Status &zasilania"
 "Estado &encendido"
 "Stav na&pájania"
 "&Stato Energetico"
 "Стан ж&ивлення"
+"Стан с&ілкавання"
+upd:"&Power status"
 
 MViewConfigTitle
 l:
@@ -3155,23 +3713,27 @@ l:
 "Prohlížeč"
 "Betrachter"
 "Nézőke"
-"Podgląd"
+"Ustawienia podglądu plików"
 "Visor"
 "Zobrazovač"
-"Impostazioni  Visualizzatore"
+"Impostazioni ► Visualizzatore"
 "Програма перегляду"
+"Праграма прагляду"
+"Peržiūra"
 
 MViewConfigExternalF3
-"Запускать внешнюю программу просмотра по F3 вместо Alt+F3"
-"Use external viewer for F3 instead of Alt+F3"
-"Použít externí prohlížeč u F3 místo Alt+F3"
-upd:"Use external viewer for F3 instead of Alt+F3"
-"Alt+F3 helyett F3 indítja a külső nézőkét"
-upd:"Use external viewer for F3 instead of Alt+F3"
-"Usar visor externo con F3 en lugar de Alt+F3"
-"Použiť externý zobrazovač pre F3 namiesto Alt+F3"
-"Usa Visualizzatore Esterno [F3] Invece Di [Alt-F3]"
-"Запускати зовнішню програму перегляду по F3 замість Alt+F3"
+"Запускать внешнюю программу просмотра по F&3 вместо Alt+F3"
+"Use external viewer for F&3 instead of Alt+F3"
+"Použít externí prohlížeč u F&3 místo Alt+F3"
+upd:"Use external viewer for F&3 instead of Alt+F3"
+"Alt+F3 helyett F&3 indítja a külső nézőkét"
+"Użyj zewnętrznego podglądu pod klawiszem F&3 zamiast Alt+F3"
+"Usar visor externo con F&3 en lugar de Alt+F3"
+"Použiť externý zobrazovač pre F&3 namiesto Alt+F3"
+"Usa Visualizzatore Esterno F&3 Invece Di Alt+F3"
+"Запускати зовнішню програму перегляду по F&3 замість Alt+F3"
+"Знешняя праграма прагляду па F&3 замест Alt+F3"
+"Naudoti išorinė peržiūros programa su F3 vietoj Alt+F3"
 
 MViewConfigExternalCommand
 "&Команда просмотра:"
@@ -3184,6 +3746,8 @@ MViewConfigExternalCommand
 "&Príkaz zobrazovača:"
 "Linea Di &Comando:"
 "&Команда перегляду:"
+"&Каманда прагляду:"
+"&Peržiūros komanda:"
 
 MViewConfigInternal
 "Встроенная программа просмотра"
@@ -3196,6 +3760,8 @@ MViewConfigInternal
 "Interný zobrazovač"
 "Visualizzatore Interno"
 "Вбудована програма перегляду"
+"Убудаваная праграма прагляду"
+"Vidinė peržiūros programa"
 
 MViewConfigSavePos
 "&Сохранять позицию файла"
@@ -3208,6 +3774,8 @@ MViewConfigSavePos
 "Pamä&tať si pozíciu v súbore"
 "Salva &Posizione File"
 "З&берігати позицію файлу"
+"&Захоўваць пазіцыю файла"
+"Iš&saugoti failo poziciją"
 
 MViewConfigSaveShortPos
 "Сохранять &закладки"
@@ -3220,6 +3788,8 @@ MViewConfigSaveShortPos
 "Ukladať &záložky"
 "Salva I &Bookmarks"
 "Зберігати &закладки"
+"Захоўваць &закладкі"
+upd:"Save &bookmarks"
 
 MViewConfigSaveCodepage
 "Сохранять ко&довую страницу файла"
@@ -3227,11 +3797,13 @@ MViewConfigSaveCodepage
 "Uložit &kódovou stránku u souboru"
 "&Codepage der Datei speichern"
 upd:"Save file &code page"
-upd:"Save file &code page"
+"Zapisz &stronę kodową pliku"
 "Guardar página de &códigos de archivo"
 "Uložiť tabuľku z&nakov súboru"
 "Salva &Tabella Caratteri"
 "Зберігати ко&дову сторінку файлу"
+"Захоўваць ка&дыроўку файла"
+upd:"Save file &code page"
 
 MViewConfigSaveWrapMode
 "Сохранять &режим переноса"
@@ -3239,11 +3811,42 @@ MViewConfigSaveWrapMode
 "Uložit &režim zalomení"
 "&Verschieben-Modus speichern"
 upd:"Save w&rap mode"
-upd:"Save w&rap mode"
+"Zapisz zawi&janie wierszy"
 "Guardar modo de ajuste de línea"
 "Uložiť &režim zalomenia"
 "Salva Stato Di &A Capo Automatico"
 "Зберігати &режим переносу"
+"Захоўваць стан пе&раносу"
+upd:"Save w&rap mode"
+
+MViewConfigSaveViewMode
+"Сохранять р&ежим просмотра"
+"Save vi&ew mode"
+"Uložit režim zobrazení"
+upd:"Save view mode"
+upd:"Save view mode"
+"Zapisz try&b podglądu"
+upd:"Save view mode"
+upd:"Save view mode"
+"Salva Modo Vista"
+"Зберігати режим перегляду"
+"Захоўваць ст&ан прагляду"
+upd:"Save vi&ew mode"
+
+# We really should come up with a better name for this option
+MViewConfigDetectDumpMode
+"Автов&ыбор дамп-режима просмотра"
+"Detect d&ump view mode"
+"Detekovat režim zobrazení výpisu paměti"
+upd:"Detect dump view mode"
+upd:"Detect dump view mode"
+"W&ykryj sposób podglądu"
+upd:"Detect dump view mode"
+upd:"Detect dump view mode"
+"Rileva Modo Vista Dump"
+"Автовизначення дамп-режиму перегляду"
+"Самав&ыбар дамп-рэжыму прагляду"
+upd:"Detect d&ump view mode"
 
 MViewAutoDetectCodePage
 "&Автоопределение кодовой страницы"
@@ -3251,11 +3854,13 @@ MViewAutoDetectCodePage
 "&Automaticky detekovat kódovou stránku"
 upd:"Zeichentabelle &automatisch erkennen"
 "&Kódlap automatikus felismerése"
-"Rozpozn&aj tablicę znaków"
+"Rozpoznaj stronę kodową plik&u"
 "&Autodetectar página de códigos"
 "&Automaticky zistiť tabuľku znakov"
 "Autorile&va Tabella Caratteri"
 "&Автовизначення кодової сторінки"
+"С&амавызначэнне кадыроўкі"
+"Auto&nustatyti kodavimo puslapį"
 
 MViewConfigTabSize
 "Размер &табуляции"
@@ -3268,6 +3873,8 @@ MViewConfigTabSize
 "Veľkosť &tabulátora"
 "&Tabulatore"
 "Розмір &табуляції"
+"Памер &табуляцыі"
+"Tab d&ydis"
 
 MViewConfigScrollbar
 "Показывать &полосу прокрутки"
@@ -3275,11 +3882,13 @@ MViewConfigScrollbar
 "Zobrazovat posu&vník"
 "Scro&llbalken anzeigen"
 "Gör&dítősáv mutatva"
-"Pokaż &pasek przewijania"
+"P&okaż pasek przewijania"
 "Mostrar &barra de desplazamiento"
 "Zobraziť posu&vník"
 "Mostra Barre Di &Scorrimento"
 "Показувати &смужку прокручування"
+"Адлюстроўваць &працяжнік"
+upd:"Show scro&llbar"
 
 MViewConfigArrows
 "Показывать стре&лки сдвига"
@@ -3292,6 +3901,8 @@ MViewConfigArrows
 "Zobraziť &šípky posuvníka"
 "&Mostra Frecce Di Scorrimento"
 "Показувати стрі&лки зсуву"
+"Адлюстроўваць стрэ&лкі зруху"
+upd:"Show scrolling arro&ws"
 
 MViewConfigPersistentSelection
 "Постоянное &выделение"
@@ -3304,18 +3915,22 @@ MViewConfigPersistentSelection
 "Trvalý &výber"
 "Sele&zione Persistente"
 "Постійне &виділення"
+"Сталае &вылучэнне"
+upd:"&Persistent selection"
 
 MViewConfigDefaultCodePage
 "Кодовая стран&ица по умолчанию:"
 "&Default code page:"
-upd:"Default code page:"
+"Výchozí stránka kódování:"
 "Standardmäßig voreingestellte Codepage:"
 upd:"Default code page:"
-upd:"Default code page:"
+"&Domyślna strona kodowa:"
 "Página de códigos por defecto:"
 "Predvolená tabuľka znakov:"
 "Codifica Caratteri Default:"
 "Кодова стор&інка за замовчуванням:"
+"Прадвызначаная кад&ыроўка:"
+upd:"&Default code page:"
 
 MViewConfigMaxLineSize
 "&Максимальная ширина строки"
@@ -3323,11 +3938,13 @@ MViewConfigMaxLineSize
 "&Maximální šířka čáry"
 "Maximalwert der Zeilenbreite"
 upd:"Maximum line width"
-upd:"Maximum line width"
+"&Maksymalna szerokość linii"
 "Ancho máximo de &línea"
 "&Maximálna šírka čiary"
 "Lunghezza Ma&ssima Linea"
 "&Максимальна ширина рядка"
+"Най&большая шырыня радка"
+upd:"&Maximum line width"
 
 MViewConfigVisible0x00
 "Показывать '\\&0'"
@@ -3335,11 +3952,13 @@ MViewConfigVisible0x00
 "Viditelné '\\0'"
 "Sichtbare '\\0'"
 upd:"Visible '\\0'"
-upd:"Visible '\\0'"
+"&Widoczne '\\0'"
 "Visible '\\&0'"
 "Viditeľné '\\0'"
 "Visibile '\\&0'"
 "Показувати '\\&0'"
+"Адлюстроўваць '\\&0'"
+upd:"Visible '\\&0'"
 
 MViewConfigEditAutofocus
 "Авто-&фокус в диалоге поиска"
@@ -3347,11 +3966,13 @@ MViewConfigEditAutofocus
 "Automaticky aktivovat dialog hledání"
 "Auto&fokus in der Suche in Dialog"
 upd:"Search dialog auto-focus"
-upd:"Search dialog auto-focus"
+"Auto-&focus okna szukania"
 "Auto-enfocar en &diálogo de búsqueda"
 "Automaticky aktivovať dialóg hľadania"
 "Auto Riposiziona Dialogo Di &Ricerca"
 "Авто-&фокус у діалозі пошуку"
+"Аўта-&фокус у гутарцы"
+upd:"Search dialog auto-&focus"
 
 MEditConfigTitle
 l:
@@ -3360,23 +3981,27 @@ l:
 "Editor"
 "Editor"
 "Szerkesztő"
-"Edytor"
+"Ustawienia edytora"
 "Editor"
 "Editor"
-"Impostazioni  Editor"
+"Impostazioni ► Editor"
 "Редактор"
+"Праграма змены"
+"Redaktorius"
 
 MEditConfigEditorF4
-"Запускать внешний редактор по F4 вместо Alt+F4"
-"Use external editor for F4 instead of Alt+F4"
-"Použít externí editor u F4 místo Alt+F4"
-upd:"Use external editor for F4 instead of Alt+F4"
-"Alt+F4 helyett F4 indítja a külső szerkesztőt"
-upd:"Use external editor for F4 instead of Alt+F4"
-"Usar editor externo con F4 en lugar de Alt+F4"
-"Použiť externý editor pre F4 namiesto Alt+F4"
-"Usa Editor Esterno Per F4 Invece Di Alt+F4"
-"Запускати зовнішній редактор по F4 замість Alt+F4"
+"Запускать внешний редактор по F&4 вместо Alt+F4"
+"Use external editor for F&4 instead of Alt+F4"
+"Použít externí editor u F&4 místo Alt+F4"
+upd:"Use external editor for F&4 instead of Alt+F4"
+"Alt+F4 helyett F&4 indítja a külső szerkesztőt"
+"Użyj zewnętrznego edytora pod klawiszem F&4 zamiast Alt+F4"
+"Usar editor externo con F&4 en lugar de Alt+F4"
+"Použiť externý editor pre F&4 namiesto Alt+F4"
+"Usa Editor Esterno Per F&4 Invece Di Alt+F4"
+"Запускати зовнішній редактор по F&4 замість Alt+F4"
+"Знешняя праграма змены па F&4 замест Alt+F4"
+"Naudoti išorinis redaktorius su F4 vietoj Alt+F4"
 
 MEditConfigEditorCommand
 "&Команда редактирования:"
@@ -3389,6 +4014,8 @@ MEditConfigEditorCommand
 "&Príkaz editora:"
 "Linea Di &Comando:"
 "&Команда редагування:"
+"&Каманда змены:"
+"&Redaktoriaus komanda:"
 
 MEditConfigInternal
 "Встроенный редактор"
@@ -3401,6 +4028,8 @@ MEditConfigInternal
 "Interný editor"
 "Editor Interno"
 "Вбудований редактор"
+"Убудаваная праграма змены"
+"Vidinis redaktorius"
 
 MEditConfigExpandTabsTitle
 "Преобразовывать &табуляцию:"
@@ -3413,6 +4042,8 @@ MEditConfigExpandTabsTitle
 "Rozšíriť ta&bulátory medzerami"
 "Espandi I &TAB:"
 "Перетворення &табуляції:"
+"Ператвараць &табуляцыю"
+upd:"Expand &tabs:"
 
 MEditConfigDoNotExpandTabs
 l:
@@ -3426,6 +4057,8 @@ l:
 "Nerozšíriť tabulátory medzerami"
 "Non &Espandere I TAB"
 "Не перетворювати табуляцію"
+"Не ператвараць табуляцыю"
+upd:"Do not expand tabs"
 
 MEditConfigExpandTabs
 "Преобразовывать новые символы табуляции в пробелы"
@@ -3438,6 +4071,8 @@ MEditConfigExpandTabs
 "Rozšíriť nové tabulátory medzerami"
 "Espandi I Nuovi TAB In &Spazi"
 "Перетворювати нові символи табуляції в пробіли"
+"Ператвараць новыя сімвалы табуляцыі ў прагалы"
+upd:"Expand newly entered tabs to spaces"
 
 MEditConfigConvertAllTabsToSpaces
 "Преобразовывать все символы табуляции в пробелы"
@@ -3450,6 +4085,8 @@ MEditConfigConvertAllTabsToSpaces
 "Rozšíriť všetky tabulátory medzerami"
 "Converti Tutti I &TAB In Spazi"
 "Перетворювати всі символи табуляції в пробіли"
+"Ператвараць усе сімвалы табуляцыі ў прагалы"
+upd:"Expand all tabs to spaces"
 
 MEditConfigPersistentBlocks
 "&Постоянные блоки"
@@ -3462,6 +4099,8 @@ MEditConfigPersistentBlocks
 "&Trvalé bloky"
 "Selezione &Persistente"
 "&Постійні блоки"
+"&Сталыя блокі"
+"&Pastovus blokas"
 
 MEditConfigDelRemovesBlocks
 l:
@@ -3470,11 +4109,13 @@ l:
 "&Del maže bloky"
 "&Entf löscht Textmark."
 "A &Del törli a blokkokat"
-"&Del usuwa bloki"
+"DE&L usuwa bloki"
 "Del &remueve bloques"
 "&Del maže bloky"
 "&DEL Elimina Selezione"
 "Del видаляє б&локи"
+"Del выдаляе б&локі"
+"&Del ištrina bloką"
 
 MEditConfigAutoIndent
 "Авто&отступ"
@@ -3487,6 +4128,8 @@ MEditConfigAutoIndent
 "Automatické &odsadenie"
 "A&uto Allineamento"
 "Автовідст&уп"
+"Сама&уцісканне"
+"Auto &atitraukti eilutę"
 
 MEditConfigSavePos
 "&Сохранять позицию файла"
@@ -3499,6 +4142,8 @@ MEditConfigSavePos
 "&Ukladať pozíciu v súbore"
 "Sal&va Posizione Cursore"
 "З&берігати позицію файлу"
+"&Захоўваць пазіцыю файла"
+"Iš&saugoti failo poziciją"
 
 MEditConfigSaveShortPos
 "Сохранять &закладки"
@@ -3506,11 +4151,13 @@ MEditConfigSaveShortPos
 "Ukládat zá&ložky"
 "&Lesezeichen speichern"
 "Könyv&jelzők mentése"
-"Zapisz &zakładki"
+"Z&apisz zakładki"
 "Guardar &marcadores"
 "Ukladať zá&ložky"
 "Salva &Preferiti"
 "Зберігати &закладки"
+"Захоўваць &закладкі"
+upd:"Save &bookmarks"
 
 MEditCursorBeyondEnd
 "Ку&рсор за пределами строки"
@@ -3523,6 +4170,8 @@ MEditCursorBeyondEnd
 "&Kurzor za koncom riadka"
 "Curs&ore Oltre La Fine Della Linea"
 "Ку&рсор за межами рядка"
+"Ку&рсор за межамі радка"
+"&Žymeklis už eilutės pabaigos"
 
 MEditAutoDetectCodePage
 "&Автоопределение кодовой страницы"
@@ -3530,11 +4179,13 @@ MEditAutoDetectCodePage
 "&Automaticky zjistit kódovou stránku"
 "Zeichentabelle &automatisch erkennen"
 "&Kódlap automatikus felismerése"
-"Rozpozn&aj tablicę znaków"
+"Rozpoznaj &stronę kodową"
 "&Autodetectar página de códigos"
 "&Automaticky zistiť tabuľku znakov"
 "Auto-&Rileva Tabella Caratteri"
 "&Автовизначення кодової сторінки"
+"С&амавызначэнне кадыроўкі"
+"Auto&nustatyti kodavimo puslapį"
 
 MEditShareWrite
 "Разрешить редактирование открытых для записи &файлов"
@@ -3542,11 +4193,13 @@ MEditShareWrite
 "Umožnit úpravu souborů otevřených &pro zápis"
 upd:"Allow editing files opened for &writing"
 "Írásra m&egnyitott fájlok szerkeszthetők"
-upd:"Allow editing files opened for &writing"
+"Z&ezwól na edycję plików otwartych do zapisu"
 "Permitir escrit&ura de archivos abiertos para edición"
 "Umožniť úpravu súborov otvorených &pre zápis"
 "Permetti &Modifica File Di Sola Lettura"
 "Дозволити редагування відкритих для запису &файлів"
+"Дазволіць змену файлаў, якія адчынены дла запісу"
+upd:"Allow editing files ope&ned for writing"
 
 MEditLockROFileModification
 "Блокировать р&едактирование файлов с атрибутом R/O"
@@ -3554,11 +4207,13 @@ MEditLockROFileModification
 "&Zamknout editaci souborů určených jen pro čtení"
 "Bearbeiten von &Dateien mit Schreibschutz verhindern"
 "Csak olvasható fájlok s&zerkesztése tiltva"
-"Nie edytuj plików tylko do odczytu"
+"&Nie edytuj plików tylko do odczytu"
 "Bloquear edición de archivos de só&lo lectura"
 "&Zamknúť úpravy súborov určených len na čítanie"
 "&Blocca Modifica File Di Sola Lettura"
 "Блокувати р&едагування файлів з атрибутом R/O"
+"Блакаваць змену файлаў, якія толькі для чытання"
+upd:"Lock editing of read-only &files"
 
 MEditWarningBeforeOpenROFile
 "Пре&дупреждать при открытии файлов с атрибутом R/O"
@@ -3571,6 +4226,8 @@ MEditWarningBeforeOpenROFile
 "&Varovať pri otvorení súborov určených len na čítanie"
 "Avvisa In Caso Di File Di Sola &Lettura"
 "Поперед&жати при відкритті файлів з атрибутом R/O"
+"Папярэджваць пры адкрыцці файлаў, якія толькі для чытання"
+upd:"&Warn when opening read-only files"
 
 MEditConfigTabSize
 "Раз&мер табуляции"
@@ -3583,6 +4240,8 @@ MEditConfigTabSize
 "Veľkosť &tabulátora"
 "Dimensione &Tabulazione"
 "Роз&мір табуляції"
+"Па&мер табуляцыі"
+"Tab d&ydis"
 
 MEditConfigScrollbar
 "Показ&ывать полосу прокрутки"
@@ -3590,11 +4249,13 @@ MEditConfigScrollbar
 "Zobr&azovat posuvník"
 "Scro&llbalken anzeigen"
 "&Gördítősáv mutatva"
-"Pokaż &pasek przewijania"
+"Pokaż pasek przewi&jania"
 "Mostrar barra de despla&zamiento"
 "Zobr&azovať posuvník"
 "Mostra Barre Di &Scorrimento"
 "Показ&увати смужку прокручування"
+"Адлюстроўваць працяжн&ік"
+upd:"S&how scrollbar"
 
 MEditShowWhiteSpace
 "Пробел&ьные символы"
@@ -3602,11 +4263,13 @@ MEditShowWhiteSpace
 "&Zobrazovat neviditelné znaky"
 "Leerzeichensymbole"
 upd:"Show white space"
-upd:"Show white space"
+"Pokaż b&iałe znaki"
 "Mostrar espacios en bla&nco"
 "Zobrazovať medzery"
 "Mostra Spazi Bianchi"
 "Пробіл&ьні символи"
+"Прагал&ьныя сімвалы"
+upd:"Sh&ow white space"
 
 MEditConfigSelFound
 "&Выделять найденное"
@@ -3619,30 +4282,50 @@ MEditConfigSelFound
 "Vy&brať nájdené"
 "Seleziona Tro&vato"
 "&Виділяти знайдене"
+"А&дзначыць знойдзенае"
+upd:"Se&lect found"
 
 MEditConfigCursorAtEnd
 "Курсор в ко&нце"
 "Cu&rsor at the end"
-upd:"Cursor at the end"
+"Kurzor je na konci"
 "Pfeile am Ende"
 upd:"Cursor at the end"
-upd:"Cursor at the end"
+"K&ursor na końcu bloku"
 "Cursor al final"
 "Kurzor na konci"
 "Cursore Alla &Fine"
 "Курсор у кі&нці"
+"Курсор у ка&нцы"
+upd:"Cu&rsor at the end"
 
 MEditConfigDefaultCodePage
 "Кодовая стран&ица по умолчанию:"
 "Default code pa&ge:"
-upd:"Default code page:"
+"Výchozí stránka kódování:"
 "Codepage standardmäßig voreingestellt:"
 upd:"Default code page:"
-upd:"Default code page:"
+"Domyślna strona kodowa:"
 "Página de códigos por defecto:"
 "Predvolená tabuľka znakov:"
 "Codifica Caratteri Default:"
 "Кодова сторін&ка за замовчуванням:"
+"Прадвызначаная кад&ыроўка:"
+upd:"Default code pa&ge:"
+
+MConfigEditor
+"Редактор конфигурации"
+"Configuration editor"
+"Editor konfigurace"
+upd:"Configuration editor"
+upd:"Configuration editor"
+"Edytor konfiguracji"
+upd:"Configuration editor"
+upd:"Configuration editor"
+upd:"Configuration editor"
+"Редактор конфігурації"
+"Рэдактар налад"
+upd:"Configuration editor"
 
 MSaveSetupTitle
 l:
@@ -3656,6 +4339,8 @@ l:
 "Uloženie nastavení"
 "Salva Impostazioni"
 "Конфігурація"
+"Захаваць налады"
+"Išsaugoti nuostatus"
 
 MSaveSetupAsk1
 "Вы хотите сохранить"
@@ -3668,6 +4353,8 @@ MSaveSetupAsk1
 "Chcete uložiť"
 "Desideri Salvare"
 "Ви бажаєте зберегти"
+"Захаваць"
+"Ar norite išsaugoti"
 
 MSaveSetupAsk2
 "текущую конфигурацию?"
@@ -3676,10 +4363,12 @@ MSaveSetupAsk2
 "speichern?"
 "beállításokat?"
 "bieżące ustawienia?"
-"actual de FAR?"
+"actual de Far?"
 "aktuálne nastavenia?"
 "Il Setup Corrente?"
 "поточну конфігурацію?"
+"бягучыя налады?"
+"esamus nuostatus?"
 
 MSaveSetup
 "Сохранить"
@@ -3687,11 +4376,13 @@ MSaveSetup
 "Uložit"
 "Speichern"
 "Mentés"
-"Zapisz"
+"&Zapisz"
 "Guardar"
 "Uložiť"
 "&Salva"
 "Зберегти"
+"Захаваць"
+"Išsaugoti"
 
 MCopyDlgTitle
 l:
@@ -3705,6 +4396,8 @@ l:
 "Kopírovanie"
 "Copia"
 "Копіювання"
+"Капіяваць"
+"Kopijuoti"
 
 MMoveDlgTitle
 "Переименование/Перенос"
@@ -3717,6 +4410,8 @@ MMoveDlgTitle
 "Premenovanie/Presunutie"
 "Rinomina/Muovi"
 "Перейменування/Переміщення"
+"Пераназваць/Перанесці"
+"Pervadinti/Perkelti"
 
 MLinkDlgTitle
 "Ссылка"
@@ -3729,6 +4424,8 @@ MLinkDlgTitle
 "Prepojenie"
 "Crea Link"
 "Посилання"
+"Спасылак"
+"Saitas"
 
 MCopySecurity
 "П&рава доступа:"
@@ -3741,6 +4438,22 @@ MCopySecurity
 "&Prístupové práva:"
 "&Diritti Di Accesso"
 "П&рава доступу:"
+"П&равы доступа:"
+"Kopijuoti &priėjimo teises"
+
+MCopySecurityDefault
+"По умол&чанию"
+"Defau&lt"
+"Vých&ozí"
+"A&utomat."
+"Ala&pért."
+"Do&myślne"
+"Por defecto"
+"Vých&odiskové"
+"Defaul&t"
+"За замов&чуванням"
+"Прадвызна&чана"
+upd:"Defau&lt"
 
 MCopySecurityCopy
 "Копироват&ь"
@@ -3753,6 +4466,8 @@ MCopySecurityCopy
 "S&kopírovať"
 "Co&pia"
 "Копіюват&и"
+"Капіявац&ь"
+"Ko&pijuoti"
 
 MCopySecurityInherit
 "Нас&ледовать"
@@ -3765,18 +4480,8 @@ MCopySecurityInherit
 "&Zdediť"
 "&Eredita"
 "Нас&лідувати"
-
-MCopySecurityLeave
-"По умол&чанию"
-"Defau&lt"
-"Vých&ozí"
-"A&utomat."
-"Ala&pért."
-"Do&myślne"
-"Por defecto"
-"Vých&odiskové"
-"Defaul&t"
-"За замов&чуванням"
+"Спа&дкаваць"
+upd:"&Inherit"
 
 MCopyIfFileExist
 "Уже су&ществующие файлы:"
@@ -3789,6 +4494,8 @@ MCopyIfFileExist
 "Už e&xistujúce súbory:"
 "Solo I &Nuovi"
 "Уже на&явні файли:"
+"У&жо існуючыя файлы:"
+upd:"Already e&xisting files:"
 
 MCopyAsk
 "&Запрос действия"
@@ -3801,6 +4508,8 @@ MCopyAsk
 "&Opýtať sa"
 "C&hiedi"
 "&Запит дії"
+"&Запыт"
+upd:"&Ask"
 
 MCopyAskRO
 "Запрос подтверждения для &R/O файлов"
@@ -3813,6 +4522,8 @@ MCopyAskRO
 "Opýtať sa aj pri súboroch &R/O"
 "Anche Nei File Di &Sola Lettura"
 "Запит підтвердження для &R/O файлів"
+"Запыт пацверджання файлаў, якія толькі для чытання"
+upd:"Also ask on &R/O files"
 
 MCopyOnlyNewerFiles
 "Только &новые/обновлённые файлы"
@@ -3825,6 +4536,8 @@ MCopyOnlyNewerFiles
 "Len &novšie súbory"
 "Solo File &Nuovo/i"
 "Лише &нові/оновлені файли"
+"Толькі &новыя файлы"
+upd:"Only ne&wer file(s)"
 
 MLinkType
 "&Тип ссылки:"
@@ -3837,6 +4550,8 @@ MLinkType
 "&Typ prepojenia:"
 "Tipo Di &Collegamento:"
 "&Тип посилання:"
+"&Тып спасылак:"
+upd:"Link t&ype:"
 
 MLinkTypeJunction
 "&связь каталогов"
@@ -3844,11 +4559,13 @@ MLinkTypeJunction
 "křížení a&dresářů"
 "Ordner&knotenpunkt"
 "Mappa &csomópont"
-"directory &junction"
+"Link &do folderu"
 "empalme de directorio"
 "kríženie pr&iečinkov"
 "&Incrocio Cartella"
 "з'єднання каталогів"
+"&сувязь каталогаў"
+upd:"directory &junction"
 
 MLinkTypeHardlink
 "&жёсткая ссылка"
@@ -3856,11 +4573,13 @@ MLinkTypeHardlink
 "&pevný link"
 "&Harder Link"
 "&Hardlink"
-"link &trwały"
+"Link &trwały"
 "enlace duro"
 "&pevné prepojenie"
 "&Hard Link"
 "&жорстке посилання"
+"&жорсткі спасылак"
+upd:"&hard link"
 
 MLinkTypeSymlink
 "си&мволическая ссылка"
@@ -3868,11 +4587,13 @@ MLinkTypeSymlink
 "&symbolický link"
 "Symbolischer Link"
 "Szimbolikus link"
-"link symboliczny"
+"Link &symboliczny"
 "enlace simbólico"
 "symbolické prepojenie"
 "Link Simbolico"
 "си&мволічне посилання"
+"сі&мвалічны спасылак"
+upd:"&symbolic link"
 
 MLinkTypeSymlinkFile
 "символическая ссылка (&файл)"
@@ -3880,11 +4601,13 @@ MLinkTypeSymlinkFile
 "symbolický link (&soubor)"
 "Symbolischer Link (&Datei)"
 "Szimbolikus link (&fájl)"
-"link symboliczny (do &pliku)"
+"Link symboliczny (do &pliku)"
 "enlace simbólico (&archivo)"
 "symbolické prepoj. (&súbor)"
 "Link Simbolico (&File)"
 "символічне посилання (&файл)"
+"сімвалічны спасылак (&файл)"
+upd:"symbolic link (&file)"
 
 MLinkTypeSymlinkDirectory
 "символическая ссылка (&папка)"
@@ -3892,11 +4615,27 @@ MLinkTypeSymlinkDirectory
 "symbolický link (&adresář)"
 "Symbolischer Link (Or&dner)"
 "Szimbolikus link (&mappa)"
-"link symboliczny (do &folderu)"
+"Link symboliczny (do &folderu)"
 "enlace simbólico (&directorio)"
 "symbolické prepoj. (prie&činok)"
 "Link Simbolico (&Cartella)"
 "символічне посилання (папка)"
+"сімвалічны с&пасылак (каталог)"
+upd:"symbolic link (fol&der)"
+
+MCopyPreserveAllTimestamps
+"Сохранять все метки времени"
+"Preserve all timestamps"
+upd:"Preserve all timestamps"
+upd:"Preserve all timestamps"
+upd:"Preserve all timestamps"
+"Zachowaj wszystkie oryg. czasy"
+upd:"Preserve all timestamps"
+upd:"Preserve all timestamps"
+upd:"Preserve all timestamps"
+"Зберігати всі позначки часу"
+"Захаваць усе меткі часу"
+upd:"Preserve all timestamps"
 
 MCopySymLinkContents
 "Копировать содерж&имое символических ссылок"
@@ -3909,6 +4648,8 @@ MCopySymLinkContents
 "Kopírovať obsah sym&bolic. prepoj."
 "Copia Contenuti Dei Link &Simbolici"
 "Копіювати вміст символічних посилань"
+"Капіяваць змест с&імвалічнай спасылкі"
+upd:"Cop&y contents of symbolic links"
 
 MCopyMultiActions
 "Обр&абатывать несколько имён файлов"
@@ -3921,6 +4662,8 @@ MCopyMultiActions
 "Spra&covať viacero miest určenia"
 "Elabora Destinazioni &Multiple"
 "Обр&обляти декілька імен файлів"
+"Апр&ацоўваць некалькі імён файлаў"
+upd:"Process &multiple destinations"
 
 MCopyDlgCopy
 "&Копировать"
@@ -3933,6 +4676,8 @@ MCopyDlgCopy
 "S&kopíruj"
 "&Copia"
 "&Копіювати"
+"&Капіяваць"
+"&Kopijuoti"
 
 MCopyDlgTree
 "F10-&Дерево"
@@ -3945,6 +4690,8 @@ MCopyDlgTree
 "F10-&Strom"
 "Al&bero [F10]"
 "F10-&Дерево"
+"F10-&Дрэва"
+"F10-&Medis"
 
 MCopyDlgCancel
 "&Отменить"
@@ -3957,6 +4704,8 @@ MCopyDlgCancel
 "Zruši&ť"
 "&Annulla"
 "Скасувати"
+"&Адмена"
+"&Atšaukti"
 
 MCopyDlgRename
 "&Переименовать"
@@ -3969,6 +4718,8 @@ MCopyDlgRename
 "Pre&menuj"
 "&Rinomina"
 "&Перейменувати"
+"&Пераназваць"
+"Per&vadinti"
 
 MCopyDlgLink
 "&Создать ссылку"
@@ -3976,11 +4727,13 @@ MCopyDlgLink
 "Vytvořit &link"
 "&Link einstellen"
 upd:"Create &link"
-upd:"Create &link"
+"Utwórz &link"
 "Crear en&lace"
 "Vytvor prepo&jenie"
 "Crea &Link"
 "&Створити посилання"
+"Стварыць &спасылак"
+"&Saitas"
 
 MCopyDlgTotal
 "Всего"
@@ -3993,18 +4746,22 @@ MCopyDlgTotal
 "Spolu"
 "Totale"
 "Усього"
+"Усяго"
+"Viso"
 
 MCopyPrepareSecury
-"Применение прав доступа..."
-"Applying access rights..."
-"Nastavuji přístupová práva..."
-"Anwenden der Zugriffsrechte..."
-"Hozzáférési jogok alkalmazása..."
-"Ustawianie praw dostępu..."
-"Aplicando derechos de acceso..."
-"Aplikujem prístupové práva..."
-"Impostazione Permessi..."
-"Застосування прав доступу..."
+"Применение прав доступа…"
+"Applying access rights…"
+"Nastavuji přístupová práva…"
+"Anwenden der Zugriffsrechte…"
+"Hozzáférési jogok alkalmazása…"
+"Ustawianie praw dostępu…"
+"Aplicando derechos de acceso…"
+"Aplikujem prístupové práva…"
+"Impostazione Permessi…"
+"Застосування прав доступу…"
+"Ужыць правы доступа…"
+upd:"Applying access rights…"
 
 MCopyUseFilter
 "Исполь&зовать фильтр"
@@ -4017,6 +4774,8 @@ MCopyUseFilter
 "Pou&žiť filter"
 "&Usa Filtro"
 "Використовувати фільтр"
+"У&жыць фільтр"
+upd:"&Use filter"
 
 MCopySetFilter
 "&Фильтр"
@@ -4029,6 +4788,8 @@ MCopySetFilter
 "Filte&r"
 "&Filtro"
 "&Фільтр"
+"&Фільтр"
+upd:"Filt&er"
 
 MCopyFile
 l:
@@ -4042,6 +4803,8 @@ l:
 "Kopírovať {0} {1}:"
 "Copia {0} {1}:"
 "Копіювати {0} {1}:"
+"Капіяваць {0} {1}:"
+"Kopijuoti {0} {1}:"
 
 MMoveFile
 "Переименовать или перенести {0} {1}:"
@@ -4054,6 +4817,8 @@ upd:"átnevezése-mozgatása {0} {1}:"
 "Premenovať alebo presunúť {0} {1}:"
 "Rinomina O Muovi {0} {1}:"
 "Перейменувати або перемістити {0} {1}:"
+"Пераназваць ці перанесці {0} {1}:"
+"Pervadinti ar perkelti {0} {1}:"
 
 MLinkFile
 "Создать ссылку на {0} {1}:"
@@ -4061,11 +4826,13 @@ MLinkFile
 "Vytvořit link na {0} {1}:"
 "Einstellen den Link für {0} {1}:"
 upd:"Create link to {0} {1}:"
-upd:"Create link to {0} {1}:"
+"Utwórz link do {0} {1}:"
 "Crear enlace a {0} {1}:"
 "Vytvoriť prepojenie na {0} {1}:"
 "Crea Link {0} {1}:"
 "Створити посилання на {0} {1}:"
+"Стварыць спасылак на {0} {1}:"
+"Susieti {0} {1}:"
 
 MCopyFiles
 "Копировать {0} элемент{1} {2}:"
@@ -4073,11 +4840,13 @@ MCopyFiles
 "Kopírovat {0} polož{1} {2}:"
 "Kopiere {0} Objekt{1} {2}:"
 "{0} elem másolása{1} {2}:"
-"Skopiuj {0} plików{1} {2}:"
+"Skopiuj {0} plik{1} {2}:"
 "Copiar {0} ítem{1} {2}:"
 "Kopírovať {0} polož{1} {2}:"
 "Copia {0} Oggett{1} {2}:"
 "Копіювати {0} елемент{1} {2}:"
+"Капіяваць {0} элемент{1} {2}:"
+"Kopijuoti {0} failu{1} {2}:"
 
 MMoveFiles
 "Переименовать или перенести {0} элемент{1} {2}:"
@@ -4085,11 +4854,13 @@ MMoveFiles
 "Přejmenovat nebo přesunout {0} polož{1} {2}:"
 "Verschiebe {0} Objekt{1} {2}:"
 "{0} elem átnevezése-mozgatása{1} {2}:"
-"Zmień nazwę lub przenieś {0} plików{1} {2}:"
+"Zmień nazwę lub przenieś {0} plik{1} {2}:"
 "Renombrar o mover {0} ítem{1} {2}:"
 "Premenovať alebo presunúť {0} polož{1} {2}:"
 "Rinomina O Muovi {0} Oggett{1} {2}:"
 "Перейменувати або перемістити {0} елемент{1} {2}:"
+"Пераназваць ці перанесці {0} элемент{1} {2}:"
+"Pervadinti ar perkelti {0} failu{1} {2}:"
 
 MLinkFiles
 "Создать ссылки на {0} элемент{1} {2}:"
@@ -4097,11 +4868,13 @@ MLinkFiles
 "Vytvořit link na {0} polož{1} {2}:"
 "Einstellen den Link für {0} Objekt {1} {2}:"
 upd:"Create links to {0} item{1} {2}:"
-upd:"Create links to {0} item{1} {2}:"
+"&Utwórz linki do {0} plik{1} {2}:"
 "Crear enlaces a {0} ítem{1} {2}:"
 "Vytvoriť prepojenia na {0} polož{1} {2}:"
 "Creazione Link {0} Oggett{1} {2}:"
 "Створити посилання на {0} елемент{1} {2}:"
+"Стварыць спасылкі на {0} элемент{1} {2}:"
+"Susieti {0} failu{1} {2}:"
 
 MCMLTargetTO
 "&в"
@@ -4109,23 +4882,27 @@ MCMLTargetTO
 "d&o"
 "na&ch"
 "ide"
-"d&o"
+"do"
 "&a"
 "d&o"
 "&In"
 "&в"
+"&у"
+"į"
 
 MCMLTargetIN
 "&в"
-"in"
+"&in"
 "&v"
-upd:" &in"
-upd:" &in"
-upd:" &in"
+upd:"&in"
+upd:"&in"
+"w"
 "en"
 "&v"
 "&In"
 "&в"
+"&у"
+"su"
 
 MCMLItems0
 ""
@@ -4138,6 +4915,8 @@ MCMLItems0
 "ku"
 ""
 ""
+""
+""
 
 MCMLItemsA
 "а"
@@ -4145,11 +4924,13 @@ MCMLItemsA
 "ek"
 "e"
 ""
-"s"
+"i"
 "s"
 "iek"
 "o"
 "а"
+"а"
+upd:"s"
 
 MCMLItemsS
 "ов"
@@ -4157,11 +4938,13 @@ MCMLItemsS
 "ky"
 "e"
 ""
-"s"
+"ów"
 "s"
 "ky"
 "i"
 "ів"
+"аў"
+upd:"s"
 
 MCopyIncorrectTargetList
 l:
@@ -4175,6 +4958,8 @@ l:
 "Nesprávny zoznam cieľov"
 "Lista Destinazione Errata!"
 "Вказано некоректний список цілей"
+"Неправільны спіс мэтаў"
+upd:"Incorrect target list"
 
 MCopyCopyingTitle
 l:
@@ -4186,8 +4971,10 @@ l:
 "Kopiowanie"
 "Copiando"
 "Kopírujem"
-"Copia..."
+"Copia"
 "Копіювання"
+"Капіяванне"
+"Kopijuoju"
 
 MCopyMovingTitle
 "Перенос"
@@ -4198,8 +4985,10 @@ MCopyMovingTitle
 "Przenoszenie"
 "Moviendo"
 "Premiestňujem"
-"Spostamento..."
+"Spostamento"
 "Переміщення"
+"Перанос"
+"Perkeliu"
 
 MCopyCannotFind
 l:
@@ -4208,11 +4997,13 @@ l:
 "Nelze nalézt soubor"
 "Folgende Datei kann nicht gefunden werden:"
 "A fájl nem található:"
-"Nie mogę odnaleźć pliku"
+"Nie odnaleziono pliku"
 "No se puede encontrar el archivo"
 "Nemôžem nájsť súbor"
 "File Non Trovato"
 "Файл не знайдено"
+"Файл не знойдзены"
+"Negaliu rasti  failo"
 
 MCannotCopyFolderToItself1
 l:
@@ -4221,11 +5012,13 @@ l:
 "Nelze kopírovat adresář"
 "Folgender Ordner kann nicht kopiert werden:"
 "A mappa:"
-"Nie można skopiować katalogu"
+"Nie można skopiować folderu"
 "No se puede copiar el directorio"
 "Nemôžem skopírovať priečinok"
 "Non Posso Copiare La Cartella"
 "Не можна копіювати папку"
+"Нельга капіяваць каталог"
+"Negaliu nukopijuoti katalogo"
 
 MCannotCopyFolderToItself2
 "в саму себя"
@@ -4238,6 +5031,8 @@ MCannotCopyFolderToItself2
 "sám do seba"
 "Dentro Se Stessa"
 "в себе"
+"у самога сябе"
+"į save patį"
 
 MCopyCannotCreateFolder
 l:
@@ -4246,23 +5041,13 @@ l:
 "Nelze vytvořit adresář"
 "Folgender Ordner kann nicht erstellt werden:"
 "A mappa nem hozható létre:"
-"Nie udało się utworzyć katalogu"
+"Nie udało się utworzyć folderu"
 "No se puede crear el directorio"
 "Nemôžem vytvoriť priečinok"
 "Non Posso Creare La Cartella"
 "Помилка створення папки"
-
-MCopyCannotChangeFolderAttr
-"Невозможно установить атрибуты для папки"
-"Failed to set folder attributes"
-"Nastavení atributů adresáře selhalo"
-"Fehler beim Setzen der Ordnerattribute"
-"A mappa attribútumok beállítása sikertelen"
-"Nie udało się ustawić atrybutów folderu"
-"Error al poner atributos en directorio"
-"Nepodarilo sa nastaviť atribúty priečinka"
-"Impossibile Impostare Gli Attributi"
-"Неможливо встановити атрибути для папки"
+"Немагчыма стварыць каталог"
+"Negaliu sukurti katalogo"
 
 MCopyCannotRenameFolder
 "Невозможно переименовать папку"
@@ -4270,11 +5055,13 @@ MCopyCannotRenameFolder
 "Nelze přejmenovat adresář"
 "Folgender Ordner kann nicht umbenannt werden:"
 "A mappa nem nevezhető át:"
-"Nie udało się zmienić nazwy katalogu"
+"Nie udało się zmienić nazwy folderu"
 "No se puede renombrar el directorio"
 "Nemôžem premenovať priečinok"
 "Non Posso Rinominare La Cartella"
 "Неможливо перейменувати папку"
+"Немагчыма пераназваць каталог"
+upd:"Cannot rename the folder"
 
 MCopyIgnore
 "&Игнорировать"
@@ -4287,6 +5074,8 @@ MCopyIgnore
 "&Ignorovať"
 "&Ignora"
 "&Ігнорувати"
+"Прапусц&іць"
+upd:"&Ignore"
 
 MCopyIgnoreAll
 "Игнорировать &все"
@@ -4299,6 +5088,8 @@ MCopyIgnoreAll
 "Ignorovať &všetko"
 "I&gnora Tutti"
 "Ігнорувати &все"
+"Прапусціць &усе"
+upd:"Ignore &All"
 
 MCopyRetry
 "&Повторить"
@@ -4311,6 +5102,8 @@ MCopyRetry
 "Z&opakovať"
 "&Riprova"
 "&Повторити"
+"&Паўтарыць"
+"&Bandyti vėl"
 
 MCopySkip
 "П&ропустить"
@@ -4323,6 +5116,8 @@ MCopySkip
 "&Preskočiť"
 "&Salta"
 "П&ропустити"
+"П&рапусціць"
+"&Praleist"
 
 MCopySkipAll
 "&Пропустить все"
@@ -4335,6 +5130,8 @@ MCopySkipAll
 "Pr&eskočiť všetko"
 "Salta &Tutti"
 "&Пропустити все"
+"&Прапусціць усе"
+upd:"S&kip all"
 
 MCopyCancel
 "&Отменить"
@@ -4347,6 +5144,8 @@ MCopyCancel
 "&Zrušiť"
 "&Annulla"
 "&Скасувати"
+"&Адмена"
+"&Atšaukti"
 
 MCopyDecrypt
 "Рас&шифровать"
@@ -4357,8 +5156,10 @@ MCopyDecrypt
 "&Deszyfruj"
 "&Descifrar"
 "Dešifovať"
-upd:"Decrypt"
+"Decripta"
 "Роз&шифрувати"
+"Рас&шыфраваць"
+upd:"&Decrypt"
 
 MCopyDecryptAll
 "&Все"
@@ -4369,8 +5170,10 @@ MCopyDecryptAll
 "Deszyfruj ws&zystkie"
 "Desci&frar todo"
 "Dešifrovať všetko"
-upd:"Decrypt all"
+"Decripta Tutti"
 "&Все"
+"Расшыфраваць &усе"
+upd:"Decrypt &all"
 
 MCopyCannotCreateLink
 l:
@@ -4384,6 +5187,8 @@ l:
 "Nemôžem vytvoriť symbolické prepojenie"
 "Non Posso Creare Il Collegamento"
 "Помилка створення посилання"
+"Немагчыма стварыць спасылак"
+upd:"Cannot create the link"
 
 MCopyFolderNotEmpty
 "Папка назначения должна быть пустой"
@@ -4396,6 +5201,8 @@ MCopyFolderNotEmpty
 "Cieľový priečinok musí byť prázdny"
 "La Cartella Di Destinazione Deve Essere Vuota"
 "Папка призначення повинна бути порожньою"
+"Каталог не павінен быць пустым"
+upd:"Target folder must be empty"
 
 MCopyCannotCreateJunctionToFile
 "Невозможно создать связь. Файл уже существует:"
@@ -4408,6 +5215,8 @@ MCopyCannotCreateJunctionToFile
 "Nemôžem vytvoriť krížový odkaz. Súbor už existuje:"
 "Non Posso Creare Incrocio. File Esistente:"
 "Неможливо створити з'єднання. Файл уже існує:"
+"Немагчыма стварыць сувязь. Файл ужо існуе:"
+upd:"Cannot create junction. The file already exists:"
 
 MCopyCannotCreateVolMount
 l:
@@ -4421,6 +5230,8 @@ l:
 "Chyba pripojovania"
 "Errore Punto Di Montaggio Del Volume"
 "Помилка монтування диска"
+"Памылка мацавання дыска"
+upd:"Volume mount points error"
 
 MCopyMountVolFailed
 "Ошибка при монтировании диска '{0}'"
@@ -4428,11 +5239,13 @@ MCopyMountVolFailed
 "Pokus o připojení svazku '{0}'"
 "Versuch Datenträger '{0}' zu aktivieren"
 ""{0}" kötet mountolása"
-"Nie udało się zamontować woluminu '{0}'"
+"Błąd montowania wolumenu '{0}'"
 "Intento de montaje de volumen '{0}'"
 "Pokus o pripojenie '{0}'"
 "Tentativo Di Montare Il Volume '{0}'"
 "Помилка при монтуванні диска '{0}'"
+"Памылка пры мацаванні дыска '{0}'"
+upd:"Attempt to volume mount '{0}'"
 
 MCopyMountVolFailed2
 "на '{0}'"
@@ -4440,11 +5253,13 @@ MCopyMountVolFailed2
 "na '{0}' selhal"
 "fehlgeschlagen bei '{0}'"
 "nem sikerült: "{0}""
-"w '{0}' nie udało się"
+"w '{0}'"
 "a '{0}' ha fallado"
 "na '{0}' zlyhal"
 "In '{0}' Fallito!"
 "на '{0}'"
+"на '{0}'"
+upd:"at '{0}' failed"
 
 MCopyMountName
 "Disk_"
@@ -4452,11 +5267,13 @@ MCopyMountName
 "Disk_"
 "Platte_"
 "Disk_"
-"Disk_"
+"Dysk_"
 "Disco_"
 "Disk_"
 "Disco_"
 "Disk_"
+"Дыск_"
+upd:"Disk_"
 
 MCannotCopyFileToItself1
 l:
@@ -4470,6 +5287,8 @@ l:
 "Nemôžem kopírovať súbor"
 "Non Posso Copiare Il File"
 "Не можна копіювати файл"
+"Немагчыма капіяваць файл"
+"Negaliu nukopijuoti failo"
 
 MCannotCopyFileToItself2
 "в самого себя"
@@ -4482,31 +5301,37 @@ MCannotCopyFileToItself2
 "sám na seba"
 "Su Se Stesso"
 "у себе"
+"у самога сябе"
+"į save patį"
 
 MCopyStream1
 l:
 "Исходный файл содержит более одного потока данных,"
-"The source file contains more than one data stream."
-"Zdrojový soubor obsahuje více než jeden datový proud."
-"Die Quelldatei enthält mehr als einen Datenstream"
+"The source file contains more than one data stream,"
+"Zdrojový soubor obsahuje více než jeden datový proud,"
+"Die Quelldatei enthält mehr als einen Datenstream,"
 "A forrásfájl több stream-et tartalmaz,"
-"Plik źródłowy zawiera więcej niż jeden strumień danych."
-"El archivo origen contiene más de un flujo de datos."
-"Zdrojový súbor obsahuje viac než jeden dátový prúd."
-"Origine Contiene Più Di Un Data Stream."
+"Plik źródłowy zawiera więcej niż jeden strumień danych,"
+"El archivo origen contiene más de un flujo de datos,"
+"Zdrojový súbor obsahuje viac než jeden dátový prúd,"
+"Origine Contiene Più Di Un Data Stream,"
 "Початковий файл містить більш ніж один потік даних,"
+"Зыходны файл змяшчае больш адной струмені дадзеных,"
+upd:"The source file contains more than one data stream,"
 
 MCopyStream2
 "но вы не используете системную функцию копирования."
-"but since you do not use a system copy routine."
-"protože nepoužíváte systémovou kopírovací rutinu."
+"but you're not using the system copy routine."
+"ale nepoužíváte systémovou kopírovací rutinu."
 "aber Sie verwenden derzeit nicht die systemeigene Kopierroutine."
 "de nem a rendszer másolórutinját használja."
-"ale ze względu na rezygnację z systemowej procedury kopiowania."
-"pero desde que usted no usa la rutina de copia del sistema."
-"lebo nepoužívate systémovú kopírovaciu rutinu."
-"Ma Poichè Non Usate Le Procedure Di Copia Del Sistema"
+"ale nie korzystasz z systemowej procedury kopiowania."
+"pero no estás utilizando la rutina de copia del sistema."
+"ale nepoužívate systémovú kopírovaciu rutinu."
+"Ma Non Stai Usando Una Procedure Di Copia Del Sistema."
 "але ви не використовуєте системну функцію копіювання."
+"але вы не ўжываеце сістэмнае капіяванне."
+upd:"but you're not using the system copy routine."
 
 MCopyStream3
 "но том назначения не поддерживает этой возможности."
@@ -4517,12 +5342,14 @@ MCopyStream3
 "ale napęd docelowy nie obsługuje tej funkcji."
 "pero el volumen de destino no soporta esta opción."
 "lebo cieľová jednotka nepodporuje túto funkciu."
-"Ma Il Disco Di Destinazione Non Supporta Queste Funzioni"
+"Ma Il Disco Di Destinazione Non Supporta Queste Funzioni."
 "але том призначення не підтримує цю можливість."
+"але дыск прызначэння не падтрымлівае гэтай магчымасці."
+upd:"but the destination volume does not support this feature."
 
 MCopyStream4
 "Часть сведений не будет сохранена."
-"Some data will not be preserved as a result."
+"Some data will not be preserved."
 "To bude mít za následek, že některá data nebudou uchována."
 "Ein Teil der Daten bleiben daher nicht erhalten."
 "Az adatok egy része el fog veszni."
@@ -4531,6 +5358,8 @@ MCopyStream4
 "To bude mať za následok, že sa niektoré dáta nezachovajú."
 "Alcuni Dati Non Saranno Preservati Come Conseguenza"
 "Частину даних буде втрачено."
+"Частка звестак не будзе захавана."
+upd:"Some data will not be preserved."
 
 MCopyDirectoryOrFile
 l:
@@ -4539,11 +5368,13 @@ l:
 "Je to název adresáře nebo souboru?"
 "Wird es Dateiname oder Ordnername gemeint?"
 upd:"Does it specify a folder name or file name?"
-upd:"Does it specify a folder name or file name?"
+"Czy zawiera nazwę folderu lub pliku?"
 "Si especifica nombre de carpeta o nombre de archivo?"
 "Je to názov priečinka alebo súboru?"
 "Questo Nome Lo Considero Come Cartella O File?"
 "Маєте на увазі ім'я папки чи файлу?"
+"Паказвае імя - ён каталог ці файл?"
+upd:"Does it specify a folder name or file name?"
 
 MCopyDirectoryOrFileDirectory
 "Папка"
@@ -4551,11 +5382,13 @@ MCopyDirectoryOrFileDirectory
 "Adresář"
 "Ordner"
 upd:"Folder"
-upd:"Folder"
+"Folder"
 "Carpeta"
 "Priečinka"
 "&Cartella"
 "Папка"
+"Каталог"
+upd:"Folder"
 
 MCopyDirectoryOrFileFile
 "Файл"
@@ -4563,11 +5396,13 @@ MCopyDirectoryOrFileFile
 "Souboru"
 "Datei"
 upd:"File"
-upd:"File"
+"Plik"
 "Archivo"
 "Súboru"
 "&File"
 "Файл"
+"Файл"
+upd:"File"
 
 MCopyFileExist
 l:
@@ -4581,6 +5416,8 @@ l:
 "Súbor už existuje"
 "Il File Esiste Già"
 "Файл уже існує"
+"Файл ужо існуе"
+"Toks failas jau yra"
 
 MCopySource
 "&Новый"
@@ -4593,6 +5430,8 @@ MCopySource
 "&Nový"
 "&Nuovo"
 "&Новий"
+"&Новы"
+"Kopijuojamas"
 
 MCopyDest
 "Су&ществующий"
@@ -4605,6 +5444,8 @@ MCopyDest
 "E&xistujúci"
 "&Esistente"
 "&Існуючий"
+"Існую&чы"
+"Esantis"
 
 MCopyOverwrite
 "В&место"
@@ -4617,18 +5458,8 @@ MCopyOverwrite
 "&Prepísať"
 "So&vrascrivi"
 "За&мість"
-
-MCopySkipOvr
-"&Пропустить"
-"&Skip"
-"Přes&kočit"
-"Über&spr."
-"&Kihagy"
-"&Omiń"
-"Sa&ltar"
-"Pres&kočiť"
-"&Salta"
-"&Пропустити"
+"За&мест"
+"U&žrašyti"
 
 MCopyAppend
 "&Добавить"
@@ -4641,18 +5472,8 @@ MCopyAppend
 "Pr&ipojiť"
 "Acc&oda"
 "&Додати"
-
-MCopyResume
-"Возоб&новить"
-"&Resume"
-"Po&kračovat"
-"&Weiter"
-"Fol&ytat"
-"Ponó&w"
-"&Resumir"
-"Pok&račovať"
-"&Riprendi"
-"Від&новити"
+"&Дадаць"
+"Pri&jungti"
 
 MCopyRename
 "&Имя"
@@ -4660,23 +5481,13 @@ MCopyRename
 "Pr&ejmenovat"
 upd:"R&ename"
 "Á&tnevez"
-upd:"R&ename"
+"Zmień &nazwę"
 "R&enombrar"
 "Pr&emenovať"
 "&Rinomina"
 "Ім'я"
-
-MCopyCancelOvr
-"&Отменить"
-"&Cancel"
-"&Storno"
-"Ab&bruch"
-"&Mégsem"
-"&Anuluj"
-"&Cancelar"
-"&Zrušiť"
-"&Annulla"
-"&Скасувати"
+"Пер&аназваць"
+upd:"R&ename"
 
 MCopyRememberChoice
 "&Запомнить выбор"
@@ -4689,6 +5500,8 @@ MCopyRememberChoice
 "Zapamä&tať si voľbu"
 "Ricor&da Scelta"
 "&Запам'ятати вибір"
+"Памята&ць выбар"
+upd:"&Remember choice"
 
 MCopyRenameTitle
 "Переименование"
@@ -4696,11 +5509,13 @@ MCopyRenameTitle
 "Přejmenovat"
 upd:"Rename"
 "Átnevezés"
-upd:"Rename"
+"Zmień nazwę"
 "Renombrar"
 "Premenovať"
 "Rinomina"
 "Перейменування"
+"Пераназыванне"
+upd:"Rename"
 
 MCopyRenameText
 "&Новое имя:"
@@ -4708,11 +5523,13 @@ MCopyRenameText
 "N&ový název:"
 upd:"&New name:"
 "Ú&j név:"
-upd:"&New name:"
+"&Nowa nazwa:"
 "&Nuevo nombre:"
 "N&ový názov:"
 "Nuo&vo Nome:"
 "Нове ім'я:"
+"&Новае імя:"
+upd:"&New name:"
 
 MCopyFileRO
 l:
@@ -4726,6 +5543,8 @@ l:
 "Súbor je len na čítanie"
 "File Di Sola Lettura"
 "Файл має атрибут \"Лише для читання\""
+"Файл 'толькі для чытання'"
+"Failas yra read only"
 
 MCopyAskDelete
 "Вы хотите удалить его?"
@@ -4738,6 +5557,8 @@ MCopyAskDelete
 "Chcete ho zmazať?"
 "Vuoi Cancellarlo ?"
 "Ви бажаєте видалити його?"
+"Вы жадаеце выдаліць яго?"
+"Ar norite jį ištrinti?"
 
 MCopyDeleteRO
 "&Удалить"
@@ -4750,6 +5571,8 @@ MCopyDeleteRO
 "Z&mazať"
 "&Elimina"
 "Ви&далити"
+"&Выдаліць"
+"&Trinti"
 
 MCopyDeleteAllRO
 "&Все"
@@ -4762,42 +5585,8 @@ MCopyDeleteAllRO
 "&Všetko"
 "&Tutti"
 "&Все"
-
-MCopySkipRO
-"&Пропустить"
-"&Skip"
-"Přes&kočit"
-"Über&springen"
-"&Kihagyja"
-"&Omiń"
-"Sa&ltar"
-"Pres&kočiť"
-"&Salta"
-"&Пропустити"
-
-MCopySkipAllRO
-"П&ропустить все"
-"S&kip all"
-"Př&eskočit vše"
-"A&lle überspringen"
-"Mind&et"
-"O&miń wszystkie"
-"Saltar to&dos"
-"Pr&eskočiť všetky"
-"Sa&lta Tutti"
-"П&ропустити все"
-
-MCopyCancelRO
-"&Отменить"
-"&Cancel"
-"&Storno"
-"Ab&bruch"
-"&Mégsem"
-"&Anuluj"
-"&Cancelar"
-"&Storno"
-"&Annulla"
-"&Скасувати"
+"&Усе"
+"&Visus"
 
 MCannotCopy
 l:
@@ -4806,11 +5595,13 @@ l:
 "Nelze kopírovat"
 "Konnte nicht kopieren"
 "Nem másolható"
-"Nie mogę skopiować"
+"Nie można skopiować"
 "No se puede copiar"
 "Nemôžem kopírovať"
 "Non Posso Copiare"
 "Помилка копіювання"
+"Памылка капіявання"
+"Negaliu nukopijuoti"
 
 MCannotMove
 "Ошибка переноса"
@@ -4818,11 +5609,13 @@ MCannotMove
 "Nelze přesunout"
 "Konnte nicht verschieben"
 "Nem mozgatható"
-"Nie mogę przenieść"
+"Nie można przenieść"
 "No se puede mover"
 "Nemôžem presunúť"
 "Non Posso Muovere"
 "Помилка переміщення"
+"Памылка пераносу"
+"Negaliu perkelti"
 
 MCannotLink
 "Ошибка создания ссылки"
@@ -4830,11 +5623,13 @@ MCannotLink
 "Nelze linkovat"
 "Konnte nicht verlinken"
 "Nem linkelhető"
-"Nie mogę dowiązać"
+"Nie można dowiązać"
 "No se puede enlazar"
 "Nemôžem prepojiť"
 "Non Posso Creare Il Link"
 "Помилка створення посилання"
+"Памылка стварэння спасылкі"
+"Negaliu susieti"
 
 MCannotCopyTo
 "в"
@@ -4847,6 +5642,8 @@ MCannotCopyTo
 "do"
 "In"
 "в"
+"у"
+"į"
 
 MCopyEncryptWarn1
 "Файл"
@@ -4859,6 +5656,8 @@ MCopyEncryptWarn1
 "Súbor"
 "Il File"
 "Файл"
+"Файл"
+upd:"The file"
 
 MCopyEncryptWarn2
 "нельзя скопировать или переместить, не потеряв его шифрование."
@@ -4871,6 +5670,8 @@ MCopyEncryptWarn2
 "sa nedá skopírovať ani presunúť bez straty jeho šifrovania."
 "Non Puo' Essere Copiato O Spostato Senza La Perdita Della Criptazione"
 "не можна скопіювати чи перемістити, не втративши його шифрування."
+"Нельга капіяваць ці перанесці, не згубіўшы яго шыфраванне."
+upd:"cannot be copied or moved without losing its encryption."
 
 MCopyEncryptWarn3
 "Можно пропустить эту ошибку или отменить операцию."
@@ -4883,6 +5684,8 @@ MCopyEncryptWarn3
 "Môžete túto chybu ignorovať a pokračovať, alebo operáciu zrušiť."
 "Puoi Scegliere Di Ignorare Questo Errore E Continuare, O Annullare."
 "Можна пропустити цю помилку або скасувати операцію."
+"Можна прапусціць гэтую памылку, альбо адмяніць дзеянне."
+upd:"You can choose to ignore this error and continue, or cancel."
 
 MCopyReadError
 l:
@@ -4891,11 +5694,13 @@ l:
 "Nelze číst data z"
 "Kann Daten nicht lesen von"
 "Nem olvasható adat innen:"
-"Nie mogę odczytać danych z"
+"Nie można odczytać danych z"
 "No se puede leer datos desde"
 "Nemôžem čítať dáta z"
 "Non Posso Leggere Da"
 "Помилка читання даних із"
+"Памылка чытання дадзеных з"
+"Negaliu nuskaityti duomenų iš"
 
 MCopyWriteError
 "Ошибка записи данных в"
@@ -4903,11 +5708,13 @@ MCopyWriteError
 "Nelze zapisovat data do"
 "Dann Daten nicht schreiben in"
 "Nem írható adat ide:"
-"Nie mogę zapisać danych do"
+"Nie można zapisać danych do:"
 "No se puede escribir datos hacia"
 "Nemôžem zapísať dáta do"
 "Non Posso Scrivere Su"
 "Помилка запису даних у"
+"Памылка запісу дадзеных у"
+"Negaliu įrašyti duomenų į"
 
 MCopyFilesTotalInfo
 l:
@@ -4921,18 +5728,22 @@ l:
 "Súbory:"
 "Files:"
 "Файлів:"
+"Файлаў:"
+"Failų:"
 
 MCopyBytesTotalInfo
 "Байт:"
 "Bytes:"
-upd:"Bytes:"
+"Bajtů:"
 "Bytes:"
 upd:"Bytes:"
-upd:"Bytes:"
+"Bajtów:"
 "Bytes:"
 "Bytov:"
-upd:"Bytes:"
+"Bytes:"
 "Байт:"
+"Байтаў:"
+upd:"Bytes:"
 
 MCopyMoving
 "Перенос файла"
@@ -4945,6 +5756,8 @@ MCopyMoving
 "Presúvam súbor"
 "Spostamento File"
 "Переміщення файлу"
+"Перанос файла"
+"Perkeliu failą"
 
 MCopyCopying
 "Копирование файла"
@@ -4957,6 +5770,8 @@ MCopyCopying
 "Kopírujem súbor"
 "Copia Del File"
 "Копіювання файлу"
+"Капіяванне файла"
+"Kopijuoju failą"
 
 MCopyTo
 "в"
@@ -4964,11 +5779,13 @@ MCopyTo
 "do"
 "nach"
 "ide:"
-"do"
+"do:"
 "Hacia:"
 "do"
 "In"
 "в"
+"у"
+"į"
 
 MCopyErrorDiskFull
 l:
@@ -4982,6 +5799,8 @@ l:
 "Disk je plný. Vložte ďalší"
 "Disco Pieno, Inserite Il Prossimo"
 "Диск заповнено. Вставте наступний"
+"Дыск перапоўнены. Устаўце наступны"
+"Diskas pilnas. Įkiškite sekantį"
 
 MDeleteTitle
 l:
@@ -4995,78 +5814,36 @@ l:
 "Zmazať"
 "Eliminazione"
 "Видалення"
-
-MAskDeleteFolder
-"Вы хотите удалить папку"
-"Do you wish to delete the folder"
-"Přejete si smazat adresář"
-"Wollen Sie den Ordner löschen"
-"Törölni akarja a mappát?"
-"Czy chcesz wymazać katalog"
-"Desea borrar el directorio"
-"Chcete zmazať priečinok"
-"Vuoi Eliminare La Cartella"
-"Ви бажаєте видалити папку"
-
-MAskDeleteFile
-"Вы хотите удалить файл"
-"Do you wish to delete the file"
-"Přejete si smazat soubor"
-"Wollen Sie die Datei löschen"
-"Törölni akarja a fájlt?"
-"Czy chcesz usunąć plik"
-"Desea borrar el archivo"
-"Chcete zmazať súbor"
-"Vuoi Eliminare Il File"
-"Ви бажаєте видалити файл"
+"Выдаленне"
+"Trinti"
 
 MAskDelete
-"Вы хотите удалить"
-"Do you wish to delete"
-"Přejete si smazat"
-"Wollen Sie folgendes Objekt löschen"
-"Törölni akar"
-"Czy chcesz usunąć"
-"Desea borrar estos"
-"Chcete zmazať"
-"Vuoi Eliminare"
-"Ви бажаєте видалити"
-
-MAskDeleteRecycleFolder
-"Вы хотите переместить в Корзину папку"
-"Do you wish to move to the Recycle Bin the folder"
-"Přejete si přesunout adresář do Koše"
-"Wollen Sie den Ordner in den Papierkorb verschieben"
-"A Lomtárba akarja dobni a mappát?"
-"Czy chcesz przenieść katalog do Kosza"
-"Desea mover hacia la Papelera de Reciclaje el directorio"
-"Chcete presunúť do Koša priečinok"
-"Vuoi Spostare La Cartella Nel Cestino"
-"Ви бажаєте перемістити в Кошик папку"
-
-MAskDeleteRecycleFile
-"Вы хотите переместить в Корзину файл"
-"Do you wish to move to the Recycle Bin the file"
-"Přejete si přesunout soubor do Koše"
-"Wollen Sie die Datei in den Papierkorb verschieben"
-"A Lomtárba akarja dobni a fájlt?"
-"Czy chcesz przenieść plik do Kosza"
-"Desea mover hacia la Papelera de Reciclaje el archivo"
-"Chcete presunúť do Koša súbor"
-"Vuoi Spostare Il File Nel Cestino"
-"Ви бажаєте перемістити в Кошик файл"
+"Вы хотите удалить {0}?"
+"Do you wish to delete {0}?"
+"Přejete si smazat {0}?"
+"Wollen Sie {0} löschen?"
+"Törölni akarja {0}?"
+"Czy chcesz usunąć {0}?"
+"¿Desea borrar {0}?"
+"Chcete zmazať {0}?"
+"Vuoi Eliminare {0}?"
+"Ви бажаєте видалити {0}?"
+"Вы жадаеце выдаліць {0}?"
+"Ar norite ištrinti {0}?"
 
 MAskDeleteRecycle
-"Вы хотите переместить в Корзину"
-"Do you wish to move to the Recycle Bin"
-"Přejete si přesunout do Koše"
-"Wollen Sie das Objekt in den Papierkorb verschieben"
-"A Lomtárba akar dobni"
-"Czy chcesz przenieść do Kosza"
-"Desea mover hacia la Papelera de Reciclaje"
-"Chcete presunúť do Koša"
-"Vuoi Spostare Nel Cestino"
-"Ви бажаєте перемістити в Кошик"
+"Вы хотите переместить {0} в Корзину?"
+"Do you wish to move {0} to the Recycle Bin?"
+"Přejete si přesunout {0} do Koše?"
+"Wollen Sie {0} in den Papierkorb verschieben?"
+"A Lomtárba akarja dobni {0}?"
+"Czy chcesz przenieść {0} do Kosza?"
+"¿Desea mover {0} hacia la Papelera de Reciclaje?"
+"Chcete presunúť {0} do Koša?"
+"Vuoi Spostare {0} Nel Cestino?"
+"Ви бажаєте перемістити {0} в Кошик?"
+"Вы жадаеце перанесці {0} у Сметнік?"
+"Ar norite perkelti {0} į Recycle Bin?"
 
 MDeleteWipeTitle
 "Уничтожение"
@@ -5079,138 +5856,92 @@ MDeleteWipeTitle
 "Vymazať"
 "Distruzione"
 "Знищення"
-
-MAskWipeFolder
-"Вы хотите уничтожить папку"
-"Do you wish to wipe the folder"
-"Přejete si vymazat adresář"
-"Wollen Sie den Ordner sicher löschen"
-"Ki akarja söpörni a mappát?"
-"Czy chcesz wymazać katalog"
-"Desea destruir el directorio"
-"Chcete vymazať priečinok"
-"Vuoi Distruggere La Cartella"
-"Ви бажаєте знищити папку"
-
-MAskWipeFile
-"Вы хотите уничтожить файл"
-"Do you wish to wipe the file"
-"Přejete si vymazat soubor"
-"Wollen Sie die Datei sicher löschen"
-"Ki akarja söpörni a fájlt?"
-"Czy chcesz wymazać plik"
-"Desea destruir el archivo"
-"Chcete vymazať súbor"
-"Vuoi Distruggere Il File"
-"Ви бажаєте знищити файл"
+"Знішчэнне"
+"Išvalyti"
 
 MAskWipe
-"Вы хотите уничтожить"
-"Do you wish to wipe"
-"Přejete si vymazat"
-"Wollen Sie das Objekt sicher löschen"
-"Ki akar söpörni"
-"Czy chcesz wymazać"
-"Desea destruir"
-"Chcete vymazať"
-"Vuoi Distruggere"
-"Ви бажаєте знищити"
+"Вы хотите уничтожить {0}?"
+"Do you wish to wipe {0}?"
+"Přejete si vymazat {0}?"
+"Wollen Sie {0} sicher löschen?"
+"Ki akarja söpörni {0}?"
+"Czy chcesz wymazać {0}?"
+"¿Desea destruir {0}?"
+"Chcete vymazať {0}?"
+"Vuoi Distruggere {0}?"
+"Ви бажаєте знищити {0}?"
+"Вы жадаеце знішчыць {0}?"
+"Ar norite išvalyti {0}?"
 
-MDeleteLinkTitle
-"Удаление ссылки"
-"Delete link"
-"Smazat link"
-"Link löschen"
-"Link törlése"
-"Usuń link"
-"Borrar enlace"
-"Zmazať prepojenie"
-"Elimina Collegamento"
-"Видалення посилання"
+MAskDeleteFolder
+"папку"
+"the folder"
+"adresář"
+"den Ordner"
+"a mappát"
+"folder"
+"el directorio"
+"priečinok"
+"La Cartella"
+"папку"
+"каталог"
+"katalogą"
+
+MAskDeleteFile
+"файл"
+"the file"
+"soubor"
+"die Datei"
+"a fájlt"
+"plik"
+"el archivo"
+"súbor"
+"Il File"
+"файл"
+"файл"
+"failą"
+
+MAskDeleteObjects
+"объекты"
+"the objects"
+"objekty"
+"die Objekte"
+"az objektumokat"
+"obiekty"
+"los objetos"
+"objekty"
+"gli oggetti"
+"об'єкти"
+"аб'екты"
+"objektus"
 
 MAskDeleteLink
-"является ссылкой на"
-"is a link to"
-"je link na"
-"ist ein Link auf"
-"linkelve ide:"
-"jest linkiem do"
-"es un enlace al"
-"je prepojenie na"
-"E' Un Link Simbolico Ad"
-"є посиланням на"
+"cсылка на"
+"a link to"
+upd:"link na"
+upd:"ein Link auf"
+upd:"link ide"
+"linkiem do"
+upd:"un enlace al"
+upd:"prepojenie na"
+upd:"Un Link Simbolico Ad"
+"посилання на"
+"спасылка на"
+upd:"a link to"
 
-MAskDeleteLinkFolder
-"папку"
-"folder"
-"adresář"
-"Ordner"
-"mappa"
-"folder"
-"directorio"
-"priečinok"
-"Una Cartella"
-"папку"
-
-MAskDeleteLinkFile
-"файл"
-"file"
-"soubor"
-"Datei"
-"fájl"
-"plik"
-"archivo"
-"súbor"
-"Un File"
-"файл"
-
-MAskDeleteItems
-"{0} элемент{1}"
-"{0} item{1}"
-"{0} polož{1}"
-"{0} Objekt{1}"
-"{0} elemet{1}"
-"{0} plik{1}"
-"{0} ítem{1}:"
-"{0} polož{1}"
-"{0} Oggett{1}"
-"{0} елемент{1}"
-
-MAskDeleteItems0
-""
-""
-"ku"
-""
-""
-""
-""
-"ku"
-""
-""
-
-MAskDeleteItemsA
-"а"
-"s"
-"ky"
-"e"
-""
-"i"
-"s"
-"ky"
-"o"
-"и"
-
-MAskDeleteItemsS
-"ов"
-"s"
-"ek"
-"e"
-""
-"ów"
-"s"
-"iek"
-"i"
-"ів"
+MAskDeleteAndMore
+"…и ещё {0}"
+"…and {0} more"
+"…a dalších {0}"
+"…und {0} mehr"
+"…és még {0}"
+"…i {0} więcej"
+"…y {0} más"
+"…a ďalších {0}"
+"…e altri {0}"
+"…і ще {0}"
+"…і яшчэ {0}"
+"…ir dar {0}"
 
 MDeleteFolderTitle
 l:
@@ -5224,6 +5955,8 @@ l:
 "Zmazať priečinok"
 "Cancellazione Cartella"
 "Видалення папки"
+"Выдаленне каталога"
+"Trinti katalogą"
 
 MWipeFolderTitle
 "Уничтожение папки"
@@ -5236,6 +5969,8 @@ MWipeFolderTitle
 "Vymazať priečinok"
 "Distruzione Cartella"
 "Знищення папки"
+"Знішчэнне каталога"
+"Išvalyti katalogą"
 
 MDeleteFilesTitle
 "Удаление файлов"
@@ -5248,6 +5983,8 @@ MDeleteFilesTitle
 "Zmazať súbory"
 "Cancellazione Files"
 "Видалення файлів"
+"Выдаленне файла"
+"Trinti failus"
 
 MWipeFilesTitle
 "Уничтожение файлов"
@@ -5260,6 +5997,8 @@ MWipeFilesTitle
 "Vymazať súbory"
 "Distruzione Files"
 "Знищення файлів"
+"Знішчэнне файла"
+"Išvalyti failus"
 
 MDeleteFolderConfirm
 "Данная папка будет удалена:"
@@ -5272,6 +6011,8 @@ MDeleteFolderConfirm
 "Nasledujúci priečinok bude zmazaný:"
 "Le Cartelle Seguenti Verranno Eliminate:"
 "Цю папку буде видалено:"
+"Каталог будзе выдалены:"
+"Šis katalogas bus ištrintas:"
 
 MWipeFolderConfirm
 "Данная папка будет уничтожена:"
@@ -5284,42 +6025,50 @@ MWipeFolderConfirm
 "Nasledujúci priečinok bude vymazaný:"
 "Le Cartelle Seguenti Verranno Distrutti:"
 "Цю папку буде знищено:"
+"Каталог будзе знішчаны:"
+"Šis katalogas bus išvalytas:"
 
 MRecycleFolderConfirm
 "Данная папка будет перемещена в корзину:"
 "The following folder will be moved to the Recycle Bin:"
-upd:"The following folder will be moved to the Recycle Bin:"
+"Tato složka bude přesunuta do koše:"
 "Folgender Ordner wird in den Papierkorb verschieben:"
 upd:"The following folder will be moved to the Recycle Bin:"
-upd:"The following folder will be moved to the Recycle Bin:"
+"Następujący folder zostanie przeniesiony do Kosza:"
 "El siguiente directorio será movido a la Papelera de Reciclaje:"
 "Tento adresár bude presunutý do koša:"
 "Le Cartelle Seguenti Verranno Spostate Nel Cestino:"
 "Цю папку буде переміщено в Кошик:"
+"Каталог будзе перанесены ў Сметнік:"
+"Šis katalogas bus perkeltas į Recycle Bin:"
 
 MRecycleFolderConfirmDeleteLink1
 "Папка содержит символические ссылки."
 "Folder contains symbolic links."
-upd:"Folder contains symbolic links."
+"Složka obsahuje symbolické odkazy."
 "Ordner enthält symbolische links."
 upd:"Folder contains symbolic links."
-upd:"Folder contains symbolic links."
+"Folder zawiera linki symboliczne."
 "Carpeta contiene enlaces simbólicos."
 "Adresár obsahuje symbolické linky."
-upd:"Folder contains symbolic links."
+"La Cartella Contiene Link Simbolici"
 "Папка містить символічні посилання."
+"Каталог змяшчае сімвалічныя спасылкі."
+upd:"Folder contains symbolic links."
 
 MRecycleFolderConfirmDeleteLink2
 "Для предотвращения потери их содержимого при очистке корзины"
 "To prevent the loss of their content when clearing Recyle Bin"
-upd:"To prevent the loss of their content when clearing Recyle Bin"
+"Chcete-li zabránit ztrátě obsahu při vyprázdnění koše"
 "Um ihren Inhaltverlust während der Papierkorbreinigung zu vermeiden"
 upd:"To prevent the loss of their content when clearing Recyle Bin"
-upd:"To prevent the loss of their content when clearing Recyle Bin"
+"Aby zapobiec utracie ich zawartości przy czyszczeniu Kosza"
 "Para prevenir la pérdida de su contenido cuando se vacía Papelera de Reciclaje"
 "Pre zabránenie straty obsahu z dôvodu čistenia koša"
-upd:"To prevent the loss of their content when clearing Recyle Bin"
+"Per Prevenire Perdite Di Dati Durante Lo Svuotamento Del Cestino"
 "Для запобігання втрати їхнього вмісту при очищенні Кошика"
+"Каб прадухіліць страту іх зместа пры чыстцы Сметніка"
+upd:"To prevent the loss of their content when clearing Recyle Bin"
 
 MRecycleFolderConfirmDeleteLink3
 "эти ссылки сейчас будут разорваны."
@@ -5327,23 +6076,27 @@ MRecycleFolderConfirmDeleteLink3
 upd:"those links will be broken now."
 "werden diese Links zerbrochen"
 upd:"those links will be broken now."
-upd:"those links will be broken now."
+"linki zostaną teraz przerwane."
 "esos enlaces serán cortados ahora."
 "budú tieto linky zrušené."
-upd:"those links will be broken now."
+"Questi Collegamenti Saranno Disattivati"
 "ці посилання зараз буде розірвано."
+"гэтыя спасылкі будуць разарваныя."
+upd:"those links will be broken now."
 
 MRecycleFolderConfirmDeleteLink4
 "Впоследствии восстановить их будет невозможно."
 "It would be impossible to restore them later."
-upd:"It would be impossible to restore them later."
+"Nebude možné je později obnovit."
 "Sie können diese Links später nicht wiederherstellen."
 upd:"It would be impossible to restore them later."
-upd:"It would be impossible to restore them later."
+"Nie będzie można ich później przywrócić."
 "Será imposible recuperarlo después."
 "Nebude možné ich potom obnoviť."
-upd:"It would be impossible to restore them later."
+"Sarà Impossibile Ripristinarli In Seguito"
 "У подальшому відновити їх буде неможливо."
+"Паздней іх аднавіць будзе немагчыма."
+upd:"It would be impossible to restore them later."
 
 MDeleteWipe
 "Уничтожить"
@@ -5356,6 +6109,8 @@ MDeleteWipe
 "Vymazať"
 "Distruzione"
 "Знищити"
+"Знішчыць"
+upd:"Wipe"
 
 MDeleteRecycle
 "Переместить"
@@ -5363,11 +6118,13 @@ MDeleteRecycle
 "Přesunout"
 "Verschieben"
 upd:"Move"
-upd:"Move"
+"Przenieś"
 "Mover"
 "Presunúť"
 "S&posta"
 "Перемістити"
+"Перанесці"
+upd:"Move"
 
 MDeleteFileDelete
 "&Удалить"
@@ -5380,6 +6137,8 @@ MDeleteFileDelete
 "Z&mazať"
 "&Elimina"
 "&Видалити"
+"&Выдаліць"
+"&Trinti"
 
 MDeleteFileWipe
 "&Уничтожить"
@@ -5392,6 +6151,8 @@ MDeleteFileWipe
 "V&ymazať"
 "&Distruggi"
 "&Знищити"
+"&Знішчыць"
+upd:"&Wipe"
 
 MDeleteFileAll
 "&Все"
@@ -5399,11 +6160,13 @@ MDeleteFileAll
 "&Vše"
 "&Alle"
 "Min&det"
-"&wszystkie"
+"&Wszystkie"
 "&Todos"
 "&Všetky"
 "&Tutti"
 "&Усе"
+"&Усе"
+"&Visus"
 
 MDeleteFileSkip
 "&Пропустить"
@@ -5416,6 +6179,8 @@ MDeleteFileSkip
 "Pres&kočiť"
 "&Salta"
 "&Пропустити"
+"&Прапусціць"
+"&Praleist"
 
 MDeleteFileSkipAll
 "П&ропустить все"
@@ -5428,6 +6193,8 @@ MDeleteFileSkipAll
 "Pr&eskočiť všetky"
 "Sa&lta Tutti"
 "П&ропустити все"
+"П&рапусціць усе"
+"P&raleist visus"
 
 MDeleteFileCancel
 "&Отменить"
@@ -5440,19 +6207,8 @@ MDeleteFileCancel
 "&Storno"
 "&Annulla"
 "&Скасувати"
-
-MDeleteLinkDelete
-l:
-"Удалить ссылку"
-"Delete link"
-"Smazat link"
-"Link löschen"
-"Link törlése"
-"Usuń link"
-"Borrar enlace"
-"Zmazať prepojenie"
-"Cancella Link"
-"Видалити посилання"
+"&Адмена"
+"&Atšaukti"
 
 MDeletingTitle
 l:
@@ -5464,8 +6220,10 @@ l:
 "Usuwam"
 "Borrando"
 "Mazanie"
-"Eliminminazione..."
+"Eliminminazione"
 "Видалення"
+"Выдаленне"
+"Trinu"
 
 MDeleting
 l:
@@ -5474,11 +6232,13 @@ l:
 "Mazání souboru nebo adresáře"
 "Löschen von Datei oder Ordner"
 "Fájl vagy mappa törlése"
-"Usuwam plik/katalog"
+"Usuwam plik/folder"
 "Borrando el archivo o directorio"
 "Mazanie súboru alebo priečinka"
 "Cancellazione Files O Cartelle"
 "Видалення файлу чи папки"
+"Выдаленне файла ці каталога"
+"Trinu failą ar katalogą"
 
 MDeletingWiping
 "Уничтожение файла или папки"
@@ -5486,11 +6246,13 @@ MDeletingWiping
 "Vymazávání souboru nebo adresáře"
 "Sicheres löschen von Datei oder Ordner"
 "Fájl vagy mappa kisöprése"
-"Wymazuję plik/katalog"
+"Wymazuję plik/folder"
 "Destruyendo el archivo o directorio"
 "Vymazávanie súboru alebo priečinka"
 "Distruzione File O Cartelle"
 "Знищення файлу чи папки"
+"Знішчэнне файла ці каталога"
+"Išvalu failą ar katalogą"
 
 MDeleteRO
 l:
@@ -5504,6 +6266,8 @@ l:
 "Súbor je len na čítanie"
 "File Di Sola Lettura"
 "Файл має атрибут \"Лише для читання\""
+"Файл 'толькі для чытання'"
+"Šis failas yra read only"
 
 MAskDeleteRO
 "Вы хотите удалить его?"
@@ -5516,6 +6280,8 @@ MAskDeleteRO
 "Chcete ho zmazať?"
 "Vuoi Cancellarlo?"
 "Ви бажаєте видалити його?"
+"Вы жадаеце выдаліць яго?"
+"Ar norite jį ištrinti?"
 
 MAskWipeRO
 "Вы хотите уничтожить его?"
@@ -5528,6 +6294,8 @@ MAskWipeRO
 "Chcete ho vymazať?"
 "Vuoi Distruggerlo?"
 "Ви бажаєте знищити його?"
+"Вы жадаеце знішчыць яго?"
+"Ar norite jį išvalyti?"
 
 MDeleteHardLink1
 l:
@@ -5541,6 +6309,8 @@ l:
 "Niekoľko pevných prepojení ukazuje na tento súbor."
 "Molti Collegamenti Si Riferiscono A Questo File"
 "Файл має декілька жорстких посилань"
+"Файл мае некалькі жорсткіх спасылак"
+upd:"Several hard links link to this file."
 
 MDeleteHardLink2
 "Уничтожение файла приведёт к обнулению всех ссылающихся на него файлов."
@@ -5553,6 +6323,8 @@ MDeleteHardLink2
 "Vymazanie tohto súboru zneplatní všetky súbory, ktoré sú naň prepojené."
 "Distruggendo Il File Eliminerà I Link Esistenti"
 "Знищення файлу призведе до обнулення всіх файлів, що посилаються на нього."
+"Знішчэнне файла прывядзе да зацірання ўсіх файлаў, якія на яго спасылаюцца"
+upd:"Wiping this file will void all files linking to it."
 
 MDeleteHardLink3
 "Уничтожать файл?"
@@ -5565,6 +6337,8 @@ MDeleteHardLink3
 "Naozaj chcete vymazať tento súbor?"
 "Vuoi Veramente Distruggere Questo File?"
 "Знищити файл?"
+"Знішчыць файл?"
+upd:"Do you wish to wipe this file?"
 
 MCannotDeleteFile
 l:
@@ -5573,11 +6347,13 @@ l:
 "Nelze smazat soubor"
 "Datei konnte nicht gelöscht werden"
 "A fájl nem törölhető"
-"Nie mogę usunąć pliku"
+"Nie można usunąć pliku"
 "No se puede borrar el archivo"
 "Nemôžem zmazať súbor"
 "Non Posso Cancellare Il File"
 "Помилка видалення файла"
+"Немагчыма выдаліць файл"
+"Negaliu ištrinti failo"
 
 MCannotDeleteFolder
 "Ошибка удаления папки"
@@ -5585,11 +6361,13 @@ MCannotDeleteFolder
 "Nelze smazat adresář"
 "Ordner konnte nicht gelöscht werden"
 "A mappa nem törölhető"
-"Nie mogę usunąć katalogu"
+"Nie można usunąć folderu"
 "No se puede borrar el directorio"
 "Nemôžem zmazať priečinok"
 "Non Posso Cancellare La Cartella"
 "Помилка видалення папки"
+"Немагчыма выдаліць каталог"
+"Negaliu ištrinti katalogo"
 
 MDeleteRetry
 "&Повторить"
@@ -5602,6 +6380,8 @@ MDeleteRetry
 "&Znova"
 "&Riprova"
 "&Повторити"
+"&Паўтарыць"
+"&Bandyti vėl"
 
 MDeleteSkip
 "П&ропустить"
@@ -5614,6 +6394,8 @@ MDeleteSkip
 "Pres&kočiť"
 "&Salta"
 "П&ропустити"
+"П&рапусціць"
+"&Praleist"
 
 MDeleteSkipAll
 "Пропустить &все"
@@ -5626,6 +6408,8 @@ MDeleteSkipAll
 "Preskočiť &všetky"
 "Salta &Tutti"
 "Пропустити &все"
+"Прапусціць &усе"
+"P&raleist visus"
 
 MDeleteCancel
 "&Отменить"
@@ -5638,30 +6422,50 @@ MDeleteCancel
 "&Storno"
 "&Annulla"
 "&Скасувати"
+"&Адмена"
+"&Atšaukti"
 
 MCannotRecycleFile
 "Не удалось переместить файл в Корзину"
 "Cannot move file to the Recycle Bin"
-upd:"Cannot move file to the Recycle Bin"
+"Nemohu přesunout soubor do koše"
 "Datei konnte in den Papierkorb nicht verschieben werden"
 upd:"Cannot move file to the Recycle Bin"
-upd:"Cannot move file to the Recycle Bin"
+"Nie można przenieść pliku do Kosza"
 "No se puede mover el archivo a la Papelera de Reciclaje"
 "Nemôžem premiestniť súbor do Koša"
 "Non Posso Spostare Il File Nel Cestino"
 "Не вдалося перемістити файл у Кошик"
+"Немагчыма перанесці файл у Сметнік"
+upd:"Cannot move file to the Recycle Bin"
 
 MCannotRecycleFolder
 "Не удалось переместить папку в Корзину"
 "Cannot move folder to the Recycle Bin"
-upd:"Cannot move folder to the Recycle Bin"
+"Nemohu přesunout složku do koše"
 "Ordner konnte in den Papierkorb nicht verschieben werden"
 upd:"Cannot move folder to the Recycle Bin"
-upd:"Cannot move folder to the Recycle Bin"
+"Nie można przenieść folderu do Kosza"
 "No se puede mover el directorio a la Papelera de Reciclaje"
 "Nemôžem premiestniť priečinok do Koša"
 "Non Posso Spostare La Cartella Nel Cestino"
 "Не вдалося перемістити папку в Кошик"
+"Немагчыма перанесці каталог у Сметнік"
+upd:"Cannot move folder to the Recycle Bin"
+
+MTryToDeletePermanently
+"Попробовать удалить окончательно?"
+"Try to delete it permanently?"
+upd:"Try to delete it permanently?"
+upd:"Try to delete it permanently?"
+upd:"Try to delete it permanently?"
+"Spróbować usunąć bezpowrotnie?"
+upd:"Try to delete it permanently?"
+upd:"Try to delete it permanently?"
+upd:"Try to delete it permanently?"
+"Спробувати видалити остаточно?"
+"Паспрабаваць выдаліць канчаткова?"
+upd:"Try to delete it permanently?"
 
 MCannotGetSecurity
 l:
@@ -5670,11 +6474,13 @@ l:
 "Nelze získat přístupová práva pro"
 "Kann Zugriffsrechte nicht lesen für"
 "A fájlhoz nincs hozzáférési joga:"
-"Nie mogę pobrać praw dostępu dla"
+"Nie można pobrać praw dostępu dla"
 "No se puede obtener permisos de acceso al archivo"
 "Nemôžem získať prístupové práva pre"
 "Non Posso Leggere Le Autorizzazioni Per"
 "Помилка отримання прав доступу до файлу"
+"Немагчыма атрымаць правы доступа да файлу"
+"Negaliu gauti failo priėjimo teisių failui"
 
 MCannotSetSecurity
 "Ошибка установки прав доступа к файлу"
@@ -5682,11 +6488,13 @@ MCannotSetSecurity
 "Nelze nastavit přístupová práva pro"
 "Kann Zugriffsrechte nicht setzen für"
 "A fájl hozzáférési jogát nem állíthatja:"
-"Nie mogę ustawić praw dostępu dla"
+"Nie można ustawić praw dostępu dla"
 "No se puede poner permisos de acceso al archivo"
 "Nemôžem nastaviť prístupové práva pre"
 "Non Posso Impostare Le Autorizzazioni Per"
 "Помилка встановлення прав доступу до файлу"
+"Немагчыма надаць правы доступа да файлу"
+"Negaliu nustatyti failo priėjimo teisių failui"
 
 MEditTitle
 l:
@@ -5700,6 +6508,8 @@ l:
 "Editor"
 "Editor"
 "Редактор"
+"Змена"
+"Redaktorius"
 
 MAskReload
 "уже загружен. Как открыть этот файл?"
@@ -5712,6 +6522,8 @@ MAskReload
 "je už spustený. Ako otvoriť tento súbor?"
 "File Già Aperto, Come Apro Il File?"
 "уже завантажено. Як відкрити цей файл?"
+"ужо запампаваны. Як адчыніць гэты файл?"
+"jau pakrautas. Pakrauti vėl?"
 
 MCurrent
 "&Текущий"
@@ -5724,6 +6536,8 @@ MCurrent
 "A&ktuálny"
 "&Mostra Corrente"
 "&Поточний"
+"&Бягучы"
+"Rodyti &einamą"
 
 MReload
 "Пере&грузить"
@@ -5736,6 +6550,8 @@ MReload
 "&Znova načítať"
 "&Rileggi"
 "Пере&завантажити"
+"Пераза&грузіць"
+"Pe&rkrauti"
 
 MNewOpen
 "&Новая копия"
@@ -5748,6 +6564,8 @@ MNewOpen
 "&Nová inštancia"
 "&Nuova Istanza"
 "&Нова копія"
+"&Новая копія"
+upd:"&New instance"
 
 MEditCannotOpen
 "Ошибка открытия файла"
@@ -5755,23 +6573,27 @@ MEditCannotOpen
 "Nelze otevřít soubor"
 "Kann Datei nicht öffnen"
 "A fájl nem nyitható meg"
-"Nie mogę otworzyć pliku"
+"Nie można otworzyć pliku"
 "No se puede abrir el archivo"
 "Nemôžem otvoriť súbor"
 "Non Posso Aprire Il File"
 "Помилка відкриття файлу"
+"Немагчыма адчыніць файл"
+"Negaliu atidaryti failo"
 
 MEditReading
-"Чтение файла"
-"Reading the file"
-"Načítám soubor"
-"Lesen der Datei"
-"Fájl olvasása"
-"Czytam plik"
-"Leyendo el archivo"
-"Načítavam súbor"
-"Lettura Del File"
-"Читання файлу"
+"Чтение файла {0}"
+"Reading the file {0}"
+"Načítám soubor {0}"
+"Lesen der Datei {0}"
+"Fájl olvasása {0}"
+"Czytam plik {0}"
+"Leyendo el archivo {0}"
+"Načítavam súbor {0}"
+"Lettura Del File {0}"
+"Читання файлу {0}"
+"Чытанне файла {0}"
+"Skaitau failą {0}"
 
 MEditAskSave
 "Файл был изменён. Сохранить?"
@@ -5779,11 +6601,13 @@ MEditAskSave
 "Soubor byl modifikován. Uložit?"
 upd:"Datei wurde verändert. Save?"
 upd:"A fájl megváltozott. Save?"
-upd:"Plik został zmodyfikowany. Save?"
+"Plik został zmodyfikowany. Zapisać?"
 "El archivo ha sido modificado. Desea guardarlo?"
 "Súbor bol upravený. Uložiť?"
-"Documento Modificato ...Lo Salvo?"
+"Documento Modificato. Lo Salvo?"
 "Файл було змінено. Зберегти?"
+"Файл быў зменены. Захаваць?"
+"Failas buvo redaguotas. Iš&saugoti?"
 
 MEditAskSaveExt
 "Файл был изменён внешней программой. Сохранить?"
@@ -5791,23 +6615,27 @@ MEditAskSaveExt
 "Soubor byl změněný externím programem. Uložit?"
 upd:"Die Datei wurde durch ein externes Programm verändert. Save?"
 upd:"A fájlt egy külső program megváltoztatta. Save?"
-upd:"Plik został zmieniony przez inny program. Save?"
+"Plik został zmieniony przez inny program. Zapisać?"
 "El archivo ha sido cambiado por un programa externo. Desea guardarlo?"
 "Súbor bol zmenený externým programom. Uložiť?"
-"Documento Cambiato Da Un Programma Esterno ...Lo Salvo?"
+"Documento Cambiato Da Un Programma Esterno. Lo Salvo?"
 "Файл було змінено зовнішньою програмою. Зберегти?"
+"Файл быў зменены знешняй праграмай. Захаваць?"
+upd:"The file was changed by an external program. Save?"
 
 MEditBtnSaveAs
-"Сохр&анить как..."
-"Save &as..."
-"Ulož&it jako..."
-"Speichern &als..."
-"Mentés más&ként..."
-"Zapisz &jako..."
-"Guardar como..."
-"Ulož&iť ako..."
-"Sal&va Come..."
-"Збер&егти як..."
+"Сохр&анить как…"
+"Save &as…"
+"Ulož&it jako…"
+"Speichern &als…"
+"Mentés más&ként…"
+"Zapisz &jako…"
+"Guardar como…"
+"Ulož&iť ako…"
+"Sal&va Come…"
+"Збер&егти як…"
+"З&ахаваць як…"
+upd:"Save &as…"
 
 MEditRO
 l:
@@ -5821,6 +6649,8 @@ l:
 "je len na čítanie"
 "File Di Sola Lettura"
 "має атрибут \"Лише для читання\""
+"мае 'толькі для чытання'"
+"yra read only failas"
 
 MEditExists
 "уже существует"
@@ -5833,6 +6663,8 @@ MEditExists
 "už existuje"
 "Esiste Già"
 "вже існує"
+"ужо існуе"
+"jau egzistuoja"
 
 MEditOvr
 "Вы хотите перезаписать его?"
@@ -5845,57 +6677,67 @@ MEditOvr
 "Chcete ho prepísať?"
 "Vuoi Sovrascriverlo"
 "Ви бажаєте перезаписати його?"
+"Вы жадаеце перазапісаць яго?"
+"Ar norite užrašyti ant jo?"
 
 MEditSaving
-"Сохранение файла"
-"Saving the file"
-"Ukládám soubor"
-"Speichere die Datei"
-"Fájl mentése"
-"Zapisuję plik"
-"Guardando el archivo"
-"Ukladám súbor"
-"Salvataggio In Corso..."
-"Збереження файлу"
+"Сохранение файла {0}"
+"Saving the file {0}"
+"Ukládám soubor {0}"
+"Speichere die Datei {0}"
+"Fájl mentése {0}"
+"Zapisuję plik {0}"
+"Guardando el archivo {0}"
+"Ukladám súbor {0}"
+"Salvataggio In Corso {0}"
+"Збереження файлу {0}"
+"Захаванне файла {0}"
+"Išsaugau failą {0}"
 
-# 3 max
 MEditStatusLine
+l:// Up to 3 characters
 "Стр"
 "Ln"
-"Řádek"
-upd:"Zeile"
+"Řdk"
+upd:"Zei"
 upd:"Sor"
-upd:"linia"
-"Línea"
-"Riadok"
 "Lin"
-"Рядок"
+"Lín"
+"Rdk"
+"Lin"
+"Ряд"
+"Стр"
+"Elt"
 
-# 3 max
 MEditStatusCol
+l:// Up to 3 characters
 "Кол"
 "Col"
-"Sloupec"
-upd:"Spal"
-upd:"Oszlop"
-upd:"kolumna"
+"Slp"
+upd:"Spl"
+upd:"Osz"
+"Kol"
 "Col"
-"Stĺpec"
+"Stĺ"
 "Col"
-"Поз."
+"Кол"
+"Кал"
+"Stl"
 
-# 2 max
 MEditStatusChar
+l:// Up to 2 characters
 "С"
 "Ch"
-"Znak"
-"Symbol"
+"Zn"
+"Sm"
 upd:"Ch"
-upd:"Ch"
+"Zn"
 "Ch"
-"Znak"
-"Car"
-"З"
+"Zn"
+"Cr"
+"См"
+"С"
+upd:"Ch"
 
 MEditRSH
 l:
@@ -5909,6 +6751,8 @@ l:
 "je súbor len na čítanie"
 "Di Sola Lettura"
 "призначено лише для читання"
+"прызначаны 'толькі для чытання'"
+upd:"is a read-only file"
 
 MEditFileGetSizeError
 "Не удалось определить размер."
@@ -5916,11 +6760,13 @@ MEditFileGetSizeError
 "Velikost souboru se nedá určit."
 upd:"File size could not be determined."
 "A fájlméret megállapíthatatlan."
-upd:"File size could not be determined."
+"Nie można określić wielkości pliku."
 "Tamaño de archivo no puede ser determinado"
 "Veľkosť súboru sa nedá určiť."
 "La Dimensione Non Può Essere Determinata"
 "Не вдалося визначити розмір."
+"Не атрымалася вызначыць памер."
+upd:"File size could not be determined."
 
 MEditFileLong
 "имеет размер {0},"
@@ -5933,6 +6779,8 @@ MEditFileLong
 "má veľkosť {0},"
 "Ha Dimensione Di {0},"
 "має розмір {0},"
+"мае памер {0},"
+upd:"has the size of {0},"
 
 MEditFileLong2
 "что превышает заданное ограничение в {0}."
@@ -5945,6 +6793,8 @@ MEditFileLong2
 "ktorá prekračuje nastavenú maximálnu veľkosť {0}."
 "Che Eccede La Dimensione Massima Di {0}"
 "що перевищує задане обмеження {0}."
+"што перавышае зададзенае абмежаванне ў {0}."
+upd:"which exceeds the configured maximum size of {0}."
 
 MEditROOpen
 "Вы хотите редактировать его?"
@@ -5957,6 +6807,8 @@ MEditROOpen
 "Chcete ho upraviť?"
 "Vuoi Modificarlo?"
 "Ви бажаєте редагувати його?"
+"Вы жадаеце мяняць яго?"
+upd:"Do you wish to edit it?"
 
 MEditCanNotEditDirectory
 l:
@@ -5970,6 +6822,8 @@ l:
 "Nemôžem upraviť priečinok"
 "Impossibile Modificare La Cartella"
 "Неможливо редагувати папку"
+"Немагчыма змяніць каталог"
+upd:"It is impossible to edit the folder"
 
 MEditSearchTitle
 l:
@@ -5983,6 +6837,8 @@ l:
 "Hľadanie"
 "Ricerca"
 "Пошук"
+"Пошук"
+"Paieška"
 
 MEditSearchFor
 "&Искать"
@@ -5995,30 +6851,36 @@ MEditSearchFor
 "&Hľadať"
 "Ricerca &Di"
 "&Шукати"
+"&Шукаць"
+upd:"&Search for"
 
 MEditSearchPickWord
 "&Слово"
 "W&ord"
-upd:"Word"
-upd:"Word"
-upd:"Word"
-upd:"Word"
-"Palabra"
 "Slovo"
 upd:"Word"
+upd:"Word"
+"Słowo"
+"Palabra"
+"Slovo"
+"Parola"
 "&Слово"
+"&Слова"
+upd:"W&ord"
 
 MEditSearchPickSelection
 "&Выделение"
 "Se&lection"
+"Výběr"
 upd:"Selection"
 upd:"Selection"
-upd:"Selection"
-upd:"Selection"
+"Zaznaczenie"
 "Selección"
 "Výber"
-upd:"Selection"
+"Selezione"
 "В&иділення"
+"&Вылучэнне"
+upd:"Se&lection"
 
 MEditSearchCase
 "&Учитывать регистр"
@@ -6031,6 +6893,8 @@ MEditSearchCase
 "&malé a VEĽKÉ"
 "&Minuscole/MAIUSCOLE"
 "&Враховувати регістр"
+"&Улічваць памер букв"
+"&Didžiosios skiriasi"
 
 MEditSearchWholeWords
 "Только &целые слова"
@@ -6043,6 +6907,8 @@ MEditSearchWholeWords
 "&Celé slová"
 "&Parole Intere"
 "Лише &цілі слова"
+"Толькі по&ўныя словы"
+upd:"&Whole words"
 
 MEditSearchReverse
 "Обратн&ый поиск"
@@ -6055,6 +6921,8 @@ MEditSearchReverse
 "Opačné h&ľadanie"
 "Ricerca In&versa"
 "Зворотний пошу&к"
+"Зваротн&ы пошук"
+"At&virkščia paieška"
 
 MEditSearchRegexp
 "&Регулярные выражения"
@@ -6062,23 +6930,27 @@ MEditSearchRegexp
 "Re&gulární výrazy"
 "Reguläre Ausdrücke"
 upd:"Re&gular expressions"
-upd:"Re&gular expressions"
+"Wyrażenie &regularne"
 "Expresiones re&gulares"
 "Re&gulárne výrazy"
 "E&spressione Regolare"
 "&Регулярні вирази"
+"&Рэгулярныя выразы"
+upd:"Re&gular expressions"
 
 MEditSearchPreserveStyle
 "&Сохранять стиль"
 "&Preserve style"
-upd:"&Zachovat styl"
+"&Zachovat styl"
 upd:"&Preserve Stil"
 upd:"&Megőrzése stílus"
-upd:"&Zachowaj styl"
+"&Zachowaj styl"
 "Preservar es&tilo"
 "&Zachovať štýl"
 "Mantieni Lo St&ile"
 "&Зберігати стиль"
+"Захоўваць &стыль"
+upd:"&Preserve style"
 
 MEditSearchSearch
 "Искать"
@@ -6091,6 +6963,8 @@ MEditSearchSearch
 "Hľadať"
 "&Ricerca"
 "Шукати"
+"Шукаць"
+"&Ieškoti"
 
 MEditSearchAll
 "Вс&ё"
@@ -6098,11 +6972,13 @@ MEditSearchAll
 "Všechn&y"
 "&Alles"
 upd:"&All"
-upd:"&All"
+"&Wszystko"
 "&Todo"
 "Všetk&y"
 "&Tutti"
 "Вс&е"
+"Ус&ё"
+"&Atšaukti"
 
 MEditSearchCancel
 "Отменить"
@@ -6115,6 +6991,8 @@ MEditSearchCancel
 "Storno"
 "&Annulla"
 "Скасувати"
+"Адмяніць"
+"Keisti"
 
 MEditReplaceTitle
 l:
@@ -6128,6 +7006,8 @@ l:
 "Nahradiť"
 "Sostituisci"
 "Заміна"
+"Змена"
+"Pakeisti"
 
 MEditReplaceWith
 "Заменить &на"
@@ -6140,6 +7020,8 @@ MEditReplaceWith
 "Nahradiť &čím"
 "Sostituisci &Con"
 "Замінити &на"
+"Змяніць &на"
+"Pa&keisti"
 
 MEditReplaceReplace
 "&Замена"
@@ -6152,19 +7034,23 @@ MEditReplaceReplace
 "&Nahradiť"
 "&Sostituisci"
 "&Замінити"
+"&Змена"
+"Pakeisti &į"
 
 MEditSearchingFor
 l:
-"Искать"
-"Searching for"
-"Vyhledávám"
-"Suche nach"
-"Keresett szöveg:"
-"Szukam"
-"Buscando por"
-"Vyhľadávam"
-"Ricerca Di"
-"Шукати"
+"Искать {0}"
+"Searching for {0}"
+"Vyhledávám {0}"
+"Suche nach {0}"
+"Keresett szöveg {0}"
+"Szukam {0}"
+"Buscando por {0}"
+"Vyhľadávam {0}"
+"Ricerca Di {0}"
+"Шукати {0}"
+"Шукаць {0}"
+"Ieškau {0}"
 
 MEditSearchStatistics
 "Вхождений: {0}, строк: {1}"
@@ -6172,23 +7058,13 @@ MEditSearchStatistics
 "Nalezených: {0}, řádky: {1}"
 "Vorkommen: {0}, Zeilen: {1}"
 upd:"Occurrences: {0}, lines: {1}"
-upd:"Occurrences: {0}, lines: {1}"
+"Wystąpień: {0}, linii: {1}"
 "Frecuencia: {0}, líneas: {1}"
 "Nájdených: {0}, riadky: {1}"
 "Occorrenze: {0}, Linee: {1}"
 "Входжень: {0}, рядків: {1}"
-
-MEditFindAllMenuFooter
-"F1, F5, Ctrl+Enter, Ctrl+Up/Down, Add"
-"F1, F5, Ctrl+Enter, Ctrl+Up/Down, Add"
-"F1, F5, Ctrl+Enter, Ctrl+Up/Down, Add"
-"F1, F5, Ctrl+Enter, Ctrl+Up/Down, Add"
-"F1, F5, Ctrl+Enter, Ctrl+Up/Down, Add"
-"F1, F5, Ctrl+Enter, Ctrl+Up/Down, Add"
-"F1, F5, Ctrl+Enter, Ctrl+Up/Down, Añadir"
-"F1, F5, Ctrl+Enter, Ctrl+Up/Down, Add"
-"Aggiungi [F1] [F5] [CTRL-INVIO] [CTRL-Up/Down]"
-"F1, F5, Ctrl+Enter, Ctrl+Up/Down, Add"
+"Уваходжаняў: {0}, радкоў: {1}"
+upd:"Occurrences: {0}, lines: {1}"
 
 MEditNotFound
 "Строка не найдена"
@@ -6196,11 +7072,13 @@ MEditNotFound
 "Nemůžu najít řetězec"
 "Konnte Zeichenkette nicht finden"
 "A szöveg nem található:"
-"Nie mogę odnaleźć ciągu"
+"Nie można odnaleźć ciągu"
 "No se puede encontrar la cadena"
 "Nemôžem nájsť reťazec"
 "La Stringa Non Esiste"
 "Рядок не знайдено"
+"Радок не знойдзены"
+"Negalėjau surasti eilutės"
 
 MEditAskReplace
 l:
@@ -6214,6 +7092,8 @@ l:
 "Nahradiť"
 "Sostituisci"
 "Замінити"
+"Замяніць"
+"Pakeisti"
 
 MEditAskReplaceWith
 "на"
@@ -6226,6 +7106,8 @@ MEditAskReplaceWith
 "čím"
 "Con"
 "на"
+"на"
+"į"
 
 MEditReplace
 "&Заменить"
@@ -6238,6 +7120,8 @@ MEditReplace
 "&Nahradiť"
 "&Sostituisci"
 "&замінити"
+"&Замяніць"
+"Pa&keisti"
 
 MEditReplaceAll
 "&Все"
@@ -6250,6 +7134,8 @@ MEditReplaceAll
 "&Všetky"
 "&Tutti"
 "&Все"
+"&Усе"
+"&Viską"
 
 MEditSkip
 "&Пропустить"
@@ -6262,6 +7148,8 @@ MEditSkip
 "Pres&kočiť"
 "Sa&lta"
 "&Пропустити"
+"&Прапусціць"
+"&Praleisti"
 
 MEditCancel
 "&Отменить"
@@ -6274,6 +7162,8 @@ MEditCancel
 "&Storno"
 "&Annulla"
 "&Скасувати"
+"&Адмена"
+"&Atšaukti"
 
 MEditOpenCreateLabel
 "&Открыть/создать файл:"
@@ -6286,6 +7176,8 @@ MEditOpenCreateLabel
 "Otvoriť/vytvoriť súbor:"
 "A&pri/Crea File:"
 "Від&крити/створити файл:"
+"&Адчыніць/стварыць файл:"
+upd:"&Open/create file:"
 
 MEditOpenAutoDetect
 "Автоматическое определение"
@@ -6298,6 +7190,8 @@ upd:"Automatic detection"
 "Automatické zistenie"
 "Rilevamento Automatico"
 "Автоматичне визначення"
+"Аўтаматычные вызначэнне"
+upd:"Automatic detection"
 
 MDefaultCP
 "По умолчанию"
@@ -6305,11 +7199,13 @@ MDefaultCP
 "Výchozí"
 "Standardmäßig voreingestellt"
 upd:"Default"
-upd:"Default"
+"Domyślna"
 "Por defecto"
 "Východiskové"
 "Default"
 "За замовчуванням"
+"Прадвызначаны"
+upd:"Default"
 
 MGoTo
 l:
@@ -6323,11 +7219,13 @@ l:
 "Ísť na"
 "Vai A"
 "Перейти"
+"Перайсці"
+"Eiti į"
 
 MGoToHex
 "16-ричное &значение"
 "&Hex value"
-upd:"&Hex value"
+"&Hexadecimální hodnota"
 upd:"&Hex value"
 "&Hexában"
 "&Szesnastkowo"
@@ -6335,6 +7233,8 @@ upd:"&Hex value"
 "&Hexadecimálny posun"
 "&Esadecimale"
 "16-ове &значення"
+"Hex &значэнне"
+upd:"&Hex value"
 
 MFolderShortcutsTitle
 l:
@@ -6343,35 +7243,13 @@ l:
 "Adresářové zkratky"
 "Ordnerschnellzugriff"
 "Mappa gyorsbillentyűk"
-"Skróty katalogów"
+"Skróty folderów"
 "Atajos a directorios"
 "Skratky priečinkov"
 "Collegamento Cartelle"
 "Посилання на папки"
-
-MFolderShortcutBottom
-"Редактирование: Del,Ins,F4"
-"Edit: Del,Ins,F4"
-"Změnit: Del,Ins,F4"
-"Bearb.: Entf,Einf,F4"
-"Szerk.: Del,Ins,F4"
-"Edycja: Del,Ins,F4"
-"Editar: Del,Ins,F4"
-"Upraviť: Del,Ins,F4"
-"Edita: [DEL] [INS] [F4]"
-"Редагування: Del,Ins,F4"
-
-MFolderShortcutBottomSub
-"Редактирование: Del,Ins,F4"
-"Edit: Del,Ins,F4"
-"Změnit: Del,Ins,F4"
-"Bearb.: Entf,Einf,F4"
-"Szerk.: Del,Ins,F4"
-"Edycja: Del,Ins,F4"
-"Editar: Del,Ins,F4"
-"Upraviť: Del,Ins,F4"
-"Edita: [DEL] [INS] [F4]"
-"Редагування: Del,Ins,F4"
+"Спасылкі на каталогі"
+"Katalogų nuorodos"
 
 MShortcutNone
 "<отсутствует>"
@@ -6384,6 +7262,8 @@ MShortcutNone
 "<nie je>"
 "[niente]"
 "<відсутній>"
+"<адчсутнічае>"
+"<nėra>"
 
 MShortcutPlugin
 "<плагин>"
@@ -6391,11 +7271,13 @@ MShortcutPlugin
 "<modul>"
 "<Plugin>"
 "<plugin>"
-"<plugin>"
+"<wtyczka>"
 "<complemento>"
 "<modul>"
 "[plugin]"
 "<плагін>"
+"<дадатак>"
+upd:"<plugin>"
 
 MFSShortcutName
 "Название:"
@@ -6403,11 +7285,13 @@ MFSShortcutName
 "Název:"
 "Titel:"
 upd:"Title:"
-upd:"Title:"
+"Nazwa:"
 "Título:"
 "Názov:"
 "Titolo:"
 "Назва:"
+"Назва:"
+upd:"Title:"
 
 MFSShortcutPath
 "Путь:"
@@ -6415,11 +7299,13 @@ MFSShortcutPath
 "Cesta:"
 "Pfad:"
 upd:"Path:"
-upd:"Path:"
+"Ścieżka:"
 "Ruta:"
 "Cesta:"
 "Percorso:"
 "Шлях:"
+"Шлях:"
+upd:"Path:"
 
 MFSShortcutPluginFile
 "Файл:"
@@ -6432,18 +7318,22 @@ MFSShortcutPluginFile
 "Súbor:"
 "File:"
 "Файл:"
+"Файл:"
+upd:"File:"
 
 MFSShortcutPluginData
 "Данные:"
 "Data:"
+"Data:"
 upd:"Data:"
 upd:"Data:"
-upd:"Data:"
-upd:"Data:"
+"Data:"
 "Dato:"
 "Dáta:"
 "Data:"
 "Дані:"
+"Дадзеныя:"
+upd:"Data:"
 
 
 MNeedNearPath
@@ -6457,6 +7347,8 @@ MNeedNearPath
 "Skočiť na najbližší existujúci priečinok?"
 "Vai Alla Cartella Piu' Vicina"
 "Перейти в найближчу доступну папку?"
+"Перайсці да бліжэйшага існуючага каталогу?"
+upd:"Jump to the nearest existing folder?"
 
 MSaveThisShortcut
 "Запомнить эту ссылку?"
@@ -6469,10 +7361,12 @@ MSaveThisShortcut
 "Uložiť tieto skratky?"
 "Salva Questo Collegamento"
 "Запам'ятати це посилання?"
+"Захаваць гэтую спасылку?"
+upd:"Save this shortcut?"
 
 MEditF1
 l:
-l://functional keys - 6 characters max, 12 keys, "OEM" is F8 dupe!
+l:// Editor: functional keys
 "Помощь"
 "Help"
 "Nápověda"
@@ -6483,6 +7377,8 @@ l://functional keys - 6 characters max, 12 keys, "OEM" is F8 dupe!
 "Pomocník"
 "Aiuto"
 "Допом."
+"Дапамога"
+"Pagalb"
 
 MEditF2
 "Сохран"
@@ -6495,8 +7391,12 @@ MEditF2
 "Uložiť"
 "Salva"
 "Зберег"
+"Захаваць"
+"Išsaug"
 
 MEditF3
+""
+""
 ""
 ""
 ""
@@ -6519,8 +7419,12 @@ MEditF4
 "Koniec"
 "Esci"
 "Вихід"
+"Выйсці"
+upd:"Quit"
 
 MEditF5
+""
+""
 ""
 ""
 ""
@@ -6538,11 +7442,13 @@ MEditF6
 "Zobraz"
 "Betr."
 "Megnéz"
-"Zobacz"
+"Podgląd"
 "Ver"
 "Zobraziť"
 "Vista"
 "Перегл"
+"Глядзець"
+"Žiūrėt"
 
 MEditF7
 "Поиск"
@@ -6555,6 +7461,8 @@ MEditF7
 "Hľadať"
 "Cerca"
 "Пошук"
+"Шукаць"
+"Rasti"
 
 MEditF8
 "ANSI"
@@ -6567,8 +7475,12 @@ MEditF8
 "WIN"
 "ANSI"
 "ANSI"
+"ANSI"
+"ANSI"
 
 MEditF9
+""
+""
 ""
 ""
 ""
@@ -6591,6 +7503,8 @@ MEditF10
 "Koniec"
 "Esci"
 "Вихід"
+"Выйсці"
+"Išeiti"
 
 MEditF11
 "Плагины"
@@ -6598,11 +7512,13 @@ MEditF11
 "Modul"
 "Plugin"
 "Plugin"
-"Plugin"
+"Wtyczki"
 "Comple"
 "Modul"
 "Plugin"
 "Плагіни"
+"Дадаткі"
+"Prieds"
 
 MEditF12
 "Экраны"
@@ -6615,10 +7531,14 @@ MEditF12
 "Okno"
 "Video"
 "Екрани"
+"Экраны"
+"Ekran"
 
 MEditShiftF1
 l:
 l://Editor: Shift
+""
+""
 ""
 ""
 ""
@@ -6635,12 +7555,14 @@ MEditShiftF2
 "SaveAs"
 "UlJako"
 "SpeiUn"
-"Ment.."
+"Ment…"
 "Zapisz"
 "Grdcom"
 "UložAko"
 "SalvaC"
 "Збер.в"
+"Захаваць у"
+"IšKaip"
 
 MEditShiftF3
 ""
@@ -6653,20 +7575,26 @@ MEditShiftF3
 ""
 ""
 ""
+""
+""
 
 MEditShiftF4
-"Редак."
-"Edit.."
-"Edit.."
-"Bear.."
-"Szrk.."
-"Edytuj"
-"Edita."
-"Uprav."
-"Edita"
-"Редаг."
+"Редак…"
+"Edit…"
+"Edit…"
+"Bear…"
+"Szrk…"
+"Edytuj…"
+"Edita…"
+"Uprav…"
+"Edita…"
+"Редаг…"
+"Мяняць…"
+upd:"Edit…"
 
 MEditShiftF5
+""
+""
 ""
 ""
 ""
@@ -6689,6 +7617,8 @@ MEditShiftF6
 ""
 ""
 ""
+""
+""
 
 MEditShiftF7
 "Дальше"
@@ -6701,6 +7631,8 @@ MEditShiftF7
 "Nasl."
 "Succes"
 "Далі"
+"Наступны"
+"Kitas"
 
 MEditShiftF8
 "КодСтр"
@@ -6708,13 +7640,17 @@ MEditShiftF8
 "ZnSady"
 upd:"Tabell"
 "Kódlap"
-"Tabela"
+"StrKodowa"
 "PágCód"
 "TabZn"
 "Tavola"
 "КодСтр"
+"Кадыроўка"
+upd:"CodePg"
 
 MEditShiftF9
+""
+""
 ""
 ""
 ""
@@ -6737,6 +7673,8 @@ MEditShiftF10
 "UložKon"
 "SalvaX"
 "ЗБрВих"
+"Захаваць і Выйсці"
+"IšIšei"
 
 MEditShiftF11
 ""
@@ -6749,8 +7687,12 @@ MEditShiftF11
 ""
 ""
 ""
+""
+""
 
 MEditShiftF12
+""
+""
 ""
 ""
 ""
@@ -6775,8 +7717,12 @@ l://Editor: Alt
 ""
 ""
 ""
+""
+""
 
 MEditAltF2
+""
+""
 ""
 ""
 ""
@@ -6799,8 +7745,12 @@ MEditAltF3
 ""
 ""
 ""
+""
+""
 
 MEditAltF4
+""
+""
 ""
 ""
 ""
@@ -6823,8 +7773,12 @@ MEditAltF5
 ""
 ""
 ""
+""
+""
 
 MEditAltF6
+""
+""
 ""
 ""
 ""
@@ -6847,6 +7801,8 @@ MEditAltF7
 "Predch"
 "Preced"
 "Назад"
+"Папярэдні"
+upd:"Prev"
 
 MEditAltF8
 "Строка"
@@ -6855,10 +7811,12 @@ MEditAltF8
 "GeheZu"
 "Ugrás"
 "IdźDo"
-"Ir a.."
+"Ir a…"
 "Ísť na"
 "Vai A"
 "Рядок"
+"Да радка"
+"Eiti"
 
 MEditAltF9
 "Видео"
@@ -6871,8 +7829,12 @@ MEditAltF9
 "Video"
 "Video"
 "Відео"
+"Відэа"
+"Video"
 
 MEditAltF10
+""
+""
 ""
 ""
 ""
@@ -6895,8 +7857,12 @@ MEditAltF11
 "ZobrHs"
 "VediCr"
 "ІстПер"
+"Гісторыя праглядаў"
+upd:"ViewHs"
 
 MEditAltF12
+""
+""
 ""
 ""
 ""
@@ -6921,8 +7887,12 @@ l://Editor: Ctrl
 ""
 ""
 ""
+""
+""
 
 MEditCtrlF2
+""
+""
 ""
 ""
 ""
@@ -6945,8 +7915,12 @@ MEditCtrlF3
 ""
 ""
 ""
+""
+""
 
 MEditCtrlF4
+""
+""
 ""
 ""
 ""
@@ -6969,8 +7943,12 @@ MEditCtrlF5
 ""
 ""
 ""
+""
+""
 
 MEditCtrlF6
+""
+""
 ""
 ""
 ""
@@ -6993,8 +7971,12 @@ MEditCtrlF7
 "Nahraď"
 "Cambia"
 "Заміна"
+"Замяніць"
+"Keisti"
 
 MEditCtrlF8
+""
+""
 ""
 ""
 ""
@@ -7017,6 +7999,8 @@ MEditCtrlF9
 ""
 ""
 ""
+""
+""
 
 MEditCtrlF10
 "Позиц"
@@ -7024,11 +8008,13 @@ MEditCtrlF10
 "JdiSou"
 "GehDat"
 "FájlPz"
-"GoFile"
+"IdźDoPliku"
 "IrArch"
 "ÍsťSúb"
 "EsciGo"
 "Позиц"
+"Пазіцыя"
+upd:"GoFile"
 
 MEditCtrlF11
 ""
@@ -7041,8 +8027,12 @@ MEditCtrlF11
 ""
 ""
 ""
+""
+""
 
 MEditCtrlF12
+""
+""
 ""
 ""
 ""
@@ -7067,8 +8057,12 @@ l://Editor: AltShift
 ""
 ""
 ""
+""
+""
 
 MEditAltShiftF2
+""
+""
 ""
 ""
 ""
@@ -7091,8 +8085,12 @@ MEditAltShiftF3
 ""
 ""
 ""
+""
+""
 
 MEditAltShiftF4
+""
+""
 ""
 ""
 ""
@@ -7115,8 +8113,12 @@ MEditAltShiftF5
 ""
 ""
 ""
+""
+""
 
 MEditAltShiftF6
+""
+""
 ""
 ""
 ""
@@ -7139,8 +8141,12 @@ MEditAltShiftF7
 ""
 ""
 ""
+""
+""
 
 MEditAltShiftF8
+""
+""
 ""
 ""
 ""
@@ -7163,8 +8169,12 @@ MEditAltShiftF9
 "Konfig"
 "Config"
 "Конфіг"
+"Налады"
+upd:"Config"
 
 MEditAltShiftF10
+""
+""
 ""
 ""
 ""
@@ -7187,8 +8197,12 @@ MEditAltShiftF11
 ""
 ""
 ""
+""
+""
 
 MEditAltShiftF12
+""
+""
 ""
 ""
 ""
@@ -7213,8 +8227,12 @@ l://Editor: CtrlShift
 ""
 ""
 ""
+""
+""
 
 MEditCtrlShiftF2
+""
+""
 ""
 ""
 ""
@@ -7237,8 +8255,12 @@ MEditCtrlShiftF3
 ""
 ""
 ""
+""
+""
 
 MEditCtrlShiftF4
+""
+""
 ""
 ""
 ""
@@ -7261,8 +8283,12 @@ MEditCtrlShiftF5
 ""
 ""
 ""
+""
+""
 
 MEditCtrlShiftF6
+""
+""
 ""
 ""
 ""
@@ -7285,8 +8311,12 @@ MEditCtrlShiftF7
 ""
 ""
 ""
+""
+""
 
 MEditCtrlShiftF8
+""
+""
 ""
 ""
 ""
@@ -7309,8 +8339,12 @@ MEditCtrlShiftF9
 ""
 ""
 ""
+""
+""
 
 MEditCtrlShiftF10
+""
+""
 ""
 ""
 ""
@@ -7333,8 +8367,12 @@ MEditCtrlShiftF11
 ""
 ""
 ""
+""
+""
 
 MEditCtrlShiftF12
+""
+""
 ""
 ""
 ""
@@ -7359,8 +8397,12 @@ l:// Editor: CtrlAlt
 ""
 ""
 ""
+""
+""
 
 MEditCtrlAltF2
+""
+""
 ""
 ""
 ""
@@ -7383,8 +8425,12 @@ MEditCtrlAltF3
 ""
 ""
 ""
+""
+""
 
 MEditCtrlAltF4
+""
+""
 ""
 ""
 ""
@@ -7407,8 +8453,12 @@ MEditCtrlAltF5
 ""
 ""
 ""
+""
+""
 
 MEditCtrlAltF6
+""
+""
 ""
 ""
 ""
@@ -7431,8 +8481,12 @@ MEditCtrlAltF7
 ""
 ""
 ""
+""
+""
 
 MEditCtrlAltF8
+""
+""
 ""
 ""
 ""
@@ -7455,8 +8509,12 @@ MEditCtrlAltF9
 ""
 ""
 ""
+""
+""
 
 MEditCtrlAltF10
+""
+""
 ""
 ""
 ""
@@ -7479,8 +8537,12 @@ MEditCtrlAltF11
 ""
 ""
 ""
+""
+""
 
 MEditCtrlAltF12
+""
+""
 ""
 ""
 ""
@@ -7505,8 +8567,12 @@ l:// Editor: CtrlAltShift
 ""
 ""
 ""
+""
+""
 
 MEditCtrlAltShiftF2
+""
+""
 ""
 ""
 ""
@@ -7529,8 +8595,12 @@ MEditCtrlAltShiftF3
 ""
 ""
 ""
+""
+""
 
 MEditCtrlAltShiftF4
+""
+""
 ""
 ""
 ""
@@ -7553,8 +8623,12 @@ MEditCtrlAltShiftF5
 ""
 ""
 ""
+""
+""
 
 MEditCtrlAltShiftF6
+""
+""
 ""
 ""
 ""
@@ -7577,8 +8651,12 @@ MEditCtrlAltShiftF7
 ""
 ""
 ""
+""
+""
 
 MEditCtrlAltShiftF8
+""
+""
 ""
 ""
 ""
@@ -7601,8 +8679,12 @@ MEditCtrlAltShiftF9
 ""
 ""
 ""
+""
+""
 
 MEditCtrlAltShiftF10
+""
+""
 ""
 ""
 ""
@@ -7625,6 +8707,8 @@ MEditCtrlAltShiftF11
 ""
 ""
 ""
+""
+""
 
 MEditCtrlAltShiftF12
 ""
@@ -7637,1199 +8721,20 @@ MEditCtrlAltShiftF12
 ""
 ""
 ""
+""
+""
 
 MEditF8DOS
-l:// End of functional keys (Editor)
-l:// it's a F8 another text
+l:// Editor: end of functional keys
+l:// This is another text for F8
 "OEM"
 "OEM"
 "OEM"
 "OEM"
 "OEM"
-"CP-1250"
 "OEM"
 "OEM"
 "OEM"
-"OEM"
-
-
-MSingleEditF1
-l:
-l://Single Editor: functional keys - 6 characters max, 12 keys, "OEM" is F8 dupe!
-"Помощь"
-"Help"
-"Nápověda"
-"Hilfe"
-"Súgó"
-"Pomoc"
-"Ayuda"
-"Pomocn"
-"Aiuto"
-"Допом."
-
-MSingleEditF2
-"Сохран"
-"Save"
-"Uložit"
-"Speich"
-"Mentés"
-"Zapisz"
-"Guarda"
-"Uložiť"
-"Salva"
-"Зберег"
-
-MSingleEditF3
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditF4
-"Выход"
-"Quit"
-"Konec"
-"Ende"
-"Kilép"
-"Koniec"
-"Salir"
-"Koniec"
-"Esci"
-"Вихід"
-
-MSingleEditF5
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditF6
-"Просм"
-"View"
-"Zobraz"
-"Betr."
-"Megnéz"
-"Zobacz"
-"Ver"
-"Zobraz"
-"Vedi"
-"Перегл"
-
-MSingleEditF7
-"Поиск"
-"Search"
-"Hledat"
-"Suchen"
-"Keres"
-"Szukaj"
-"Buscar"
-"Hľadať"
-"Cerca"
-"Пошук"
-
-MSingleEditF8
-"ANSI"
-"ANSI"
-"WIN"
-"ANSI"
-"ANSI"
-"Latin 2"
-"ANSI"
-"WIN"
-"ANSI"
-"ANSI"
-
-MSingleEditF9
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditF10
-"Выход"
-"Quit"
-"Konec"
-"Ende"
-"Kilép"
-"Koniec"
-"Salir"
-"Koniec"
-"Esci"
-"Вихід"
-
-MSingleEditF11
-"Плагины"
-"Plugin"
-"Modul"
-"Plugin"
-"Plugin"
-"Plugin"
-"Comple"
-"Modul"
-"Plugin"
-"Плагіни"
-
-MSingleEditF12
-"Экраны"
-"Screen"
-"Obraz."
-"Seiten"
-"Képrny"
-"Ekran"
-"Pantal"
-"Okno"
-"Video"
-"Екрани"
-
-MSingleEditShiftF1
-l:
-l://Single Editor: Shift
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditShiftF2
-"Сохр.в"
-"SaveAs"
-"UlJako"
-"SpeiUn"
-"Ment.."
-"Zapisz"
-"GrdCom"
-"UložAko"
-"SalvaC"
-"Збер.в"
-
-MSingleEditShiftF3
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditShiftF4
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditShiftF5
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditShiftF6
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditShiftF7
-"Дальше"
-"Next"
-"Další"
-"Nächst"
-"TovKer"
-"Następ"
-"Próxim"
-"Nasl."
-"Prossi"
-"Далі"
-
-MSingleEditShiftF8
-"КодСтр"
-"CodePg"
-"ZnSady"
-upd:"Tabell"
-"Kódlap"
-"Tabela"
-"PágCód"
-"TabZn"
-"Tavola"
-"КодСтр"
-
-MSingleEditShiftF9
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditShiftF10
-"СхрВых"
-"SaveQ"
-"UlKone"
-"SaveQ"
-"MentKi"
-"ZapKon"
-"GrdySl"
-"UložKon"
-"SalvaX"
-"ЗбрВих"
-
-MSingleEditShiftF11
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditShiftF12
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditAltF1
-l:
-l://Single Editor: Alt
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditAltF2
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditAltF3
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditAltF4
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditAltF5
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditAltF6
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditAltF7
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditAltF8
-"Строка"
-"Goto"
-"Jít na"
-"GeheZu"
-"Ugrás"
-"IdźDo"
-"Ir a.."
-"Ísť na"
-"Vai A"
-"Рядок"
-
-MSingleEditAltF9
-"Видео"
-"Video"
-"Video"
-"Ansich"
-"Video"
-"Ekran"
-"Video"
-"Video"
-"Video"
-"Відео"
-
-MSingleEditAltF10
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditAltF11
-"ИстПр"
-"ViewHs"
-"ProhHs"
-"BetrHs"
-"NézElő"
-"ZobHs"
-"VerHis"
-"ZobrHs"
-"VediCr"
-"ІстПер"
-
-MSingleEditAltF12
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlF1
-l:
-l://Single Editor: Ctrl
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlF2
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlF3
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlF4
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlF5
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlF6
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlF7
-"Замена"
-"Replac"
-"Nahraď"
-"Ersetz"
-"Csere"
-"Zastąp"
-"Remplz"
-"Nahraď"
-"Sostit"
-"Заміна"
-
-MSingleEditCtrlF8
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlF9
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlF10
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlF11
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlF12
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditAltShiftF1
-l:
-l://Single Editor: AltShift
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditAltShiftF2
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditAltShiftF3
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditAltShiftF4
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditAltShiftF5
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditAltShiftF6
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditAltShiftF7
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditAltShiftF8
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditAltShiftF9
-"Конфиг"
-"Config"
-"Nastav"
-"Konfig"
-"Beáll."
-"Konfig"
-"Config"
-"Konfig"
-"SetUP"
-"Конфіг"
-
-MSingleEditAltShiftF10
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditAltShiftF11
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditAltShiftF12
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlShiftF1
-l:
-l://Single Editor: CtrlShift
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlShiftF2
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlShiftF3
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlShiftF4
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlShiftF5
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlShiftF6
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlShiftF7
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlShiftF8
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlShiftF9
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlShiftF10
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlShiftF11
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlShiftF12
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlAltF1
-l:
-l://Single Editor: CtrlAlt
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlAltF2
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlAltF3
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlAltF4
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlAltF5
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlAltF6
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlAltF7
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlAltF8
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlAltF9
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlAltF10
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlAltF11
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlAltF12
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlAltShiftF1
-l:
-l://Single Editor: CtrlAltShift
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlAltShiftF2
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlAltShiftF3
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlAltShiftF4
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlAltShiftF5
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlAltShiftF6
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlAltShiftF7
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlAltShiftF8
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlAltShiftF9
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlAltShiftF10
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlAltShiftF11
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditCtrlAltShiftF12
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleEditF8DOS
-l:// End of functional keys (Single Editor)
-l:// it's a F8 another text
-"OEM"
-"OEM"
-"OEM"
-"OEM"
-"OEM"
-"CP 1250"
 "OEM"
 "OEM"
 "OEM"
@@ -8847,6 +8752,8 @@ l:
 "Uložiť súbor ako"
 "Sal&va Il File Come"
 "Зберегти &файл як"
+"Захаваць &файл як"
+"Išsaugoti failą vardu"
 
 MEditCodePage
 "&Кодовая страница:"
@@ -8859,6 +8766,8 @@ MEditCodePage
 "Tabuľka znakov:"
 "Codifica Pagina:"
 "&Кодова сторінка:"
+"&Кадыроўка:"
+upd:"&Code page:"
 
 MEditAddSignature
 "Добавить &сигнатуру (BOM)"
@@ -8871,6 +8780,8 @@ MEditAddSignature
 "Pridať podpis (BOM)"
 "Aggiungi &Firma (BOM)"
 "Додати &сигнатуру (BOM)"
+"Дадаць подпі&с (BOM)"
+upd:"Add &signature (BOM)"
 
 MEditSaveAsFormatTitle
 "Изменить перевод строки:"
@@ -8883,6 +8794,8 @@ MEditSaveAsFormatTitle
 "Zmeniť konce riadkov na:"
 "Cambia A Capo In:"
 "Змінити закінчення рядка:"
+"Замяніць перарывальнік радка:"
+upd:"Change line breaks to:"
 
 MEditSaveOriginal
 "&исходный формат"
@@ -8895,6 +8808,8 @@ MEditSaveOriginal
 "&Bez zmeny"
 "&Non Cambiare"
 "&Початковий формат"
+"не м&яняць"
+upd:"Do n&ot change"
 
 MEditSaveDOS
 "в форма&те DOS/Windows (CR LF)"
@@ -8902,11 +8817,13 @@ MEditSaveDOS
 "&Dos/Windows formát (CR LF)"
 "&Dos/Windows Format (CR LF)"
 "&DOS/Windows formátum (CR LF)"
-"Format &Dos/Windows (CR LF)"
+"Format &DOS/Windows (CR LF)"
 "Formato &DOS/Windows (CR LF)"
 "Formát &DOS/Windows (CR LF)"
 "Formato &Dos/Windows (CRLF)"
 "у форма&ті DOS/Windows (CR LF)"
+"у разметцы DOS/Windows (CR LF)"
+upd:"&Dos/Windows format (CR LF)"
 
 MEditSaveUnix
 "в формат&е UNIX (LF)"
@@ -8914,11 +8831,13 @@ MEditSaveUnix
 "&Unix formát (LF)"
 "&Unix Format (LF)"
 "&UNIX formátum (LF)"
-"Format &Unix (LF)"
+"Format &UNIX (LF)"
 "Formato &Unix (LF)"
 "Formát &Unix (LF)"
 "Formato &Unix (LF)"
 "у формат&і UNIX (LF)"
+"у разметцы UNIX (LF)"
+upd:"&Unix format (LF)"
 
 MEditSaveMac
 "в фор&мате MAC (CR)"
@@ -8926,11 +8845,13 @@ MEditSaveMac
 "&Mac formát (CR)"
 "&Mac Format (CR)"
 "&Mac formátum (CR)"
-"Format &Mac (CR)"
+"Format &MAC (CR)"
 "Formato &Mac (CR)"
 "Formát &Mac (CR)"
 "Formato &Mac  (CR)"
 "у фор&маті MAC (CR)"
+"у разметцы MAC (CR)"
+upd:"&Mac format (CR)"
 
 MEditCannotSave
 "Ошибка сохранения файла"
@@ -8938,11 +8859,13 @@ MEditCannotSave
 "Nelze uložit soubor"
 "Kann die Datei nicht speichern"
 "A fájl nem menthető"
-"Nie mogę zapisać pliku"
+"Nie można zapisać pliku"
 "No se puede guardar archivo"
 "Nemôžem uložiť súbor"
 "Non Posso Salvare Il File"
 "Помилка збереження файлу"
+"Немагчыма захаваць файл"
+"Negaliu išsaugoti failo"
 
 MEditSavedChangedNonFile
 "Файл изменён, но файл или папка, в которой он находился,"
@@ -8955,6 +8878,8 @@ MEditSavedChangedNonFile
 "Súbor je zmenený, ale súbor alebo priečinok obsahujúci"
 "File Modificato Ma Lo Stesso O La Cartella In Cui Era"
 "Файл змінено, але файл або папка, в якій він містився,"
+"Файл зменены, але файла ці каталог, дзе ён знаходзіўся,"
+upd:"The file is changed but the file or the folder containing"
 
 MEditSavedChangedNonFile1
 "Файл или папка, в которой он находился,"
@@ -8967,6 +8892,8 @@ MEditSavedChangedNonFile1
 "Súbor alebo priečinok obsahujúci"
 "Il File O La Cartella Contenente"
 "Файл або папка, в якій він містився,"
+"Файл ці каталог, дзе ён знаходзіўся,"
+upd:"The file or the folder containing"
 
 MEditSavedChangedNonFile2
 "был перемещён или удалён. Сохранить?"
@@ -8974,11 +8901,13 @@ MEditSavedChangedNonFile2
 "tento soubor byl přesunut, nebo smazán. Uložit?"
 upd:"diesen Inhalt enthält wurde verschoben oder gelöscht. Save?"
 upd:"időközben áthelyezte/átnevezte vagy törölte. Save?"
-upd:"ten plik został przeniesiony lub usunięty. Save?"
+"ten plik został przeniesiony lub usunięty. Zapisać?"
 "este archivo ha sido movido o borrado. Desea guardarlo?"
 "tento súbor bol presunutý alebo zmazaný. Uložiť?"
-"Questo File Non Esiste Più! ...Lo Salvo?"
+"Questo File Non Esiste Più! Lo Salvo?"
 "було переміщено або видалено. Зберегти?"
+"быў перанесены ці выдалены. Захаваць?"
+upd:"this file was moved or deleted. Save?"
 
 MEditNewPath1
 "Путь к редактируемому файлу не существует,"
@@ -8991,6 +8920,8 @@ MEditNewPath1
 "Cesta k upravenému súboru neexistuje,"
 "Il Percorso Del File Editato Non Esiste"
 "Шлях до редагованого файлу не існує,"
+"Шлях да файла, які мяняецца, не існуе,"
+upd:"The path to the edited file does not exist,"
 
 MEditNewPath2
 "но будет создан при сохранении файла."
@@ -9003,6 +8934,8 @@ MEditNewPath2
 "ale vytvorí sa pri uložení súboru."
 "Ma Sarà Creato Quando Il File Verrà Salvato"
 "але буде створено при збереженні файлу."
+"але будез створаны пры захаванні файла."
+upd:"but will be created when the file is saved."
 
 MEditNewPath3
 "Продолжать?"
@@ -9015,6 +8948,8 @@ MEditNewPath3
 "Pokračovať?"
 "Continuare?"
 "Продовжити?"
+"Пряцягнуць?"
+upd:"Continue?"
 
 MEditNewPlugin1
 "Имя редактируемого файла не может быть пустым"
@@ -9027,103 +8962,64 @@ MEditNewPlugin1
 "Názov súboru na úpravu nesmie byť prázdny"
 "Il Nome Del File Da Modificare Non Puo' Essere Vuoto"
 "Ім'я редагованого файлу не може бути порожнім"
+"Імя файла, які мяняецца, ня можа быць пустым"
+upd:"The name of the file to edit cannot be empty"
 
 MEditorLoadCPWarn1
 "Файл содержит символы, которые невозможно"
-"File contains characters that cannot be"
+"The file contains characters that cannot be"
 "Soubor obsahuje znaky, které se nedají"
 "Datei enthält Symbole, die korrekt"
-upd:"File contains characters that cannot be"
-upd:"File contains characters that cannot be"
+upd:"The file contains characters that cannot be"
+"Plik zawiera znaki, które nie mogą być"
 "El archivo contiene caracteres que no pueden ser"
 "Súbor obsahuje znaky, ktoré sa nedajú"
 "Questo File Contiene Caratteri, Che Non Possono Esser"
 "Файл містить символи, які неможливо"
+"Файл змяшчае сімвалы, якія немагчыма"
+upd:"The file contains characters that cannot be"
 
 MEditorLoadCPWarn2
 "корректно прочитать, используя выбранную кодовую страницу."
-"correctly read using selected code page."
+"correctly read using the selected code page."
 "správně přečíst se zvolenou kódovou stránkou."
 "mit ausgewälte Codepage nicht gelesen werden können."
-upd:"correctly read using selected code page."
-upd:"correctly read using selected code page."
+upd:"correctly read using the selected code page."
+"poprawnie odczytane w tej stronie kodowej."
 "correctamente leídos con la página de códigos (codepage) seleccionada."
 "správne prečítať so zvolenou tabuľkou znakov."
 "Letti Correttamente Utilizzando La Tabella Selezionata"
 "коректно прочитати з використанням обраної кодової сторінки."
+"правільна прачытаць, калі ужыць абраную кадыроўку."
+upd:"correctly read using the selected code page."
 
 MEditorReloadCPWarnLost1
 "Для смены кодовой страницы требуется перезагрузка файла."
-"File has to be reloaded to change code page."
-upd:"File has to be reloaded to change code page."
+"The file has to be reloaded to change the code page."
+"Pro změnu kódové stránky musí být soubor znovu načten."
 "Datei muss neu gestartet werden, um neue Codepage zu wählen."
-upd:"File has to be reloaded to change code page."
-upd:"File has to be reloaded to change code page."
+upd:"The file has to be reloaded to change the code page."
+"Plik zostanie przeładowany, aby zmienić stronę kodową."
 "Archivo tiene que ser recargado para cambiar página de códigos."
 "Aby sa zmenila kódová stránka musí byť súbor nanovo načítaný."
 "Il File Deve Essere Ricaricato Per La Nuova Tabella"
 "Для змінення кодової сторінки потрібне перезавантаження файлу."
+"Для змены кадыроўкі патрэбна перапрачытаць файл."
+upd:"The file has to be reloaded to change the code page."
 
 MEditorReloadCPWarnLost2
 "Все несохранённые изменения будут потеряны."
 "All unsaved changes will be lost."
-upd:"All unsaved changes will be lost."
+"Všechny neuložené změny budou ztraceny."
 "Alle ungespeicherte Änderungen werden entfernt."
 upd:"All unsaved changes will be lost."
-upd:"All unsaved changes will be lost."
+"Wszystkie niezapisane zmany zostaną utracone."
 "Todos los cambios no guardados serán perdidos."
 "Neuložené zmeny budú stratené."
 "Tutte Le Modifiche Non Salvate Verranno Perse"
 "Усі незбережені зміни буде втрачено."
-
-
-MEditorSaveCPWarn1
-"Редактор содержит символы, которые невозможно"
-"Editor contains characters that cannot be"
-"Editor obsahuje znaky, které se nedají"
-"Editor enthält Symbole, die korrekt"
-upd:"Editor contains characters that cannot be"
-upd:"Editor contains characters that cannot be"
-"El editor contiene caracteres que no pueden ser"
-"Editor obsahuje znaky, ktoré sa nedajú"
-"L'Editor Contiene Caratteri, Che Non Possono Essere"
-"Редактор містить символи, які неможливо"
-
-MEditorSaveCPWarn2
-"корректно сохранить, используя выбранную кодовую страницу."
-"correctly saved using selected code page."
-"správně uložit se zvolenou kódovou stránkou."
-"mit ausgewählte Codepage nicht gespeichert werden können."
-upd:"correctly saved using selected code page."
-upd:"correctly saved using selected code page."
-"correctamente guardados con página de códigos (codepage) seleccionada."
-"správne uložiť so zvolenou tabuľkou znakov."
-"Salvati Correttamente Usando La Tabella Selezionata"
-"коректно зберегти з використанням обраної кодової сторінки."
-
-MEditorSwitchCPWarn1
-"Редактор содержит символы, которые невозможно"
-"Editor contains characters that cannot be"
-"Editor obsahuje znaky, které se nedají"
-"Editor enthält Symbole, die korrekt"
-upd:"Editor contains characters that cannot be"
-upd:"Editor contains characters that cannot be"
-"El editor contiene caracteres que no pueden ser correctamente traducidos"
-"Editor obsahuje znaky, ktoré sa nedajú"
-"L'Editor Contiene Caratteri, Che Non Possono Essere"
-"Редактор містить символи, які неможливо"
-
-MEditorSwitchCPWarn2
-"корректно преобразовать, используя выбранную кодовую страницу [{0}]"
-"correctly translated using selected code page [{0}]"
-"správně přeložit se zvolenou kódovou stránkou [{0}]"
-"mit ausgewählte Codepage nicht gewandelt werden können [{0}]"
-upd:"correctly translated using selected code page [{0}]"
-upd:"correctly translated using selected code page [{0}]"
-"con la página de códigos (codepage) seleccionada [{0}]"
-"správne preložiť so zvolenou tabuľkou znakov [{0}]"
-"Correttamente Tradotti Usando La Tabella Selezionata [{0}]"
-"коректно перетворити з використанням обраної кодової сторінки [{0}]"
+"Усі незахаваныя змены будуць згубленыя."
+upd:"All unsaved changes will be lost."
 
 MEditorSwitchCPConfirm
 "Продолжить?"
@@ -9131,23 +9027,27 @@ MEditorSwitchCPConfirm
 "Pokračovat?"
 "Fortfahren?"
 upd:"Continue?"
-upd:"Continue?"
+"Kontynuować?"
 "Continuar?"
 "Pokračovať?"
 "Continuare?"
 "Продовжити?"
+"Працягнуць?"
+upd:"Continue?"
 
 MEditDataLostWarn
 "Во время редактирования файла некоторые данные были утеряны."
-"During file editing some data were lost."
+"During the file editing some data was lost."
 "Během úpravy souboru se některá data ztratila."
 "Während der Dateibearbeitung sind einige Daten verloren."
-upd:"During file editing some data were lost."
-upd:"During file editing some data were lost."
+upd:"During the file editing some data was lost."
+"Podczas edycji pliku, część danych została utracona."
 "Durante la edición del archivo algunos datos se perdieron."
 "Počas úpravy súboru sa niektoré dáta stratili."
 "Durante La Codifica Alcuni Dati Sono Andati Perduti"
 "При редагуванні файлу деякі дані було втрачено."
+"У час змены файла некаторыя дадзеныя былі згублены."
+upd:"During the file editing some data was lost."
 
 MEditorSaveNotRecommended
 "Сохранять файл не рекомендуется."
@@ -9160,6 +9060,8 @@ MEditorSaveNotRecommended
 "Neodporúčame uložiť tento súbor."
 "Non E' Raccompandabile Salvare Questo File!"
 "Зберігати файл не рекомендуємо."
+"Прапануем файл не захоўваць."
+upd:"It is not recommended to save this file."
 
 MEditorSave
 "Сохранить"
@@ -9172,6 +9074,8 @@ MEditorSave
 "Uložiť"
 "Sal&va"
 "Зберегти"
+"Пахаваць"
+upd:"Save"
 
 MEditorSaveCPWarnShow
 "Показать"
@@ -9179,47 +9083,13 @@ MEditorSaveCPWarnShow
 "Zobrazit"
 "Zeigen"
 upd:"Show"
-upd:"Show"
+"Pokaż"
 "Mostrar"
 "Zobraziť"
 "&Mostra"
 "Показати"
-
-MEditorSwitchUnicodeCPDisabled
-"Нельзя изменить юникодную кодовую страницу"
-"Unicode code page switch is not supported"
-"Přepínač kódové stránky Unicode není podporovaný"
-"Unicode Codepage kann nicht verändert werden"
-upd:"Unicode code page switch is not supported"
-upd:"Unicode code page switch is not supported"
-"Cambio a página de códigos unicode no está soportado"
-"Prepínač Unicode nie je podporovaný"
-"Il Cambio Di Codifica Ad Unicode Non è Supportata"
-"Не можна змінити юнікодну кодову сторінку"
-
-MEditorTryReloadFile
-"Можно перечитать файл, указав нужную кодовую страницу (ShiftF4)"
-"You can reload file using custom code page (ShiftF4)"
-"Můžete znova načíst soubor s uživatelskou kódovou stránkou (ShiftF4)"
-"Sie können die Datei neu starten, um neue Codepage zu wählen (ShiftF4)"
-upd:"You can reload file using custom code page (ShiftF4)"
-upd:"You can reload file using custom code page (ShiftF4)"
-"Usted puede recargar el archivo usando página de códigos a elección (ShiftF4)"
-"Môžete znova načítať súbor s užívateľskou tabuľkou znakov (ShiftF4)"
-"Puoi Ricaricare Il File Usando Una Tabella Personale [SHIFT-F4]"
-"Можна перечитати файл, вказавши потрібну кодову сторінку (Shift+F4)"
-
-MEditorSwitchToUnicodeCPDisabled
-"Переключение на юникодную кодовую страницу {0} не поддерживается"
-"Switch to unicode code page {0} is not supported"
-"Přepnutí na kódovou stránku Unicode {0} není podporované"
-"Wechseln zu Unicode Codepage {0} ist nicht unterstützt"
-upd:"Switch to unicode code page {0} is not supported"
-upd:"Switch to unicode code page {0} is not supported"
-"Cambio a página de códigos unicode {0} no está soportado"
-"Prepínač na tabuľku Unicode {0} nie je podporovaný"
-"Il Cambio In Unicode {0} Non è Supportato"
-"Переключення на юнікодну кодову сторінку {0} не підтримується"
+"Адлюстраваць"
+upd:"Show"
 
 MEditorCPNotSupported
 "Кодовая страница {0} не поддерживается вашей системой"
@@ -9227,11 +9097,13 @@ MEditorCPNotSupported
 "Kódová stránka {0} není podporovaná ve vašem systému"
 "Codepage {0} ist nicht unterstützt"
 upd:"Code page {0} is not supported in your system"
-upd:"Code page {0} is not supported in your system"
+"Strona kodowa {0} nie jest obsługiwana przez Twój system"
 "Página de códigos {0} no está soportado en su sistema"
 "Tabuľka znakov {0} nie je podporovaná vo vašom systéme"
 "La Codifica {0} Non è Supportata Nel Tuo Sistema"
 "Кодова сторінка {0} не підтримується вашою системою"
+"Кадыроўка {0} не падтрымліваецца вашай сістэмай"
+upd:"Code page {0} is not supported in your system"
 
 MColumnName
 l:
@@ -9245,6 +9117,8 @@ l:
 "Názov"
 "Nome"
 "Ім'я"
+"Імя"
+"Vardas"
 
 MColumnExtension
 "Расширение"
@@ -9252,11 +9126,13 @@ MColumnExtension
 "Přípona"
 "Erweiterung"
 upd:"Extension"
-upd:"Extension"
+"Rozszerzenie"
 "Extensión"
 "Prípona"
 "Estensione"
 "Тип"
+"Пашырэнне"
+"Plėtinįs"
 
 MColumnSize
 "Размер"
@@ -9269,6 +9145,8 @@ MColumnSize
 "Veľkosť"
 "Dimensione"
 "Розмір"
+"Памер"
+"Dydis"
 
 MColumnAlocatedSize
 "Выделено"
@@ -9276,11 +9154,13 @@ MColumnAlocatedSize
 "Alokováno"
 "Markiert"
 upd:"Allocated"
-upd:"Allocated"
+"Przydzielone"
 "Compresión"
 "Alokovaný"
 "Allocato"
 "Виділено"
+"Размеркавана"
+upd:"Allocated"
 
 MColumnDate
 "Дата"
@@ -9293,6 +9173,8 @@ MColumnDate
 "Dátum"
 "Data"
 "Дата"
+"Дата"
+"Data"
 
 MColumnTime
 "Время"
@@ -9305,6 +9187,8 @@ MColumnTime
 "Čas"
 "Ora"
 "Час"
+"Час"
+"Laiks"
 
 MColumnWrited
 "Запись"
@@ -9312,11 +9196,13 @@ MColumnWrited
 "Zápis"
 "Schreiben"
 upd:"Write"
-upd:"Write"
+"Zapis"
 "Escrit"
 "Zápis"
 "Modificato"
 "Запис"
+"Запіс"
+"Modifikuotas"
 
 MColumnCreated
 "Создание"
@@ -9329,6 +9215,8 @@ MColumnCreated
 "Vytvorený"
 "Creato"
 "Створення"
+"Стварэнне"
+"Sukurtas"
 
 MColumnAccessed
 "Доступ"
@@ -9341,6 +9229,8 @@ MColumnAccessed
 "Prístup"
 "Accesso"
 "Доступ"
+"Доступ"
+"Naudotas"
 
 MColumnChanged
 "Изменение"
@@ -9348,11 +9238,13 @@ MColumnChanged
 "Změnený"
 "Änderung"
 upd:"Change"
-upd:"Change"
+"Zmiana"
 "Cambio"
 "Zmenený"
 "Cambiato"
 "Змінення"
+"Змена"
+upd:"Change"
 
 MColumnAttr
 "Атриб"
@@ -9365,6 +9257,8 @@ MColumnAttr
 "Atrib."
 "Attributi"
 "Атриб"
+"Атрыбут"
+"Atrib"
 
 MColumnDescription
 "Описание"
@@ -9377,6 +9271,8 @@ MColumnDescription
 "Popis"
 "Descrizione"
 "Опис"
+"Апісанне"
+"Aprašymas"
 
 MColumnOwner
 "Владелец"
@@ -9389,6 +9285,8 @@ MColumnOwner
 "Vlastník"
 "Proprietario"
 "Власник"
+"Уладальнік"
+"Savininkas"
 
 MColumnMumLinks
 "КлС"
@@ -9401,6 +9299,8 @@ MColumnMumLinks
 "NmL"
 "NmL"
 "КлС"
+"КлСпасылак"
+"NumL"
 
 MColumnNumStreams
 "КлП"
@@ -9408,11 +9308,13 @@ MColumnNumStreams
 "NmS"
 upd:"NmS"
 "Stm"
-upd:"NmS"
+"NmS"
 "NmS"
 "NmS"
 "NmS"
 "КлП"
+"КлСтруменяў"
+"NumS"
 
 MColumnStreamsSize
 "РазмПт"
@@ -9420,13 +9322,17 @@ MColumnStreamsSize
 "StrmSz"
 upd:"StrmSz"
 "StmMér"
-upd:"StrmSz"
+"WlkStr"
 "StrmSz"
 "StrmSz"
 "StrmSz"
 "РозмПт"
+"ПамСтрумені"
+upd:"StrmSz"
 
 MColumnUnknown
+"???"
+"???"
 "???"
 "???"
 "???"
@@ -9448,8 +9354,10 @@ l:
 "W górę"
 "UP-DIR"
 "Nahor"
-"Su"
+"↑Su↑"
 "Угору"
+"Уверх"
+"Aukštyn"
 
 MListFolder
 "Папка"
@@ -9458,22 +9366,26 @@ MListFolder
 "Ordner"
 "Mappa"
 "Folder"
-"SUB-DIR"
+"Directorio"
 "Priečinok"
-"Cartel"
+"Cartella"
 "Папка"
+"Каталог"
+"Katalogs"
 
 MListSymlink
 "Ссылка"
 "Symlink"
-"Link"
+"Symlink"
 "Symlink"
 "SzimLnk"
 "LinkSym"
-"EnlSimb"
+"EnlcSimb"
 "Prepojenie"
-"@Link>"
+"Simbolico"
 "Посилання"
+"Спасылак"
+upd:"Symlink"
 
 MListJunction
 "Связь"
@@ -9485,139 +9397,23 @@ MListJunction
 "Empalme"
 "Kríženie"
 "Incrocio"
-"Зв'язок"
+"Cполучення"
+"Злучэнне"
+upd:"Junction"
 
 MListVolMount
 "Том"
 "Volume"
 "Svazek"
-"Datenräger"
-upd:"Volume"
-upd:"Volume"
+"Datenträger"
+"Kötet"
+"Wolumen"
 "Volumen"
 "Zväzok"
 "Volume"
 "Том"
-
-MListDFS
-"DFS"
-"DFS"
-"DFS"
-"DFS"
-"DFS"
-"DFS"
-"DFS"
-"DFS"
-"DFS"
-"DFS"
-
-MListDFSR
-"DFSR"
-"DFSR"
-"DFSR"
-"DFSR"
-"DFSR"
-"DFSR"
-"DFSR"
-"DFSR"
-"DFSR"
-"DFSR"
-
-MListHSM
-"HSM"
-"HSM"
-"HSM"
-"HSM"
-"HSM"
-"HSM"
-"HSM"
-"HSM"
-"HSM"
-"HSM"
-
-MListHSM2
-"HSM2"
-"HSM2"
-"HSM2"
-"HSM2"
-"HSM2"
-"HSM2"
-"HSM2"
-"HSM2"
-"HSM2"
-"HSM2"
-
-MListSIS
-"SIS"
-"SIS"
-"SIS"
-"SIS"
-"SIS"
-"SIS"
-"SIS"
-"SIS"
-"SIS"
-"SIS"
-
-MListWIM
-"WIM"
-"WIM"
-"WIM"
-"WIM"
-"WIM"
-"WIM"
-"WIM"
-"WIM"
-"WIM"
-"WIM"
-
-MListCSV
-"CSV"
-"CSV"
-"CSV"
-"CSV"
-"CSV"
-"CSV"
-"CSV"
-"CSV"
-"CSV"
-"CSV"
-
-MListDEDUP
-"DEDUP"
-"DEDUP"
-"DEDUP"
-"DEDUP"
-"DEDUP"
-"DEDUP"
-"DEDUP"
-"DEDUP"
-"DEDUP"
-"DEDUP"
-
-MListNFS
-"NFS"
-"NFS"
-"NFS"
-"NFS"
-"NFS"
-"NFS"
-"NFS"
-"NFS"
-"NFS"
-"NFS"
-
-MListPlaceholder
-"Заполнитель"
-"Placeholder"
-upd:"Placeholder"
-"Ordnerstelle"
-upd:"Placeholder"
-upd:"Placeholder"
-"Marcador de posición"
-"Zástupca"
-upd:"Placeholder"
-"Покажчик місця заповнення"
+"Дыск"
+upd:"Volume"
 
 MListUnknownReparsePoint
 "?Ссылка?"
@@ -9630,8 +9426,12 @@ MListUnknownReparsePoint
 "?Prepojenie?"
 "?Symlink?"
 "?Посилання?"
+"?Спасылак?"
+upd:"?Symlink?"
 
 MListBrackets
+"<>"
+"<>"
 "<>"
 "<>"
 "<>"
@@ -9654,18 +9454,22 @@ MListBytes
 "B"
 "B"
 "Б"
+"Б"
+"B"
 
 MListKb
 "К"
 "K"
 "K"
 "K"
-"k"
 "K"
 "K"
-"k"
+"K"
+"K"
 "K"
 "К"
+"К"
+"K"
 
 MListMb
 "М"
@@ -9678,6 +9482,8 @@ MListMb
 "M"
 "M"
 "М"
+"М"
+"M"
 
 MListGb
 "Г"
@@ -9690,6 +9496,8 @@ MListGb
 "G"
 "G"
 "Г"
+"Г"
+"G"
 
 MListTb
 "Т"
@@ -9702,6 +9510,8 @@ MListTb
 "T"
 "T"
 "Т"
+"Т"
+"T"
 
 MListPb
 "П"
@@ -9714,6 +9524,8 @@ MListPb
 "P"
 "P"
 "П"
+"П"
+"P"
 
 MListEb
 "Э"
@@ -9726,20 +9538,27 @@ MListEb
 "E"
 "E"
 "Е"
+"Э"
+"E"
 
 MListFileSize
+l:{3} replacement field can receive a sum of files & folders
 "Байт: {0}, файлов: {1}, папок: {2}"
 "Bytes: {0}, files: {1}, folders: {2}"
+"Bajty: {0}, soubory: {1}, složky: {2}"
 upd:"Bytes: {0}, files: {1}, folders: {2}"
 upd:"Bytes: {0}, files: {1}, folders: {2}"
-upd:"Bytes: {0}, files: {1}, folders: {2}"
-upd:"Bytes: {0}, files: {1}, folders: {2}"
+"Bajtów: {0}, plików: {1}, folderów: {2}"
 "Bytes: {0}, archivos: {1}, carpetas: {2}"
 "Bytov: {0}, súborov: {1}, adresárov: {2}"
-upd:"Bytes: {0}, files: {1}, folders: {2}"
+"Bytes: {0}, Files: {1}, Cartelle: {2}"
 "Байт: {0}, файлів: {1}, папок: {2}"
+"Байтаў: {0}, файлаў: {1}, каталогаў: {2}"
+"Baitai: {0}, faitai: {1}, katalogai: {2}"
 
 MListFileSizeStatus
+"{0} ({1}/{2}) {3} {4}"
+"{0} ({1}/{2}) {3} {4}"
 "{0} ({1}/{2}) {3} {4}"
 "{0} ({1}/{2}) {3} {4}"
 "{0} ({1}/{2}) {3} {4}"
@@ -9757,11 +9576,13 @@ MListFreeSize
 "{0} volných bytů"
 "{0} freie Bytes"
 "{0} szabad bájt"
-"{0} wolnych bajtów"
+"{0} bajtów wolnych"
 "{0} bytes libres"
 "{0} voľných bajtov"
 "{0} Bytes Liberi"
 "{0} байт вільно"
+"{0} вольных байтаў"
+"{0} baitų laisva"
 
 MDirInfoViewTitle
 l:
@@ -9775,6 +9596,8 @@ l:
 "Zobraziť"
 "Vista"
 "Перегляд"
+"Глядзець"
+"Žiūrėti"
 
 MFileToEdit
 "Редактировать файл:"
@@ -9787,6 +9610,8 @@ MFileToEdit
 "Súbor na úpravu:"
 "File Da Modificare:"
 "Редагувати файл:"
+"Мяняць файл:"
+"Redaguoti failą:"
 
 MUnselectTitle
 l:
@@ -9800,6 +9625,8 @@ l:
 "Odznačiť"
 "Deseleziona"
 "Зняти"
+"Прыбраць"
+"Atžymėti"
 
 MSelectTitle
 "Пометить"
@@ -9812,6 +9639,8 @@ MSelectTitle
 "Označiť"
 "Seleziona"
 "Позначити"
+"Адзначыць"
+"Pažymėti"
 
 MSelectFilter
 "&Фильтр"
@@ -9824,6 +9653,8 @@ MSelectFilter
 "&Filter"
 "&Filtro"
 "&Фільтр"
+"&Фільтр"
+upd:"&Filter"
 
 MCompareTitle
 l:
@@ -9837,6 +9668,8 @@ l:
 "Porovnať"
 "Confronta"
 "Порівняння"
+"Параўнанне"
+"Palyginti"
 
 MCompareFilePanelsRequired1
 "Для сравнения папок требуются"
@@ -9844,11 +9677,13 @@ MCompareFilePanelsRequired1
 "Pro provedení příkazu Porovnat adresáře"
 "Zwei Dateipanels werden benötigt um"
 "Mappák összehasonlításához"
-"Aby porównać katalogi konieczne są"
+"Aby porównać foldery konieczne są"
 "Dos paneles de archivos son necesarios para poder"
 "Na vykonanie príkazu Porovnať priečinky"
 "Occorre Attivare Entrambi I Pannelli"
 "Для порівняння папок потрібні"
+"Для параўнання каталогаў патрэбна"
+"Komandai ""Palyginti katalogus"" įvykdyti"
 
 MCompareFilePanelsRequired2
 "две файловые панели"
@@ -9861,6 +9696,8 @@ MCompareFilePanelsRequired2
 "treba dva súborové panely"
 "Per Eseguire Il Comando Comparazione"
 "дві файлові панелі"
+"дзьве файлавыя панэлі"
+"reikia dviejų langų"
 
 MCompareSameFolders1
 "Содержимое папок,"
@@ -9868,11 +9705,13 @@ MCompareSameFolders1
 "Obsahy adresářů jsou"
 "Der Inhalt der beiden Ordner scheint"
 "A mappák tartalma"
-"Zawartość katalogów"
+"Zawartość folderów"
 "El contenido de los directorios parecen"
 "Obsahy priečinkov sú"
 "I Contenuti Dei Due Pannelli Sembrano"
 "Вміст папок,"
+"Змест каталогаў,"
+"Katalogų turiniai atrodo"
 
 MCompareSameFolders2
 "скорее всего, одинаково"
@@ -9885,6 +9724,8 @@ MCompareSameFolders2
 "zhodné"
 "Essere Identici"
 "скоріш за все, однаковий"
+"хутчэй за ўсё аднолькава"
+"esą identiški"
 
 MSelectAssocTitle
 l:
@@ -9898,6 +9739,8 @@ l:
 "Výber asociácie"
 "Selezione Associazioni"
 "Виберіть асоціацію"
+"Вызначце прызначэнне"
+"Pažymėkit asociaciją"
 
 MAssocTitle
 l:
@@ -9911,18 +9754,8 @@ l:
 "Asociácie súborov"
 "Associazioni Dei Files"
 "Асоціації для файлів"
-
-MAssocBottom
-"Редактирование: Del,Ins,F4"
-"Edit: Del,Ins,F4"
-"Změnit: Del,Ins,F4"
-"Bearb.: Entf,Einf,F4"
-"Szerk.: Del,Ins,F4"
-"Edycja: Del,Ins,F4"
-"Editar: Del,Ins,F4"
-"Upraviť: Del,Ins,F4"
-"Edita: [DEL] [INS] [F4]"
-"Редагування: Del,Ins,F4"
+"Прызначэнні да файлаў"
+"Failų asociacijos"
 
 MAskDelAssoc
 "Вы хотите удалить ассоциацию для"
@@ -9935,6 +9768,8 @@ MAskDelAssoc
 "Chcete zmazať asociáciu pre"
 "Vuoi Eliminare Le Associazioni Per"
 "Ви бажаєте видалити асоціацію для"
+"Вы жадаеце выдаліць прызначэнне да"
+"Ar norite ištrinti asociaciją"
 
 MFileAssocTitle
 l:
@@ -9948,6 +9783,8 @@ l:
 "Upraviť asociácie súborov"
 "Edita Associazione"
 "Редагування асоціацій файлів"
+"Змена прызначэнняў файлаў"
+"Redaguoti failų asociacijas"
 
 MFileAssocMasks
 "Одна или несколько &масок файлов:"
@@ -9955,11 +9792,13 @@ MFileAssocMasks
 "&Maska nebo masky souborů:"
 "Datei&maske (mehrere getrennt mit Komma):"
 "F&ájlmaszk(ok, vesszővel elválasztva):"
-"&Maska pliku lub kilka masek oddzielonych przecinkami:"
+"&Maski plików oddzielonych przecinkami:"
 "&Máscara de archivo o múltiples máscaras de archivos:"
 "&Maska alebo masky súborov:"
 "Un &Filtro O Più Filtri Divisi Dalla Virgola:"
 "Одна або декілька &масок файлів:"
+"Адна ці некалькі &масак файлаў:"
+"Failo &maskuotė ar kelios failo maskuotės atskirtos kableliais:"
 
 MFileAssocDescr
 "&Описание ассоциации:"
@@ -9972,6 +9811,8 @@ MFileAssocDescr
 "&Popis asociácií:"
 "&Descrizione Associazione:"
 "&Опис асоціації:"
+"&Апісанне прызначэнняў:"
+"Asociacijos apr&ašymas:"
 
 MFileAssocExec
 "Команда, &выполняемая по Enter:"
@@ -9979,11 +9820,13 @@ MFileAssocExec
 "&Vykonat příkaz (použito pro Enter):"
 "Befehl &ausführen (mit Enter):"
 "&Végrehajtandó parancs (Enterre):"
-"Polecenie (po naciśnięciu &Enter):"
+"Polecenie (po &naciśnięciu Enter):"
 "E&jecutar comando (usado por Enter):"
 "&Vykonať príkaz (platí pre Enter):"
 "Comando E&segui        [INVIO]:"
 "Команда, що &виконується по Enter:"
+"Каманда, якая &выконваецца па Enter:"
+"V&ykdyti komandą (naudoti su Enter):"
 
 MFileAssocAltExec
 "Коман&да, выполняемая по Ctrl+PgDn:"
@@ -9994,8 +9837,10 @@ MFileAssocAltExec
 "Polecenie (po naciśnięciu &Ctrl+PgDn):"
 "Ejecutar comando (usado por Ctrl+PgDn):"
 "V&ykonať príkaz (platí pre Ctrl+PgDn):"
-"Comando E&segui   [CTRL-PGGIU]:"
+"Comando E&segui   [CTRL+PGGIU]:"
 "Коман&да, що виконується по Ctrl+PgDn:"
+"Каман&да, якая выконваецца па Ctrl+PgDn:"
+"Vykdyti komandą (naudoti su Ctrl+PgDn):"
 
 MFileAssocView
 "Команда &просмотра, выполняемая по F3:"
@@ -10008,6 +9853,8 @@ MFileAssocView
 "Príkaz &Zobraz (platí pre F3):"
 "Comando &Visualizza       [F3]:"
 "Команда &перегляду, що виконується по F3:"
+"Каманда &прагляду, якая выконваецца па F3:"
+"Per&žiūros komanda (naudoti su F3):"
 
 MFileAssocAltView
 "Команда просмотра, в&ыполняемая по Alt+F3:"
@@ -10018,8 +9865,10 @@ MFileAssocAltView
 "Podg&ląd (po naciśnięciu Alt+F3):"
 "Comando de visor (usado por Alt+F3):"
 "Príkaz Z&obraz (platí pre Alt+F3):"
-"Comando &Visualizza   [ALT-F3]:"
+"Comando &Visualizza   [ALT+F3]:"
 "Команда перегляду, що в&иконується по Alt+F3:"
+"Каманда прагляду, якая в&конваецца на Alt+F3:"
+"Peržiūros komanda (naudoti su Alt+F3):"
 
 MFileAssocEdit
 "Команда &редактирования, выполняемая по F4:"
@@ -10032,6 +9881,8 @@ MFileAssocEdit
 "Príkaz &Uprav (platí pre F4):"
 "Comando &Modifica         [F4]:"
 "Команда &редагування, що виконується по F4:"
+"Каманда &змены, якая выконваецца па F4:"
+"&Redagavimo komanda (naudoti su F4):"
 
 MFileAssocAltEdit
 "Команда редактировани&я, выполняемая по Alt+F4:"
@@ -10042,12 +9893,14 @@ MFileAssocAltEdit
 "E&dycja  (po naciśnięciu Alt+F4):"
 "Comando de editor (usado por Alt+F4):"
 "Príkaz Upra&v (platí pre Alt+F4):"
-"Comando &Modifica     [ALT-F4]:"
+"Comando &Modifica     [Alt+F4]:"
 "Команда редагуванн&я, що виконується по Alt+F4:"
+"Камандна змен&ы, якая выконваецца па Alt+F4:"
+"Redagavimo komanda (naudoti su Alt+F4):"
 
 MViewF1
 l:
-l://Viewer: functional keys, 12 keys, except F2 - 2 keys, and F8 - 2 keys
+l:// Viewer: functional keys
 "Помощь"
 "Help"
 "Nápověda"
@@ -10056,11 +9909,12 @@ l://Viewer: functional keys, 12 keys, except F2 - 2 keys, and F8 - 2 keys
 "Pomoc"
 "Ayuda"
 "Pomocník"
-"Aiuto!"
+"Aiuto"
 "Допом."
+"Дапамога"
+"Pagalb"
 
 MViewF2
-l:// this is another text for F2
 "Сверн"
 "Wrap"
 "Zalomit"
@@ -10071,6 +9925,8 @@ l:// this is another text for F2
 "Zalomiť"
 "DeBord"
 "Згорн"
+"Згарнуць"
+"Kelt"
 
 MViewF3
 "Выход"
@@ -10083,6 +9939,8 @@ MViewF3
 "Koniec"
 "Esci"
 "Вихід"
+"Выйсці"
+"Išeiti"
 
 MViewF4
 "Код"
@@ -10095,8 +9953,12 @@ MViewF4
 "Hex"
 "Hex"
 "Код"
+"Код"
+upd:"Hex"
 
 MViewF5
+""
+""
 ""
 ""
 ""
@@ -10119,6 +9981,8 @@ MViewF6
 "Upraviť"
 "Edita"
 "Редаг."
+"Змена"
+"Redag"
 
 MViewF7
 "Поиск"
@@ -10131,20 +9995,26 @@ MViewF7
 "Hľadať"
 "Cerca"
 "Пошук"
+"Пошук"
+"Rasti"
 
 MViewF8
 "ANSI"
 "ANSI"
-"WIN"
 "ANSI"
 "ANSI"
-"Latin 2"
 "ANSI"
-"WIN"
+"ANSI"
+"ANSI"
+"ANSI"
+"ANSI"
+"ANSI"
 "ANSI"
 "ANSI"
 
 MViewF9
+""
+""
 ""
 ""
 ""
@@ -10167,6 +10037,8 @@ MViewF10
 "Koniec"
 "Esci"
 "Вихід"
+"Выйсці"
+"Išeiti"
 
 MViewF11
 "Плагины"
@@ -10174,11 +10046,13 @@ MViewF11
 "Moduly"
 "Plugin"
 "Plugin"
-"Pluginy"
+"Wtyczki"
 "Comple"
 "Moduly"
 "Plugin"
 "Плагіни"
+"Дадаткі"
+"Prieds"
 
 MViewF12
 "Экраны"
@@ -10191,10 +10065,14 @@ MViewF12
 "Okno"
 "Video"
 "Екрани"
+"Экраны"
+"Ekran"
 
 MViewShiftF1
 l:
 l://Viewer: Shift
+""
+""
 ""
 ""
 ""
@@ -10217,8 +10095,12 @@ MViewShiftF2
 "ZalSlo"
 "A Capo"
 "Слова"
+"Словы"
+upd:"WWrap"
 
 MViewShiftF3
+""
+""
 ""
 ""
 ""
@@ -10236,13 +10118,17 @@ MViewShiftF4
 "Režim"
 "Modus"
 upd:"Mode"
-upd:"Mode"
+"Tryb"
 "Modo"
 "Mode"
 "Modo"
 "Режим"
+"Стан"
+upd:"Mode"
 
 MViewShiftF5
+""
+""
 ""
 ""
 ""
@@ -10265,6 +10151,8 @@ MViewShiftF6
 ""
 ""
 ""
+""
+""
 
 MViewShiftF7
 "Дальше"
@@ -10277,6 +10165,8 @@ MViewShiftF7
 "Nasl."
 "Succes"
 "Далі"
+"Наступны"
+"Kitas"
 
 MViewShiftF8
 "КодСтр"
@@ -10284,13 +10174,17 @@ MViewShiftF8
 "ZnSady"
 upd:"Tabell"
 "Kódlap"
-"Tabela"
+"StrKod"
 "PágCód"
 "Tabuľka"
 "Tavola"
 "КодСтр"
+"Кадыроўка"
+upd:"CodePg"
 
 MViewShiftF9
+""
+""
 ""
 ""
 ""
@@ -10313,6 +10207,8 @@ MViewShiftF10
 ""
 ""
 ""
+""
+""
 
 MViewShiftF11
 ""
@@ -10325,8 +10221,12 @@ MViewShiftF11
 ""
 ""
 ""
+""
+""
 
 MViewShiftF12
+""
+""
 ""
 ""
 ""
@@ -10351,8 +10251,12 @@ l://Viewer: Alt
 ""
 ""
 ""
+""
+""
 
 MViewAltF2
+""
+""
 ""
 ""
 ""
@@ -10375,8 +10279,12 @@ MViewAltF3
 ""
 ""
 ""
+""
+""
 
 MViewAltF4
+""
+""
 ""
 ""
 ""
@@ -10399,8 +10307,12 @@ MViewAltF5
 ""
 ""
 ""
+""
+""
 
 MViewAltF6
+""
+""
 ""
 ""
 ""
@@ -10423,6 +10335,8 @@ MViewAltF7
 "Predch."
 "Preced"
 "Назад"
+"Уперад"
+upd:"Prev"
 
 MViewAltF8
 "Перейт"
@@ -10431,10 +10345,12 @@ MViewAltF8
 "GeheZu"
 "Ugrás"
 "IdźDo"
-"Ir a.."
+"Ir a…"
 "Ísť na"
 "Vai A"
 "Перейт"
+"Перайсці"
+"Eiti"
 
 MViewAltF9
 "Видео"
@@ -10447,8 +10363,12 @@ MViewAltF9
 "Video"
 "Video"
 "Відео"
+"Відэа"
+"Video"
 
 MViewAltF10
+""
+""
 ""
 ""
 ""
@@ -10468,11 +10388,15 @@ MViewAltF11
 "NézElő"
 "Historia"
 "VerHis"
-"ZobrHs"
+"ZobHis"
 "VediCr"
 "ІстПер"
+"Гісторыя праглядаў"
+upd:"ViewHs"
 
 MViewAltF12
+""
+""
 ""
 ""
 ""
@@ -10497,8 +10421,12 @@ l://Viewer: Ctrl
 ""
 ""
 ""
+""
+""
 
 MViewCtrlF2
+""
+""
 ""
 ""
 ""
@@ -10521,8 +10449,12 @@ MViewCtrlF3
 ""
 ""
 ""
+""
+""
 
 MViewCtrlF4
+""
+""
 ""
 ""
 ""
@@ -10545,8 +10477,12 @@ MViewCtrlF5
 ""
 ""
 ""
+""
+""
 
 MViewCtrlF6
+""
+""
 ""
 ""
 ""
@@ -10569,8 +10505,12 @@ MViewCtrlF7
 ""
 ""
 ""
+""
+""
 
 MViewCtrlF8
+""
+""
 ""
 ""
 ""
@@ -10593,6 +10533,8 @@ MViewCtrlF9
 ""
 ""
 ""
+""
+""
 
 MViewCtrlF10
 "Позиц"
@@ -10600,11 +10542,13 @@ MViewCtrlF10
 "JítSoub"
 "GehDat"
 "FájlPz"
-"DoPlik"
+"IdźDoPlik"
 "IrArch"
 "ÍsťSúbor"
 "VaFile"
 "Позиц"
+"Пазіцыя"
+upd:"GoFile"
 
 MViewCtrlF11
 ""
@@ -10617,8 +10561,12 @@ MViewCtrlF11
 ""
 ""
 ""
+""
+""
 
 MViewCtrlF12
+""
+""
 ""
 ""
 ""
@@ -10643,8 +10591,12 @@ l://Viewer: AltShift
 ""
 ""
 ""
+""
+""
 
 MViewAltShiftF2
+""
+""
 ""
 ""
 ""
@@ -10667,8 +10619,12 @@ MViewAltShiftF3
 ""
 ""
 ""
+""
+""
 
 MViewAltShiftF4
+""
+""
 ""
 ""
 ""
@@ -10691,8 +10647,12 @@ MViewAltShiftF5
 ""
 ""
 ""
+""
+""
 
 MViewAltShiftF6
+""
+""
 ""
 ""
 ""
@@ -10715,8 +10675,12 @@ MViewAltShiftF7
 ""
 ""
 ""
+""
+""
 
 MViewAltShiftF8
+""
+""
 ""
 ""
 ""
@@ -10739,8 +10703,12 @@ MViewAltShiftF9
 "Konfig"
 "Config"
 "Конфіг"
+"Налады"
+upd:"Config"
 
 MViewAltShiftF10
+""
+""
 ""
 ""
 ""
@@ -10763,8 +10731,12 @@ MViewAltShiftF11
 ""
 ""
 ""
+""
+""
 
 MViewAltShiftF12
+""
+""
 ""
 ""
 ""
@@ -10789,8 +10761,12 @@ l://Viewer: CtrlShift
 ""
 ""
 ""
+""
+""
 
 MViewCtrlShiftF2
+""
+""
 ""
 ""
 ""
@@ -10813,8 +10789,12 @@ MViewCtrlShiftF3
 ""
 ""
 ""
+""
+""
 
 MViewCtrlShiftF4
+""
+""
 ""
 ""
 ""
@@ -10837,8 +10817,12 @@ MViewCtrlShiftF5
 ""
 ""
 ""
+""
+""
 
 MViewCtrlShiftF6
+""
+""
 ""
 ""
 ""
@@ -10861,8 +10845,12 @@ MViewCtrlShiftF7
 ""
 ""
 ""
+""
+""
 
 MViewCtrlShiftF8
+""
+""
 ""
 ""
 ""
@@ -10885,8 +10873,12 @@ MViewCtrlShiftF9
 ""
 ""
 ""
+""
+""
 
 MViewCtrlShiftF10
+""
+""
 ""
 ""
 ""
@@ -10909,8 +10901,12 @@ MViewCtrlShiftF11
 ""
 ""
 ""
+""
+""
 
 MViewCtrlShiftF12
+""
+""
 ""
 ""
 ""
@@ -10935,8 +10931,12 @@ l://Viewer: CtrlAlt
 ""
 ""
 ""
+""
+""
 
 MViewCtrlAltF2
+""
+""
 ""
 ""
 ""
@@ -10959,8 +10959,12 @@ MViewCtrlAltF3
 ""
 ""
 ""
+""
+""
 
 MViewCtrlAltF4
+""
+""
 ""
 ""
 ""
@@ -10983,8 +10987,12 @@ MViewCtrlAltF5
 ""
 ""
 ""
+""
+""
 
 MViewCtrlAltF6
+""
+""
 ""
 ""
 ""
@@ -11007,8 +11015,12 @@ MViewCtrlAltF7
 ""
 ""
 ""
+""
+""
 
 MViewCtrlAltF8
+""
+""
 ""
 ""
 ""
@@ -11031,8 +11043,12 @@ MViewCtrlAltF9
 ""
 ""
 ""
+""
+""
 
 MViewCtrlAltF10
+""
+""
 ""
 ""
 ""
@@ -11055,8 +11071,12 @@ MViewCtrlAltF11
 ""
 ""
 ""
+""
+""
 
 MViewCtrlAltF12
+""
+""
 ""
 ""
 ""
@@ -11081,8 +11101,12 @@ l://Viewer: CtrlAltShift
 ""
 ""
 ""
+""
+""
 
 MViewCtrlAltShiftF2
+""
+""
 ""
 ""
 ""
@@ -11105,8 +11129,12 @@ MViewCtrlAltShiftF3
 ""
 ""
 ""
+""
+""
 
 MViewCtrlAltShiftF4
+""
+""
 ""
 ""
 ""
@@ -11129,8 +11157,12 @@ MViewCtrlAltShiftF5
 ""
 ""
 ""
+""
+""
 
 MViewCtrlAltShiftF6
+""
+""
 ""
 ""
 ""
@@ -11153,8 +11185,12 @@ MViewCtrlAltShiftF7
 ""
 ""
 ""
+""
+""
 
 MViewCtrlAltShiftF8
+""
+""
 ""
 ""
 ""
@@ -11177,8 +11213,12 @@ MViewCtrlAltShiftF9
 ""
 ""
 ""
+""
+""
 
 MViewCtrlAltShiftF10
+""
+""
 ""
 ""
 ""
@@ -11201,8 +11241,12 @@ MViewCtrlAltShiftF11
 ""
 ""
 ""
+""
+""
 
 MViewCtrlAltShiftF12
+""
+""
 ""
 ""
 ""
@@ -11220,11 +11264,13 @@ MViewF2Unwrap
 "Nezalom"
 "KeinUm"
 "NemTör"
-"Unwrap"
+"NieZawij"
 "NoDiv"
 "Nezalom"
 "A Capo"
 "Розгор"
+"Разгарнуць"
+"Nekelt"
 
 MViewF4Text
 l:// this is another text for F4
@@ -11238,6 +11284,8 @@ l:// this is another text for F4
 "Text"
 "Testo"
 "Текст"
+"Тэкст"
+"Tekst"
 
 MViewF4Dump
 l:// this is another text for F4
@@ -11246,1229 +11294,25 @@ l:// this is another text for F4
 "Výpis"
 upd:"Dump"
 upd:"Dump"
-upd:"Dump"
+"Źródło"
 "Volcar"
 "Dump"
 "Dump"
 "Дамп"
+"Дамп"
+upd:"Dump"
 
 MViewF8DOS
-l:// this is another text for F8
-l:// end of functional keys (Viewer)
+l:// Viewer: end of functional keys
+l:// This is another text for F8
 "OEM"
 "OEM"
 "OEM"
 "OEM"
 "OEM"
-"CP 1250"
 "OEM"
 "OEM"
 "OEM"
-"OEM"
-
-MSingleViewF1
-l:
-l://Single Viewer: functional keys, 12 keys, except F2 - 2 keys, and F8 - 2 keys
-"Помощь"
-"Help"
-"Nápověda"
-"Hilfe"
-"Súgó"
-"Pomoc"
-"Ayuda"
-"Pomocník"
-"Aiuto"
-"Допом."
-
-MSingleViewF2
-"Сверн"
-"Wrap"
-"Zalomit"
-"Umbr."
-"SorTör"
-"Zawiń"
-"Divide"
-"Zalomiť"
-"A Capo"
-"Згорн"
-
-MSingleViewF3
-"Выход"
-"Quit"
-"Konec"
-"Ende"
-"Kilép"
-"Koniec"
-"Salir"
-"Koniec"
-"Esci"
-"Вихід"
-
-MSingleViewF4
-"Код"
-"Hex"
-"Hex"
-"Hex"
-"Hexa"
-"Hex"
-"Hexa"
-"Hex"
-"Hex"
-"Код"
-
-MSingleViewF5
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewF6
-"Редакт"
-"Edit"
-"Edit"
-"Bearb"
-"Szerk."
-"Edytuj"
-"Editar"
-"Upraviť"
-"Edita"
-"Редаг."
-
-MSingleViewF7
-"Поиск"
-"Search"
-"Hledat"
-"Suchen"
-"Keres"
-"Szukaj"
-"Buscar"
-"Hľadať"
-"Cerca"
-"Пошук"
-
-MSingleViewF8
-"ANSI"
-"ANSI"
-"WIN"
-"ANSI"
-"ANSI"
-"Latin 2"
-"ANSI"
-"WIN"
-"ANSI"
-"ANSI"
-
-MSingleViewF9
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewF10
-"Выход"
-"Quit"
-"Konec"
-"Ende"
-"Kilép"
-"Koniec"
-"Salir"
-"Koniec"
-"Esci"
-"Вихід"
-
-MSingleViewF11
-"Плагины"
-"Plugins"
-"Moduly"
-"Plugins"
-"Plugin"
-"Pluginy"
-"Complementos"
-"Moduly"
-"Plugin"
-"Плагіни"
-
-MSingleViewF12
-"Экраны"
-"Screen"
-"Obraz."
-"Seiten"
-"Képrny"
-"Ekran"
-"Pantal"
-"Okno"
-"Video"
-"Екрани"
-
-MSingleViewShiftF1
-l:
-l://Single Viewer: Shift
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewShiftF2
-"Слова"
-"WWrap"
-"ZalSlo"
-"WUmbr"
-"SzóTör"
-"ZawińS"
-"ConDiv"
-"ZalSlo"
-"A Capo"
-"Слова"
-
-MSingleViewShiftF3
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewShiftF4
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewShiftF5
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewShiftF6
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewShiftF7
-"Дальше"
-"Next"
-"Další"
-"Nächst"
-"TovKer"
-"Nast."
-"Próxim"
-"Nasl."
-"Succes"
-"Далі"
-
-MSingleViewShiftF8
-"КодСтр"
-"CodePg"
-"ZnSada"
-upd:"Tabell"
-"Kódlap"
-"Tabela"
-"PágCód"
-"TabZn"
-"Tavola"
-"КодСтор"
-
-MSingleViewShiftF9
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewShiftF10
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewShiftF11
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewShiftF12
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewAltF1
-l:
-l://Single Viewer: Alt
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewAltF2
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewAltF3
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewAltF4
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewAltF5
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewAltF6
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewAltF7
-"Назад"
-"Prev"
-"Předch"
-"Letzt"
-"VisKer"
-"Poprz"
-"Prev"
-"Predch"
-"Preced"
-"Назад"
-
-MSingleViewAltF8
-"Перейт"
-"Goto"
-"Jít na"
-"GeheZu"
-"Ugrás"
-"IdźDo"
-"Ir a.."
-"Ísť na"
-"Vai A"
-"Перейт"
-
-MSingleViewAltF9
-"Видео"
-"Video"
-"Video"
-"Ansich"
-"Video"
-"Video"
-"Video"
-"Video"
-"Video"
-"Відео"
-
-MSingleViewAltF10
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewAltF11
-"ИстПр"
-"ViewHs"
-"ProhHs"
-"BetrHs"
-"NézElő"
-"Historia"
-"VerHis"
-"ZobrHs"
-"VediCr"
-"ІстПер"
-
-MSingleViewAltF12
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlF1
-l:
-l://Single Viewer: Ctrl
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlF2
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlF3
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlF4
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlF5
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlF6
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlF7
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlF8
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlF9
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlF10
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlF11
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlF12
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewAltShiftF1
-l:
-l://Single Viewer: AltShift
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewAltShiftF2
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewAltShiftF3
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewAltShiftF4
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewAltShiftF5
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewAltShiftF6
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewAltShiftF7
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewAltShiftF8
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewAltShiftF9
-"Конфиг"
-"Config"
-"Nastav"
-"Konfig"
-"Beáll."
-"Konfig"
-"Config"
-"Konfig"
-"SetUp"
-"Конфіг"
-
-MSingleViewAltShiftF10
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""   
-
-MSingleViewAltShiftF11
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewAltShiftF12
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlShiftF1
-l:
-l://Single Viewer: CtrlShift
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlShiftF2
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlShiftF3
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlShiftF4
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlShiftF5
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlShiftF6
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlShiftF7
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlShiftF8
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlShiftF9
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlShiftF10
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlShiftF11
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlShiftF12
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlAltF1
-l:
-l://Single Viewer: CtrlAlt
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlAltF2
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlAltF3
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlAltF4
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlAltF5
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlAltF6
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlAltF7
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlAltF8
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlAltF9
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlAltF10
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlAltF11
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlAltF12
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlAltShiftF1
-l:
-l://Single Viewer: CtrlAltShift
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlAltShiftF2
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlAltShiftF3
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlAltShiftF4
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlAltShiftF5
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlAltShiftF6
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlAltShiftF7
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlAltShiftF8
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlAltShiftF9
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlAltShiftF10
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlAltShiftF11
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewCtrlAltShiftF12
-""
-""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MSingleViewF2Unwrap
-l:// this is another text for F2
-"Развер"
-"Unwrap"
-"Nezal"
-"KeinUm"
-"NemTör"
-"Rozwij"
-"NoDivi"
-"Nezalom."
-"A Capo"
-"Розгор"
-
-MSingleViewF4Text
-l:// this is another text for F4
-"Текст"
-"Text"
-"Text"
-"Text"
-"Szöveg"
-"Tekst"
-"Texto"
-"Text"
-"Testo"
-"Текст"
-
-MSingleViewF8DOS
-l:// this is another text for F4
-l:// end of functional keys (Single Viewer)
-"OEM"
-"OEM"
-"OEM"
-"OEM"
-"OEM"
-"CP 1250"
 "OEM"
 "OEM"
 "OEM"
@@ -12480,11 +11324,13 @@ MViewMode
 "Režim zobrazení"
 "Sichtmodus"
 upd:"View mode"
-upd:"View mode"
+"Tryb widoku"
 "Modo de visualización"
-"View mode"
+"Režim zobrazenia"
 "Visualizza"
 "Режим перегляду"
+"Стан прагляду"
+upd:"View mode"
 
 MInViewer
 "просмотр"
@@ -12497,6 +11343,8 @@ MInViewer
 "zobraziť"
 "Vedi"
 "Перегляд"
+"прагляд"
+"žiūrėti"
 
 MInEditor
 "редактирование"
@@ -12509,6 +11357,8 @@ MInEditor
 "upraviť"
 "Cambia"
 "Редагування"
+"Змена"
+"redaguoti"
 
 MFilterTitle
 l:
@@ -12522,18 +11372,8 @@ l:
 "Menu filtrov"
 "Menu Filtri"
 "Меню фільтрів"
-
-MFilterBottom
-"+,-,Пробел,I,X,BS,Shift+BS,Ins,Del,F4,F5,Ctrl+Up,Ctrl+Dn"
-"+,-,Space,I,X,BS,Shift+BS,Ins,Del,F4,F5,Ctrl+Up,Ctrl+Dn"
-"+,-,Mezera,I,X,BS,Shift+BS,Ins,Del,F4,F5,Ctrl+Up,Ctrl+Dn"
-"+,-,Leer,I,X,BS,UmschBS,Einf,Entf,F4,F5,Strg+Up,Strg+Dn"
-"+,-,Szóköz,I,X,BS,Shift+BS,Ins,Del,F4,F5,Ctrl+Fel,Ctrl+Le"
-"+,-,Spacja,I,X,BS,Shift+BS,Ins,Del,F4,F5,Ctrl+Up,Ctrl+Dn"
-"+,-,Espacio,I,X,BS,Shift+BS,Ins,Del,F4,F5,Ctrl+Up,Ctrl+Dn"
-"+,-,Medzera,I,X,BS,Shift+BS,Ins,Del,F4,F5,Ctrl+Up,Ctrl+Dn"
-"[+] [-] [Spazio] [I] [X] [BS] [INS] [DEL] [F4] [F5] [Ctrl-Su] [Ctrl-Giu]"
-"+,-,Пробіл,I,X,BS,Shift+BS,Ins,Del,F4,F5,Ctrl+Up,Ctrl+Dn"
+"Меню фільтраў"
+"Filtras"
 
 MPanelFileType
 "Файлы панели"
@@ -12546,6 +11386,8 @@ MPanelFileType
 "Typ panela súborov"
 "Pannello Filtri"
 "Файли панелі"
+"Фалы панэлі"
+"Lango failų tipas"
 
 MFolderFileType
 "Папки"
@@ -12558,6 +11400,8 @@ MFolderFileType
 "Priečinky"
 "Cartelle"
 "Папки"
+"Каталогі"
+upd:"Folders"
 
 MCanEditCustomFilterOnly
 "Только пользовательский фильтр можно редактировать"
@@ -12570,6 +11414,8 @@ MCanEditCustomFilterOnly
 "Len vlastný filter sa dá upraviť"
 "Solo I Filtri Personali Possono Essere Modificati"
 "Тільки фільтр користувача можна редагувати"
+"Можна мяняць толькі выбарачны фільтр"
+"Tik vartotojo filtrai gali būti redaguojami"
 
 MAskDeleteFilter
 "Вы хотите удалить фильтр"
@@ -12582,6 +11428,8 @@ MAskDeleteFilter
 "Chcete zmazať filter"
 "Vuoi Eliminare Questo Filtro"
 "Ви бажаєте видалити фільтр"
+"Вы жадаеце выдаліць фільтр"
+"Ar norite ištrinti filtrą"
 
 MCanDeleteCustomFilterOnly
 "Только пользовательский фильтр может быть удалён"
@@ -12594,6 +11442,8 @@ MCanDeleteCustomFilterOnly
 "Len vlastný filter sa dá zmazať"
 "Solo I Filtri Personali Possono Essere Cancellati"
 "Тільки фільтр користувача можна видалити"
+"Можна выдаліць толькі выбарачны фільтр"
+"Tik vartotojo filtras gali būti ištrintas"
 
 MFindFileTitle
 l:
@@ -12607,6 +11457,8 @@ l:
 "Hľadať súbor"
 "Ricerca File"
 "Пошук файлу"
+"Пошук файла"
+"Rasti failą"
 
 MFindFileMasks
 "Одна или несколько &масок файлов:"
@@ -12614,11 +11466,13 @@ MFindFileMasks
 "&Maska nebo masky souborů:"
 "Datei&maske (mehrere getrennt mit Komma):"
 "Fájlm&aszk(ok, vesszővel elválasztva):"
-"&Maska pliku lub kilka masek oddzielonych przecinkami:"
+"&Maski plików oddzielone przecinkami:"
 "&Máscara de archivo o múltiples máscaras de archivos:"
 "Maska alebo masky súborov:"
 "Un &Filtro O Piu' Filtri Divisi Dalla Virgola:"
 "Одна або декілька &масок файлів:"
+"Адна ці некалькі &масак файлаў:"
+"Failo &maskuotė ar kelios failo maskuotės atskirtos kableliais:"
 
 MFindFileText
 "&Содержащих текст:"
@@ -12631,18 +11485,22 @@ MFindFileText
 "Obsahujúci te&xt:"
 "Contenente Il Test&o:"
 "&Які містять текст:"
+"&Змяшчае тэкст:"
+"Talpinantį &tekstą:"
 
 MFindFileHex
 "&Содержащих 16-ричный код:"
 "Con&taining hex:"
 "Obsahující &hex:"
-"En&thält Hex (xx xx ...):"
+"En&thält Hex (xx xx …):"
 "Tartalmazza a he&xát:"
-"Zawierający wartość &szesnastkową:"
+"Zawierający wartość szesnas&tkową:"
 "Conteniendo hexa:"
 "Obsahujúci &hex:"
 "Contenente He&x:"
 "Я&кі містять 16-ковий код:"
+"&Змяшчае hex:"
+upd:"Con&taining hex:"
 
 MFindFileCodePage
 "Используя кодо&вую страницу:"
@@ -12650,23 +11508,13 @@ MFindFileCodePage
 "Použít kódovou &stránku:"
 upd:"Zeichenta&belle verwenden:"
 "Kó&dlap:"
-"Użyj tablicy znaków:"
+"Użyj ta&blicy znaków:"
 "Usando pá&gina de códigos:"
 "Použiť tabuľku &znakov:"
 "Utilizza &Tabella Caratteri"
 "Використ. кодо&ву сторінку:"
-
-MFindFileCodePageBottom
-"Space, Ins"
-"Space, Ins"
-"Mezera, Ins"
-"Leertaste, Ins"
-"Space, Ins"
-"Space, Ins"
-"Espacio,Ins"
-"Medzera, Ins"
-"Spazio, Inserimento"
-"Space, Ins"
+"Ужыць кадыро&ўку:"
+upd:"Using code pa&ge:"
 
 MFindFileCase
 "&Учитывать регистр"
@@ -12679,6 +11527,8 @@ MFindFileCase
 "ma&lé a VEĽKÉ písmená"
 "&MAIUSCOLE/minuscole"
 "&Враховувати регістр"
+"&Улічваць памер букв"
+"&Didžiosios skiriasi"
 
 MFindFileWholeWords
 "Только &целые слова"
@@ -12691,30 +11541,36 @@ MFindFileWholeWords
 "&Celé slová"
 "Parole &Esatte"
 "Лише &цілі слова"
+"Толькі по&ўныя словы"
+upd:"&Whole words"
 
 MFindFileAllCodePages
 "Все стандартные кодовые страницы"
 "All standard code pages"
-upd:"Všechny kódové stránky"
+"Všechny kódové stránky"
 upd:"Alle Zeichentabellen"
 upd:"Minden kódlappal"
-upd:"Wszystkie zainstalowane"
+"Wszystkie zainstalowane"
 "Todas las páginas de códigos estándar"
 "Všetky tabuľky znakov"
 "Tutte Le Tabella Caratteri"
 "Усі стандартні кодові сторінки"
+"Усе стандарныя кадыроўкі"
+upd:"All standard code pages"
 
 MFindFileSelectedCodePages
 "Отмеченные кодовые страницы"
 "Selected code pages"
-upd:"Selected code pages"
+"Vybrané kódové stránky"
 "Gewählte Codepages"
 upd:"Selected code pages"
-upd:"Selected code pages"
+"Wybrana strona kodowa"
 "Páginas de códigos seleccionadas"
 "Zvolené kódové stránky"
 "Tabelle Caratteri Selezionate"
 "Позначені кодові сторінки"
+"Адзначаныя кадыроўкі"
+upd:"Selected code pages"
 
 MFindArchives
 "Искать в а&рхивах"
@@ -12727,6 +11583,8 @@ MFindArchives
 "Hľadať v a&rchívoch"
 "Cerca Nei File Co&mpressi"
 "Шукати в а&рхівах"
+"Шукаць у а&рхівах"
+"Ieškoti arch&yvuose"
 
 MFindFolders
 "Искать п&апки"
@@ -12734,11 +11592,13 @@ MFindFolders
 "Hledat a&dresáře"
 "Nach &Ordnern suchen"
 "Keresés mapp&ákra"
-"Szukaj &folderów"
+"Szukaj f&olderów"
 "Buscar por &directorios"
 "Hľadať pr&iečinky"
 "Cerca Car&telle"
 "Шукати папки"
+"Шукаць к&аталогі"
+upd:"Search for f&olders"
 
 MFindSymLinks
 "Искать в символи&ческих ссылках"
@@ -12751,18 +11611,22 @@ MFindSymLinks
 "Hľadať v s&ymbol. prepoj."
 "Cerca Nei Lin&k Simbolici"
 "Шукати в символі&чних посиланнях"
+"Шукаць у сімвалі&чных спасылках"
+upd:"Search in symbolic lin&ks"
 
 MFindAlternateStreams
 "Искать в альтернативных потоках"
-"Search in alternate streams"
-upd:"Search in alternate streams"
+"Search in a&lternate streams"
+"Hledat v alternativních streamech"
 "In alternativen Stream suchen"
 upd:"Search in alternate streams"
-upd:"Search in alternate streams"
+"Szukaj w alt. st&rumieniach"
 "Buscar en cadenas alternativas"
 "Hľadanie v alternatívnych menách"
 "Cerca &Stream Alternativo (ADS)"
 "Шукати в альтернативних потоках"
+"Шукаць у альтрэрнатыўных струменях"
+upd:"Search in a&lternate streams"
 
 MSearchForHex
 "Искать 16-ричн&ый код"
@@ -12775,18 +11639,22 @@ MSearchForHex
 "Hľadať &hex"
 "Ricerca E&sadecimale"
 "Шукати 16-ков&ий код"
+"Шукац&ь hex"
+upd:"Search for &hex"
 
 MSearchNotContaining
 "Не содержащих"
-"Not containing"
-upd:"Not containing"
+"&Not containing"
+"Neobsahuje"
 "Nicht enthalten"
 upd:"Not containing"
-upd:"Not containing"
+"&Nie zawierające"
 "No conteniendo"
 "Neobsahuje"
 "Non Contenente"
 "Які не містять"
+"Не змяшчае"
+upd:"&Not containing"
 
 MSearchWhere
 "Выберите &область поиска:"
@@ -12794,11 +11662,13 @@ MSearchWhere
 "Zvolte oblast hledání:"
 upd:"Suchbereich:"
 "Keresés hatós&ugara:"
-"Obszar wyszukiwania:"
+"Obszar w&yszukiwania:"
 "Seleccionar área de búsqueda:"
 "Zvoľte oblasť hľadania:"
 "Selezione Area Di Ricerca:"
 "Виберіть &область пошуку:"
+"Вызначце в&обласць пошуку"
+upd:"Select search &area:"
 
 MSearchAllDisks
 "На всех несъёмных &дисках"
@@ -12811,6 +11681,8 @@ MSearchAllDisks
 "na všetkých p&evných diskoch"
 "Nelle &Unità Non Removibili"
 "На всіх незнімних &дисках"
+"На ўсіх нязменных &дысках"
+"Ieškoti &visuose fiksuotuose diskuose"
 
 MSearchAllButNetwork
 "На всех &локальных дисках"
@@ -12823,6 +11695,8 @@ MSearchAllButNetwork
 "na všetkých &lokálnych diskoch"
 "In Tutti I Dischi &Locali"
 "На всіх &локальних дисках"
+"На ўсіх &мясцовых дысках"
+upd:"In all &local drives"
 
 MSearchInPATH
 "В PATH-катало&гах"
@@ -12835,6 +11709,8 @@ MSearchInPATH
 "v priečinkoch z &PATH"
 "Nelle Cartelle Del PAT&H"
 "В PATH-катало&гах"
+"В PATH-катало&гах"
+upd:"In &PATH folders"
 
 MSearchFromRootOfDrive
 "С кор&ня диска"
@@ -12847,6 +11723,8 @@ MSearchFromRootOfDrive
 "od &koreňa"
 "Dalla Radice Di"
 "З коре&ня диска"
+"З кора&ня дыска"
+upd:"From the &root of"
 
 MSearchFromRootFolder
 "С кор&невой папки"
@@ -12854,11 +11732,13 @@ MSearchFromRootFolder
 "V kořeno&vém adresáři"
 "Ab Wu&rzelverzeichnis"
 "A &gyökérmappától"
-"Od katalogu &głównego"
+"Od folderu &głównego"
 "Desde el directorio &raíz"
 "od koreňo&vého priečinka"
 "Dalla Cartella &Radice"
 "З коре&невої папки"
+"З кара&нёвага каталога"
+"Ieškoti nuo ša&kninio katalogo"
 
 MSearchFromCurrent
 "С &текущей папки"
@@ -12866,11 +11746,13 @@ MSearchFromCurrent
 "V tomto adresář&i"
 "Ab dem aktuelle&n Ordner"
 "Az akt&uális mappától"
-"Od &bieżącego katalogu"
+"Od &bieżącego folderu"
 "Desde directorio actual"
 "od tohto prie&činka"
 "Dalla Cartella &Corrente"
 "З по&точної папки"
+"З бугучага ка&талога"
+"Ieškoti nuo &einamo katalogo"
 
 MSearchInCurrent
 "Только в теку&щей папке"
@@ -12878,11 +11760,13 @@ MSearchInCurrent
 "P&ouze v tomto adresáři"
 "Nur im aktue&llen Ordner"
 "&Csak az aktuális mappában"
-"&Tylko w bieżącym katalogu"
+"&Tylko w bieżącym folderze"
 "Sólo en directorio &actual"
 "len v &tomto priečinku"
 "&Solo Cartella Corrente"
 "Лише в пото&чній папці"
+"Толькі &ў бягучым каталоге"
+"Ieškoti tik eina&mame kataloge"
 
 MSearchInSelected
 "В &отмеченных папках"
@@ -12890,11 +11774,13 @@ MSearchInSelected
 "Ve vy&braných adresářích"
 "In au&sgewählten Ordner"
 "A ki&jelölt mappákban"
-"W &zaznaczonych katalogach"
+"W &zaznaczonych folderach"
 "Directorios &seleccionados"
 "vo vy&braných priečinkoch"
 "Nelle Cartelle Sele&zionate"
 "У п&означених папках"
+"&Абраныя каталогі"
+"Ieškoti paž&ymėtuose kataloguose"
 
 MFindUseFilter
 "Исполь&зовать фильтр"
@@ -12902,11 +11788,13 @@ MFindUseFilter
 "Použít f&iltr"
 "Ben&utze Filter"
 "Sz&űrővel"
-"&Filtruj"
+"F&iltruj"
 "Usar &filtro"
 "Použiť f&ilter"
 "&Usa Filtro"
 "Викор&истовувати фільтр"
+"У&жыць фільтр"
+upd:"&Use filter"
 
 MFindUsingFilter
 "используя фильтр"
@@ -12919,6 +11807,8 @@ MFindUsingFilter
 "používam filter"
 "Utilizza Filtro"
 "використовуючи фильтр"
+"ужыць фільтр"
+upd:"using filter"
 
 MFindFileFind
 "&Искать"
@@ -12931,6 +11821,8 @@ MFindFileFind
 "&Hľadať"
 "&Cerca"
 "&Шукати"
+"&Шукаць"
+"&Rasti"
 
 MFindFileDrive
 "Дис&к"
@@ -12943,6 +11835,8 @@ MFindFileDrive
 "D&isk"
 "&Disco"
 "Дис&к"
+"Дыс&к"
+upd:"Dri&ve"
 
 MFindFileSetFilter
 "&Фильтр"
@@ -12955,6 +11849,8 @@ MFindFileSetFilter
 "&Filter"
 "Filt&ro"
 "&Фільтр"
+"&Фільтр"
+upd:"Filt&er"
 
 MFindFileAdvanced
 "До&полнительно"
@@ -12967,6 +11863,8 @@ MFindFileAdvanced
 "Pokr&očilé"
 "A&vanzate"
 "До&датково"
+"Да&даткова"
+upd:"Advance&d"
 
 MFindSearchingIn
 "Поиск {0} в"
@@ -12979,6 +11877,8 @@ MFindSearchingIn
 "Hľadám {0} v"
 "Ricerca {0} In:"
 "Пошук {0} в"
+"Шукаць {0} у"
+"Ieškau {0} į"
 
 MFindNewSearch
 "&Новый поиск"
@@ -12986,11 +11886,13 @@ MFindNewSearch
 "&Nové hledání"
 "&Neue Suche"
 "&Új keresés"
-"&Od nowa..."
+"&Od nowa"
 "&Nueva búsqueda"
 "&Nové hľadanie"
 "&Nuova Ricerca"
 "&Новий пошук"
+"&Новы пошук"
+"&Nauja paieška"
 
 MFindGoTo
 "Пе&рейти"
@@ -13001,8 +11903,10 @@ MFindGoTo
 "&Idź do"
 "&Ir a"
 "&Ísť na"
-"&Vai A..."
+"&Vai A"
 "Пе&рейти"
+"Пе&райсці"
+"&Eiti"
 
 MFindView
 "&Смотреть"
@@ -13015,6 +11919,8 @@ MFindView
 "Zo&braziť"
 "V&ista"
 "&Дивитися"
+"Гляд&зець"
+"&Žiūrėti"
 
 MFindPanel
 "Пане&ль"
@@ -13027,6 +11933,8 @@ MFindPanel
 "&Panel"
 "&Pannello"
 "Пане&ль"
+"&Панэль"
+"&Langas"
 
 MFindStop
 "С&топ"
@@ -13039,6 +11947,8 @@ MFindStop
 "&Stop"
 "&Ferma"
 "С&топ"
+"Спыні&ць"
+upd:"&Stop"
 
 MFindDone
 l:
@@ -13052,6 +11962,8 @@ l:
 "Hľadanie skončilo. Nájdených {0} súbor(ov) a {1} priečink(ov)"
 "Ricerca Terminata [{0} Files - {1} Cartelle]"
 "Пошук закінчено. Знайдено файлів: {0}, папок: {1}"
+"Пошук завершаны. Знойдзена файлаў:{0}, каталогаў: {1}"
+"Paieška baigta. Rasta files: {0}, folders: {1}"
 
 MFindCancel
 "Отм&ена"
@@ -13064,6 +11976,8 @@ MFindCancel
 "&Storno"
 "&Annulla"
 "Скасувати"
+"Адм&яніць"
+"&Atšaukti"
 
 MFindFound
 l:
@@ -13077,6 +11991,8 @@ l:
 "Súborov: {0}, priečinkov: {1}"
 "Files: {0}, Cartelle: {1}"
 "Файлів: {0}, папок: {1}"
+"Фйлаў:{0}, каталогаў: {1}"
+upd:"Files: {0}, folders: {1}"
 
 MFindFileAdvancedTitle
 l:
@@ -13090,6 +12006,8 @@ l:
 "Pokročilé nastavenie vyhľadávania súborov"
 "Opzioni Avanzate Ricerca File"
 "Додаткові параметри пошуку"
+"Дадатковыя налады пошуку"
+upd:"Find file advanced options"
 
 MFindFileSearchFirst
 "Искать только в &первых:"
@@ -13102,6 +12020,8 @@ MFindFileSearchFirst
 "Hľadať &len v prvých:"
 "Ricerca Solo Nei &Primi:"
 "Шукати у &перших:"
+"Шукаць толькі ў &першых:"
+upd:"Search only in the &first:"
 
 MFindFileSearchOutputFormat
 "&Формат вывода:"
@@ -13109,11 +12029,13 @@ MFindFileSearchOutputFormat
 "Vý&stupní formát:"
 "&Ausgabeformat:"
 upd:"&Output format:"
-upd:"&Output format:"
+"&Format wyjściowy:"
 "F&ormato de salida:"
 "Vý&stupný formát:"
 "Formato &Visualizzazione:"
 "&Формат вивед.:"
+"&Фармат вываду:"
+upd:"&Output format:"
 
 MFindAlternateModeTypes
 "&Типы колонок"
@@ -13126,6 +12048,8 @@ MFindAlternateModeTypes
 "&Typ stĺpcov"
 "&Tipo Colonne"
 "&Типи стовпців"
+"&Тыпы слупкоў"
+upd:"Column &types"
 
 MFindAlternateModeWidths
 "&Ширина колонок"
@@ -13138,6 +12062,8 @@ MFindAlternateModeWidths
 "Šír&ka stĺpcov"
 "&Dimensione Colonne"
 "&Ширина стовпців"
+"&Шырыня слупкоў"
+upd:"Column &widths"
 
 MFoldTreeSearch
 l:
@@ -13151,6 +12077,8 @@ l:
 "Hľadať:"
 "Ricerca:"
 "Пошук:"
+"Шукаць:"
+upd:"Search:"
 
 MGetCodePageTitle
 l:
@@ -13164,6 +12092,8 @@ upd:"Tabellen"
 "Tabuľky znakov:"
 "Tabella Caratteri"
 "Кодові сторінки"
+"Кадыроўкі"
+upd:"Code pages"
 
 MGetCodePageSystem
 "Системные"
@@ -13171,23 +12101,27 @@ MGetCodePageSystem
 "Systém"
 upd:"System"
 "Rendszer"
-upd:"System"
+"Systemowe"
 "Sistema"
 "Systém"
 "Sistema"
 "Системні"
+"Сістэмныя"
+upd:"System"
 
 MGetCodePageUnicode
 "Юникод"
 "Unicode"
 "Unicode"
-upd:"Unicode"
 "Unicode"
-upd:"Unicode"
+"Unicode"
+"Unicode"
 "Unicode"
 "Unicode"
 "Unicode"
 "Юнікод"
+"Юнікод"
+"Unicode"
 
 MGetCodePageFavorites
 "Избранные"
@@ -13195,11 +12129,13 @@ MGetCodePageFavorites
 "Oblíbené"
 upd:"Favorites"
 "Kedvencek"
-upd:"Favorites"
+"Ulubione"
 "Favoritos"
 "Obľúbené"
 "Preferiti"
 "Вибрані"
+"Пераважныя"
+upd:"Favorites"
 
 MGetCodePageOther
 "Прочие"
@@ -13207,47 +12143,27 @@ MGetCodePageOther
 "Jiné"
 upd:"Other"
 "Egyéb"
-upd:"Other"
+"Pozostałe"
 "Otro"
 "Iné"
 "Altro"
 "Інші"
-
-MGetCodePageBottomTitle
-"Ctrl+H, Del, Ins, F4"
-"Ctrl+H, Del, Ins, F4"
-"Ctrl+H, Del, Ins, F4"
-"Strg+H, Entf, Einf, F4"
-"Ctrl+H, Del, Ins, F4"
-"Ctrl+H, Del, Ins, F4"
-"Ctrl+H, Del, Ins, F4"
-"Ctrl+H, Del, Ins, F4"
-"[Ctrl-H] [Canc] [Ins] [F4]"
-"Ctrl+H, Del, Ins, F4"
-
-MGetCodePageBottomShortTitle
-"Ctrl+H, Del, F4"
-"Ctrl+H, Del, F4"
-"Ctrl+H, Del, F4"
-"Strg+H, Entf, F4"
-"Ctrl+H, Del, F4"
-"Ctrl+H, Del, F4"
-"Ctrl+H, Del, F4"
-"Ctrl+H, Del, F4"
-"[Ctrl-H] [Canc] [F4]"
-"Ctrl+H, Del, F4"
+"Іншыя"
+upd:"Other"
 
 MGetCodePageEditCodePageName
 "Переименование кодовой страницы"
 "Rename the code page"
-upd:"Upravit název kódové stránky"
+"Upravit název kódové stránky"
 upd:"Codepagename bearbeiten"
 upd:"Rename the code page"
-upd:"Rename the code page"
+"Zmień nazwę strony kodowej"
 upd:"Editar nombre de página de códigos"
 "Upraviť názov tabuľky znakov"
-upd:"Modifica Nome Codepage"
+"Modifica Nome Codepage"
 "Перейменування кодової сторінки"
+"Пераназваць кадыроўку"
+upd:"Rename the code page"
 
 MGetCodePageResetCodePageName
 "&Сбросить"
@@ -13255,11 +12171,13 @@ MGetCodePageResetCodePageName
 "&Reset"
 "&Zurücksetzen"
 upd:"&Reset"
-upd:"&Reset"
+"&Reset"
 "&Reiniciar"
 "&Reset"
 "Az&zera"
 "&Скинути"
+"&Зкінуць"
+upd:"&Reset"
 
 MHighlightTitle
 l:
@@ -13273,18 +12191,8 @@ l:
 "Zvýrazňovanie súborov"
 "Evidenzia File"
 "Розмальовка файлів"
-
-MHighlightBottom
-"Ins,Del,F4,F5,Ctrl+Up,Ctrl+Down"
-"Ins,Del,F4,F5,Ctrl+Up,Ctrl+Down"
-"Ins,Del,F4,F5,Ctrl+Up,Ctrl+Down"
-"Einf,Entf,F4,F5,Strg+Up,Strg+Down"
-"Ins,Del,F4,F5,Ctrl+Fel,Ctrl+Le"
-"Ins,Del,F4,F5,Ctrl+Up,Ctrl+Down"
-"Ins,Del,F4,F5,Ctrl+Up,Ctrl+Down"
-"Ins,Del,F4,F5,Ctrl+Nahor,Ctrl+Nadol"
-"[INS] [DEL] [F4] [F5] [Ctrl-Giu] [Ctrl-Su]"
-"Ins,Del,F4,F5,Ctrl+Up,Ctrl+Down"
+"Разфарбоўка файлаў"
+"Failų paryškinimai"
 
 MHighlightUpperSortGroup
 "Верхняя группа сортировки"
@@ -13297,6 +12205,8 @@ MHighlightUpperSortGroup
 "Vzostupné triedenie"
 "Gruppo Ordinamento Superiore"
 "Верхня група сортування"
+"Верхняя суполка парадкавання"
+upd:"Upper sort group"
 
 MHighlightLowerSortGroup
 "Нижняя группа сортировки"
@@ -13309,6 +12219,8 @@ MHighlightLowerSortGroup
 "Zostupné triedenie"
 "Gruppo Ordinamento Inferiore"
 "Нижня група сортування"
+"Ніжняя суполка парадкавання"
+upd:"Lower sort group"
 
 MHighlightLastGroup
 "Наименее приоритетная группа раскраски"
@@ -13321,6 +12233,8 @@ MHighlightLastGroup
 "Zvýraznenie najnižšej priority"
 "Evidenzia Gruppo Priorità Inferiore"
 "Найменш пріоритетна група розмальовки"
+"Найменьш пераважная суполка разфарбоўкі"
+upd:"Lowest priority highlighting group"
 
 MHighlightAskDel
 "Вы хотите удалить раскраску для"
@@ -13333,6 +12247,8 @@ MHighlightAskDel
 "Chcete zmazať zvýraznenie pre"
 "Vuoi Cancellare Le Informazioni Per"
 "Ви бажаєте видалити розмальовку для"
+"Вы жадаеце выдаліць разфарбоўку для"
+"Ar norite ištrinti paryškinimą failams"
 
 MHighlightWarning
 "Будут потеряны все Ваши настройки"
@@ -13345,6 +12261,8 @@ MHighlightWarning
 "Všetky zmeny sa stratia"
 "Perderai Tutti I Cambiamenti!"
 "Будуть втрачені всі ваші налаштування"
+"Будуць згублены усе Налады"
+upd:"You will lose all changes"
 
 MHighlightAskRestore
 "Вы хотите восстановить раскраску файлов по умолчанию?"
@@ -13357,6 +12275,8 @@ MHighlightAskRestore
 "Chcete obnoviť východiskové zvýrazňovanie?"
 "Vuoi Ripristinare Le Informazioni?"
 "Ви бажаєте відновити розмальовку файлів за замовчуванням?"
+"Вы жадаеце узнавіць прадвызначаную разфарбоўку файлаў?"
+upd:"Do you wish to restore default highlighting?"
 
 MHighlightEditTitle
 l:
@@ -13370,6 +12290,8 @@ l:
 "Upraviť zvýrazňovanie súborov"
 "Modifica Le Evidenziazioni"
 "Редагування розмальовки файлів"
+"Мяняць разфарбоўку файлаў"
+"Redaguoti failų paryškinimus"
 
 MHighlightMarkChar
 "Оп&циональный символ пометки,"
@@ -13382,6 +12304,8 @@ MHighlightMarkChar
 "Voliteľný &znak označovania,"
 "Carattere Opzionale Di Marcatura"
 "Оп&ціональний символ помітки,"
+"Неа&бавязковы сімвал адзнакі"
+"Pasirinktinas si&mbolis pažymėti apibrėžtiems failams,"
 
 MHighlightTransparentMarkChar
 "прозра&чный"
@@ -13394,6 +12318,8 @@ MHighlightTransparentMarkChar
 "prieh&ľadný"
 "Traspare&nte"
 "прозор&ий"
+"празр&ысты"
+upd:"tra&nsparent"
 
 MHighlightColors
 "Цвета файлов (\"чёрный на чёрном\" - цвет по умолчанию)"
@@ -13406,6 +12332,8 @@ MHighlightColors
 "Farba názvov súborov (\"čierna na čiernej\" - východisková)"
 "Colore File (\"nero su nero\" - colore base)"
 "Кольори файлів (\"чорний на чорному\" - колір за замовчуванням)"
+"Колеры файлаў ('чорны на чорным' - прадвызначаны колер)"
+"Failo vardo spalvos (\"juoda ant juodos\" - pradinė spalva)"
 
 MHighlightFileName1
 "&1. Обычное имя файла"
@@ -13418,6 +12346,8 @@ MHighlightFileName1
 "&1. Normálny súbor"
 "&1. Nome File Normale"
 "&1. Звичайне ім'я файлу"
+"&1. Звычайнае імя файла"
+"&1. Normalus"
 
 MHighlightFileName2
 "&3. Помеченное имя файла"
@@ -13430,6 +12360,8 @@ MHighlightFileName2
 "&3. Vybraný súbor"
 "&3. Nome File Selezionato"
 "&3. Помічене ім'я файлу"
+"&3. Абранае імя файла"
+"&3. Pažymėtas"
 
 MHighlightFileName3
 "&5. Имя файла под курсором"
@@ -13442,6 +12374,8 @@ MHighlightFileName3
 "&5. Súbor pod kurzorom"
 "&5. Nome File File Sotto Il Cursore"
 "&5. Ім'я файлу під курсором"
+"&5. Імя файла пад указальнікам"
+"&5. Po kursoriumi"
 
 MHighlightFileName4
 "&7. Помеченное под курсором имя файла"
@@ -13454,6 +12388,8 @@ MHighlightFileName4
 "&7. Vybraný súbor pod kurzorom"
 "&7. File Evidenziato Sotto Il Cursore"
 "&7. Помічене під курсором ім'я файлу"
+"&7. Абранае імя файла пад указальнікам"
+"&7. Pažymėtas po kursoriumi"
 
 MHighlightMarking1
 "&2. Пометка"
@@ -13466,6 +12402,8 @@ MHighlightMarking1
 "&2. Označenie"
 "&2. Marca"
 "&2. Помітка"
+"&2. Адзнака"
+upd:"&2. Marking"
 
 MHighlightMarking2
 "&4. Пометка"
@@ -13478,6 +12416,8 @@ MHighlightMarking2
 "&4. Označenie"
 "&4. Marca"
 "&4. Помітка"
+"&4. Адзнака"
+upd:"&4. Marking"
 
 MHighlightMarking3
 "&6. Пометка"
@@ -13490,6 +12430,8 @@ MHighlightMarking3
 "&6. Označenie"
 "&6. Marca"
 "&6. Помітка"
+"&6. Адзнака"
+upd:"&6. Marking"
 
 MHighlightMarking4
 "&8. Пометка"
@@ -13502,30 +12444,22 @@ MHighlightMarking4
 "&8. Označenie"
 "&8. Marca"
 "&8. Помітка"
+"&8. Адзнака"
+upd:"&8. Marking"
 
-MHighlightExample1
-"║filename.ext │"
-"║filename.ext │"
-"║filename.ext │"
-"║dateinam.erw │"
-"║fájlneve.kit │"
-"║nazwa.roz    │"
-"║nombre.ext  │"
-"║filename.ext │"
-"║nome.ext │"
-"║filename.ext │"
-
-MHighlightExample2
-"║ filename.ext│"
-"║ filename.ext│"
-"║ filename.ext│"
-"║ dateinam.erw│"
-"║ fájlneve.kit│"
-"║ nazwa.roz   │"
-"║ nombre.ext │"
-"║ filename.ext│"
-"║ nome.ext│"
-"║ filename.ext│"
+MHighlightExample
+"filename.ext"
+"filename.ext"
+"filename.ext"
+"dateinam.erw"
+"fájlneve.kit"
+"nazwa.roz"
+"nombre.ext"
+"filename.ext"
+"nome.ext"
+"filename.ext"
+"filename.ext"
+upd:"filename.ext"
 
 MHighlightContinueProcessing
 "Продолжать &обработку"
@@ -13538,6 +12472,8 @@ MHighlightContinueProcessing
 "Pokračovať v spracúva&ní"
 "&Continua L'Elaborazione"
 "Продовжити &обробку"
+"Працягнуць апрац&оўку"
+upd:"C&ontinue processing"
 
 MInfoTitle
 l:
@@ -13551,6 +12487,8 @@ l:
 "Informácie"
 "[ Informazioni ]"
 "Інформація"
+"Даведка"
+"Informacija"
 
 MInfoCompName
 "Имя компьютера"
@@ -13563,6 +12501,8 @@ MInfoCompName
 "Názov počítača"
 "Nome Computer"
 "Ім'я комп'ютера"
+"Імя кампутара"
+"Kompiuterio vardas"
 
 MInfoCompDescription
 "Описание компьютера"
@@ -13570,11 +12510,13 @@ MInfoCompDescription
 "Popis počítače"
 "Beschreibung des Computers"
 upd:"Computer description"
-upd:"Computer description"
+"Opis komputera"
 "Descripción de computadora"
 "Opis počítača"
 "Descrizione Computer"
 "Опис комп'ютера"
+"Апісанне кампутара"
+upd:"Computer description"
 
 MInfoUserName
 "Имя пользователя"
@@ -13587,6 +12529,8 @@ MInfoUserName
 "Meno užívateľa"
 "Nome Utente"
 "Ім'я користувача"
+"Імя карыстальніка"
+"Vartotojo vardas"
 
 MInfoUserDescription
 "Описание пользователя"
@@ -13594,11 +12538,13 @@ MInfoUserDescription
 "Popis uživatele"
 "Beschreibung des Nutzers"
 upd:"User description"
-upd:"User description"
+"Opis użytkownika"
 "Descripción de usuario"
 "Opis užívateľa"
 "Descrizione Utente"
 "Опис користувача"
+"Апісанне карыстальніка"
+upd:"User description"
 
 MInfoUserAccessLevel
 "Уровень доступа"
@@ -13606,11 +12552,13 @@ MInfoUserAccessLevel
 "Úroveň přístupu"
 "Zugriff-Niveau"
 upd:"Access level"
-upd:"Access level"
+"Poziom dostępu"
 "Nivel de acceso"
 "Úroveň prístupu"
 "Livello Di Accesso"
 "Рівень доступу"
+"Узровень доступу"
+upd:"Access level"
 
 MInfoUserAccessLevelGuest
 "Гость"
@@ -13618,11 +12566,13 @@ MInfoUserAccessLevelGuest
 "Host"
 "Gäst"
 upd:"Guest"
-upd:"Guest"
+"Gość"
 "Invitado"
 "Hosť"
 "Ospite"
 "Гість"
+"Госць"
+upd:"Guest"
 
 MInfoUserAccessLevelUser
 "Пользователь"
@@ -13630,23 +12580,27 @@ MInfoUserAccessLevelUser
 "Uživatel"
 "Nutzer"
 upd:"User"
-upd:"User"
+"Użytkownik"
 "Usuario"
 "Užívateľ"
 "Utente"
 "Користувач"
+"Карыстальнік"
+upd:"User"
 
 MInfoUserAccessLevelAdministrator
 "Администратор"
 "Administrator"
 "Administrátor"
-upd:"Administrator"
-upd:"Administrator"
-upd:"Administrator"
+"Administrator"
+"Adminisztrátor"
+"Administrator"
 "Administrador"
 "Správca"
 "Amministratore"
 "Адміністратор"
+"Адміністратар"
+"Administratorius"
 
 MInfoUserAccessLevelUnknown
 "Неизвестно"
@@ -13654,11 +12608,13 @@ MInfoUserAccessLevelUnknown
 "Neznámý"
 "Unbekannt"
 upd:"Unknown"
-upd:"Unknown"
+"Nieznany"
 "Desconocido"
 "Neznámy"
 "Sconosciuto"
 "Невідомо"
+"Невядома"
+upd:"Unknown"
 
 MInfoDiskTitle
 "Диск"
@@ -13671,6 +12627,8 @@ MInfoDiskTitle
 "Disk"
 "Disco"
 "Диск"
+"Дыск"
+upd:"Disk"
 
 MInfoRemovable
 "Сменный"
@@ -13683,6 +12641,8 @@ MInfoRemovable
 "Vymeniteľný"
 "Removibile"
 "Змінний"
+"Зменны"
+"Keičiamas"
 
 MInfoFixed
 "Жёсткий"
@@ -13695,6 +12655,8 @@ MInfoFixed
 "Pevný"
 "Fisso"
 "Жорсткий"
+"Замацаваныя"
+"Fiksuotas"
 
 MInfoNetwork
 "Сетевой"
@@ -13707,6 +12669,8 @@ MInfoNetwork
 "Sieťový"
 "Rete"
 "Мережевий"
+"Сеткавы"
+"Tinklas"
 
 MInfoCDROM
 "CD-ROM"
@@ -13717,10 +12681,28 @@ MInfoCDROM
 "CD-ROM"
 "CD-ROM"
 "CD-ROM"
-"CD-Rom"
+"CD-ROM"
+"CD-ROM"
+"CD-ROM"
 "CD-ROM"
 
-MInfoCD_RW
+MInfoCDR
+"CD-R"
+"CD-R"
+"CD-R"
+"CD-R"
+"CD-R"
+"CD-R"
+"CD-R"
+"CD-R"
+"CD-R"
+"CD-R"
+"CD-R"
+"CD-R"
+
+MInfoCDRW
+"CD-RW"
+"CD-RW"
 "CD-RW"
 "CD-RW"
 "CD-RW"
@@ -13732,7 +12714,9 @@ MInfoCD_RW
 "CD-RW"
 "CD-RW"
 
-MInfoCD_RWDVD
+MInfoCDRWDVD
+"CD-RW/DVD"
+"CD-RW/DVD"
 "CD-RW/DVD"
 "CD-RW/DVD"
 "CD-RW/DVD"
@@ -13744,7 +12728,7 @@ MInfoCD_RWDVD
 "CD-RW/DVD"
 "CD-RW/DVD"
 
-MInfoDVD_ROM
+MInfoDVDROM
 "DVD-ROM"
 "DVD-ROM"
 "DVD-ROM"
@@ -13753,10 +12737,28 @@ MInfoDVD_ROM
 "DVD-ROM"
 "DVD-ROM"
 "DVD-ROM"
-"DVD-Rom"
+"DVD-ROM"
+"DVD-ROM"
+"DVD-ROM"
 "DVD-ROM"
 
-MInfoDVD_RW
+MInfoDVDR
+"DVD-R"
+"DVD-R"
+"DVD-R"
+"DVD-R"
+"DVD-R"
+"DVD-R"
+"DVD-R"
+"DVD-R"
+"DVD-R"
+"DVD-R"
+"DVD-R"
+"DVD-R"
+
+MInfoDVDRW
+"DVD-RW"
+"DVD-RW"
 "DVD-RW"
 "DVD-RW"
 "DVD-RW"
@@ -13768,7 +12770,7 @@ MInfoDVD_RW
 "DVD-RW"
 "DVD-RW"
 
-MInfoDVD_RAM
+MInfoDVDRAM
 "DVD-RAM"
 "DVD-RAM"
 "DVD-RAM"
@@ -13777,10 +12779,112 @@ MInfoDVD_RAM
 "DVD-RAM"
 "DVD-RAM"
 "DVD-RAM"
-"DVD-Ram"
 "DVD-RAM"
+"DVD-RAM"
+"DVD-RAM"
+"DVD-RAM"
+
+MInfoBDROM
+"BD-ROM"
+"BD-ROM"
+"BD-ROM"
+"BD-ROM"
+"BD-ROM"
+"BD-ROM"
+"BD-ROM"
+"BD-ROM"
+"BD-ROM"
+"BD-ROM"
+"BD-ROM"
+"BD-ROM"
+
+MInfoBDR
+"BD-R"
+"BD-R"
+"BD-R"
+"BD-R"
+"BD-R"
+"BD-R"
+"BD-R"
+"BD-R"
+"BD-R"
+"BD-R"
+"BD-R"
+"BD-R"
+
+MInfoBDRW
+"BD-RW"
+"BD-RW"
+"BD-RW"
+"BD-RW"
+"BD-RW"
+"BD-RW"
+"BD-RW"
+"BD-RW"
+"BD-RW"
+"BD-RW"
+"BD-RW"
+"BD-RW"
+
+MInfoHDDVDROM
+"HDDVD-ROM"
+"HDDVD-ROM"
+"HDDVD-ROM"
+"HDDVD-ROM"
+"HDDVD-ROM"
+"HDDVD-ROM"
+"HDDVD-ROM"
+"HDDVD-ROM"
+"HDDVD-ROM"
+"HDDVD-ROM"
+"HDDVD-ROM"
+"HDDVD-ROM"
+
+MInfoHDDVDR
+"HDDVD-R"
+"HDDVD-R"
+"HDDVD-R"
+"HDDVD-R"
+"HDDVD-R"
+"HDDVD-R"
+"HDDVD-R"
+"HDDVD-R"
+"HDDVD-R"
+"HDDVD-R"
+"HDDVD-R"
+"HDDVD-R"
+
+MInfoHDDVDRW
+"HDDVD-RW"
+"HDDVD-RW"
+"HDDVD-RW"
+"HDDVD-RW"
+"HDDVD-RW"
+"HDDVD-RW"
+"HDDVD-RW"
+"HDDVD-RW"
+"HDDVD-RW"
+"HDDVD-RW"
+"HDDVD-RW"
+"HDDVD-RW"
+
+MInfoHDDVDRAM
+"HDDVD-RAM"
+"HDDVD-RAM"
+"HDDVD-RAM"
+"HDDVD-RAM"
+"HDDVD-RAM"
+"HDDVD-RAM"
+"HDDVD-RAM"
+"HDDVD-RAM"
+"HDDVD-RAM"
+"HDDVD-RAM"
+"HDDVD-RAM"
+"HDDVD-RAM"
 
 MInfoRAM
+"RAM"
+"RAM"
 "RAM"
 "RAM"
 "RAM"
@@ -13803,6 +12907,8 @@ MInfoSUBST
 "Subst"
 "Subst"
 "Subst"
+"Subst"
+"Subst"
 
 MInfoVirtual
 "Виртуальный"
@@ -13810,11 +12916,13 @@ MInfoVirtual
 "Virtuální"
 "Virtuelle"
 upd:"Virtual"
-upd:"Virtual"
+"Wirtualny"
 "Virtual"
 "Virtuálny"
 "Virtuale"
 "Віртуальний"
+"Уяўны"
+upd:"Virtual"
 
 MInfoUnknown
 "Неизвестный"
@@ -13822,11 +12930,13 @@ MInfoUnknown
 "Neznámý"
 "Unbekannte"
 upd:"Unknown"
-upd:"Unknown"
+"Nieznany"
 "Desconocido"
 "Neznámy"
 "Sconosciuto"
 "Невідомий"
+"Невядомы"
+upd:"Unknown"
 
 MInfoDisk
 "диск"
@@ -13839,6 +12949,8 @@ MInfoDisk
 "disk"
 "Disco"
 "диск"
+"дыск"
+"Diskas"
 
 MInfoDiskTotal
 "Общий размер"
@@ -13851,6 +12963,8 @@ MInfoDiskTotal
 "Bajtov spolu"
 "Bytes Totali"
 "Разом байт"
+"Агульны памер"
+"Iš viso baitų"
 
 MInfoDiskFree
 "Свободно"
@@ -13858,11 +12972,13 @@ MInfoDiskFree
 "Volných bytů"
 "Bytes frei"
 "Szabad bájt"
-"Wolnych bajtów"
+"Bajtów wolnych"
 "Bytes libres"
 "Bajtov voľných"
 "Bytes Liberi"
 "Вільно байт"
+"Вольна"
+"Laisva baitų"
 
 MInfoDiskLabel
 "Метка тома"
@@ -13875,6 +12991,8 @@ MInfoDiskLabel
 "Názov disku"
 "Etichetta Di Volume"
 "Мітка тому"
+"Метка дыска"
+"Disko vardas"
 
 MInfoDiskNumber
 "Серийный номер"
@@ -13887,6 +13005,8 @@ MInfoDiskNumber
 "Sériové číslo"
 "Numero Seriale"
 "Серійний номер"
+"Серыйны нумар"
+"Serijinis numeris"
 
 MInfoMemory
 "Память"
@@ -13899,6 +13019,8 @@ MInfoMemory
 "Pamäť"
 "Memoria"
 "Пам'ять"
+"Памяць"
+"Atmintis"
 
 MInfoMemoryLoad
 "Используется"
@@ -13911,6 +13033,8 @@ MInfoMemoryLoad
 "Obsadenie pamäte"
 "Memoria Occupata"
 "Завантаж. пам'яті"
+"Ужыта"
+"Užimta"
 
 MInfoMemoryInstalled
 "Установлено"
@@ -13918,11 +13042,13 @@ MInfoMemoryInstalled
 "Nainstalovaná paměť"
 "Installierter Speicher"
 upd:"Installed memory"
-upd:"Installed memory"
+"Zainstalowana pamięć"
 "Memoria instalada"
 "Nainštalovaná pamäť"
 "Memoria Installata"
 "Встановлено пам'яті"
+"Усталявана"
+upd:"Installed"
 
 MInfoMemoryTotal
 "Всего доступно"
@@ -13935,6 +13061,8 @@ MInfoMemoryTotal
 "Pamäť spolu"
 "Memoria Totale"
 "Усього пам'яті"
+"Усяго дасяжна"
+"Iš viso"
 
 MInfoMemoryFree
 "Свободно"
@@ -13947,6 +13075,8 @@ MInfoMemoryFree
 "Pamäť voľná"
 "Memoria Libera"
 "Вільно пам'яті"
+"Вольна"
+"Laisva"
 
 MInfoVirtualTotal
 "Виртуальная (всего)"
@@ -13959,6 +13089,8 @@ MInfoVirtualTotal
 "Virtuálna spolu"
 "Memoria Virtuale Totale"
 "Усьго вірт. пам'яті"
+"Усяго ўяўнай"
+"Iš viso virtualios"
 
 MInfoVirtualFree
 "Виртуальная (свободно)"
@@ -13971,6 +13103,8 @@ MInfoVirtualFree
 "Virtuálna voľná"
 "Memoria Virtuale Libera"
 "Вільно вірт. пам'яті"
+"Вольна ўяўнай"
+"Laisva virtualios"
 
 MInfoPageFileTotal
 "Файл подкачки (всего)"
@@ -13978,11 +13112,13 @@ MInfoPageFileTotal
 "Stránkovací soubor celkem"
 "Auslagerungsdatei gesamt"
 upd:"Total paging file"
-upd:"Total paging file"
+"Wielkość pliku stronicowania"
 "Archivo de paginación total"
 "Stránkovací súbor spolu"
 "File Swap Totale"
 "Всього файлу довантаження"
+"Усяго файла падампоўкі"
+upd:"Total paging file"
 
 MInfoPageFileFree
 "Файл подкачки (свободно)"
@@ -13990,11 +13126,13 @@ MInfoPageFileFree
 "Stránkovací soubor volný"
 "Auslagerungsdatei frei"
 upd:"Free paging file"
-upd:"Free paging file"
+"Wolne miejsce w pliku stronicowania"
 "Archivo de paginación libre"
 "Stránkovací súbor voľný"
 "File Swap Libero"
 "Вільно файлу довантаження"
+"Вольна файла падампоўкі"
+upd:"Free paging file"
 
 MInfoDescription
 "Описание"
@@ -14007,6 +13145,8 @@ MInfoDescription
 "Popis"
 "Descrizione"
 "Опис"
+"Апісанне"
+upd:"Description"
 
 MInfoDizAbsent
 "Файл описания папки отсутствует"
@@ -14014,11 +13154,13 @@ MInfoDizAbsent
 "Soubor s popisem adresáře chybí"
 "Keine Datei mit Ordnerbeschreibungen vorhanden."
 "Mappa megjegyzésfájl nincs"
-"Plik opisu katalogu nie istnieje"
+"Plik opisu folderu nie istnieje"
 "Archivo descripción del directorio está ausente"
 "Chýba popisný súbor priečinka"
 "Descrizione Cartelle Assente!"
 "Файл опису папки відсутній"
+"Файл апісання каталога адсутнічае"
+"Katalogo aprašymo failas nerastas"
 
 MInfoPlugin
 "Плагин"
@@ -14026,11 +13168,13 @@ MInfoPlugin
 "Modul"
 "Plugin"
 "Plugin"
-"Plugin"
+"Wtyczka"
 "Complemento"
 "Modul"
 "Plugin"
 "Плагін"
+"Дадатак"
+upd:"Plugin"
 
 MInfoPowerStatus
 "Питание"
@@ -14038,11 +13182,13 @@ MInfoPowerStatus
 "Stav napájení"
 "Power-Status"
 upd:"Power Status"
-upd:"Power Status"
+"Status zasilania"
 "Estado de encendido"
 "Stav napájania"
 "Stato Energetico ]"
 "Живлення"
+"Сілкаванне"
+upd:"Power Status"
 
 MInfoPowerStatusAC
 "Подключения к сети"
@@ -14050,11 +13196,13 @@ MInfoPowerStatusAC
 "Stav síťového napájení"
 "Verbindung zum Netzwerk"
 upd:"AC power status"
-upd:"AC power status"
+"Zasilanie sieciowe"
 "Estado encendido AC"
 "Stav sieťového napájania"
 "Stato Alimentazione"
 "Підключення до мережі"
+"Сеткавае сілкаванне"
+upd:"AC power status"
 
 MInfoPowerStatusACOffline
 "Отсутствует"
@@ -14062,11 +13210,13 @@ MInfoPowerStatusACOffline
 "Offline"
 "nicht hergestellt"
 upd:"Offline"
-upd:"Offline"
+"Wyłączone"
 "Offline"
 "Offline"
 "Disconnesso Dalla Rete"
 "Відсутнє"
+"Адсутнічае"
+upd:"Offline"
 
 MInfoPowerStatusACOnline
 "Подключено"
@@ -14074,11 +13224,13 @@ MInfoPowerStatusACOnline
 "Online"
 "hergestellt"
 upd:"Online"
-upd:"Online"
+"Włączone"
 "Online"
 "Online"
 "Connesso Alla Rete"
 "Підключено"
+"Уключана"
+upd:"Online"
 
 MInfoPowerStatusACBackUp
 "Резервный источник"
@@ -14086,11 +13238,13 @@ MInfoPowerStatusACBackUp
 "Záložní napájení"
 "Notstrom"
 upd:"Backup power"
+"Zasilanie zapasowe"
 upd:"Backup power"
-"Backup power"
 "Záložné napájanie"
 "Gruppo Di Continuità"
 "Резервне джерело"
+"Рэзервовае сілкаванне"
+upd:"Backup power"
 
 MInfoPowerStatusACUnknown
 "Не определено"
@@ -14098,11 +13252,13 @@ MInfoPowerStatusACUnknown
 "Neznámý"
 "Unbekannt"
 upd:"Unknown"
-upd:"Unknown"
+"Nieznany"
 "Desconocido"
 "Neznámy"
 "Sconosciuto"
 "Не визначено"
+"Ня вызначана"
+upd:"Unknown"
 
 MInfoPowerStatusBCLifePercent
 "Заряд батареи"
@@ -14110,11 +13266,13 @@ MInfoPowerStatusBCLifePercent
 "Stav baterie v procentech"
 "Status der Batteriedauer"
 upd:"Battery life percent"
-upd:"Battery life percent"
+"Procent naładowania baterii"
 "Porcentaje carga de batería"
 "Stav akumulátora v percentách"
 "Percentuale Batterie"
 "Заряд батареї"
+"Зарад батарэи"
+upd:"Battery life percent"
 
 MInfoPowerStatusBCLifePercentUnknown
 "Не определено"
@@ -14122,11 +13280,13 @@ MInfoPowerStatusBCLifePercentUnknown
 "Neznámý"
 "Unbekannt"
 upd:"Unknown"
-upd:"Unknown"
+"Nieznany"
 "Desconocido"
 "Neznámy"
 "Sconosciuto"
 "Не визначено"
+"Ня вызначана"
+upd:"Unknown"
 
 MInfoPowerStatusBC
 "Статус заряда батареи"
@@ -14134,11 +13294,13 @@ MInfoPowerStatusBC
 "Stav nabití baterie"
 "Status der Akkuladung"
 upd:"Battery charge status"
-upd:"Battery charge status"
+"Stan ładowania baterii"
 "Estado de carga de batería"
 "Kapacita akumulátora"
 "Stato Ricarica Batterie"
 "Статус заряду батареї"
+"Стан зарада батарэі"
+upd:"Battery charge status"
 
 MInfoPowerStatusBCHigh
 "Высокий"
@@ -14146,11 +13308,13 @@ MInfoPowerStatusBCHigh
 "Vysoký"
 "Hoch"
 upd:"High"
-upd:"High"
+"Wysoki"
 "Alto"
 "Vysoká"
 "Alto"
 "Високий"
+"Высокі"
+upd:"High"
 
 MInfoPowerStatusBCLow
 "Низкий"
@@ -14158,11 +13322,13 @@ MInfoPowerStatusBCLow
 "Nízký"
 "Niedrig"
 upd:"Low"
-upd:"Low"
+"Niski"
 "Bajo"
 "Nízka"
 "Basso"
 "Низький"
+"Нізкі"
+upd:"Low"
 
 MInfoPowerStatusBCCritical
 "Критичный"
@@ -14170,11 +13336,13 @@ MInfoPowerStatusBCCritical
 "Kritický"
 "Kritisch"
 upd:"Critical"
-upd:"Critical"
+"Krytyczny"
 "Crítico"
 "Kritická"
 "Critico"
 "Критичний"
+"Крытычны"
+upd:"Critical"
 
 MInfoPowerStatusBCCharging
 "Зарядка"
@@ -14182,11 +13350,13 @@ MInfoPowerStatusBCCharging
 "Nabíjení"
 "Wird geladen"
 upd:"Charging"
-upd:"Charging"
+"Ładowanie"
 "Cargando"
 "Nabíjanie"
 "In Carica"
 "Заряджання"
+"Зарадка"
+upd:"Charging"
 
 MInfoPowerStatusBCNoSysBat
 "Батареи нет"
@@ -14194,11 +13364,13 @@ MInfoPowerStatusBCNoSysBat
 "Žádná systémová baterie"
 "Kein Akku gefunden"
 upd:"No system battery"
-upd:"No system battery"
+"Brak baterii systemowej"
 "No hay batería de sistema"
 "Chýba systémový akumulátor"
 "Nessuna Batteria"
 "Батареї нема"
+"Батарэя адсутнічае"
+upd:"No system battery"
 
 MInfoPowerStatusBCUnknown
 "Не определено"
@@ -14206,11 +13378,13 @@ MInfoPowerStatusBCUnknown
 "Neznámý"
 "Unbekannt"
 upd:"Unknown"
-upd:"Unknown"
+"Nieznany"
 "Desconocido"
 "Neznámy"
 "Sconosciuto"
 "Не визначено"
+"Ня вызначана"
+upd:"Unknown"
 
 MInfoPowerStatusBCTimeRem
 "Время до разряда"
@@ -14218,11 +13392,13 @@ MInfoPowerStatusBCTimeRem
 "Doba napájení z baterie"
 "Batterielebensdauer"
 upd:"Battery life time"
-upd:"Battery life time"
+"Cza pracy na baterii"
 "Tiempo de vida de batería"
 "Doba práce z akumulátora"
 "Tempo Di Vita Batterie"
 "Час до розрядки"
+"Час да разраду"
+upd:"Battery life time"
 
 MInfoPowerStatusBCFullTimeRem
 "Полное время работы"
@@ -14230,11 +13406,13 @@ MInfoPowerStatusBCFullTimeRem
 "Celková doba napájení z baterie"
 "Batterieaufladezeit"
 upd:"Battery full time"
-upd:"Battery full time"
+"Całkowity czas baterii"
 "Tiempo completo de batería"
 "Plná doba práce z akumulátora"
 "Cariche Complete Eseguite"
 "Повний час роботи"
+"Поўны час працы"
+upd:"Battery full time"
 
 MInfoPowerStatusUnknown
 "Не определено"
@@ -14242,11 +13420,13 @@ MInfoPowerStatusUnknown
 "Neznámá"
 "Unbekannt"
 upd:"Unknown"
-upd:"Unknown"
+"Nieznany"
 "Desconocido"
 "Neznámy"
 "Sconosciuto"
 "Не визначено"
+"Ня вызначана"
+upd:"Unknown"
 
 MAccessDenied
 "Доступ запрещён"
@@ -14259,6 +13439,8 @@ MAccessDenied
 "Prístup odmietnutý"
 "Accesso Negato"
 "Доступ заборонено"
+"Доступ забаронены"
+upd:"Access denied"
 
 MCannotExecute
 l:
@@ -14267,11 +13449,13 @@ l:
 "Nelze provést"
 "Fehler beim Ausführen von"
 "Nem végrehajtható:"
-"Nie mogę wykonać"
+"Nie można wykonać"
 "No se puede ejecutar"
 "Nedá sa vykonať"
 "Non Posso Eseguire"
 "Помилка виконання"
+"Немагчыма выканаць"
+"Negaliu įvykdyti"
 
 MCannotInvokeComspec
 "Ошибка вызова командного интерпретатора"
@@ -14279,11 +13463,13 @@ MCannotInvokeComspec
 "Nelze vyvolat interpretera příkazů"
 "Fehler beim Aufruf Kommandointerpreter"
 upd:"Cannot invoke command interpreter"
-upd:"Cannot invoke command interpreter"
+"Nie można wywołać interpretera poleceń"
 "No se puede invocar intérprete de comando"
 "Nemôžem vyvolať interpreta príkazov"
 "Non Posso Eseguire L'Interprete Dei Comandi"
 "Помилка виклику командного інтерпретатора"
+"Немагчыма выклікаць камандны выканальнік"
+upd:"Cannot invoke command interpreter"
 
 MCheckComspecVar
 "Проверьте переменную окружения COMSPEC"
@@ -14291,23 +13477,27 @@ MCheckComspecVar
 "Zkontrolujte proměnnou prostředí COMSPEC"
 "Prüfen Umgebungsvariable COMSPEC"
 upd:"Check COMSPEC environment variable"
-upd:"Check COMSPEC environment variable"
+"Sprawdź zmienną systemową COMSPEC"
 "Compruebe variable de entorno COMSPEC"
 "Skontrolujte premennú prostredia COMSPEC"
 "Controlla La Variabile COMSPEC"
 "Перевірте змінну оточення COMSPEC"
+"Праверце шляхі асяроддзя COMSPEC"
+upd:"Check COMSPEC environment variable"
 
 MScanningFolder
 "Просмотр папки"
 "Scanning the folder"
 "Prohledávám adresář"
 "Scanne den Ordner"
-"Mappák olvasása..."
-"Przeszukuję katalog"
+"Mappák olvasása"
+"Przeszukuję folder"
 "Explorando el directorio"
 "Prehľadávam priečinok"
 "Scansione Della Cartella"
 "Перегляд папки"
+"Прагляд каталогу"
+"Skenuoju katalogą"
 
 MMakeFolderTitle
 l:
@@ -14316,11 +13506,13 @@ l:
 "Vytvořit adresář"
 "Ordner erstellen"
 "Új mappa létrehozása"
-"Utwórz katalog"
+"Utwórz folder"
 "Crear directorio"
 "Vytvorenie priečinka"
 "Creazione Cartella"
 "Створення папки"
+"Стварэнне каталогу"
+"Sukurti katalogą"
 
 MCreateFolder
 "Создать п&апку:"
@@ -14328,16 +13520,18 @@ MCreateFolder
 "Vytvořit &adresář:"
 "Diesen &Ordner erstellen:"
 "Mappa &neve:"
-"Nazwa katalogu:"
+"&Nazwa folderu:"
 "Nombre del directorio:"
 "Vytvoriť &priečinok:"
 "Crea La Cartella"
 "Створити папку:"
+"Стварыць к&аталог:"
+"Sukurti katalogą:"
 
 MMakeFolderLinkType
 "Тип ссылки:"
-"Link type:"
-"Typ linku:"
+"&Link type:"
+"&Typ linku:"
 "Linktyp:"
 "Link típusa:"
 "Typ linku:"
@@ -14345,54 +13539,64 @@ MMakeFolderLinkType
 "Typ prepojenia:"
 "Tipo Di Link:"
 "Тип посилання:"
+"Тып спасылкі:"
+upd:"&Link type:"
 
 MMakeFolderLinkNone
 "Нет"
-"None"
+"&none"
 "Žádný"
 "Nein"
 upd:"None"
-upd:"None"
+"Brak"
 "Ninguno"
 "Žiadny"
 "Nessuno"
 "Нема"
+"Няма"
+upd:"&none"
 
 MMakeFolderLinkJunction
 "связь каталогов"
-"directory junction"
+"directory &junction"
 "křížení adresářů"
 "Ordnerknotenpunkt"
 "Mappa csomópont"
-"directory junction"
+"Przyłączenie folderu"
 "empalme de directorio"
 "kríženie priečinkov"
 "Giunzione"
 "З'єднання каталогів"
+"сувязь каталогаў"
+upd:"directory &junction"
 
 MMakeFolderLinkSymlink
 "символическая ссылка"
-"symbolic link"
+"symbolic &link"
 "symbolický link"
 "Symbolischer Link"
 "Szimbolikus link"
-"link symboliczny"
+"Link symboliczny"
 "enlace simbólico"
 "symbolické prepojenie"
 "Simbolico"
 "Символічне посилання"
+"сімвалічная спасылка"
+upd:"symbolic &link"
 
 MMakeFolderLinkTarget
 "Цель:"
-"Target:"
+"&Target:"
 "Cíl:"
 "Ziel:"
 upd:"Target:"
-upd:"Target:"
+"&Cel:"
 "Destino:"
 "Cieľ:"
 "Destinazione:"
 "Призначення:"
+"Мэта:"
+upd:"&Target:"
 
 MMultiMakeDir
 "Обрабатыват&ь несколько имён папок"
@@ -14405,6 +13609,8 @@ MMultiMakeDir
 "Spracovať &viac názvov"
 "Elabora &Nomi Multipli"
 "Оброблят&и декілька імен папок"
+"Апрацоўвац&ь некалькі імёнаў каталогаў"
+upd:"Process &multiple names"
 
 MIncorrectDirList
 "Неправильный список папок"
@@ -14417,6 +13623,8 @@ MIncorrectDirList
 "Neplatný zoznam priečinkov"
 "Lista Cartelle Errata"
 "Неправильний список папок"
+"Неправільны спіс каталогаў"
+upd:"Incorrect folders list"
 
 MCannotCreateFolder
 "Ошибка создания папки"
@@ -14424,11 +13632,13 @@ MCannotCreateFolder
 "Adresář nelze vytvořit"
 "Konnte den Ordner nicht erstellen"
 "A mappa nem hozható létre"
-"Nie mogę utworzyć katalogu"
+"Nie można utworzyć folderu"
 "No se puede crear el directorio"
 "Nemôžem vytvoriť priečinok"
 "Non Posso Creare La Cartella"
 "Помилка створення папки"
+"Немагчыма стварыць каталог"
+"Negaliu sukurti katalogo"
 
 MMenuBriefView
 l:
@@ -14442,6 +13652,8 @@ l:
 "&Stručný"
 "Vista &Semplice"
 "&Короткий"
+"&Кароткі"
+"&Trumpai"
 
 MMenuMediumView
 "&Средний"
@@ -14454,6 +13666,8 @@ MMenuMediumView
 "S&tredný"
 "Vista &Media"
 "&Середній"
+"&Сярэдні"
+"&Vidutiniškai"
 
 MMenuFullView
 "&Полный"
@@ -14466,6 +13680,8 @@ MMenuFullView
 "Ú&plný"
 "Vista &Completa"
 "&Повний"
+"&Поўны"
+"&Pilnai"
 
 MMenuWideView
 "&Широкий"
@@ -14478,6 +13694,8 @@ MMenuWideView
 "Š&iroký"
 "Vista &Allargata"
 "&Широкий"
+"&Шырокі"
+"P&lačiai"
 
 MMenuDetailedView
 "&Детальный"
@@ -14490,6 +13708,8 @@ MMenuDetailedView
 "Pod&robný"
 "Vista &Dettagliata"
 "&Детальний"
+"Па&драбязны"
+"&Detaliai"
 
 MMenuDizView
 "&Описания"
@@ -14502,6 +13722,8 @@ MMenuDizView
 "S p&opismi"
 "Vista D&escrizioni"
 "&Описи"
+"&Апісанне"
+"Apraš&ymai"
 
 MMenuLongDizView
 "Д&линные описания"
@@ -14514,6 +13736,8 @@ MMenuLongDizView
 "S &dlhými popismi"
 "Vista &Informazioni"
 "До&вгі описи"
+"До&ўгія апісанні"
+"Il&gi aprašymai"
 
 MMenuOwnersView
 "Вл&адельцы файлов"
@@ -14526,6 +13750,8 @@ MMenuOwnersView
 "Vlastníci s&úboru"
 "Vista &Proprietari"
 "Вл&асники файлів"
+"Ул&адальнікі файлаў"
+"&Failo savininkai"
 
 MMenuLinksView
 "Ссылки файлов"
@@ -14538,6 +13764,8 @@ MMenuLinksView
 "Prepo&jenia súboru"
 "Vista Collegamen&ti"
 "Посилання файлів"
+"Спасыл&кі файлаў"
+"Failo &saitai"
 
 MMenuAlternativeView
 "Аль&тернативный полный"
@@ -14550,6 +13778,8 @@ MMenuAlternativeView
 "&Alternatívny úplný"
 "Vista A&lternativa"
 "Аль&тернативний повний"
+"Дада&тковы поўны"
+"Pilnai &alternatyva"
 
 MMenuInfoPanel
 l:
@@ -14557,12 +13787,14 @@ l:
 "&Info panel"
 "Panel In&formace"
 "&Infopanel"
-"&Info panel"
+upd:"&Info panel"
 "Panel informacy&jny"
 "Panel &información"
 "Panel In&fo"
 "I&nformazioni Varie"
 "Панель ин&формації"
+"Панэл&ь даведкі"
+"&Info langas"
 
 MMenuTreePanel
 "Де&рево папок"
@@ -14575,6 +13807,8 @@ MMenuTreePanel
 "Pa&nel Strom"
 "&Vista Ad Albero"
 "Де&рево папок"
+"Д&рэва каталогаў"
+"&Medis"
 
 MMenuQuickView
 "Быстры&й просмотр"
@@ -14587,6 +13821,8 @@ MMenuQuickView
 "R&ýchle info"
 "Vista &Rapida"
 "Швидки&й перегляд"
+"Хутк&і прагляд"
+"Vai&zdas"
 
 MMenuSortModes
 "Режим&ы сортировки"
@@ -14595,10 +13831,12 @@ MMenuSortModes
 "&Sortiermodi"
 "R&endezési elv"
 "Try&by sortowania"
-"&Ordenar por..."
+"&Ordenar por"
 "Triediť pod&ľa"
 "&Ordinamenti"
 "Режим&и сортування"
+"Стан&ы парадкавання"
+"Rūšiavimo b&ūdai"
 
 MMenuLongNames
 "Показывать длинные &имена"
@@ -14611,6 +13849,8 @@ MMenuLongNames
 "Zobraziť dlhé názv&y"
 "Mostra Nomi Lung&hi"
 "Показувати довгі &імена"
+"Адлюстроўваць доўгія &імёны"
+"&Rodyti ilgus vardus"
 
 MMenuTogglePanel
 "Панель &Вкл/Выкл"
@@ -14623,6 +13863,8 @@ MMenuTogglePanel
 "Panel &Zap/Vyp"
 "Pannello Si&/No"
 "Панель У&вімк/Вимк"
+"Панэль Укл/&Выкл"
+"Langas &On/Off"
 
 MMenuReread
 "П&еречитать"
@@ -14635,6 +13877,8 @@ MMenuReread
 "O&bnoviť"
 "A&ggiorna Pannello"
 "П&еречитати"
+"П&ерачытаць"
+"At&naujinti"
 
 MMenuChangeDrive
 "С&менить диск"
@@ -14645,8 +13889,10 @@ MMenuChangeDrive
 "Z&mień napęd"
 "Cambiar &unidad"
 "Z&meniť jednotku"
-"Cam&bia Unità..."
+"Cam&bia Unità"
 "З&мінити диск"
+"З&мяніць дыск"
+"&Keisti diską"
 
 MMenuView
 l:
@@ -14660,6 +13906,8 @@ l:
 "&Zobraziť"
 "&Visualizza"
 "&Перегляд"
+"&Прагляд"
+"&Žiūrėti"
 
 MMenuEdit
 "&Редактирование"
@@ -14672,6 +13920,8 @@ MMenuEdit
 "&Upraviť"
 "&Modifica"
 "&Редагування"
+"&Змена"
+"R&edaguoti"
 
 MMenuCopy
 "&Копирование"
@@ -14684,6 +13934,8 @@ MMenuCopy
 "&Kopírovať"
 "&Copia"
 "&Копіювання"
+"&Капіяванне"
+"&Kopijuoti"
 
 MMenuMove
 "П&еренос"
@@ -14696,6 +13948,8 @@ MMenuMove
 "&Premenovať/Presunúť"
 "&Rinomina O Muovi"
 "П&ереміщення"
+"П&еранос"
+"Pe&rvadinti/Perkelti"
 
 MMenuLink
 "Ссы&лка"
@@ -14703,11 +13957,13 @@ MMenuLink
 "Link"
 upd:"Link"
 upd:"Link"
-upd:"Link"
+"Link"
 "En&lace"
 "Linka"
 "Crea Co&llegamento"
 "Поси&лання"
+"Спасы&лак"
+upd:"Lin&k"
 
 MMenuCreateFolder
 "&Создание папки"
@@ -14715,11 +13971,13 @@ MMenuCreateFolder
 "&Vytvořit adresář"
 "&Ordner erstellen"
 "Ú&j mappa"
-"U&twórz katalog"
+"U&twórz folder"
 "Crear &directorio"
 "&Vytvoriť priečinok"
 "Crea Ca&rtella"
 "&Створення папки"
+"&Стварэнне каталогу"
+"&Sukurti katalogą"
 
 MMenuDelete
 "&Удаление"
@@ -14732,6 +13990,8 @@ MMenuDelete
 "Z&mazať"
 "&Elimina"
 "&Видалення"
+"В&ыдаленне"
+"&Trinti"
 
 MMenuWipe
 "Уни&чтожение"
@@ -14744,6 +14004,8 @@ MMenuWipe
 "&Vymazať"
 "&Distruggi"
 "Зни&щення"
+"Зніш&чэнне"
+upd:"&Wipe"
 
 MMenuAdd
 "&Архивировать"
@@ -14756,6 +14018,8 @@ MMenuAdd
 "Pridať do &archívu"
 "A&ggiungi Ad Archivio"
 "&Архівувати"
+"З&апакаваць"
+"Su&pakuoti į archyvą"
 
 MMenuExtract
 "Распако&вать"
@@ -14768,6 +14032,8 @@ MMenuExtract
 "&Rozbaliť súbory"
 "E&strai Da Archivio"
 "Роз&пакувати"
+"Разпака&ваць"
+"Išar&chyvuoti failus"
 
 MMenuArchiveCommands
 "Архивн&ые команды"
@@ -14780,6 +14046,8 @@ MMenuArchiveCommands
 "Príkaz&y pakovača"
 "&Opzioni Per Archivi"
 "Архівн&і команди"
+"Каманд&ы пакоўшчыка"
+"Arc&hyvo komandos"
 
 MMenuAttributes
 "А&трибуты файлов"
@@ -14792,6 +14060,8 @@ MMenuAttributes
 "A&tribúty súboru"
 "A&ttributi Dei Files"
 "А&трибути файлів"
+"А&трыбуты файлаў"
+"Failo &atributai"
 
 MMenuApplyCommand
 "Применить коман&ду"
@@ -14804,6 +14074,8 @@ MMenuApplyCommand
 "Po&užiť príkaz"
 "Appl&ica Comando"
 "Застосувати коман&ду"
+"Ужыць каман&ду"
+"Panaudoti k&omandą"
 
 MMenuDescribe
 "&Описание файлов"
@@ -14816,6 +14088,8 @@ MMenuDescribe
 "Pridať popis k sú&borom"
 "Descri&zione Del File"
 "&Опис файлів"
+"&Апісанне файлаў"
+"Apraš&yti failus"
 
 MMenuSelectGroup
 "Пометить &группу"
@@ -14828,6 +14102,8 @@ MMenuSelectGroup
 "Oz&načiť skupinu"
 "Seleziona Gruppo"
 "Позначити &групу"
+"Адзначыць &суполку"
+"Pažymėti &grupę"
 
 MMenuUnselectGroup
 "С&нять пометку"
@@ -14840,6 +14116,8 @@ MMenuUnselectGroup
 "O&dznačiť skupinu"
 "Deseleziona Gruppo"
 "З&няти позначення"
+"З&няць суполку"
+"Atžymėti gr&upę"
 
 MMenuInvertSelection
 "&Инверсия пометки"
@@ -14852,6 +14130,8 @@ MMenuInvertSelection
 "&Invertovať výber"
 "Inverti La Selezione"
 "&Інверсія позначення"
+"Супрац&ьлеглая адзнака"
+"At&virkščiai pažymėt"
 
 MMenuRestoreSelection
 "Восстановить по&метку"
@@ -14864,6 +14144,8 @@ MMenuRestoreSelection
 "&Obnoviť výber"
 "Ri&pristina La Selezione"
 "Відновити по&значення"
+"Узнавіць адз&наку"
+"At&naujinti žymėjimą"
 
 MMenuFindFile
 l:
@@ -14877,6 +14159,8 @@ l:
 "Ná&jsť súbor"
 "&Cerca Files"
 "&Пошук файлу"
+"&Пошук файла"
+"&Rasti failą"
 
 MMenuHistory
 "&История команд"
@@ -14889,6 +14173,8 @@ MMenuHistory
 "&História"
 "Cronolo&gia"
 "&Історія команд"
+"Г&історыя камандаў"
+"&Istorija"
 
 MMenuVideoMode
 "Видео&режим"
@@ -14901,6 +14187,8 @@ MMenuVideoMode
 "&Video mód"
 "&Modalità Video"
 "Відео&режим"
+"&Відэа"
+"&Video režimas"
 
 MMenuFindFolder
 "Поис&к папки"
@@ -14908,11 +14196,13 @@ MMenuFindFolder
 "Hl&edat adresář"
 "Ordner fi&nden"
 "&Mappakeresés"
-"Znajdź kata&log"
+"Znajdź &folder"
 "&Buscar directorio"
 "Hľ&adať priečinok"
 "Ce&rca Cartella"
 "Пошу&к папки"
+"Пошу&к каталогу"
+"Ras&ti katalogą"
 
 MMenuViewHistory
 "Ис&тория просмотра"
@@ -14925,6 +14215,8 @@ MMenuViewHistory
 "História &zobrazení súborov"
 "Elenco File Vist&i"
 "Іс&торія перегляду"
+"Гіс&торыя прагляду файлаў"
+"Per&žiūros istorija"
 
 MMenuFoldersHistory
 "Ист&ория папок"
@@ -14932,11 +14224,13 @@ MMenuFoldersHistory
 "Historie &adresářů"
 "&Ordnerhistorie"
 "Ma&ppa előzmények"
-"Historia &katalogów"
+"Historia &folderów"
 "Historial de &directorios"
 "História &priečinkov"
 "Elenco Director&y"
 "Іст&орія папок"
+"Гіст&орыя прагляду каталогаў"
+"Katal&ogų istorija"
 
 MMenuSwapPanels
 "По&менять панели"
@@ -14949,6 +14243,8 @@ MMenuSwapPanels
 "Vymeniť panel&y"
 "&Scambia I Pannelli"
 "По&міняти панелі"
+"Аб&мяняць панэлі"
+"&Sukeisti langus"
 
 MMenuTogglePanels
 "Панели &Вкл/Выкл"
@@ -14961,6 +14257,8 @@ MMenuTogglePanels
 "Pane&ly Zap/Vyp"
 "Pannelli Si&/No"
 "Панелі У&вімк/Вимк"
+"Панелі Укл/&Выкл"
+"&Langai On/Off"
 
 MMenuCompareFolders
 "&Сравнение папок"
@@ -14968,11 +14266,13 @@ MMenuCompareFolders
 "Po&rovnat adresáře"
 "Ordner verglei&chen"
 "Mappák össze&hasonlítása"
-"Porówna&j katalogi"
+"Porówna&j foldery"
 "&Comparar directorios"
 "Po&rovnať priečinky"
 "C&ompara Cartella"
 "Порівн&яння папок"
+"Пара&ўнанне каталогаў"
+"&Palyginti katalogus"
 
 MMenuUserMenu
 "Меню пользовател&я"
@@ -14985,6 +14285,8 @@ MMenuUserMenu
 "Upraviť užívateľské &menu"
 "Edita Menu &Utente"
 "Меню користува&ча"
+"Меню кар&ыстальніка"
+"Redaguoti vartotojo &meniu"
 
 MMenuFileAssociations
 "&Ассоциации файлов"
@@ -14997,6 +14299,8 @@ MMenuFileAssociations
 "Asociá&cie súborov"
 "Edita Le Associa&zioni"
 "&Асоціації файлів"
+"Прызначэнні ф&айлаў"
+"Failų &asociacijos"
 
 MMenuFolderShortcuts
 "Ссы&лки на папки"
@@ -15004,11 +14308,13 @@ MMenuFolderShortcuts
 "A&dresářové zkratky"
 "Or&dnerschnellzugriff"
 "Mappa gyorsbillent&yűk"
-"&Skróty katalogów"
+"&Skróty folderów"
 "Ata&jos a directorios"
 "Skratk&y priečinkov"
 "&Cartelle Memorizzate"
 "Поси&лання на папки"
+"Спасы&лкі на каталогі"
+"Katalogų nuoro&dos"
 
 MMenuFilter
 "&Фильтр панели файлов"
@@ -15021,6 +14327,8 @@ MMenuFilter
 "F&ilter panela súborov"
 "Impostazione &Filtro"
 "&Фільтр панелі файлів"
+"&Фільтр панэлі файлаў"
+"Failų lango &filtras"
 
 MMenuPluginCommands
 "Команды внешних мо&дулей"
@@ -15028,11 +14336,13 @@ MMenuPluginCommands
 "Příkazy &modulů"
 "Pl&uginbefehle"
 "Pl&ugin parancsok"
-"Pl&uginy"
+"W&tyczki"
 "C&omandos de complemento"
 "Príkazy mo&dulov"
 "Comandi Per I &Plug-IN"
 "Команди зовнішніх мо&дулів"
+"Каманды &дадаткаў"
+"Komandos - pri&edai"
 
 MMenuWindowsList
 "Список экра&нов"
@@ -15045,6 +14355,8 @@ MMenuWindowsList
 "Zoznam okie&n"
 "Finestre Attivate"
 "Список екра&нів"
+"Спіс экра&наў"
+"E&kranų sąrašas"
 
 MMenuProcessList
 "Список &задач"
@@ -15057,6 +14369,8 @@ MMenuProcessList
 "Zoznam úl&oh"
 "Finestra Processi"
 "Список &задач"
+"Спіс &заданняў"
+"&Užduočių sąrašas"
 
 MMenuHotPlugList
 "Список Hotplug-&устройств"
@@ -15069,6 +14383,8 @@ MMenuHotPlugList
 "Zoznam vy&berateľných zariadení"
 "Lista Periferiche &USB"
 "Список Hotplug-пристроїв"
+"Спіс прылад гарачай &устаноўкі"
+upd:"Ho&tplug devices list"
 
 MMenuSystemSettings
 l:
@@ -15080,8 +14396,10 @@ l:
 "Ustawienia &systemowe"
 "&Sistema"
 "S&ystémové nastavenia"
-" &Sistema"
+"► &Sistema"
 "Си&стемні параметри"
+"Сістэ&іныя налады"
+"Siste&miniai nuostatai"
 
 MMenuPanelSettings
 "Настройки па&нели"
@@ -15092,8 +14410,10 @@ MMenuPanelSettings
 "Ustawienia &panelu"
 "&Paneles"
 "Nastavenia &panelov"
-" &Pannelli"
+"► &Pannelli"
 "Налаштування па&нелі"
+"Налады па&нэлі"
+"La&ngų parametrai"
 
 MMenuTreeSettings
 "Настройки д&ерева папок"
@@ -15101,11 +14421,13 @@ MMenuTreeSettings
 "Nastavení s&tromu"
 "Ordnerbaumeinstellungen"
 upd:"Tree settings"
-upd:"Tree settings"
+"Ustawienia d&rzewa"
 "Ar&bol de directorios"
 "Nastavenia s&tromu"
-" &Albero Cartelle"
+"► &Albero Cartelle"
 "Налаштування д&ерева папок"
+"Налады др&эва каталогаў"
+upd:"&Tree settings"
 
 MMenuInterface
 "Настройки &интерфейса"
@@ -15116,8 +14438,10 @@ MMenuInterface
 "Ustawienia &interfejsu"
 "Interfa&z"
 "Nastavenia ro&zhrania"
-" &Interfaccia"
+"► &Interfaccia"
 "Налаштування &інтерфейсу"
+"Налады знешняга в&ыгляду"
+"&Sąsajos nuostatai"
 
 MMenuLanguages
 "&Языки"
@@ -15125,11 +14449,13 @@ MMenuLanguages
 "Nastavení &jazyka"
 "Sprac&hen"
 "N&yelvek (Languages)"
-"&Język"
+"&Język programu"
 "&Idiomas"
 "Nastavenia &jazyka"
-" &Lingua"
+"► &Lingua"
 "&Мови"
+"&Мовы"
+"Kal&ba"
 
 MMenuPluginsConfig
 "Параметры плагино&в"
@@ -15137,23 +14463,27 @@ MMenuPluginsConfig
 "Nastavení mo&dulů"
 "Konfiguration von Pl&ugins"
 "Pl&ugin beállítások"
-"Konfiguracja p&luginów"
+"Konfiguracj&a wtyczek"
 "Configuración de complementos"
 "Nastavenia mo&dulov"
-" Pl&ug-In"
+"► Pl&ug-In"
 "Параметри плагіні&в"
+"Налады дадатка&ў"
+"Pri&edų konfigūracija"
 
 MMenuPluginsManagerSettings
 "Параметры менеджера плагинов"
-"Plugins manager settings"
+"Plugins manage&r settings"
 "Nastavení správce modulů"
 "Konfiguration des Plugins-Managers"
 upd:"Plugins manager settings"
-upd:"Plugins manager settings"
+"Ustawienia ma&nagera wtyczek"
 "&Gestor de complementos"
 "Nastavenia správcu modulov"
-" &Gestore Plug-In"
+"► &Gestore Plug-In"
 "Параметри менеджера плагінів"
+"Налады распарадніка дадаткаў"
+upd:"Plugins manage&r settings"
 
 MMenuDialogSettings
 "Настройки &диалогов"
@@ -15161,11 +14491,13 @@ MMenuDialogSettings
 "Nastavení dialo&gů"
 "Di&aloge einrichten"
 "Pár&beszédablak beállítások"
-"Ustawienia okna &dialogowego"
+"Ustawienia okien dialogowyc&h"
 "Diá&logo"
 "Nastavenia dialó&gov"
-" &Finestre"
+"► &Finestre"
 "Налаштування &діалогов"
+"Налады &гутаркі"
+upd:"Di&alog settings"
 
 MMenuVMenuSettings
 "Настройки меню"
@@ -15173,11 +14505,13 @@ MMenuVMenuSettings
 "Nastavení menu"
 "Menüeinstellungen"
 upd:"Menu settings"
-upd:"Menu settings"
+"Ustawienia &menu"
 "Menú"
 "Nastavenia menu"
-" Imposta &Menu"
+"► Imposta &Menu"
 "Налаштування меню"
+"Налады меню"
+upd:"Menu settings"
 
 MMenuCmdlineSettings
 "Настройки &командной строки"
@@ -15185,23 +14519,27 @@ MMenuCmdlineSettings
 "Nastavení příkazové řádky"
 "Einstellungen der Eingabeaufforderung"
 upd:"Command line settings"
-upd:"Command line settings"
+"Us&tawienia wiersza poleceń"
 "Línea de comando"
 "Nastavenia príkazového riadka"
-" P&rompt Dei Commandi"
+"► P&rompt Dei Commandi"
 "Налаштування &командного рядка"
+"Налады &каманднага радка"
+upd:"&Command line settings"
 
 MMenuAutoCompleteSettings
 "На&стройки автозавершения"
-"AutoComplete settings"
+"Au&toComplete settings"
 "Nastavení AutoComplete"
 "Einstellungen der Autovervollständigung"
 upd:"AutoComplete settings"
-upd:"AutoComplete settings"
+"&Ustawienie AutoUzupełniania"
 "A&utocompletar"
 "Nastavenia AutoComplete"
-" Au&tocompletamento"
+"► Au&tocompletamento"
 "Налаштування &автозавершення"
+"Нала&ды самазавяршэння"
+upd:"Au&toComplete settings"
 
 MMenuInfoPanelSettings
 "Нас&тройки информационной панели"
@@ -15209,23 +14547,27 @@ MMenuInfoPanelSettings
 "Nastavení Inf&oPanelu"
 "Einstellungen des Inf&oPanels"
 upd:"Inf&oPanel settings"
-upd:"Inf&oPanel settings"
+"Ustawienia panelu in&formacyjnego"
 "&Panel de información"
 "Nastavenia Inf&oPanela"
-" Pa&nnello Informazioni"
+"► Pa&nnello Informazioni"
 "Налаштування &інформаційної панелі"
+"Налады &даведачнай панэлі"
+upd:"Inf&oPanel settings"
 
 MMenuMaskGroups
 "Группы масок файлов"
-"Groups of file masks"
+"Groups of file mas&ks"
 "Skupiny masek souborů"
-"Gruppe der Datenmasken" 
+"Gruppe der Datenmasken"
 upd:"Groups of file masks"
-upd:"Groups of file masks"
+"Grupy masek p&lików"
 "Grupos de máscara de archivos"
 "Skupiny masiek súborov"
-" Masc&here Filtri"
+"► Masc&here Filtri"
 "Групи масок файлів"
+"Суполкі масак файлаў"
+upd:"Groups of file mas&ks"
 
 MMenuConfirmation
 "&Подтверждения"
@@ -15236,8 +14578,10 @@ MMenuConfirmation
 "P&otwierdzenia"
 "Co&nfirmaciones"
 "P&otvrzovanie"
-" C&onferme"
+"► C&onferme"
 "&Підтверждення"
+"&Пацверджанне"
+"Pa&tvirtinimai"
 
 MMenuFilePanelModes
 "Режим&ы панели файлов"
@@ -15245,11 +14589,13 @@ MMenuFilePanelModes
 "&Módy souborových panelů"
 "Anzeige&modi von Dateipanels"
 "Fájlpanel mód&ok"
-"&Tryby wyświetlania panelu plików"
+"Try&by wyświetlania panelu plików"
 "M&odo de paneles de archivos"
 "&Módy súborových panelov"
-" Modi Di &Visualizzazione"
+"► Modi Di &Visualizzazione"
 "Режим&и панелі файлов"
+"Стан&ы панэлі файлаў"
+"Failų lan&go režimai"
 
 MMenuFileDescriptions
 "&Описания файлов"
@@ -15260,8 +14606,10 @@ MMenuFileDescriptions
 "Opis&y plików"
 "Descripción de &archivos"
 "Popi&sy súborov"
-" &Descrizioni Files"
+"► &Descrizioni Files"
 "&Описи файлів"
+"&Апісанне файлаў"
+"Failų &aprašymai"
 
 MMenuFolderInfoFiles
 "Файлы описания п&апок"
@@ -15269,11 +14617,13 @@ MMenuFolderInfoFiles
 "Popisy &adresářů"
 "O&rdnerbeschreibungen"
 "M&appa megjegyzésfájlok"
-"Pliki opisu &katalogu"
+"Pliki opisu folde&rów"
 "Descripción de &directorios"
 "Popisy pr&iečinkov"
-" D&escrizioni Cartelle"
+"► D&escrizioni Cartelle"
 "Файли опису папок"
+"Файл апісання к&аталогаў"
+"&Katalogų aprašymo failai"
 
 MMenuViewer
 "Настройки про&граммы просмотра"
@@ -15284,8 +14634,10 @@ MMenuViewer
 "Ustawienia pod&glądu"
 "&Visor"
 "Nastavenia zob&razovača"
-" Visuali&zzatore Interno"
+"► Visuali&zzatore Interno"
 "Налаштування про&грами перегляду"
+"Налады пра&гляду"
+"Per&žiūros nuostatai"
 
 MMenuEditor
 "Настройки &редактора"
@@ -15296,8 +14648,10 @@ MMenuEditor
 "Ustawienia &edytora"
 "&Editor"
 "Nastavenia &editora"
-" Editor In&terno"
+"► Editor In&terno"
 "Налаштування &редактора"
+"Налады &змены"
+"&Redaktoriaus nuostatai"
 
 MMenuCodePages
 "Кодов&ые страницы"
@@ -15305,11 +14659,13 @@ MMenuCodePages
 "Kódové stránky"
 upd:"Tabellen"
 upd:"Kódlapok"
-upd:"Strony kodowe"
+"Strony ko&dowe"
 "Página de códigos"
 "Tabuľky znakov:"
-" Codifica Caratteri"
+"► Codifica Caratteri"
 "Кодові сто&рінки"
+"Кадыроўк&і"
+upd:"Code pages"
 
 MMenuColors
 "&Цвета"
@@ -15317,11 +14673,13 @@ MMenuColors
 "&Barvy"
 "&Farben"
 "S&zínek"
-"Kolo&ry"
+"&Kolory"
 "&Colores"
 "&Farby"
-" Colori Far"
+"► Colori Far"
 "&Кольори"
+"Ко&леры"
+"Spa&lvos"
 
 MMenuFilesHighlighting
 "Раскраска &файлов и группы сортировки"
@@ -15332,8 +14690,10 @@ MMenuFilesHighlighting
 "&Wyróżnianie plików"
 "&Resaltar archivos y ordenar grupos"
 "Z&výrazňovanie súborov a skupiny triedenia"
-" Colori Files"
+"► Colori Files"
 "Розмальовка &файлів і групи сортування"
+"Разфарбоўка &файлаў і суполкі парадкавання"
+"Failų par&yškinimai ir rūšiavimo grupes"
 
 MMenuSaveSetup
 "&Сохранить параметры"
@@ -15346,6 +14706,8 @@ MMenuSaveSetup
 "&Uložiť nastavenia"
 "• Salva Le Impostazioni"
 "&Зберегти параметри"
+"&Захаваць налады"
+"&Išsaugoti nuostatus"
 
 MMenuTogglePanelRight
 "Панель &Вкл/Выкл"
@@ -15358,6 +14720,8 @@ MMenuTogglePanelRight
 "Panel &Zap/Vyp"
 "Pannello Si&/No"
 "Панель У&вімк/Вимк"
+"Панэль Укл/&Выкл"
+"Langas &On/Off"
 
 MMenuChangeDriveRight
 "С&менить диск"
@@ -15370,6 +14734,8 @@ MMenuChangeDriveRight
 "Z&meniť disk"
 "Cambia Unità"
 "З&мінити диск"
+"З&мяніць дыск"
+"&Keisti diską"
 
 MMenuLeftTitle
 l:
@@ -15381,8 +14747,10 @@ l:
 "&Lewy"
 "&Izquierdo"
 "&Ľavý"
-" &Sinistra"
+"◄ &Sinistra"
 "&Ліва"
+"&Левая"
+"&Kairė"
 
 MMenuFilesTitle
 "&Файлы"
@@ -15393,8 +14761,10 @@ MMenuFilesTitle
 "Pl&iki"
 "&Archivos"
 "&Súbory"
-" &Archivi"
+"▼ &Archivi"
 "&Файли"
+"&Файлы"
+"&Failai"
 
 MMenuCommandsTitle
 "&Команды"
@@ -15405,8 +14775,10 @@ MMenuCommandsTitle
 "Pol&ecenia"
 "&Comandos"
 "Prí&kazy"
-" &Comandi"
+"▼ &Comandi"
 "&Команди"
+"&Каманды"
+"Ko&mandos"
 
 MMenuOptionsTitle
 "Па&раметры"
@@ -15417,8 +14789,10 @@ MMenuOptionsTitle
 "&Opcje"
 "&Opciones"
 "&Nastavenia"
-" &Opzioni"
+"▼ &Opzioni"
 "Па&раметри"
+"&Налады"
+"&Opcijos"
 
 MMenuRightTitle
 "&Правая"
@@ -15429,8 +14803,10 @@ MMenuRightTitle
 "&Prawy"
 "&Derecho"
 "&Pravý"
-"&Destra "
+"&Destra ►"
 "&Права"
+"&Правая"
+"&Dešinė"
 
 MMenuSortTitle
 l:
@@ -15439,11 +14815,13 @@ l:
 "Řadit podle"
 "Sortieren nach"
 "Rendezési elv"
-"Sortuj według..."
+"Sortuj według"
 "Ordenar por"
 "Triediť podľa"
-" Ordina Per..."
+"► Ordina Per"
 "Критерій сортування"
+"Парадкаваць па"
+"Rūšiuoti pagal"
 
 MMenuSortByName
 "&Имя"
@@ -15451,11 +14829,13 @@ MMenuSortByName
 "&Názvu"
 "&Name"
 "&Név"
-"&nazwy"
+"&Nazwy"
 "&Nombre"
 "&Názvu"
 "Nome"
 "&Ім'я"
+"&Імя"
+"&Vardą"
 
 MMenuSortByExt
 "&Расширение"
@@ -15463,11 +14843,13 @@ MMenuSortByExt
 "&Přípony"
 "&Erweiterung"
 "Ki&terjesztés"
-"ro&zszerzenia"
+"R&ozszerzenia"
 "E&xtensión"
 "&Prípony"
 "Estensione"
 "&Тип файлу"
+"Пашы&рэнне"
+"&Plėtinį"
 
 MMenuSortByWrite
 "Время &записи"
@@ -15475,11 +14857,13 @@ MMenuSortByWrite
 "Č&asu zápisu"
 "&Schreibzeit"
 upd:"&Write time"
-upd:"&Write time"
+"Czasu &zapisu"
 "Fecha &modificación"
 "Č&asu zápisu"
 "Data Di Modifica"
 "Час &запису"
+"Час &запісу"
+"&Modifikavimo laiką"
 
 MMenuSortBySize
 "Р&азмер"
@@ -15487,11 +14871,13 @@ MMenuSortBySize
 "&Velikosti"
 "&Größe"
 "&Méret"
-"&rozmiaru"
+"&Rozmiaru"
 "&Tamaño"
 "&Veľkosti"
 "Dimensione"
 "&Розмір"
+"П&амер"
+"&Dydį"
 
 MMenuUnsorted
 "&Не сортировать"
@@ -15499,11 +14885,13 @@ MMenuUnsorted
 "N&eřadit"
 "&Unsortiert"
 "&Rendezetlen"
-"&bez sortowania"
+"&Bez sortowania"
 "&Sin ordenar"
 "N&etriediť"
 "Senza Ordine"
 "&Не сортувати"
+"&Не парадкаваць"
+"&Nerūšiuoti"
 
 MMenuSortByCreation
 "Время &создания"
@@ -15511,11 +14899,13 @@ MMenuSortByCreation
 "Čas&u vytvoření"
 "E&rstelldatum"
 "Ke&letkezés ideje"
-"czasu u&tworzenia"
+"Czasu u&tworzenia"
 "Fecha de &creación"
 "&Času vytvorenia"
 "Data Di Creazione"
 "Час &створення"
+"Час &стварэння"
+"&Sukūrimo datą"
 
 MMenuSortByAccess
 "Время &доступа"
@@ -15523,11 +14913,13 @@ MMenuSortByAccess
 "Ča&su přístupu"
 "&Zugriffsdatum"
 "&Hozzáférés ideje"
-"czasu &użycia"
+"Czasu &użycia"
 "Fecha de &acceso"
 "Ča&su prístupu"
 "Ultimo Accesso"
 "Час &доступу"
+"Час &доступу"
+"Nau&dojimo datą"
 
 MMenuSortByChange
 "Время из&менения"
@@ -15535,11 +14927,13 @@ MMenuSortByChange
 "Času z&měny"
 "Änderungsdatum"
 upd:"Change time"
-upd:"Change time"
+"Czasu z&miany"
 "Cambiar &hora"
 "Času zmeny"
 "Ultima Modifica"
 "Час з&мінення"
+"Час з&мены"
+upd:"Chan&ge time"
 
 MMenuSortByDiz
 "&Описания"
@@ -15547,11 +14941,13 @@ MMenuSortByDiz
 "P&opisků"
 "&Beschreibungen"
 "Megjegyzé&sek"
-"&opisu"
+"Opi&su"
 "&Descripciones"
 "P&opisov"
 "Descrizione"
 "&Описи"
+"&Апісанне"
+"Ap&rašymą"
 
 MMenuSortByOwner
 "&Владельцы файлов"
@@ -15559,11 +14955,13 @@ MMenuSortByOwner
 "V&lastníka"
 "Bes&itzer"
 "Tula&jdonos"
-"&właściciela"
+"&Właściciela"
 "Dueñ&o"
 "V&lastníka"
 "Proprietario"
 "&Власники файлів"
+"&Уладальнік файлаў"
+"S&avininką"
 
 MMenuSortByAllocatedSize
 "Выделенный размер"
@@ -15571,11 +14969,13 @@ MMenuSortByAllocatedSize
 "Alokované velikosti"
 "Ausgewählte Größe"
 upd:"Allocated size"
-upd:"Allocated size"
+"&Przydzielonego miejsca"
 "Tamaño de com&presión"
 "Alokovanej veľkosti"
 "&Dimensione Compressa"
 "Виділений розмір"
+"Памер размеркавання"
+"S&upakuoto dydį"
 
 MMenuSortByNumLinks
 "Ко&личество ссылок"
@@ -15583,11 +14983,13 @@ MMenuSortByNumLinks
 "Poč&tu pevných linků"
 "Anzahl an &Links"
 "Hardlinkek s&záma"
-"&liczby dowiązań"
+"&Liczby dowiązań"
 "Número de enlaces du&ros"
 "Poč&tu pevných prepojení"
 "Numero Di &Hard Link"
 "Кі&лькість посилань"
+"Ко&лькасць жорсткіх спасылак"
+"&Hard links skaičių"
 
 MMenuSortByNumStreams
 "Количество &потоков"
@@ -15595,11 +14997,13 @@ MMenuSortByNumStreams
 "Počtu to&ků"
 upd:"Number of st&reams"
 "Stream-e&k száma"
-upd:"Number of st&reams"
+"L&iczby strumieni"
 "Número de flujos"
 "Počtu toko&v"
 "Numero Di S&treams"
 "Кількість &потоків"
+"Колькасць &струменяў"
+upd:"Number of st&reams"
 
 MMenuSortByStreamsSize
 "Размер по&токов"
@@ -15607,35 +15011,27 @@ MMenuSortByStreamsSize
 "Velikos&ti toků"
 upd:"Si&ze of streams"
 "Stream-ek m&érete"
-upd:"Si&ze of streams"
+"Wi&elkości strumieni"
 "Tamaño de flujos"
 "Veľkos&ti tokov"
 "Dimensione De&gli Streams"
 "Розмір по&токів"
+"Пасмер с&труменяў"
+upd:"Si&ze of streams"
 
-MMenuSortByFullName
-"&Полное имя"
-"&Full name"
-"&Úplného názvu"
-"&Voller Name"
-upd:"&Full name"
-upd:"&Full name"
-"Nombre completo"
-"&Úplneho názvu"
-"Nome &Completo"
-"Повне ім'я"
-
-MMenuSortByCustomData
-"Пользовательские данные"
-"Cus&tom data"
-"U&živatelských dat"
-"Benützerdaten"
-upd:"Cus&tom data"
-upd:"Cus&tom data"
-"Datos opcionales"
-"U&žívateľských dát"
-"Dati Definiti Dall'&Utente"
-"Дані користувача"
+MMenuSortByNameOnly
+"Только имя"
+"Name only"
+"&Pouze názvu"
+"Nur Name"
+"Csak név"
+"Tylko nazwa"
+"Solo nombre"
+"Iba názvu"
+"Nome Solo"
+"Тільки ім'я"
+"Толькі імя"
+upd:"Name only"
 
 MMenuSortUseGroups
 "Использовать &группы сортировки"
@@ -15643,11 +15039,13 @@ MMenuSortUseGroups
 "Řazení podle skup&in"
 "Sortier&gruppen verw."
 "Rend. cs&oport haszn."
-"użyj &grup sortowania"
+"Użyj &grup sortowania"
 "Usar orden/&grupo"
 "Skup&inového triedenia"
 "G&ruppi Ordinamento"
 "Використовувати &групи сортування"
+"Ужываць &суполкі парадкавання"
+"Naudoti rūšiavimo &grupes"
 
 MMenuSortSelectedFirst
 "Помеченные &файлы вперёд"
@@ -15655,11 +15053,13 @@ MMenuSortSelectedFirst
 "Nejdřív zobrazit vy&brané"
 "&Ausgewählte zuerst"
 "Kijel&ölteket előre"
-"zazna&czone najpierw"
+"Zazna&czone najpierw"
 "Mostrar seleccionados primero"
 "Najprv zobraziť vy&brané"
-"Prima I Selezionati [Shift-F1&2]"
+"Prima I Selezionati"
 "Позначені &файли вперед"
+"Адзначаныя &файлы першапачаткова"
+"Pirmiau rodyti pa&žymėtus"
 
 MMenuSortDirectoriesFirst
 "&Каталоги вперёд"
@@ -15667,23 +15067,27 @@ MMenuSortDirectoriesFirst
 "Nejdří&ve zobrazit adresáře"
 "Verzeichnisse zuerst anzeigen"
 upd:"Sho&w directories first"
-upd:"Sho&w directories first"
+"Najpierw &foldery"
 "Mostrar directorios primero"
 "Najpr&v zobraziť priečinky"
 "&Mostra Le Cartelle Per Prime"
 "&Каталоги вперед"
+"&Каталогі першапачаткова"
+upd:"Sho&w directories first"
 
-MMaskGroupBottom
-"Редактирование: Ins, Del, F4, F7, Ctrl+R"
-"Edit: Ins, Del, F4, F7, Ctrl+R"
-"Změnit: Ins, Del, F4, F7, Ctrl+R"
-"Tasten: Einf, Entf, F4, F7, Strg+R"
-"Szerk.: Ins, Del, F4, F7, Ctrl+R"
-"Edycja: Ins, Del, F4, F7, Ctrl+R"
-"Editar: Ins, Del, F4, F7, Ctrl+R"
-"Upraviť: Ins, Del, F4, F7, Ctrl+R"
-"Edita: [INS] [DEL] [F4] [F7] [Ctrl-R]"
-"Редагування: Ins, Del, F4, F7, Ctrl+R"
+MMaskGroupTitle
+"Группы масок файлов"
+"Groups of file masks"
+"Skupiny masek souborů"
+"Gruppe der Datenmasken"
+upd:"Groups of file masks"
+"Grupy masek plików"
+"Grupos de máscara de archivos"
+"Skupiny masiek súborov"
+"Maschere Filtri"
+"Групи масок файлів"
+"Суполкі масак файлаў"
+upd:"Groups of file masks"
 
 MMaskGroupName
 "&Имя:"
@@ -15696,6 +15100,8 @@ MMaskGroupName
 "Me&no:"
 "&Nome:"
 "&Ім'я:"
+"&Імя:"
+upd:"&Name:"
 
 MMaskGroupMasks
 "Одна или несколько &масок файлов:"
@@ -15708,6 +15114,8 @@ MMaskGroupMasks
 "&Maska alebo masky súborov:"
 "Un &Filtro O Più Filtri:"
 "Одна або декілька &масок файлів:"
+"Адна ці некалькі &масак файлаў"
+upd:"A file &mask or several file masks:"
 
 MMaskGroupAskDelete
 "Вы хотите удалить"
@@ -15720,6 +15128,8 @@ MMaskGroupAskDelete
 "Chcete zmazať"
 "Desideri Eliminare"
 "Ви бажаєте видалити"
+"Вы жадаеце выдаліць"
+upd:"Do you wish to delete"
 
 MMaskGroupRestore
 "Вы хотите восстановить наборы масок по умолчанию?"
@@ -15727,11 +15137,13 @@ MMaskGroupRestore
 "Přejete si obnovit výchozí sestavy masek?"
 "Wollen Sie voreingestellte Maskensets zurückstellen?"
 upd:"Do you wish to restore default mask sets?"
-upd:"Do you wish to restore default mask sets?"
+"Chcesz przywrócić domyślne ustawienia masek?"
 "Quiere restablecer por defecto máscaras?"
 "Chcete obnoviť predvolené zostavy masiek?"
 "Desideri Ripristinare I Filtri Originali?"
 "Ви бажаєте відновити набори масок за замовчуванням?"
+"Вы жадаеце узнавіць прадвызначаны набор масак?"
+upd:"Do you wish to restore default mask sets?"
 
 MMaskGroupFindMask
 "&Маска:"
@@ -15744,6 +15156,8 @@ MMaskGroupFindMask
 "&Maska"
 "&Maschera:"
 "&Маска:"
+"&Маска:"
+upd:"&Mask:"
 
 MMaskGroupTotal
 "Всего: {0}"
@@ -15756,6 +15170,8 @@ MMaskGroupTotal
 "Spolu: {0}"
 "Totale: {0}"
 "Всього: {0}"
+"Усяго: {0}"
+upd:"Total: {0}"
 
 MChangeDriveTitle
 l:
@@ -15767,8 +15183,10 @@ l:
 "Napęd"
 "Unidad"
 "Disk"
-" Unità"
+"► Unità"
 "Диск"
+"Змяніць дыск"
+"Keisti diską"
 
 MChangeDriveRemovable
 "сменный"
@@ -15781,6 +15199,8 @@ MChangeDriveRemovable
 "vymeniteľný"
 "Removibile"
 "змінний"
+"зменны"
+"keičiamas"
 
 MChangeDriveFixed
 "жёсткий"
@@ -15793,18 +15213,22 @@ MChangeDriveFixed
 "pevný"
 "Disco Fisso"
 "жорсткий"
+"замацаваны"
+"fiksuotas"
 
 MChangeDriveNetwork
 "сетевой"
 "network"
-"síťová"
+"síťový"
 "Netzwerk"
 "hálózati"
 "sieciowy"
 "Red"
 "sieťový"
-"Coll. Rete"
+"Rete"
 "мережевий"
+"сеткавы"
+"tinklas"
 
 MChangeDriveDisconnectedNetwork
 "отключенный"
@@ -15812,11 +15236,13 @@ MChangeDriveDisconnectedNetwork
 "odpojená"
 upd:"disconnected"
 "leválasztva"
-upd:"disconnected"
+"odłączony"
 "Desconectado"
 "odpojený"
 "Disconnesso"
 "відключений"
+"адключаны"
+upd:"disconnected"
 
 MChangeDriveCDROM
 "CD-ROM"
@@ -15829,8 +15255,26 @@ MChangeDriveCDROM
 "CD-ROM"
 "CD-ROM"
 "CD-ROM"
+"CD-ROM"
+"CD-ROM"
 
-MChangeDriveCD_RW
+MChangeDriveCDR
+"CD-R"
+"CD-R"
+"CD-R"
+"CD-R"
+"CD-R"
+"CD-R"
+"CD-R"
+"CD-R"
+"CD-R"
+"CD-R"
+"CD-R"
+"CD-R"
+
+MChangeDriveCDRW
+"CD-RW"
+"CD-RW"
 "CD-RW"
 "CD-RW"
 "CD-RW"
@@ -15842,7 +15286,9 @@ MChangeDriveCD_RW
 "CD-RW"
 "CD-RW"
 
-MChangeDriveCD_RWDVD
+MChangeDriveCDRWDVD
+"CD-RW/DVD"
+"CD-RW/DVD"
 "CD-RW/DVD"
 "CD-RW/DVD"
 "CD-RW/DVD"
@@ -15854,7 +15300,9 @@ MChangeDriveCD_RWDVD
 "CD-RW/DVD"
 "CD-RW/DVD"
 
-MChangeDriveDVD_ROM
+MChangeDriveDVDROM
+"DVD-ROM"
+"DVD-ROM"
 "DVD-ROM"
 "DVD-ROM"
 "DVD-ROM"
@@ -15866,19 +15314,37 @@ MChangeDriveDVD_ROM
 "DVD-ROM"
 "DVD-ROM"
 
-MChangeDriveDVD_RW
+MChangeDriveDVDR
+"DVD-R"
+"DVD-R"
+"DVD-R"
+"DVD-R"
+"DVD-R"
+"DVD-R"
+"DVD-R"
+"DVD-R"
+"DVD-R"
+"DVD-R"
+"DVD-R"
+"DVD-R"
+
+MChangeDriveDVDRW
 "DVD-RW"
 "DVD-RW"
-"DWD-RW"
 "DVD-RW"
 "DVD-RW"
 "DVD-RW"
 "DVD-RW"
-"DWD-RW"
+"DVD-RW"
+"DVD-RW"
+"DVD-RW"
+"DVD-RW"
 "DVD-RW"
 "DVD-RW"
 
-MChangeDriveDVD_RAM
+MChangeDriveDVDRAM
+"DVD-RAM"
+"DVD-RAM"
 "DVD-RAM"
 "DVD-RAM"
 "DVD-RAM"
@@ -15890,7 +15356,9 @@ MChangeDriveDVD_RAM
 "DVD-RAM"
 "DVD-RAM"
 
-MChangeDriveBD_ROM
+MChangeDriveBDROM
+"BD-ROM"
+"BD-ROM"
 "BD-ROM"
 "BD-ROM"
 "BD-ROM"
@@ -15902,7 +15370,23 @@ MChangeDriveBD_ROM
 "BD-ROM"
 "BD-ROM"
 
-MChangeDriveBD_RW
+MChangeDriveBDR
+"BD-R"
+"BD-R"
+"BD-R"
+"BD-R"
+"BD-R"
+"BD-R"
+"BD-R"
+"BD-R"
+"BD-R"
+"BD-R"
+"BD-R"
+"BD-R"
+
+MChangeDriveBDRW
+"BD-RW"
+"BD-RW"
 "BD-RW"
 "BD-RW"
 "BD-RW"
@@ -15914,7 +15398,9 @@ MChangeDriveBD_RW
 "BD-RW"
 "BD-RW"
 
-MChangeDriveHDDVD_ROM
+MChangeDriveHDDVDROM
+"HDDVD-ROM"
+"HDDVD-ROM"
 "HDDVD-ROM"
 "HDDVD-ROM"
 "HDDVD-ROM"
@@ -15926,7 +15412,23 @@ MChangeDriveHDDVD_ROM
 "HDDVD-ROM"
 "HDDVD-ROM"
 
-MChangeDriveHDDVD_RW
+MChangeDriveHDDVDR
+"HDDVD-R"
+"HDDVD-R"
+"HDDVD-R"
+"HDDVD-R"
+"HDDVD-R"
+"HDDVD-R"
+"HDDVD-R"
+"HDDVD-R"
+"HDDVD-R"
+"HDDVD-R"
+"HDDVD-R"
+"HDDVD-R"
+
+MChangeDriveHDDVDRW
+"HDDVD-RW"
+"HDDVD-RW"
 "HDDVD-RW"
 "HDDVD-RW"
 "HDDVD-RW"
@@ -15938,6 +15440,19 @@ MChangeDriveHDDVD_RW
 "HDDVD-RW"
 "HDDVD-RW"
 
+MChangeDriveHDDVDRAM
+"HDDVD-RAM"
+"HDDVD-RAM"
+"HDDVD-RAM"
+"HDDVD-RAM"
+"HDDVD-RAM"
+"HDDVD-RAM"
+"HDDVD-RAM"
+"HDDVD-RAM"
+"HDDVD-RAM"
+"HDDVD-RAM"
+"HDDVD-RAM"
+"HDDVD-RAM"
 
 MChangeDriveRAM
 "RAM диск"
@@ -15950,6 +15465,8 @@ MChangeDriveRAM
 "RAM disk"
 "Disco RAM"
 "RAM диск"
+"RAM дыск"
+"RAM diskas"
 
 MChangeDriveSUBST
 "SUBST"
@@ -15962,6 +15479,8 @@ MChangeDriveSUBST
 "SUBST"
 "Disco Subst"
 "SUBST"
+"SUBST"
+upd:"subst"
 
 MChangeDriveVirtual
 "виртуальный"
@@ -15969,11 +15488,13 @@ MChangeDriveVirtual
 "virtuální"
 "virtuelle Festplatte"
 upd:"virtual"
-upd:"virtual"
+"wirtualny"
 "virtual"
 "virtuálny"
 "Virtuale"
 "віртуальний"
+"уяўны"
+upd:"virtual"
 
 MChangeDriveLabelAbsent
 "недоступен"
@@ -15986,6 +15507,8 @@ MChangeDriveLabelAbsent
 "nie je k dispozícii"
 "Non Disponibile"
 "недоступний"
+"недасяжны"
+"neprieinamas"
 
 MChangeDriveCannotReadDisk
 "Ошибка чтения диска в дисководе"
@@ -15993,11 +15516,13 @@ MChangeDriveCannotReadDisk
 "Nelze přečíst disk v jednotce"
 "Kann nicht gelesen werden datenträge in Laufwerk"
 "Meghajtó lemeze nem olvasható"
-"Nie mogę odczytać dysku w napędzie"
+"Nie można odczytać dysku w napędzie"
 "No se puede leer el disco en unidad"
 "Nemôžem prečítať disk v jednotke"
 "Non Posso Leggere Il Disco Unità"
 "Помилка читання диска в дисководі"
+"Немагчыма прачытаць дыск"
+"Negaliu nuskaityti disko"
 
 MChangeDriveCannotDisconnect
 "Не удаётся отсоединиться от {0}"
@@ -16005,11 +15530,13 @@ MChangeDriveCannotDisconnect
 "Nelze se odpojit od {0}"
 "Verbindung zu {0} konnte nicht getrennt werden."
 "Nem lehet leválni innen: {0}"
-"Nie mogę odłączyć się od {0}"
+"Nie można odłączyć się od {0}"
 "No se puede desconectar desde {0}"
 "Nemôžem sa odpojiť od {0}"
-"Non Posso Disconnettermi Da {0}:"
+"Non Posso Disconnettermi Da {0}"
 "Не вдається від'єднатися від {0}"
+"Немагчыма адключыцца ад {0}"
+"Negaliu atsijungti nuo {0}"
 
 MChangeDriveCannotDelSubst
 "Не удаётся удалить SUBST-диск {0}"
@@ -16022,18 +15549,22 @@ MChangeDriveCannotDelSubst
 "Nemôžem zmazať substnutú jednotku {0}"
 "Non Posso Eliminare Un Drive SUBST {0}"
 "Не вдається видалити SUBST-диск {0}"
+"Немагчыма выдаліць SUBST-дыск {0}"
+upd:"Cannot delete a substituted disk {0}"
 
 MChangeDriveCannotDetach
 "Не удаётся отсоединить виртуальный диск {0}"
 "Cannot detach a virtual disk {0}"
-upd:"Cannot detach virtual disk {0}"
+"Nemohu odpojit virtuální disk {0}"
 "Virtuelle Festplatte {0} kann nicht getrennt werden"
 upd:"Cannot detach virtual disk {0}"
-upd:"Cannot detach virtual disk {0}"
+"Nie można odłączyć dyski wirtualnego {0}"
 "No se puede desvincular disco virtual {0}"
 "Nemožno odpojiť virtuálny disk {0}"
-upd:"Cannot detach virtual disk {0}"
+"Non Posso Scollegare Disco Virtuale {0}"
 "Не вдається від'єднати віртуальний диск {0}"
+"Немагчыма адключыць уяўны дыск ад {0}"
+upd:"Cannot detach a virtual disk {0}"
 
 
 MChangeDriveOpenFiles
@@ -16047,31 +15578,37 @@ MChangeDriveOpenFiles
 "Ak nezatvoríte otvorené súbory, môžete stratiť dáta"
 "Se Non Chiudete I Files Aperti, I Dati Potrebbero Esser Persi!"
 "Якщо Ви не закриєте відкриті файли, дані може бути втрачено"
+"Калі вы не зачыніце адчыненыя файлы, дадзеныя могуць быць згубленыя"
+"Jei neuždarysite atvertų failų, galite prarasti duomenis"
 
 MChangeSUBSTDisconnectDriveTitle
 l:
 "Отключение SUBST-диска"
 "Substituted disk deletion"
-upd:"Odpojování virtuálního zařízení"
+"Odpojování virtuálního zařízení"
 upd:"Virtuelles Gerät trennen"
 upd:"Virtuális meghajtó törlése"
-upd:"Odłączanie napędu wirtualnego"
+"Odłączanie napędu wirtualnego"
 upd:"Desconexión de dispositivo virtual"
 "Odstránenie virtuálneho zariadenia"
 "Disconnessione Disco Virtuale"
 "Відключення SUBST-диска"
+"Выдаленне SUBST-дыска"
+upd:"Substituted disk deletion"
 
 MChangeSUBSTDisconnectDriveQuestion
 "Удалить SUBST-диск {0}?"
 "Delete SUBST-disk {0}?"
-upd:"Odpojit SUBST-disk {0}?"
+"Odpojit virtuální disk {0}?"
 upd:"Substlaufwerk {0} trennen?"
 upd:"Törli {0} virtuális meghajtót?"
-upd:"Odłączyć dysk SUBST {0}?"
+"Odłączyć dysk SUBST {0}?"
 upd:"Desconectarse de disco sustituido {0}?"
 "Odstrániť SUBST-disk {0}?"
-"Elimino Disco SUBST {0}:?"
+"Elimino Disco SUBST {0}?"
 "Видалити SUBST-диск {0}?"
+"Выдаліць SUBST-дыск {0}?"
+upd:"Delete SUBST-disk {0}?"
 
 MChangeVHDDisconnectDriveTitle
 "Отсоединение виртуального диска"
@@ -16079,11 +15616,13 @@ MChangeVHDDisconnectDriveTitle
 "Odpojení virtuálního disku"
 "Trennung der Virtuelle Festplatte"
 upd:"Virtual disk detaching"
-upd:"Virtual disk detaching"
+"Odłączanie dysku wirtualnego"
 "Desconexión de disco virtual"
 "Odpojenie virtuálneho disku"
 "Smontaggio Disco Virtuale"
 "Від'єднання віртуального диска"
+"Адлучэнне ўяўнага дыску"
+upd:"Virtual disk detaching"
 
 MChangeVHDDisconnectDriveQuestion
 "Отсоединить виртуальный диск {0}?"
@@ -16091,11 +15630,13 @@ MChangeVHDDisconnectDriveQuestion
 "Odpojit virtuální disk {0}?"
 "Wollen Sie virtuelle Festplatte {0} trennen?"
 upd:"Detach virtual disk {0}?"
-upd:"Detach virtual disk {0}?"
+"Odłączanie dysku wirtualnego {0}?"
 "Desconectar disco virtual {0}?"
 "Odpojiť virtuálny disk {0}?"
-"Smontare Disco Virtuale {0}:?"
+"Smontare Disco Virtuale {0}?"
 "Від'єднати віртуальний диск {0}?"
+"Адлучыць ўяўы дыск {0}?"
+upd:"Detach virtual disk {0}?"
 
 MChangeHotPlugDisconnectDriveTitle
 l:
@@ -16104,11 +15645,13 @@ l:
 "Odpojování zařízení"
 "Sicheres Entfernen"
 "Eszköz biztonságos eltávolítása"
-"Odłączanie urządzenia"
+"Odłączanie urządzenie"
 "Remover dispositivo"
 "Odstránenie zariadenia"
 "Disconnetti Unità"
 "Видалення пристрою"
+"Выдаленне прыстасавання"
+upd:"Device Removal"
 
 MChangeHotPlugDisconnectDriveQuestion
 "Вы хотите удалить устройство"
@@ -16121,6 +15664,8 @@ MChangeHotPlugDisconnectDriveQuestion
 "Chcete odstrániť zariadenie"
 "Vuoi Rimuovere La Periferica"
 "Ви бажаєте видалити пристрій"
+"Вы жадаеце выдаліць прыстасаванне"
+upd:"Do you want to remove the device"
 
 MHotPlugDisks
 "(диск(и): {0})"
@@ -16133,18 +15678,22 @@ MHotPlugDisks
 "(disk(y): {0})"
 "(unità: {0})"
 "(диск(и): {0})"
+"(дыск(і): {0})"
+upd:"(disk(s): {0})"
 
 MChangeCouldNotEjectHotPlugMedia
-"Невозможно удалить устройство для диска {0}:"
-"Cannot remove a device for drive {0}:"
-"Nelze odpojit zařízení pro jednotku {0}:"
-"Ein Gerät für Laufwerk {0}: konnte nicht entfernt werden"
-"{0}: eszköz nem távolítható el"
-"Nie udało się odłączyć dysku {0}:"
-"No se puede remover dispositivo para unidad {0}:"
-"Nemôžem odstrániť zariadenie pre jednotku {0}:"
-"Non Posso Rimuovere La Periferica In {0}:"
-"Неможливо видалити пристрій для диска {0}:"
+"Невозможно удалить устройство для диска {0}"
+"Cannot remove a device for drive {0}"
+"Nelze odpojit zařízení pro jednotku {0}"
+"Ein Gerät für Laufwerk {0} konnte nicht entfernt werden"
+"{0} eszköz nem távolítható el"
+"Nie udało się odłączyć dysku {0}"
+"No se puede remover dispositivo para unidad {0}"
+"Nemôžem odstrániť zariadenie pre jednotku {0}"
+"Non Posso Rimuovere La Periferica In {0}"
+"Неможливо видалити пристрій для диска {0}"
+"Немагчыма выдаліць прыстасаванне для дыску {0}"
+upd:"Cannot remove a device for drive {0}"
 
 MChangeCouldNotEjectHotPlugMedia2
 "Невозможно удалить устройство:"
@@ -16157,6 +15706,8 @@ MChangeCouldNotEjectHotPlugMedia2
 "Nemôžem odstrániť zariadenie."
 "Non Posso Rimuovere La Periferica:"
 "Неможливо видалити пристрій:"
+"Немагчыма выдаліць прыстасаванне:"
+upd:"Cannot remove a device:"
 
 MChangeHotPlugNotify1
 "Теперь устройство"
@@ -16169,6 +15720,8 @@ MChangeHotPlugNotify1
 "Zariadenie"
 "La Periferica"
 "Тепер пристрій"
+"Цяпер пырстасаванне"
+upd:"The device"
 
 MChangeHotPlugNotify2
 "может быть безопасно извлечено из компьютера"
@@ -16181,6 +15734,8 @@ MChangeHotPlugNotify2
 "môže byť teraz bezpečne odstránené"
 "Può Ora Esser Rimossa"
 "можна безпечно від'єднати від комп'ютера"
+"можна быспечна выняць з кампутара"
+upd:"can now be safely removed"
 
 MHotPlugListTitle
 "Hotplug-устройства"
@@ -16193,18 +15748,8 @@ MHotPlugListTitle
 "Zoznam vyberateľných zariadení"
 "Lista Periferiche HotPlug"
 "Hotplug-пристрої"
-
-MHotPlugListBottom
-"Редактирование: Del,Ctrl+R"
-"Edit: Del,Ctrl+R"
-"Edit: Del,Ctrl+R"
-"Tasten: Entf,Strg+R,F1"
-"Szerkesztés: Del,Ctrl+R"
-"Edycja: Del,Ctrl+R"
-"Editar: Del,Ctrl+R"
-"Edit: Del,Ctrl+R"
-"Edita: [Canc] [Ctrl-R]"
-"Редагування: Del,Ctrl+R"
+"Прылада гарачай ўсталёўкі"
+upd:"Hotplug devices list"
 
 MChangeDriveDisconnectTitle
 l:
@@ -16218,30 +15763,36 @@ l:
 "Odpojiť sieťový disk"
 "Rimozione Unità Di Rete"
 "Від'єднання мережевого диска"
+"Адлучэнне сеткавага дыску"
+upd:"Disconnect network drive"
 
 MChangeDriveDisconnectQuestion
-"Вы хотите удалить соединение с устройством {0}:?"
-"Do you want to disconnect from the drive {0}:?"
-"Chcete odpojit od jednotky {0}:?"
-"Wollen Sie die Verbindung zu Laufwerk {0}: trennen?"
-"Le akar válni {0}: meghajtóról?"
-"Czy odłączyć dysk {0}:?"
-"Quiere desconectarse desde la unidad {0}:?"
-"Chcete odpojiť od jednotky {0}:?"
-"Vuoi Disconnetterti Il Disco {0}:?"
-"Ви бажаєте видалити з'єднання з пристроєм {0}:?"
+"Вы хотите удалить соединение с устройством {0}?"
+"Do you want to disconnect from the drive {0}?"
+"Chcete odpojit od jednotky {0}?"
+"Wollen Sie die Verbindung zu Laufwerk {0} trennen?"
+"Le akar válni {0} meghajtóról?"
+"Czy odłączyć dysk {0}?"
+"Quiere desconectarse desde la unidad {0}?"
+"Chcete odpojiť od jednotky {0}?"
+"Vuoi Disconnetterti Il Disco {0}?"
+"Ви бажаєте видалити з'єднання з пристроєм {0}?"
+"Вы жадаеце выдаліць сувязь з прыстасаваннем {0}?"
+upd:"Do you want to disconnect from the drive {0}?"
 
 MChangeDriveDisconnectMapped
-"На устройство {0}: отображена папка:"
-"The drive {0}: is mapped to:"
-"Jednotka {0}: je namapována na:"
-"Laufwerk {0}: ist verknüpft zu:"
-"{0}: meghajtó hozzárendelve:"
-"Dysk {0}: jest skojarzony z:"
-"La unidad %c: es mapeada hacia:"
-"Jednotka {0}: je namapovaná na:"
-"Il Disco {0}: E' Mappato Su..."
-"На пристрій {0}: відображена папка:"
+"На устройство отображена папка:"
+"The drive is mapped to:"
+"Jednotka je namapována na:"
+"Laufwerk ist verknüpft zu:"
+"Meghajtó hozzárendelve:"
+"Dysk jest skojarzony z:"
+"La unidad es mapeada hacia:"
+"Jednotka je namapovaná na:"
+"Il Disco E' Mappato Su:"
+"На пристрій відображена папка:"
+"На прыстасаванне адлюстраваны каталог:"
+upd:"The drive is mapped to:"
 
 MChangeDriveDisconnectReconnect
 "&Восстанавливать при входе в систему"
@@ -16254,6 +15805,8 @@ MChangeDriveDisconnectReconnect
 "&Znova pripojiť pri prihlásení"
 "&Reconnetti Al Riavvio"
 "&Відновлювати при вході в систему"
+"Узна&віць пры уваходзе ў сістэму"
+upd:"&Reconnect at logon"
 
 MChangeDriveAskDisconnect
 l:
@@ -16267,30 +15820,36 @@ l:
 "Aj tak chcete odpojiť zariadenie?"
 "Forzare La Rimozione Della Periferica?"
 "Ви бажаєте в будь-якому разі відключитися від пристрою?"
+"Вы жадаеце ў любым выпадку адлучыцца ад прыстасавання?"
+"Ar prietaisą norite atjungti bet kuriuo atveju?"
 
 MChangeWaitingLoadDisk
-"Ожидание чтения диска..."
-"Waiting for disk to mount..."
-"Čekám na disk k připojení..."
-"Warte auf Datenträger..."
-"Lemez betöltése..."
-"Trwa montowanie dysku..."
-"Esperando para montar el disco..."
-"Čakám na disk na pripojenie..."
-"In Attesa Della Rimozione..."
-"Очікування читання диска..."
+"Ожидание чтения диска…"
+"Waiting for the disk to mount…"
+"Čekám na disk k připojení…"
+"Warte auf Datenträger…"
+"Lemez betöltése…"
+"Trwa montowanie dysku…"
+"Esperando para montar el disco…"
+"Čakám na disk na pripojenie…"
+"In Attesa Della Rimozione…"
+"Очікування читання диска…"
+"Чаканне чытання дыску…"
+upd:"Waiting for the disk to mount…"
 
 MChangeCouldNotEjectMedia
-"Невозможно извлечь диск из привода {0}:"
-"Could not eject media from drive {0}:"
-"Nelze vysunout médium v jednotce {0}:"
-"Konnte Medium in Laufwerk {0}: nicht auswerfen"
-"{0}: meghajtó lemeze nem oldható ki"
-"Nie można wysunąć dysku z napędu {0}:"
-"No se puede expulsar medio de la unidad {0}:"
-"Nemôžem vysunúť médium v jednotke {0}:"
-"Non Posso Espellere Il Volume {0}:"
-"Неможливо витягти диск із приводу {0}:"
+"Невозможно извлечь диск из привода"
+"Could not eject media from drive"
+"Nelze vysunout médium v jednotce"
+"Konnte Medium in Laufwerk nicht auswerfen"
+"Meghajtó lemeze nem oldható ki"
+"Nie można wysunąć dysku z napędu"
+"No se puede expulsar medio de la unidad"
+"Nemôžem vysunúť médium v jednotke"
+"Non Posso Espellere Il Volume"
+"Неможливо витягти диск із приводу"
+"Немагчыма выняць дыск з прывада"
+upd:"Could not eject media from drive"
 
 MChangeDriveConfigure
 "Настройка меню выбора диска"
@@ -16298,11 +15857,13 @@ MChangeDriveConfigure
 "Možnosti menu změny jednotky"
 "Einstellungen des Auswahlmenüs mit Laufwerken"
 upd:"Change Drive Menu Options"
-upd:"Change Drive Menu Options"
+"Opcje menu zmiany dysku"
 "Cambiar opciones de menú de unidades"
 "Možnosti menu zmeny disku"
 "Opzioni Per Il Cambio Unità"
 "Налаштування меню вибору диска"
+"Налады меню змены дыску"
+upd:"Change Drive Menu Options"
 
 MChangeDriveShowDiskType
 "Показывать &тип диска"
@@ -16310,11 +15871,13 @@ MChangeDriveShowDiskType
 "Zobrazit typ disku"
 "&Typ des Datenspeichers anzeigen"
 upd:"Show disk type"
-upd:"Show disk type"
+"Pokaż &typ dysku"
 "Mostrar &tipo de disco"
 "Zobraziť typ disku"
 "Mostra Tipo &Disco"
 "Показувати &тип диска"
+"Адлюстроўваць &тып дыску"
+upd:"Show disk &type"
 
 MChangeDriveShowPath
 "Показывать &сетевое имя / путь SUBST / имя VHD"
@@ -16322,11 +15885,13 @@ MChangeDriveShowPath
 "Zobrazit síťový &název / cestu SUBST / název VHD"
 "&Netzwerkname / SUBST Pfad / VHD Name anzeigen"
 upd:"Show &network name / SUBST path / VHD name"
-upd:"Show &network name / SUBST path / VHD name"
+"Pokaż dyski &sieciowe / ścieżki SUBST / nazwy VHD"
 "Mostrar nombre / SUBST ruta / VHD de nombre de &red"
 "Zobraziť sieťový &názov / cesta SUBST / názov VHD"
 "Mostra Nome &Rete / SUBST / VHD"
 "Показувати &мережеве ім'я / шлях SUBST / ім'я VHD"
+"Адлюстроўваць &сеткавае імя / шлях SUBST / імя VHD"
+upd:"Show &network name / SUBST path / VHD name"
 
 MChangeDriveShowLabel
 "Показывать &метку диска"
@@ -16334,11 +15899,27 @@ MChangeDriveShowLabel
 "Zobrazit název disku"
 "&Plattenkennung anzeigen"
 upd:"Show disk &label"
-upd:"Show disk &label"
+"Pokaż &etykietę dysku"
 "Mostrar etiqueta de disco"
 "Zobraziť názov disk&u"
 "Mostra &Etichetta"
 "Показувати м&ітку диска"
+"Адлюстроўваць &подпіс дыску"
+upd:"Show disk &label"
+
+MChangeDriveShowLabelUseShell
+"Использовать имя оболочки"
+"Use shell na&me"
+"Použít název shellu"
+upd:"Use shell name"
+upd:"Use shell name"
+"Użyj nazwy z Windows"
+upd:"Use shell name"
+upd:"Use shell name"
+upd:"Use shell name"
+"Використвувати ім'я оболонки"
+"Ужыць імя абалонкі"
+upd:"Use shell na&me"
 
 MChangeDriveShowFileSystem
 "Показывать тип &файловой системы"
@@ -16346,11 +15927,13 @@ MChangeDriveShowFileSystem
 "Zobrazit ty&p souborového systému"
 "&Dateisystemtyp anzeigen"
 upd:"Show &file system type"
-upd:"Show &file system type"
+"Pokaż system &plików"
 "Mostrar sistema de archivos"
 "Zobraziť ty&p systému súborov"
 "Mostra &File System"
 "Показувати тип &файлової системи"
+"Адлюстроўваць тып &файлавай сістэмы"
+upd:"Show &file system type"
 
 MChangeDriveShowSize
 "Показывать &размер"
@@ -16358,23 +15941,27 @@ MChangeDriveShowSize
 "Zobrazi&t velikost"
 "&Größe anzeigen"
 upd:"Show &size"
-upd:"Show &size"
+"Pokaż &pojemność"
 "Mostrar tamaño"
 "Zobrazi&ť veľkosť"
 "Mostra Dimensio&ne"
 "Показувати &розмір"
+"Адлюстроўваць паме&р"
+upd:"Show &size"
 
 MChangeDriveShowSizeFloat
 "Показывать ра&змер в виде десятичной дроби"
-"Show size as a decimal fraction"
+"Show si&ze as a decimal fraction"
+"Zobrazit velikost jako desetinný zlomek"
 upd:"Show size as a decimal fraction"
 upd:"Show size as a decimal fraction"
-upd:"Show size as a decimal fraction"
-upd:"Show size as a decimal fraction"
+"Wielkość w jednostkach dziesiętnych"
 "Mostrar tamaño como fracción decimal"
 "Zobraz veľkosť ako zlomok desiatky"
-upd:"Show size as a decimal fraction"
+"Mostra Dimensione Come Frazione Decimale"
 "Показувати ро&змір у вигляді десяткового дробу"
+"Адлюстро&ўваць памер у выглядзе дзесяткавай дробі"
+upd:"Show si&ze as a decimal fraction"
 
 MChangeDriveShowRemovableDrive
 "Показывать параметры см&енных дисков"
@@ -16382,11 +15969,13 @@ MChangeDriveShowRemovableDrive
 "Zobrazit paramet&ry vyměnitelné jednotky"
 "Parameter der &Wechsellaufwerkes anzeigen"
 upd:"Show &removable drive parameters"
-upd:"Show &removable drive parameters"
+"Pok&aż parametry dysków wyjmowalnych"
 "Mostrar parámetros de unidad removible"
 "Zobraziť paramet&re vymeniteľnej jednotky"
 "Mostra Parametri Disc&hi USB"
 "Показувати параметри знім&них дисків"
+"Адлюстроўваць налады зм&енных дыскаў"
+upd:"Show &removable drive parameters"
 
 MChangeDriveShowPlugins
 "Показывать &плагины"
@@ -16394,23 +15983,27 @@ MChangeDriveShowPlugins
 "Zobrazit mo&duly"
 "&Plugins anzeigen"
 upd:"Show &plugins"
-upd:"Show &plugins"
+"Pokaż &wtyczki"
 "Mostrar com&plementos"
 "Zobraziť mo&duly"
 "Mostra &Plugins"
 "Показувати &плагіни"
+"Адлюстроўваць &дадаткі"
+upd:"Show &plugins"
 
 MChangeDriveSortPluginsByHotkey
 "Сортировать плагины по горячей клавише"
-"Sort plugins by hotkey"
+"Sort plugins by &hotkey"
 "Řadit moduly podle zkratky"
 "Plugins mit dem Hotkey sortieren"
 upd:"Sort plugins by hotkey"
-upd:"Sort plugins by hotkey"
+"Sortuj wtyczki wg skrótów"
 "Ordenar complementos por tecla de atajo"
 "Triediť moduly podľa skratky"
 "Ordina Plugin In Base Al T&asto Rapido"
 "Сортувати плагіни по гарячій клавіші"
+"Парадкаваць дадаткі па хуткім клавішам"
+upd:"Sort plugins by &hotkey"
 
 MChangeDriveShowCD
 "Показывать параметры &компакт-дисков"
@@ -16418,11 +16011,13 @@ MChangeDriveShowCD
 "Zobrazit parametry &CD jednotky"
 "&CD Parameter anzeigen"
 upd:"Show &CD drive parameters"
-upd:"Show &CD drive parameters"
+"Pokaż parametry napędów &CD"
 "Mostrar parámetros unidad de &CD\DVD\BD"
 "Zobraziť parametre jednotky &CD"
 "Mostra Parametri &CD/DVD"
 "Показувати параметри &компакт-дисків"
+"Адлюстроўваць налады &кампакт-дыскаў"
+upd:"Show &CD drive parameters"
 
 MChangeDriveShowNetworkDrive
 "Показывать параметры се&тевых дисков"
@@ -16430,23 +16025,27 @@ MChangeDriveShowNetworkDrive
 "Zobrazit parametry sí&ťové jednotky"
 "Parameter der Netzlaufwerkes anzeigen"
 upd:"Show ne&twork drive parameters"
-upd:"Show ne&twork drive parameters"
+"Pokaż parametry &dysków sieciowych"
 "Mostrar parámetros unidades de red"
 "Zobraziť parametre sie&ťovej jednotky"
 "Mostra Parametri Re&te"
 "Показувати параметри мережевих дисків"
+"Адлюстроўваць налады се&ткавых дыскаў"
+upd:"Show n&etwork drive parameters"
 
-MChangeDriveMenuFooter
-"Del,Shift+Del,F3,F4,F9"
-"Del,Shift+Del,F3,F4,F9"
-"Del,Shift+Del,F3,F4,F9"
-"Entf,Shift+Entf,F3,F4,F9"
-"Del,Shift+Del,F3,F4,F9"
-"Del,Shift+Del,F3,F4,F9"
-"Del,Shift+Del,F3,F4,F9"
-"Del,Shift+Del,F3,F4,F9"
-"[Canc] [Shift-Canc] [F3] [F4] [F9]"
-"Del,Shift+Del,F3,F4,F9"
+MChangeDriveShowVirtualDisk
+"Определять виртуальные диски"
+"Detect virtual disks"
+upd:"Detect virtual disks"
+upd:"Detect virtual disks"
+upd:"Detect virtual disks"
+"Wykrywaj dyski wrtualne"
+upd:"Detect virtual disks"
+upd:"Detect virtual disks"
+upd:"Detect virtual disks"
+"Визначати віртуальні диски"
+"Вызначаць віртуальныя дыскі"
+upd:"Detect virtual disks"
 
 MSearchFileTitle
 l:
@@ -16460,30 +16059,22 @@ l:
 "Hľadať"
 "Ricerca"
 "Пошук"
-
-MCannotCreateListFile
-"Ошибка создания списка файлов"
-"Cannot create list file"
-"Nelze vytvořit soubor se seznamem"
-"Dateiliste konnte nicht erstellt werden"
-"A listafájl nem hozható létre"
-"Nie mogę utworzyć listy plików"
-"No se puede crear archivo de lista"
-"Nemôžem vytvoriť súbor so zoznamom"
-"Non Posso Creare La Lista Dei Files"
-"Помилка створення списку файлів"
+"Пошук"
+"Paieška"
 
 MCannotCreateListTemp
-"(невозможно создать временный файл для списка)"
-"(cannot create temporary file for list)"
-"(nelze vytvořit dočasný soubor pro seznam)"
-"(Fehler beim Anlegen einer temporären Datei für Liste)"
-"(a lista átmeneti fájl nem hozható létre)"
-"(nie można utworzyć pliku tymczasowego dla listy)"
-"(no se puede crear archivo temporal para lista)"
-"(nemôžem vytvoriť dočasný súbor pre zoznam)"
-"(Non Posso Creare Il File Temporaneo Per La Lista)"
-"(Неможливо створити тимчасовий файл для списку)"
+"Невозможно создать временный файл для списка файлов"
+"Cannot create a temporary file for the list of files"
+"Nelze vytvořit dočasný soubor pro seznam souborů"
+"Fehler beim Anlegen einer temporären Datei für die Liste der Dateien"
+"Nem sikerült ideiglenes fájlt létrehozni a fájllistához"
+"Nie można utworzyć pliku tymczasowego dla listy plików"
+"No se puede crear archivo temporal para la lista de archivos"
+"Nemôžem vytvoriť dočasný súbor pre zoznam súborov"
+"Non Posso Creare Il File Temporaneo Per La Lista Dei Files"
+"Неможливо створити тимчасовий файл для списку файлів"
+"Немагчыма стварыць часовы файл для спісу файлаў"
+"Negaliu sukurti laikino failo failų sąrašui"
 
 MDragFiles
 l:
@@ -16497,6 +16088,8 @@ l:
 "{0} súborov"
 "{0} Files"
 "{0} файлів"
+"{0} файлаў"
+"{0} failai"
 
 MDragMove
 "Перенос {0}"
@@ -16509,6 +16102,8 @@ MDragMove
 "Presunúť {0}"
 "Muovi {0}"
 "Переміщення {0}"
+"Перанос {0}"
+"Perkelti {0}"
 
 MDragCopy
 "Копирование {0}"
@@ -16521,6 +16116,8 @@ MDragCopy
 "Kopírovať {0}"
 "Copia {0}"
 "Копіювання {0}"
+"Капіяванне {0}"
+"Kopijuoti {0}"
 
 MProcessListTitle
 l:
@@ -16534,18 +16131,8 @@ l:
 "Zoznam úloh"
 "Lista Processi Attivi"
 "Список завдань"
-
-MProcessListBottom
-"Редактирование: Del,Ctrl+R,F2"
-"Edit: Del,Ctrl+R,F2"
-"Změnit: Del,Ctrl+R,F2"
-"Tasten: Entf,Strg+R,F2"
-"Szerk.: Del,Ctrl+R,F2"
-"Edycja: Del,Ctrl+R,F2"
-"Editar: Del,Ctrl+R,F2"
-"Upraviť: Del,Ctrl+R,F2"
-"Edita: [Canc] [Ctrl-R] [F2]"
-"Редагування: Del,Ctrl+R,F2"
+"Спіс &заданняў"
+"Užduočių sąrašas"
 
 MKillProcessTitle
 "Удаление задачи"
@@ -16558,6 +16145,8 @@ MKillProcessTitle
 "Zrušiť úlohu"
 "Termina Il Processo"
 "Видалення завдання"
+"Забіццё задання"
+"Panaikinti užduotį"
 
 MAskKillProcess
 "Вы хотите удалить выбранную задачу?"
@@ -16570,6 +16159,8 @@ MAskKillProcess
 "Chcete zrušiť zvolenú úlohu?"
 "Vuoi Eliminare I Processi Selezionati?"
 "Ви бажаєте видалити вибране завдання?"
+"Вы жадаеце выдаліць абранае заданне?"
+"Ar norite uždaryti pažymėtą programą?"
 
 MKillProcessWarning
 "Вы потеряете всю несохраненную информацию этой программы"
@@ -16582,6 +16173,8 @@ MKillProcessWarning
 "V tomto programe sa stratia neuložené informácie"
 "Vuoi Perdere Ogni Informazione Non Salvata Di Questo Processo"
 "Ви втратите всю незбережену інформацію цієї програми"
+"Вы згубіце ўсі незахаваныя звесткі гэтай праграмы"
+"Jūs prarasite visą neišsaugota informaciją šioje programoje"
 
 MKillProcessKill
 "Удалить"
@@ -16594,6 +16187,8 @@ MKillProcessKill
 "Zrušiť"
 "Termina!"
 "видалити"
+"Забіць"
+"Uždaryti"
 
 MCannotKillProcess
 "Указанную задачу удалить не удалось"
@@ -16601,11 +16196,13 @@ MCannotKillProcess
 "Nelze ukončit zvolenou úlohu"
 "Task konnte nicht beendet werden"
 "A programot nem lehet kilőni"
-"Nie mogę zakończyć wybranego zadania"
+"Nie można zakończyć wybranego zadania"
 "No se puede terminar la tarea seleccionada"
 "Nemôžem ukončiť zvolenú úlohu"
 "Non Posso Eliminare Il Processo Specificato"
 "Вказане завдання видалити не вдалося"
+"Немагчыма забіць азначанае заданне"
+"Negaliu uždaryti nurodytos programos"
 
 MCannotKillProcessPerm
 "Вы не имеет права удалить этот процесс."
@@ -16618,6 +16215,8 @@ MCannotKillProcessPerm
 "Nemáte oprávnenie zrušiť tento proces."
 "Non Avete Alcun Permesso Per Terminare Il Processo"
 "Ви не маєте права видалити цей процес."
+"У вас няма дазволу забіць гэты працэс."
+upd:"You have no permission to kill this process."
 
 MQuickViewTitle
 l:
@@ -16631,174 +16230,8 @@ l:
 "Rýchle info"
 "Vista Rapida"
 "Швидкий перегляд"
-
-MQuickViewFolder
-"Папка"
-"Folder"
-"Adresář"
-"Verzeichnis"
-"Mappa"
-"Folder"
-"Directorio"
-"Priečinok"
-"Cartella"
-"Папка"
-
-MQuickViewJunction
-"Связь"
-"Junction"
-"Křížení"
-"Knotenpunkt"
-"Csomópont"
-"Powiązanie"
-"Empalme"
-"Kríženie"
-"Giunzione"
-"З'єднання"
-
-MQuickViewSymlink
-"Ссылка"
-"Symlink"
-"Symbolický link"
-"Symlink"
-"Szimlink"
-"Link"
-"EnlcSimb"
-"Symbolické prepojenie"
-"Simbolico"
-"Посилання"
-
-MQuickViewVolMount
-"Том"
-"Volume"
-"Svazek"
-"Datenträger"
-"Kötet"
-"Napęd"
-"Volumen"
-"Zväzok"
-"Volume"
-"Том"
-
-MQuickViewDFS
-"DFS"
-"DFS"
-"DFS"
-"DFS"
-"DFS"
-"DFS"
-"DFS"
-"DFS"
-"DFS"
-"DFS"
-
-MQuickViewDFSR
-"DFSR"
-"DFSR"
-"DFSR"
-"DFSR"
-"DFSR"
-"DFSR"
-"DFSR"
-"DFSR"
-"DFSR"
-"DFSR"
-
-MQuickViewHSM
-"HSM"
-"HSM"
-"HSM"
-"HSM"
-"HSM"
-"HSM"
-"HSM"
-"HSM"
-"HSM"
-"HSM"
-
-MQuickViewHSM2
-"HSM2"
-"HSM2"
-"HSM2"
-"HSM2"
-"HSM2"
-"HSM2"
-"HSM2"
-"HSM2"
-"HSM2"
-"HSM2"
-
-MQuickViewSIS
-"SIS"
-"SIS"
-"SIS"
-"SIS"
-"SIS"
-"SIS"
-"SIS"
-"SIS"
-"SIS"
-"SIS"
-
-MQuickViewWIM
-"WIM"
-"WIM"
-"WIM"
-"WIM"
-"WIM"
-"WIM"
-"WIM"
-"WIM"
-"WIM"
-"WIM"
-
-MQuickViewCSV
-"CSV"
-"CSV"
-"CSV"
-"CSV"
-"CSV"
-"CSV"
-"CSV"
-"CSV"
-"CSV"
-"CSV"
-
-MQuickViewDEDUP
-"DEDUP"
-"DEDUP"
-"DEDUP"
-"DEDUP"
-"DEDUP"
-"DEDUP"
-"DEDUP"
-"DEDUP"
-"DEDUP"
-"DEDUP"
-
-MQuickViewNFS
-"NFS"
-"NFS"
-"NFS"
-"NFS"
-"NFS"
-"NFS"
-"NFS"
-"NFS"
-"NFS"
-"NFS"
-
-MQuickViewPlaceholder
-"Заполнитель"
-"Placeholder"
-upd:"Placeholder"
-"Platzhalter"
-upd:"Placeholder"
-upd:"Placeholder"
-"Marcador de posición"
-"Zástupca"
-upd:"Placeholder"
-"Покажчик місця заповнення"
+"Хуткі прагляд"
+"Vaizdas"
 
 MQuickViewUnknownReparsePoint
 "Неизвестная точка повторного анализа"
@@ -16806,11 +16239,13 @@ MQuickViewUnknownReparsePoint
 upd:"Unknown reparse point"
 "Unbekannter Analysepunkt"
 upd:"Unknown reparse point"
-upd:"Unknown reparse point"
+"Nieznany punkt powiązania"
 "Punto de análisis desconocido"
 "Neznáme rozšírené informácie (ReparsePoint)"
 "Punto Reparse Ignoto"
 "Невідома точка повторного аналізу"
+"Невядомая кропка паўторнага аналізу"
+upd:"Unknown reparse point"
 
 MQuickViewNoData
 "(нет данных)"
@@ -16823,6 +16258,8 @@ MQuickViewNoData
 "(dáta nie sú k dispozícii)"
 "(dati sconosciuti)"
 "(нема даних)"
+"(няма дадзеных)"
+upd:"(data not available)"
 
 MQuickViewFolders
 "Папок:"
@@ -16830,11 +16267,13 @@ MQuickViewFolders
 "Adresáře:"
 "Ordner:"
 "Mappák száma:"
-"Katalogi:"
+"Foldery:"
 "Directorios:"
 "Priečinky:"
 "Cartelle:"
 "Папок:"
+"Каталогаў:"
+"Katalogai:"
 
 MQuickViewFiles
 "Файлов:"
@@ -16847,6 +16286,8 @@ MQuickViewFiles
 "Súbory:"
 "Files:"
 "Файлів:"
+"Файлаў:"
+"Failai:"
 
 MQuickViewBytes
 "Размер файлов:"
@@ -16859,6 +16300,8 @@ MQuickViewBytes
 "Veľkosť súborov:"
 "Dimensione Files:"
 "Розмір файлів:"
+"Памер файлаў:"
+"Failų dydis"
 
 MQuickViewAllocated
 "Выделенный размер:"
@@ -16866,11 +16309,13 @@ MQuickViewAllocated
 "Alokovaná velikost:"
 "Zugewiesene Speichergröße:"
 upd:"Allocated size:"
-upd:"Allocated size:"
+"Przydzielone miejsce:"
 "Tamaño alojado:"
 "Alokovaná veľkosť:"
 "Dim. Allocata:"
 "Виділений розмір:"
+"Памер размеркавання:"
+"Suarchyvuotų dydis"
 
 MQuickViewCluster
 "Размер кластера:"
@@ -16883,6 +16328,8 @@ MQuickViewCluster
 "Veľkosť klastra:"
 "Dimensione Culster:"
 "Розмір кластера:"
+"Памер кластара:"
+"Klasterio dydis"
 
 MQuickViewSlack
 "Остатки кластеров:"
@@ -16895,6 +16342,8 @@ MQuickViewSlack
 "Mŕtve miesto:"
 "Dimensione Reale:"
 "Залишки кластерів:"
+"Рэшткі кластара:"
+upd:"Files slack:"
 
 MQuickViewMFTOverhead
 "Занято MFT:"
@@ -16902,11 +16351,13 @@ MQuickViewMFTOverhead
 upd:"MFT overhead:"
 "MFT Verwaltungsdaten:"
 upd:"MFT overhead:"
-upd:"MFT overhead:"
+"Utracone miejsce MFT:"
 "Gasto adicional MFT:"
 "MFT režijná veľkosť:"
 "Perdita Spazio MFT:"
 "Зайнято MFT:"
+"Занята MFT:"
+upd:"MFT overhead:"
 
 MSetAttrTitle
 l:
@@ -16920,6 +16371,8 @@ l:
 "Atribúty"
 "Attributi"
 "Атрибути"
+"Атрыбуты"
+"Atributai"
 
 MSetAttrFor
 "Изменить файловые атрибуты"
@@ -16932,6 +16385,8 @@ MSetAttrFor
 "Zmena atributov súboru pre"
 "Cambia Gli Attributi Per"
 "Змінити файлові атрибути"
+"Змяніць файлавыя атрыбуты"
+"Keisti atributus"
 
 MSetAttrSelectedObjects
 "выбранных объектов"
@@ -16944,6 +16399,8 @@ MSetAttrSelectedObjects
 "vybrané objekty"
 "Oggetti Selezionati"
 "вибраних об'єктів"
+"Азначаных аб'ектаў"
+upd:"selected objects"
 
 MSetAttrHardLinks
 "жёстких ссылок"
@@ -16956,10 +16413,12 @@ MSetAttrHardLinks
 "pevné prepojenia"
 "Hard Links"
 "жорстких посилань"
+"жорскіх спасылак"
+upd:"hard links"
 
 MSetAttrJunction
 "Связь:"
-"Junction:"
+"&Junction:"
 "Křížení:"
 "Knotenpunkte:"
 "Сsomópont:"
@@ -16968,6 +16427,8 @@ MSetAttrJunction
 "Kríženie:"
 "Incrocio:"
 "З'єднання:"
+"Сувязь:"
+upd:"&Junction:"
 
 MSetAttrSymlink
 "Ссылка:"
@@ -16980,6 +16441,8 @@ MSetAttrSymlink
 "Prepojenie:"
 "Simbolico:"
 "Посилання:"
+"Спасылак:"
+upd:"Symlink:"
 
 MSetAttrVolMount
 "Том:"
@@ -16987,25 +16450,43 @@ MSetAttrVolMount
 "Svazek:"
 "Datenträger:"
 "Kötet:"
-"Punkt zamontowania:"
+"Wolumen:"
 "Volumen:"
 "Zväzok:"
 "Volume:"
 "Том:"
+"Дыск:"
+upd:"Volume:"
 
 MSetAttrDfsTargets
-"DFS цели"
-"DFS Targets"
-upd:"DFS Targets"
-"DFS Ziele"
-upd:"DFS Targets"
-upd:"DFS Targets"
-"DFS Destinos"
-"DFS ciele"
-"Destinazioni DFS"
-"DFS признач."
+"DFS цели:"
+"DFS Targets:"
+"DFS cíly:"
+"DFS Ziele:"
+upd:"DFS Targets:"
+"Cel DFS:"
+"DFS Destinos:"
+"DFS ciele:"
+"Destinazioni DFS:"
+"DFS цілі:"
+"DFS мэты:"
+upd:"DFS Targets:"
 
-MSetAttrUnknownJunction
+MSetAttrAppExecLink
+upd:"App Alias:"
+"App Alias:"
+upd:"App Alias:"
+upd:"App Alias:"
+upd:"App Alias:"
+"Alias aplikacji:"
+upd:"App Alias:"
+upd:"App Alias:"
+upd:"App Alias:"
+upd:"App Alias:"
+upd:"App Alias:"
+upd:"App Alias:"
+
+MSetAttrUnknownReparsePoint
 "(нет данных)"
 "(data not available)"
 "(data nejsou k dispozici)"
@@ -17016,18 +16497,22 @@ MSetAttrUnknownJunction
 "(dáta nie sú k dispozícii)"
 "(dati sconosciuti)"
 "(нема даних)"
+"(няма дадзеных)"
+upd:"(data not available)"
 
-MSetAttrRO
+MSetAttrReadOnly
 "&Только для чтения"
 "&Read only"
 "&Pouze pro čtení"
 "Sch&reibschutz"
 "&Csak olvasható"
-"&Tylko do odczytu"
+"Tylko do &odczytu"
 "Sólo &lectura"
 "&Len na čítanie"
 "&Sola-Lettura"
 "&Лише для читання"
+"&Толькі для чытання"
+upd:"&Read only"
 
 MSetAttrArchive
 "&Архивный"
@@ -17040,6 +16525,8 @@ MSetAttrArchive
 "&Archivovať"
 "A&rchivio"
 "&Архівний"
+"З&апакаваны"
+upd:"&Archive"
 
 MSetAttrHidden
 "Скр&ытый"
@@ -17052,6 +16539,8 @@ MSetAttrHidden
 "&Skrytý"
 "&Nascosto"
 "Пр&ихований"
+"Зхаван&ы"
+upd:"&Hidden"
 
 MSetAttrSystem
 "С&истемный"
@@ -17064,6 +16553,8 @@ MSetAttrSystem
 "S&ystémový"
 "S&istema"
 "С&истемний"
+"С&істэмны"
+upd:"&System"
 
 MSetAttrCompressed
 "С&жатый"
@@ -17076,6 +16567,8 @@ MSetAttrCompressed
 "&Komprimovaný"
 "&Compresso"
 "С&тиснений"
+"З&ціснуты"
+upd:"&Compressed"
 
 MSetAttrEncrypted
 "За&шифрованный"
@@ -17088,6 +16581,8 @@ MSetAttrEncrypted
 "&Šifrovaný"
 "Cri&ptato"
 "За&шифрований"
+"Та&йнапісны"
+upd:"&Encrypted"
 
 MSetAttrNotIndexed
 "Неиндексируемый"
@@ -17100,34 +16595,40 @@ MSetAttrNotIndexed
 "Neinde&xovaný"
 "Non Id&dicizzato"
 "Неіндексований"
+"Неін&дэксаваны"
+upd:"Not &indexed"
 
 MSetAttrSparse
 "Разреженный"
-"Sparse"
+"&Sparse"
 "Rozptýlený"
 upd:"Reserve"
 "Ritk&ított"
-upd:"Sparse"
+"Rzadki"
 "Dis&perso"
 "Rozptýlený"
 "Sp&arso"
 "Розріджений"
+"Разрэджаны"
+upd:"&Sparse"
 
-MSetAttrTemp
+MSetAttrTemporary
 "Временный"
-"Temporary"
+"&Temporary"
 "Dočasný"
 "Temporär"
 "&Átmeneti"
-"&Tymczasowy"
+"T&ymczasowy"
 "Temporal"
 "Dočasný"
 "&Temporaneo"
 "Тимчасовий"
+"Часовы"
+upd:"&Temporary"
 
 MSetAttrOffline
 "Автономный"
-"Offline"
+"&Offline"
 "Offline"
 "Offline"
 "O&ffline"
@@ -17136,22 +16637,26 @@ MSetAttrOffline
 "Offline"
 "Non In &Linea"
 "Автономний"
+"Аўтаномны"
+upd:"&Offline"
 
 MSetAttrReparsePoint
 "Точка повторного анализа"
-"Reparse point"
+"&Reparse point"
 "Reparse point"
 "Analysepunkt"
 upd:"Reparse point"
-upd:"Reparse point"
+"Punkt analizy"
 "Punto de análisis"
 "Reparse point"
 "P&unto Di Reparse"
 "Точка повторного аналізу"
+"Кропка паўторнай апрацоўкі"
+upd:"&Reparse point"
 
 MSetAttrVirtual
 "Виртуальный"
-"Virtual"
+"&Virtual"
 "Virtuální"
 "Virtuell"
 "&Virtuális"
@@ -17160,30 +16665,120 @@ MSetAttrVirtual
 "Virtuálny"
 "&Virtuale"
 "Віртуальний"
+"Уяўны"
+upd:"&Virtual"
 
 MSetAttrIntegrityStream
 "Поток целостности"
+"&Integrity stream"
 "Integrity stream"
-upd:"Integrity stream"
 "Integrität"
 upd:"Integrity stream"
-upd:"Integrity stream"
+"Integralny strumień"
 "Cadena de integridad"
 "Integrita dát"
-upd:"Integrity stream"
+"Integrità Flusso"
 "Потік цілісності"
+"Струмень цэласнасці"
+upd:"&Integrity stream"
 
 MSetAttrNoScrubData
 "Нет данных очистки"
+"&No scrub data"
 "No scrub data"
-upd:"No scrub data"
 "Keine Datenbereinigung"
 upd:"No scrub data"
-upd:"No scrub data"
+"Brak danych kontrolnych"
 "No hay datos depurados"
 "Žiadne dáta pre skener integrity dát"
-upd:"No scrub data"
+"Nessun Dato Scrub"
 "Нема даних очищення"
+"Няма дадзеных ачысткі"
+upd:"&No scrub data"
+
+MSetAttrPinned
+"Закреплённый"
+"&Pinned"
+"Připnuto"
+upd:"Pinned"
+upd:"Pinned"
+"Przypięty"
+"Anclado"
+upd:"Pinned"
+upd:"Pinned"
+"Закріплений"
+upd:"Pinned"
+upd:"&Pinned"
+
+MSetAttrUnpinned
+"Откреплённый"
+"&Unpinned"
+"Odepnuto"
+upd:"Unpinned"
+upd:"Unpinned"
+"Odpiety"
+"Desanclado"
+upd:"Unpinned"
+upd:"Unpinned"
+"Відкріплений"
+upd:"Unpinned"
+upd:"&Unpinned"
+
+MSetAttrRecallOnOpen
+upd:"Recall on open"
+"R&ecall on open"
+"Zavolat při otevření"
+upd:"Recall on open"
+upd:"Recall on open"
+"Przywołaj na otwarcie"
+upd:"Recall on open"
+upd:"Recall on open"
+upd:"Recall on open"
+upd:"Recall on open"
+upd:"Recall on open"
+upd:"R&ecall on open"
+
+MSetAttrRecallOnDataAccess
+upd:"Recall on data access"
+"Rec&all on data access"
+"Zavolat při přístupu k datům"
+upd:"Recall on data access"
+upd:"Recall on data access"
+"Przywołaj na dostęp danych"
+upd:"Recall on data access"
+upd:"Recall on data access"
+upd:"Recall on data access"
+upd:"Recall on data access"
+upd:"Recall on data access"
+upd:"Rec&all on data access"
+
+MSetAttrStrictlySequential
+upd:"Strictly sequential"
+"Strictly se&quential"
+"Striktně sekvenční"
+upd:"Strictly sequential"
+upd:"Strictly sequential"
+"Czysto sekwencyjny"
+upd:"Strictly sequential"
+upd:"Strictly sequential"
+upd:"Strictly sequential"
+upd:"Strictly sequential"
+upd:"Strictly sequential"
+upd:"Strictly se&quential"
+
+MSetAttrMore
+"Ещё"
+"&More"
+"Více"
+"Mehr"
+"Továbbiak"
+"Więcej"
+"Más"
+"Viac"
+"Altro"
+"Ще"
+"Больш"
+upd:"&More"
 
 MSetAttrSubfolders
 "Обрабатывать &вложенные папки"
@@ -17191,35 +16786,27 @@ MSetAttrSubfolders
 "Zpracovat i po&dadresáře"
 "Unterordner miteinbe&ziehen"
 "Az almappákon is"
-"Przetwarzaj &podkatalogi"
+"Przetwarzaj &podfoldery"
 "Procesar sub&directorios"
 "Spracovať aj po&dpriečinky"
 "Elabora Sott&o Cartelle"
 "Обробляти &вкладені папки"
+"Апрацоў&ваць укладзеныя каталогі"
+"Apdoroti pa&katalogius"
 
 MSetAttrOwner
 "Владелец:"
-"Owner:"
+"Owner&:"
 "Vlastník:"
 "Besitzer:"
 "Tulajdonos:"
-"Właściciel:"
+"Właścicie&l:"
 "Dueño:"
 "Vlastník:"
 "Proprietario:"
 "Власник:"
-
-MSetAttrOwnerMultiple
-"(несколько значений)"
-"(multiple values)"
-"(více hodnot)"
-"(mehrere Bedeutungen)"
-upd:"(multiple values)"
-upd:"(multiple values)"
-"(valores múltiples)"
-"(viacero hodnôt)"
-"(valori multipli)"
-"(декілька значень)"
+"Уладальнік:"
+upd:"Owner&:"
 
 MSetAttrModification
 "Время последней за&писи:"
@@ -17227,11 +16814,13 @@ MSetAttrModification
 "Čas posle&dního zápisu:"
 "Letzte &Schreibzeit:"
 upd:"Last &write time:"
-upd:"Last &write time:"
+"Czas &zapisu:"
 "&Ultima hora escritura:"
 "Čas posle&dného zápisu:"
 "Data &Modifica"
 "Час останнього за&пису:"
+"Час апошняга за&пісу:"
+"&Modifikuotas laikas:"
 
 MSetAttrCreation
 "Время со&здания:"
@@ -17244,6 +16833,8 @@ MSetAttrCreation
 "Čas v&ytvorenia:"
 "Data Cr&eazione"
 "Час створ&ення:"
+"Час &стварэння:"
+"Su&kurtas laikas:"
 
 MSetAttrLastAccess
 "Время последнего &доступа:"
@@ -17256,6 +16847,8 @@ MSetAttrLastAccess
 "Čas posledného prí&stupu:"
 "Data Ultimo Accesso"
 "Час останнього &доступу:"
+"Час апошняга &доступу:"
+"&Naudotas laikas:"
 
 MSetAttrChange
 "Время из&менения:"
@@ -17263,11 +16856,13 @@ MSetAttrChange
 "Čas změny:"
 "Änderungsdatum:"
 upd:"Change time:"
-upd:"Change time:"
+"Zmień czas:"
 "Cambiar &hora:"
 "Čas zmeny:"
 "Cambia Data&/Ora:"
 "Час з&мінення:"
+"Час з&мены:"
+upd:"Chan&ge time:"
 
 MSetAttrOriginal
 "Исход&ное"
@@ -17275,11 +16870,13 @@ MSetAttrOriginal
 "&Originální"
 "&Original"
 "&Eredeti"
-"Wstaw &oryginalny"
+"Oryginal&ny"
 "Ori&ginal"
 "&Originálny"
 "Data Ori&ginale"
 "Початковий"
+"Першас&ны"
+upd:"&Original"
 
 MSetAttrCurrent
 "Те&кущее"
@@ -17287,11 +16884,13 @@ MSetAttrCurrent
 "Akt&uální"
 "Akt&uell"
 "Aktuál&is"
-"Wstaw &bieżący"
+"&Bieżący"
 "Ac&tual"
 "Akt&uálny"
 "C&orrente"
 "Поточний"
+"Бя&гучы"
+"&Einamas"
 
 MSetAttrBlank
 "Сбр&ос"
@@ -17299,11 +16898,13 @@ MSetAttrBlank
 "P&rázdný"
 "L&eer"
 "&Üres"
-"&Wyczyść"
+"Wy&czyść"
 "&Vaciar"
 "P&rázdny"
 "&Vuoto"
 "Скинути"
+"Зк&ід"
+upd:"&Blank"
 
 MSetAttrSet
 "Установить"
@@ -17316,55 +16917,65 @@ MSetAttrSet
 "Nastaviť"
 "&Imposta"
 "Установити"
+"Ужыць"
+"Keisti"
 
-MSetAttrDateTitle1
+MSetAttrDateTitleMDY
 l:
 "ММ{0}ДД{0}ГГГГГ"
 "MM{0}DD{0}YYYYY"
 "MM{0}DD{0}RRRRR"
 upd:"MM{0}TT{0}JJJJJ"
 upd:"HH{0}NN{0}ÉÉÉÉÉ"
-upd:"MM{0}DD{0}RRRRR"
+"MM{0}DD{0}RRRRR"
 "MM{0}DD{0}AAAAA"
 "MM{0}DD{0}RRRRR"
 "MM{0}DD{0}YYYYY"
 "ММ{0}ДД{0}РРРРР"
+"ММ{0}ДД{0}ГГГГГ"
+upd:"MM{0}DD{0}YYYYY"
 
-MSetAttrDateTitle2
+MSetAttrDateTitleDMY
 "ДД{0}ММ{0}ГГГГГ"
 "DD{0}MM{0}YYYYY"
 "DD{0}MM{0}RRRRR"
 upd:"TT{0}MM{0}JJJJJ"
 upd:"NN{0}HH{0}ÉÉÉÉÉ"
-upd:"DD{0}MM{0}RRRRR"
+"DD{0}MM{0}RRRRR"
 "DD{0}MM{0}AAAAA"
 "DD{0}MM{0}RRRRR"
 "DD{0}MM{0}YYYYY"
 "ДД{0}ММ{0}РРРРР"
+"ДД{0}ММ{0}ГГГГГ"
+upd:"DD{0}MM{0}YYYYY"
 
-MSetAttrDateTitle3
+MSetAttrDateTitleYMD
 "ГГГГГ{0}ММ{0}ДД"
 "YYYYY{0}MM{0}DD"
 "RRRRR{0}MM{0}DD"
 upd:"JJJJJ{0}MM{0}TT"
 upd:"ÉÉÉÉÉ{0}HH{0}NN"
-upd:"RRRRR{0}MM{0}DD"
+"RRRRR{0}MM{0}DD"
 "AAAAA{0}MM{0}DD"
 "RRRRR{0}MM{0}DD"
 "YYYYY{0}MM{0}DD"
 "РРРРР{0}ММ{0}ДД"
+"ГГГГГ{0}ММ{0}ДД"
+upd:"YYYYY{0}MM{0}DD"
 
 MSetAttrTimeTitle
-"чч{0}мм{0}сс{1}мс"
-"hh{0}mm{0}ss{1}ms"
-"hh{0}mm{0}ss{1}ms"
-upd:"hh{0}mm{0}ss{1}ms"
-upd:"óó{0}pp{0}mm{1}ms"
-upd:"gg{0}mm{0}ss{1}ms"
-"hh{0}mm{0}ss{1}ms"
-"hh{0}mm{0}ss{1}ms"
-"hh{0}mm{0}ss{1}ms"
-"гг{0}хх{0}сс{1}мс"
+"чч{0}мм{0}сс"
+"hh{0}mm{0}ss"
+"hh{0}mm{0}ss"
+upd:"hh{0}mm{0}ss"
+upd:"óó{0}pp{0}mm"
+"gg{0}mm{0}ss"
+upd:"hh{0}mm{0}ss"
+upd:"hh{0}mm{0}ss"
+upd:"hh{0}mm{0}ss"
+"гг{0}хх{0}сс"
+"чч{0}мм{0}сс"
+upd:"hh{0}mm{0}ss"
 
 MSetAttrSystemDialog
 "Системные &свойства"
@@ -17372,11 +16983,13 @@ MSetAttrSystemDialog
 "Vlastnosti systému"
 "Systemeigenschaften"
 upd:"System properties"
-upd:"System properties"
+"Właściwości systemu"
 "Propiedades del sistema"
 "Vlastnosti systému"
 "Proprietà di Sistema"
 "Системні вла&стивості"
+"Сістэмныя ула&сцівасці"
+upd:"System &properties"
 
 MSetAttrSetting
 l:
@@ -17390,6 +17003,8 @@ l:
 "Nastavenie atribútov súboru pre"
 "Imposta Attributi Per"
 "Установка файлових атрибутів для"
+"Наладзіць файлавыя атрыбуты для"
+"Uždedu atributus failui"
 
 MSetAttrCannotFor
 "Ошибка установки атрибутов для"
@@ -17397,11 +17012,13 @@ MSetAttrCannotFor
 "Nelze nastavit atributy pro"
 "Konnte Dateiattribute nicht setzen für"
 "Az attribútumok nem állíthatók be:"
-"Nie mogę ustawić atrybutów dla"
+"Nie można ustawić atrybutów dla"
 "No se pueden poner atributos para"
 "Nemôžem nastaviť atribúty pre"
 "Non Posso Settare Gli Attributi Per"
 "Помилка установки атрибутів для"
+"Немагчыма ужыць атрыбуты для"
+"Negaliu uždėti atributų failui"
 
 MSetAttrCompressedCannotFor
 "Не удалось установить атрибут СЖАТЫЙ для"
@@ -17409,11 +17026,13 @@ MSetAttrCompressedCannotFor
 "Nelze nastavit atribut KOMPRIMOVANÝ pro"
 "Konnte Komprimierung nicht setzen für"
 "A TÖMÖRÍTETT attribútum nem állítható be:"
-"Nie mogę ustawić atrybutu SKOMPRESOWANY dla"
+"Nie można ustawić atrybutu SKOMPRESOWANY dla"
 "No se puede poner atributo COMPRIMIDO a"
 "Nemôžem nastaviť atribút KOMPRIMOVANÝ pre"
 "Non Posso Settare Attributo COMPRESSO Per"
 "Не вдалося встановити атрибут СТИСНУТИЙ для"
+"Немагчыма ужыць атрыбут ЗХАВАНЫ для"
+"Negaliu uždėti atributo COMPRESSED failui"
 
 MSetAttrEncryptedCannotFor
 "Не удалось установить атрибут ЗАШИФРОВАННЫЙ для"
@@ -17421,11 +17040,13 @@ MSetAttrEncryptedCannotFor
 "Nelze nastavit atribut ŠIFROVANÝ pro"
 "Konnte Verschlüsselung nicht setzen für"
 "A TITKOSÍTOTT attribútum nem állítható be:"
-"Nie mogę ustawić atrybutu ZASZYFROWANY dla"
+"Nie można ustawić atrybutu ZASZYFROWANY dla"
 "No se puede poner atributo CIFRADO a"
 "Nemôžem nastaviť atribút ŠIFROVANÝ pre"
 "Non Posso Settare Attributo CRIPTATO Per"
 "Не вдалося встановити атрибут ЗАШИФРОВАНИЙ для"
+"Немагчыма ужыць атрыбут ТАЙНАПІСНЫ для"
+"Negaliu uždėti atributo ENCRYPTED failui"
 
 MSetAttrSparseCannotFor
 "Не удалось установить атрибут РАЗРЕЖЁННЫЙ для"
@@ -17433,11 +17054,13 @@ MSetAttrSparseCannotFor
 "Nelze nastavit atribut SPARSE pro"
 upd:"Cannot set attribute SPARSE for"
 "A RITKÍTOTT attribútum nem állítható be:"
-upd:"Cannot set attribute SPARSE for"
+"Nie można ustawić atrybutu SPARSE (RZADKI) dla"
 "No se puede poner atributo DISPERSO para"
 "Nemôžem nastaviť atribút SPARSE pre"
 "Non Posso Settare Attributo SPARSE Per"
 "Не вдалося встановити атрибут РОЗРІДЖЕНИЙ для"
+"Немагчыма ужыць атрыбут РАЗРЭДЖАНЫ для"
+"Negaliu uždėti atributo SPARSE failui"
 
 MSetAttrTimeCannotFor
 "Не удалось установить время файла для"
@@ -17445,11 +17068,13 @@ MSetAttrTimeCannotFor
 "Nelze nastavit čas souboru pro"
 "Konnte Dateidatum nicht setzen für"
 "A dátum nem állítható be:"
-"Nie mogę ustawić czasu pliku dla"
+"Nie można ustawić czasu pliku dla"
 "No se puede poner hora de archivo para"
 "Nemôžem nastaviť čas súboru pre"
 "Non Posso Settare La Data/Ora Per"
 "Не вдалося встановити час файлу для"
+"Немагчыма усталяваць час файла для"
+"Negaliu uždėti failo laiko failui"
 
 MSetAttrOwnerCannotFor
 "Не удалось установить владельца для"
@@ -17457,11 +17082,27 @@ MSetAttrOwnerCannotFor
 "Nelze nastavit vlastníka pro"
 "Konnte Besitzer nicht setzen für"
 upd:"Cannot set owner for"
-upd:"Cannot set owner for"
+"Nie można ustawić właściciela dla"
 "No se puede poner como dueño para"
 "Nemôžem nastaviť vlastníka pre"
 "Non Posso Settare Il Proprietario Per"
 "Не вдалося встановити власника для"
+"Немагчыма усталяваць уладальника для"
+upd:"Cannot set owner for"
+
+MSetAttrReparsePointCannotFor
+"Не удалось удалить точку повторного анализа для"
+"Cannot remove reparse point for"
+upd:"Cannot remove reparse point for"
+upd:"Cannot remove reparse point for"
+upd:"Cannot remove reparse point for"
+"Nie można usunąć punktu analizy dla"
+upd:"Cannot remove reparse point for"
+upd:"Cannot remove reparse point for"
+upd:"Cannot remove reparse point for"
+"Не вдалося видалити точку повторного аналізу для"
+upd:"Cannot remove reparse point for"
+upd:"Cannot remove reparse point for"
 
 
 MSetColorPanel
@@ -17476,6 +17117,8 @@ l:
 "&Panel"
 "&Pannello"
 "&Панель"
+"&Панэль"
+"&Langas"
 
 MSetColorDialog
 "&Диалог"
@@ -17488,6 +17131,8 @@ MSetColorDialog
 "&Dialóg"
 "&Dialogo"
 "&Діалог"
+"&Гутарка"
+"&Dialogas"
 
 MSetColorWarning
 "Пр&едупреждение"
@@ -17500,6 +17145,8 @@ MSetColorWarning
 "&Varovné hlásenie"
 "M&essaggi Di Errore"
 "Попер&едження"
+"Папярэджанн&е"
+"&Įspėjamasis pranešimas"
 
 MSetColorMenu
 "&Меню"
@@ -17512,6 +17159,8 @@ MSetColorMenu
 "&Menu"
 "&Menu"
 "&Меню"
+"Меню"
+"&Meniu"
 
 MSetColorHMenu
 "&Горизонтальное меню"
@@ -17524,6 +17173,8 @@ MSetColorHMenu
 "Hori&zontálne menu"
 "&Barra Menu"
 "&Горизонтальне меню"
+"&Гарызантальнае меню"
+"Hori&zontalus meniu"
 
 MSetColorKeyBar
 "&Линейка клавиш"
@@ -17536,6 +17187,8 @@ upd:"&Key bar"
 "&Lišta klávesov"
 "Barra &Comandi"
 "&Лінійка клавіш"
+"&Радок клавіш"
+"Funkciniu &klavišų juosta"
 
 MSetColorCommandLine
 "&Командная строка"
@@ -17548,6 +17201,8 @@ MSetColorCommandLine
 "Prí&kazový riadok"
 "&Linea Di Comando"
 "&Командний рядок"
+"&Камандны радок"
+"K&omandinė eilutė"
 
 MSetColorClock
 "&Часы"
@@ -17560,6 +17215,8 @@ MSetColorClock
 "&Hodiny"
 "&Orologio"
 "Годи&нник"
+"&Гадзіннік"
+"&Laikrodis"
 
 MSetColorViewer
 "Про&смотрщик"
@@ -17572,6 +17229,8 @@ MSetColorViewer
 "Zob&razovač"
 "&Visualizzatore"
 "Перегл&ядач"
+"&Прагляд"
+"&Peržiūra"
 
 MSetColorEditor
 "&Редактор"
@@ -17584,6 +17243,8 @@ MSetColorEditor
 "&Editor"
 "Edi&tor"
 "&Редактор"
+"&Змена"
+"R&edaktorius"
 
 MSetColorHelp
 "П&омощь"
@@ -17596,6 +17257,8 @@ MSetColorHelp
 "Pomoc&ník"
 "Ai&uto"
 "Доп&омога"
+"&Дапамога"
+"P&agalba"
 
 MSetDefaultColors
 "&Установить стандартные цвета"
@@ -17608,6 +17271,8 @@ MSetDefaultColors
 "N&astaviť východiskové farby"
 "&Colori Originari"
 "&Установити стандартні кольори"
+"&Ужыць прадвызначаныя колеры"
+"Grįžti prie pra&dinių spalvų"
 
 MSetBW
 "Чёрно-бел&ый режим"
@@ -17620,6 +17285,8 @@ MSetBW
 "Čierno&biely režim"
 "Modalità Bianco&/Nero"
 "Чорно-біл&ий режим"
+"Чорна-бел&ы рэжым"
+"Juodai-&baltas režimas"
 
 MSetColorPanelNormal
 l:
@@ -17633,6 +17300,8 @@ l:
 "Normálny text"
 "Testo Normale"
 "Звичайний текст"
+"Звычайны тэкст"
+"Normalus tekstas"
 
 MSetColorPanelSelected
 "Выбранный текст"
@@ -17645,6 +17314,8 @@ MSetColorPanelSelected
 "Vybraný text"
 "Testo Selezionato"
 "Вибраний текст"
+"Абраны тэкст"
+"Pažymėtas tekstas"
 
 MSetColorPanelHighlightedText
 "Выделенный текст"
@@ -17657,6 +17328,8 @@ MSetColorPanelHighlightedText
 "Zvýraznený text"
 "Testo Evidenziato"
 "Виділений текст"
+"Разфарбаваны тэкст"
+upd:"Highlighted text"
 
 MSetColorPanelHighlightedInfo
 "Выделенная информация"
@@ -17669,6 +17342,8 @@ MSetColorPanelHighlightedInfo
 "Zvýraznené info"
 "Info Evidenziate"
 "Виділена інформація"
+"Разфарбаваная даведка"
+"Paryškinta info"
 
 MSetColorPanelDragging
 "Перетаскиваемый текст"
@@ -17681,6 +17356,8 @@ MSetColorPanelDragging
 "Potiahnutý text"
 "Spostamento Testo"
 "Текст, що перетяг."
+"Перацягаемы тэкст"
+"Tempiamas tekstas"
 
 MSetColorPanelBox
 "Рамка"
@@ -17693,6 +17370,8 @@ MSetColorPanelBox
 "Okraj"
 "Cornici"
 "Рамка"
+"Аблямоўка"
+"Rėmelis"
 
 MSetColorPanelNormalCursor
 "Обычный курсор"
@@ -17705,6 +17384,8 @@ MSetColorPanelNormalCursor
 "Normálny kurzor"
 "Cursore Normale"
 "Звичайний курсор"
+"Звычайны указальнік"
+"Normalus kursorius"
 
 MSetColorPanelSelectedCursor
 "Выделенный курсор"
@@ -17717,6 +17398,8 @@ MSetColorPanelSelectedCursor
 "Vybraný kurzor"
 "Cursore Selezionato"
 "Виділений курсор"
+"Абраны ўказальнік"
+"Pažymėtas kursorius"
 
 MSetColorPanelNormalTitle
 "Обычный заголовок"
@@ -17729,6 +17412,8 @@ MSetColorPanelNormalTitle
 "Normálny názov"
 "Titolo Normale"
 "Звичайний заголовок"
+"Звычайная назва"
+"Normali antraštė"
 
 MSetColorPanelSelectedTitle
 "Выделенный заголовок"
@@ -17741,6 +17426,8 @@ MSetColorPanelSelectedTitle
 "Vybraný názov"
 "Titolo Selezionato"
 "Виділений заголовок"
+"Абраная назва"
+"Pažymėta antraštė"
 
 MSetColorPanelColumnTitle
 "Заголовок колонки"
@@ -17753,6 +17440,8 @@ MSetColorPanelColumnTitle
 "Názov stĺpca"
 "Titolo Colonne"
 "Заголовок стовпця"
+"Назва слупка"
+"Stulpelio antraštė"
 
 MSetColorPanelTotalInfo
 "Количество файлов"
@@ -17765,6 +17454,8 @@ MSetColorPanelTotalInfo
 "Celkové info"
 "Informazioni Generali"
 "Кількість файлів"
+"Колькасць файлаў"
+"Suminė informacija"
 
 MSetColorPanelSelectedInfo
 "Количество выбранных файлов"
@@ -17777,6 +17468,8 @@ MSetColorPanelSelectedInfo
 "vybrané info"
 "Informazioni Selezionate"
 "Кількість вибраних файлів"
+"Колькасць абраных файлаў"
+"Pažymėta informacija"
 
 MSetColorPanelScrollbar
 "Полоса прокрутки"
@@ -17789,6 +17482,8 @@ MSetColorPanelScrollbar
 "Posuvník"
 "Barre Di Scorrimento"
 "Смужка прокручування"
+"Працяжнік"
+"Šliaužiklis"
 
 MSetColorPanelScreensNumber
 "Количество фоновых экранов"
@@ -17801,6 +17496,8 @@ MSetColorPanelScreensNumber
 "Počet okien na pozadí"
 "Numero Delle Finestre"
 "Кількість фонових екранів"
+"Колькасць фонавых экранаў"
+"Nematomų ekranų skaičius"
 
 MSetColorDialogNormal
 l:
@@ -17814,6 +17511,8 @@ l:
 "Normálny text"
 "Testo Normale"
 "Звичайний текст"
+"Звычайны тэкст"
+"Normalus tekstas"
 
 MSetColorDialogHighlighted
 "Выделенный текст"
@@ -17826,6 +17525,8 @@ MSetColorDialogHighlighted
 "Zvýraznený text"
 "Testo Evidenziato"
 "Виділений текст"
+"Разфарбаваны тэкст"
+"Paryškintas tekstas"
 
 MSetColorDialogDisabled
 "Блокированный текст"
@@ -17838,6 +17539,8 @@ MSetColorDialogDisabled
 "Zakázaný text"
 "Testo Disabilitato"
 "Блокований текст"
+"Забаронены тэкст"
+upd:"Disabled text"
 
 MSetColorDialogBox
 "Рамка"
@@ -17850,6 +17553,8 @@ MSetColorDialogBox
 "Okraj"
 "Cornice"
 "Рамка"
+"Аблямоўка"
+"Rėmelis"
 
 MSetColorDialogBoxTitle
 "Заголовок рамки"
@@ -17862,6 +17567,8 @@ MSetColorDialogBoxTitle
 "Názov"
 "Titolo Finestra"
 "Заголовок рамки"
+"Назва аблямоўкі"
+"Antraštė"
 
 MSetColorDialogHighlightedBoxTitle
 "Выделенный заголовок рамки"
@@ -17874,6 +17581,8 @@ MSetColorDialogHighlightedBoxTitle
 "Zvýraznený názov"
 "Titolo Evidenziato"
 "Виділений заголовок рамки"
+"Разфарбаваная назва аблямоўкі"
+"Paryškinta antraštė"
 
 MSetColorDialogTextInput
 "Ввод текста"
@@ -17886,6 +17595,8 @@ MSetColorDialogTextInput
 "Textový vstup"
 "Inserimento Dati"
 "Введення тексту"
+"Увод тэксту"
+"Teksto įvedimas"
 
 MSetColorDialogUnchangedTextInput
 "Неизмененный текст"
@@ -17898,6 +17609,8 @@ MSetColorDialogUnchangedTextInput
 "Nezmenený textový vstup"
 "Dati Non Modificati"
 "Незмінений текст"
+"Увод нязменнага тэкст"
+"Nepasikeitusio teksto įvedimas"
 
 MSetColorDialogSelectedTextInput
 "Ввод выделенного текста"
@@ -17910,6 +17623,8 @@ MSetColorDialogSelectedTextInput
 "Označený textový vstup"
 "Testo Di Input Selezionato"
 "Введення виділеного тексту"
+"Увод абранага тэксту"
+"Pažymėto teksto įvedimas"
 
 MSetColorDialogEditDisabled
 "Блокированное поле ввода"
@@ -17922,6 +17637,8 @@ MSetColorDialogEditDisabled
 "Zakázaný vstupný riadok"
 "Testo Di Input Disabilitato"
 "Блоковане поле введення"
+"Забаронены радок уводу"
+upd:"Disabled input line"
 
 MSetColorDialogButtons
 "Кнопки"
@@ -17934,6 +17651,8 @@ MSetColorDialogButtons
 "Tlačidlá"
 "Pulsanti"
 "Кнопки"
+"Кнопки"
+"Mygtukai"
 
 MSetColorDialogSelectedButtons
 "Выбранные кнопки"
@@ -17946,6 +17665,8 @@ MSetColorDialogSelectedButtons
 "Vybrané tlačidlá"
 "Pulsante Selezionato"
 "Вибрані кнопки"
+"Абраныя кнопки"
+"Pažymėti mygtukai"
 
 MSetColorDialogHighlightedButtons
 "Выделенные кнопки"
@@ -17958,6 +17679,8 @@ MSetColorDialogHighlightedButtons
 "Zvýraznené tlačidlá"
 "Pulsante Evidenziato"
 "Виділені кнопки"
+"Разфарбаваныя кнопки"
+"Paryškinti mygtukai"
 
 MSetColorDialogSelectedHighlightedButtons
 "Выбранные выделенные кнопки"
@@ -17970,6 +17693,8 @@ MSetColorDialogSelectedHighlightedButtons
 "Vybrané zvýraznené tlačidlá"
 "Selezionato Evidenziato"
 "Вибрані виділені кнопки"
+"Абраныя разфарбаваныя кнопки"
+"Pažymėti paryškinti mygtukai"
 
 MSetColorDialogDefaultButton
 "Кнопка по умолчанию"
@@ -17977,11 +17702,13 @@ MSetColorDialogDefaultButton
 "Výchozí tlačítko"
 "Voreingestellte Schaltfläche"
 upd:"Default button"
-upd:"Default button"
+"Domyślny przycisk"
 "Botón por defecto"
 "Predvolené tlačidlo"
 "Pulsante Default"
 "Кнопка за замовчуванням"
+"Прадвызначаная кнопка"
+upd:"Default button"
 
 MSetColorDialogSelectedDefaultButton
 "Выбранная кнопка по умолчанию"
@@ -17989,11 +17716,13 @@ MSetColorDialogSelectedDefaultButton
 "Vybrané výchozí tlačítko"
 "Ausgewählte voreingestellte Schaltfläche"
 upd:"Selected default button"
-upd:"Selected default button"
+"Zaznaczony domyślny przycisk"
 "Botón por defecto seleccionado"
 "Vybrané predvolené tlačidlo"
 "Pulsante Default Selezionato"
 "Вибрана кнопка за замовчуванням"
+"Абраная прадвызначаная кнопка"
+upd:"Selected default button"
 
 MSetColorDialogHighlightedDefaultButton
 "Выделенная кнопка по умолчанию"
@@ -18001,11 +17730,13 @@ MSetColorDialogHighlightedDefaultButton
 "Zvýrazněné výchozí tlačítko"
 "Markierte voreingestellte Schaltfläche"
 upd:"Highlighted default button"
-upd:"Highlighted default button"
+"Podświetlony domyślny przycisk"
 "Botón por defecto (atajo resaltado)"
 "Zvýraznené predvolené tlačidlo"
 "Pulsante Default Evidenziato"
 "Виділена кнопка за замовчуванням"
+"Разфарбаваная прадвызначаная кнопка"
+upd:"Highlighted default button"
 
 MSetColorDialogSelectedHighlightedDefaultButton
 "Выбранная выделенная кнопка по умолчанию"
@@ -18013,11 +17744,13 @@ MSetColorDialogSelectedHighlightedDefaultButton
 "Vybrané zvýrazněné výchozí tlačítko"
 "Ausgewählte markierte voreingestellte Schaltfläche"
 upd:"Selected highlighted default button"
-upd:"Selected highlighted default button"
+"Zaznaczony podświetlony domyślny przycisk"
 "Botón por defecto (atajo resaltado seleccionado)"
 "Vybrané zvýraznené predvolené tlačidlo"
 "Pulsante Default Selezionato Evidenziato"
 "Вибрана виділена кнопка за замовчуванням"
+"Абраная разфарбаваная прадвызначаная кнопка"
+upd:"Selected highlighted default button"
 
 MSetColorDialogListBoxControl
 "Список"
@@ -18030,6 +17763,8 @@ MSetColorDialogListBoxControl
 "Zoznam položiek"
 "Box Lista"
 "Список"
+"Спіс"
+"Sąrašo"
 
 MSetColorDialogComboBoxControl
 "Комбинированный список"
@@ -18042,6 +17777,8 @@ MSetColorDialogComboBoxControl
 "Výber položiek"
 "Combobox"
 "Комбінований список"
+"Камбінаваны спіс"
+upd:"Combobox"
 
 MSetColorDialogListText
 l:
@@ -18055,6 +17792,8 @@ l:
 "Normálny text"
 "Testo Normale"
 "Звичайний текст"
+"Звычайны тэкст"
+"Normalus tekstas"
 
 MSetColorDialogListSelectedText
 "Выбранный текст"
@@ -18067,6 +17806,8 @@ MSetColorDialogListSelectedText
 "Vybraný text"
 "Testo Selezionato"
 "Вибраний текст"
+"Абраны тэкст"
+"Pažymėtas tekstas"
 
 MSetColorDialogListHighLight
 "Выделенный текст"
@@ -18079,6 +17820,8 @@ MSetColorDialogListHighLight
 "Zvýraznený text"
 "Testo Evidenziato"
 "Виділений текст"
+"Разфарбаваны тэкст"
+"Paryškintas tekstas"
 
 MSetColorDialogListSelectedHighLight
 "Выбранный выделенный текст"
@@ -18091,6 +17834,8 @@ MSetColorDialogListSelectedHighLight
 "Vybraný zvýraznený text"
 "Selezionato Evidenziato"
 "Вибраний виділений текст"
+"Абраны разфарбаваны тэкст"
+upd:"Selected highlighted text"
 
 MSetColorDialogListDisabled
 "Блокированный пункт"
@@ -18103,6 +17848,8 @@ MSetColorDialogListDisabled
 "Neaktívna položka"
 "Oggetto Disabilitato"
 "Блокований пункт"
+"Забаронены элемент"
+upd:"Disabled item"
 
 MSetColorDialogListBox
 "Рамка"
@@ -18115,6 +17862,8 @@ MSetColorDialogListBox
 "Okraj"
 "Bordo"
 "Рамка"
+"Аблямоўка"
+"Rėmelis"
 
 MSetColorDialogListTitle
 "Заголовок"
@@ -18127,6 +17876,8 @@ MSetColorDialogListTitle
 "Názov"
 "Titolo"
 "Заголовок"
+"Назва"
+"Antraštė"
 
 MSetColorDialogListGrayed
 "Серый текст списка"
@@ -18134,11 +17885,13 @@ MSetColorDialogListGrayed
 "Zašedlý text v seznamu"
 upd:"Grayed list text"
 "Szürke listaszöveg"
-upd:"Grayed list text"
+"Nieaktywny tekst"
 "Texto deshabilitado de lista"
-"Grayed list text"
+upd:"Grayed list text"
 "Lista Testo Non Selezionabile"
 "Сірий текст списку"
+"Шэры тэкст спісу"
+upd:"Grayed list text"
 
 MSetColorDialogSelectedListGrayed
 "Выбранный серый текст списка"
@@ -18146,11 +17899,13 @@ MSetColorDialogSelectedListGrayed
 "Vybraný zašedlý text v seznamu"
 upd:"Selected grayed list text"
 "Kijelölt szürke listaszöveg"
-upd:"Selected grayed list text"
+"Zaznaczony nieaktywny tekst"
 "Texto seleccionado deshabilitado de lista"
-"Selected grayed list text"
+upd:"Selected grayed list text"
 "Lista Testo Grigia Selezionata"
 "Вибраний сірий текст списку"
+"Абраны шэры тэкст спісу"
+upd:"Selected grayed list text"
 
 MSetColorDialogListScrollBar
 "Полоса прокрутки"
@@ -18163,6 +17918,8 @@ MSetColorDialogListScrollBar
 "Posuvník"
 "Barre Di Scorrimento"
 "Смужка прокручув."
+"Працяжнік"
+"Šliaužiklis"
 
 MSetColorDialogListArrows
 "Индикаторы длинных строк"
@@ -18175,6 +17932,8 @@ MSetColorDialogListArrows
 "Značka dlhého reťazca"
 "Indicatori Testo Lungo"
 "Індикатори довгих рядків"
+"Паказальнікі доўгіх радкоў"
+upd:"Long string indicators"
 
 MSetColorDialogListArrowsSelected
 "Выбранные индикаторы длинных строк"
@@ -18187,6 +17946,8 @@ MSetColorDialogListArrowsSelected
 "Vybraná značka dlhého reťazca"
 "Indicatori Testo Lungo Selezionato"
 "Вибрані індикатори довгих рядків"
+"Абраныя паказальнікі доўгіх радкоў"
+upd:"Selected long string indicators"
 
 MSetColorDialogListArrowsDisabled
 "Блокированные индикаторы длинных строк"
@@ -18199,6 +17960,8 @@ MSetColorDialogListArrowsDisabled
 "Zakázaná značka dlhého reťazca"
 "Indicatori Testo Lungo Disabilitato"
 "Блоковані індикатори довгих рядків"
+"Забароненыя паказальнікі доўгіх радкоў"
+upd:"Disabled long string indicators"
 
 MSetColorMenuNormal
 l:
@@ -18212,6 +17975,8 @@ l:
 "Normálny text"
 "Testo Normale"
 "Звичайний текст"
+"Звычайны тэкст"
+"Normalus tekstas"
 
 MSetColorMenuSelected
 "Выбранный текст"
@@ -18224,6 +17989,8 @@ MSetColorMenuSelected
 "Vybraný text"
 "Testo Selezionato"
 "Вибраний текст"
+"Абраны тэкст"
+"Pažymėtas tekstas"
 
 MSetColorMenuHighlighted
 "Выделенный текст"
@@ -18236,6 +18003,8 @@ MSetColorMenuHighlighted
 "Zvýraznený text"
 "Testo Evidenziato"
 "Виділений текст"
+"Разфарбаваны тэкст"
+"Paryškintas tekstas"
 
 MSetColorMenuSelectedHighlighted
 "Выбранный выделенный текст"
@@ -18248,18 +18017,22 @@ MSetColorMenuSelectedHighlighted
 "Vybraný zvýraznený text"
 "Testo Selezionato Evidenziato"
 "Вибраний виділенний текст"
+"Абраны разфарбаваны тэкст"
+"Pažymėtas paryškintas tekstas"
 
 MSetColorMenuDisabled
 "Недоступный пункт"
 "Disabled text"
 "Neaktivní text"
-"Disabled text"
+upd:"Disabled text"
 "Inaktív szöveg"
 "Tekst nieaktywny"
 "Texto desactivado"
 "Neaktívny text"
 "Testo Disabilitato"
 "Недоступний пункт"
+"Забаронены тэкст"
+upd:"Disabled text"
 
 MSetColorMenuGrayed
 "Серый текст"
@@ -18267,23 +18040,27 @@ MSetColorMenuGrayed
 "Zašedlý text"
 upd:"Grayed text"
 "Szürke szöveg"
-upd:"Grayed text"
+"Nieaktywny tekst"
 "Texto deshabilitado"
 "Stmavený text"
 "Testo Non Selezionabile"
 "Сірий текст"
+"Шэры тэкст"
+upd:"Grayed text"
 
 MSetColorMenuSelectedGrayed
 "Выбранный серый текст"
 "Selected grayed text"
 "Vybraný zašedlý text"
-upd:"Selected grayed text"
+"Zaznaczony nieaktywny tekst"
 "Kijelölt szürke szöveg"
-upd:"Selected grayed text"
+"Zaznaczony wyszarzony tekest"
 "Texto deshabilitado seleccionado"
 "Vybraný stmavený text"
 "Testo Non Selezionabile Selezionato"
 "Вибраний сірий текст"
+"Абраны шэры тэкст"
+upd:"Selected grayed text"
 
 MSetColorMenuBox
 "Рамка"
@@ -18296,6 +18073,8 @@ MSetColorMenuBox
 "Okraj"
 "Cornice"
 "Рамка"
+"Аблямоўка"
+"Rėmelis"
 
 MSetColorMenuTitle
 "Заголовок"
@@ -18308,6 +18087,8 @@ MSetColorMenuTitle
 "Názov"
 "Titolo Cornice"
 "Заголовок"
+"Назва"
+"Antraštė"
 
 MSetColorMenuScrollBar
 "Полоса прокрутки"
@@ -18320,42 +18101,50 @@ MSetColorMenuScrollBar
 "Posuvník"
 "Barre Di Scorrimento"
 "Смужка прокручування"
+"Працяжнік"
+"Šliaužiklis"
 
 MSetColorMenuArrows
 "Индикаторы длинных строк"
 "Long string indicators"
 "Značka dlouhého řetězce"
-"Long string indicators"
+upd:"Long string indicators"
 "Hosszú sztring jelzők"
 "Znacznik długiego napisu"
 "Indicadores de cadena larga"
 "Značka dlhého reťazca"
 "Indicatori Testo Lungo"
 "Індикатори довгих рядків"
+"Паказальнікі доўгіх радкоў"
+upd:"Long string indicators"
 
 MSetColorMenuArrowsSelected
 "Выбранные индикаторы длинных строк"
 "Selected long string indicators"
 "Vybraná značka dlouhého řetězce"
-"Selected long string indicators"
+upd:"Selected long string indicators"
 "Kijelölt hosszú sztring jelzők"
-"Zaznaczone znacznik długiego napisu"
+"Zaznaczony znacznik długiego napisu"
 "Indicadores de cadena larga seleccionados"
 "Vybraná značka dlhého reťazca"
 "Indicatori Testo Lungo Selezionato"
 "Вибрані індикатори довгих рядків"
+"Абраныя паказальнікі доўгіх радкоў"
+upd:"Selected long string indicators"
 
 MSetColorMenuArrowsDisabled
 "Блокированные индикаторы длинных строк"
 "Disabled long string indicators"
 "Zakázaná značka dlouhého řetězce"
-"Disabled long string indicators"
+upd:"Disabled long string indicators"
 "Inaktív hosszú sztring jelzők"
 "Nieaktywny znacznik długiego napisu"
 "Indicadores de cadena larga desactivados"
 "Zakázaná značka dlhého reťazca"
 "Indicatori Testo Lungo Disabilitato"
 "Блоковані індикатори довгих рядків"
+"Забароненыя паказальнікі доўгіх радкоў"
+upd:"Disabled long string indicators"
 
 MSetColorHMenuNormal
 l:
@@ -18369,6 +18158,8 @@ l:
 "Normálny text"
 "Testo Normale"
 "Звичайний текст"
+"Звычайны тэкст"
+"Normalus tekstas"
 
 MSetColorHMenuSelected
 "Выбранный текст"
@@ -18381,6 +18172,8 @@ MSetColorHMenuSelected
 "Vybraný text"
 "Testo Selezionato"
 "Вибраний текст"
+"Абраны тэкст"
+"Pažymėtas tekstas"
 
 MSetColorHMenuHighlighted
 "Выделенный текст"
@@ -18393,6 +18186,8 @@ MSetColorHMenuHighlighted
 "Zvýraznený text"
 "Testo Evidenziato"
 "Виділений текст"
+"Разфарбаваны тэкст"
+"Paryškintas tekstas"
 
 MSetColorHMenuSelectedHighlighted
 "Выбранный выделенный текст"
@@ -18405,6 +18200,8 @@ MSetColorHMenuSelectedHighlighted
 "Vybraný zvýraznený text"
 "Testo Selezionato Evidenziato"
 "Вибраний виділений текст"
+"Абраны разфарбаваны тэкст"
+"Pažymėtas paryškintas tekstas"
 
 MSetColorKeyBarNumbers
 l:
@@ -18418,6 +18215,8 @@ l:
 "Čísla klávesov"
 "Numeri Chiave"
 "Номери клавіш"
+"Нумары клавішаў"
+"Klavišų numeriai"
 
 MSetColorKeyBarNames
 "Названия клавиш"
@@ -18430,6 +18229,8 @@ MSetColorKeyBarNames
 "Názvy klávesov"
 "Nomi Chiave"
 "Назви клавіш"
+"Назвы клавішаў"
+"Klavišų vardai"
 
 MSetColorKeyBarBackground
 "Фон"
@@ -18442,6 +18243,8 @@ MSetColorKeyBarBackground
 "Pozadie"
 "Sfondo"
 "Фон"
+"Фон"
+"Fonas"
 
 MSetColorCommandLineNormal
 l:
@@ -18455,6 +18258,8 @@ l:
 "Normálny text"
 "Testo Normale"
 "Звичайний текст"
+"Звычайны тэкст"
+"Teksto įvedimas"
 
 MSetColorCommandLineSelected
 "Выделенный текст"
@@ -18467,6 +18272,8 @@ MSetColorCommandLineSelected
 "Vybraný textový vstup"
 "Testo Inserito Selezionato"
 "Виділений текст"
+"Абраны тэкст"
+"Pažymėto teksto įvedimas"
 
 MSetColorCommandLinePrefix
 "Текст префикса"
@@ -18479,6 +18286,8 @@ MSetColorCommandLinePrefix
 "Text predpony"
 "Testo Prefisso"
 "Текст префікса"
+"Тэкст прыстаўкі"
+upd:"Prefix text"
 
 MSetColorCommandLineUserScreen
 "Пользовательский экран"
@@ -18491,6 +18300,8 @@ MSetColorCommandLineUserScreen
 "Okno užívateľa"
 "Schermo Utente"
 "Екран користувача"
+"Экран карыстальніка"
+upd:"User screen"
 
 MSetColorClockNormal
 l:
@@ -18504,6 +18315,8 @@ l:
 "Normálny text (panel)"
 "Testo Normale (Pannello)"
 "Звичайний текст (панелі)"
+"Звычайны тэкст (панэлі)"
+"Normalus tekstas (Langas)"
 
 MSetColorClockNormalEditor
 "Обычный текст (редактор)"
@@ -18516,6 +18329,8 @@ MSetColorClockNormalEditor
 "Normálny text (editor)"
 "Testo Normale (Editor)"
 "Звичайний текст (редактор)"
+"Звычайны тэкст (змены)"
+"Normalus tekstas (Redaktorius)"
 
 MSetColorClockNormalViewer
 "Обычный текст (вьювер)"
@@ -18528,6 +18343,8 @@ MSetColorClockNormalViewer
 "Normálny text (zobrazovač)"
 "Testo Normale (Visualizzatore)"
 "Звичайний текст (переглядач)"
+"Звычайны тэкст (прагляду)"
+"Pažymėtas tekstas (Peržiūra)"
 
 MSetColorViewerNormal
 l:
@@ -18541,6 +18358,8 @@ l:
 "Normálny text"
 "Testo Normale"
 "Звичайний текст"
+"Звычайны тэкст"
+"Normalus tekstas"
 
 MSetColorViewerSelected
 "Выбранный текст"
@@ -18553,6 +18372,8 @@ MSetColorViewerSelected
 "Vybraný text"
 "Testo Evidenziato"
 "Вибраний текст"
+"Абраны тэкст"
+"Pažymėtas tekstas"
 
 MSetColorViewerStatus
 "Статус"
@@ -18565,6 +18386,8 @@ MSetColorViewerStatus
 "Stavový riadok"
 "Barra Superiore"
 "Статус"
+"Стан"
+"Statuso juosta"
 
 MSetColorViewerArrows
 "Стрелки сдвига экрана"
@@ -18577,6 +18400,8 @@ MSetColorViewerArrows
 "Šípky posuvníka"
 "Frecce Di Scorrimento"
 "Стрілки зсуву екрану"
+"Стрэлкі зруху экрана"
+"Ekrano postūmio rodyklės"
 
 MSetColorViewerScrollbar
 "Полоса прокрутки"
@@ -18589,6 +18414,8 @@ MSetColorViewerScrollbar
 "Posuvník"
 "Barra Di Scorrimento"
 "Смужка прокручування"
+"Працяжнік"
+"Šliaužiklis"
 
 MSetColorEditorNormal
 l:
@@ -18602,6 +18429,8 @@ l:
 "Normálny text"
 "Testo Normale"
 "Звичайний текст"
+"Звычайны тэкст"
+"Normalus tekstas"
 
 MSetColorEditorSelected
 "Выбранный текст"
@@ -18614,6 +18443,8 @@ MSetColorEditorSelected
 "Vybraný text"
 "Testo Evidenziato"
 "Вибраний текст"
+"Абраны тэкст"
+"Pažymėtas tekstas"
 
 MSetColorEditorStatus
 "Статус"
@@ -18626,6 +18457,8 @@ MSetColorEditorStatus
 "Stavový riadok"
 "Barra Di Stato"
 "Статус"
+"Стан"
+"Statuso juosta"
 
 MSetColorEditorScrollbar
 "Полоса прокрутки"
@@ -18638,6 +18471,8 @@ MSetColorEditorScrollbar
 "Posuvník"
 "Barra Di Scorrimento"
 "Смужка прокручування"
+"Працяжнік"
+"Šliaužiklis"
 
 MSetColorHelpNormal
 l:
@@ -18651,6 +18486,8 @@ l:
 "Normálny text"
 "Testo Normale"
 "Звичайний текст"
+"Звычайны тэкст"
+"Normalus tekstas"
 
 MSetColorHelpHighlighted
 "Выделенный текст"
@@ -18663,6 +18500,8 @@ MSetColorHelpHighlighted
 "Zvýraznený text"
 "Testo Evidenziato"
 "Виділений текст"
+"Разфарбаваны тэкст"
+"Paryškintas tekstas"
 
 MSetColorHelpReference
 "Ссылка"
@@ -18675,6 +18514,8 @@ MSetColorHelpReference
 "Odkaz"
 "Referenza"
 "Посилання"
+"Спасылак"
+"Nuoroda"
 
 MSetColorHelpSelectedReference
 "Выбранная ссылка"
@@ -18687,6 +18528,8 @@ MSetColorHelpSelectedReference
 "Vybraný odkaz"
 "Referenza Selezionata"
 "Вибране посилання"
+"Абраны спасылак"
+"Pažymėta nuoroda"
 
 MSetColorHelpBox
 "Рамка"
@@ -18699,6 +18542,8 @@ MSetColorHelpBox
 "Okraj"
 "Cornice"
 "Рамка"
+"Аблямоўка"
+"Rėmelis"
 
 MSetColorHelpBoxTitle
 "Заголовок рамки"
@@ -18711,6 +18556,8 @@ MSetColorHelpBoxTitle
 "Názov"
 "Titolo Finestra"
 "Заголовок рамки"
+"Назва"
+"Antraštė"
 
 MSetColorHelpScrollbar
 "Полоса прокрутки"
@@ -18723,6 +18570,8 @@ MSetColorHelpScrollbar
 "Posuvník"
 "Barra Di Scorrimento"
 "Смужка прокручування"
+"Працяжнік"
+"Šliaužiklis"
 
 MSetColorGroupsTitle
 l:
@@ -18736,6 +18585,8 @@ l:
 "Skupiny farieb"
 "Colore Dei Gruppi"
 "Колірні групи"
+"Каляровыя суполкі"
+"Spalvų grupės"
 
 MSetColorItemsTitle
 "Элементы группы"
@@ -18748,6 +18599,8 @@ MSetColorItemsTitle
 "Položky skupín"
 "Oggetti Di Gruppo"
 "Елементи групи"
+"Элемент суполки"
+"Grupės punktai"
 
 MSetColorTitle
 l:
@@ -18761,54 +18614,272 @@ l:
 "Farba"
 "Colore"
 "Колір"
+"Колер"
+"Spalva"
 
 MSetColorForeground
-"&Текст"
-"&Foreground"
-"&Popředí"
-"&Vordergrund"
-"&Előtér"
-"&Pierwszy plan"
-"&Caracteres"
-"&Popredie"
-"&PrimoPiano"
-"&Текст"
+"&Текст:"
+"&Foreground:"
+"&Popředí:"
+"&Vordergrund:"
+"&Előtér:"
+"&Kolor:"
+"&Caracteres:"
+"&Popredie:"
+"&PrimoPiano:"
+"&Текст:"
+"&Тэкст:"
+"&Raidės:"
 
 MSetColorBackground
-"&Фон"
-"&Background"
-"Po&zadí"
-"&Hintergrund"
-"&Háttér"
-"&Tło"
-"&Fondo"
-"Po&zadie"
-"&Sfondo"
-"&Фон"
+"&Фон:"
+"&Background:"
+"Po&zadí:"
+"&Hintergrund:"
+"&Háttér:"
+"&Tło:"
+"&Fondo:"
+"Po&zadie:"
+"&Sfondo:"
+"&Фон:"
+"&Фон:"
+"&Fonas:"
 
-MSetColorForeTransparent
-"&Прозрачный"
-"&Transparent"
-"Průhlednos&t"
-"&Transparent"
-"Átlá&tszó"
-"P&rzezroczyste"
-"&Transparente"
-"Priehľadnos&ť"
-"&Trasparente"
-"&Прозорий"
+MSetColorForeIndex
+l:
+l:// 8 characters max
+"AA     #"
+"AA     #"
+"AA     #"
+"AA     #"
+"AA     #"
+"AA     #"
+"AA     #"
+"AA     #"
+"AA     #"
+"AA     #"
+"AA     #"
+"AA     #"
 
-MSetColorBackTransparent
-"П&розрачный"
-"T&ransparent"
-"Průhledno&st"
-"T&ransparent"
-"Átlát&szó"
-"Pr&zezroczyste"
-"T&ransparente"
-"Priehľadno&sť"
-"T&rasparente"
-"П&розорий"
+MSetColorForeAARRGGBB
+l:
+l:// 8 characters max
+"AARRGGBB"
+"AARRGGBB"
+"AARRGGBB"
+"AARRGGBB"
+"AARRGGBB"
+"AARRGGBB"
+"AARRGGBB"
+"AARRGGBB"
+"AARRGGBB"
+"AARRGGBB"
+"AARRGGBB"
+"AARRGGBB"
+
+MSetColorForeRGB
+l:
+l:// 3 characters max
+"&RGB…"
+"&RGB…"
+"&RGB…"
+"&RGB…"
+"&RGB…"
+"&RGB…"
+"&RGB…"
+"&RGB…"
+"&RGB…"
+"&RGB…"
+"&RGB…"
+"&RGB…"
+
+MSetColorBackIndex
+l:
+l:// 8 characters max
+"AA     #"
+"AA     #"
+"AA     #"
+"AA     #"
+"AA     #"
+"AA     #"
+"AA     #"
+"AA     #"
+"AA     #"
+"AA     #"
+"AA     #"
+"AA     #"
+
+MSetColorBackAARRGGBB
+l:
+l:// 8 characters max
+"AARRGGBB"
+"AARRGGBB"
+"AARRGGBB"
+"AARRGGBB"
+"AARRGGBB"
+"AARRGGBB"
+"AARRGGBB"
+"AARRGGBB"
+"AARRGGBB"
+"AARRGGBB"
+"AARRGGBB"
+"AARRGGBB"
+
+MSetColorBackRGB
+l:
+l:// 3 characters max
+"R&GB…"
+"R&GB…"
+"R&GB…"
+"R&GB…"
+"R&GB…"
+"R&GB…"
+"R&GB…"
+"R&GB…"
+"R&GB…"
+"R&GB…"
+"R&GB…"
+"R&GB…"
+
+MSetColorStyle
+"Стиль:"
+"Style:"
+"Styl:"
+"Stil:"
+"Stílus:"
+"Styl:"
+"Estilo:"
+"Štýl:"
+"Stile:"
+"Cтиль:"
+"Cтыль:"
+"Stilius:"
+
+MSetColorStyleInherit
+"Наследовать"
+"Inherit"
+"Zdědí"
+"Erben"
+"Örökölje"
+"Dziedziczyć"
+"Heredar"
+"Zdediť"
+"Eredita"
+"Успадковувати"
+"Спадчыну"
+"Paveldėti"
+
+MSetColorStyleBold
+"Жирный"
+"Bold"
+"Tučné"
+"Fett"
+"Félkövér"
+"Pogrubienie"
+"Negrita"
+"Tučné"
+"Grassetto"
+"Жирний"
+"Тоўсты"
+"Paryškintasis"
+
+MSetColorStyleItalic
+"Курсив"
+"Italic"
+"Kurzíva"
+"Kursiv"
+"Dőlt"
+"Kursywa"
+"Cursiva"
+"Kurzíva"
+"Corsivo"
+"Курсив"
+"Курсіў"
+"Kursyvas"
+
+MSetColorStyleUnderline
+"Подчёркнутый"
+"Underline"
+"Podtržené"
+"Unterstrichen"
+"Aláhúzott"
+"Podkreślenie"
+"Subrayado"
+"Podčiarknuté"
+"Sottolineato"
+"Підкреслений"
+"Падкрэслены"
+"Pabrauktasis"
+
+MSetColorStyleUnderline2
+"Двойное"
+"Double"
+"Dvojitě"
+"Doppelt"
+"Dupla"
+"Podwójne"
+"Doble"
+"Dvojité"
+"Doppia"
+"Подвійне"
+"Падвойнае"
+"Dvigubas"
+
+MSetColorStyleOverline
+"Надчёркивание"
+"Overline"
+"Nadtržítko"
+"Überstrichen"
+"Föléhúzás"
+"Nadkreślenie"
+"Línea alta"
+"Horná čiara"
+"Linea sopra"
+"Надкреслення"
+"Перакрыцце"
+"Pabrauktas virš"
+
+MSetColorStyleStrikeout
+"Зачёркнутый"
+"Strikeout"
+"Přeškrtnuté"
+"Durchgestrichen"
+"Áthúzás"
+"Przekreślenie"
+"Tachado"
+"Prečiarknuté"
+"Barrato"
+"Закреслений"
+"Закрэслены"
+"Perbraukimas"
+
+MSetColorStyleFaint
+"Бледный"
+"Faint"
+"Tmavé"
+"Abblenden"
+"Sötét"
+"Przygaszone"
+"Atenuado"
+"Temné"
+"Tenue"
+"Приглушений"
+"Прыцемнены"
+"Tamsus"
+
+MSetColorStyleBlink
+"Мерцающий"
+"Blink"
+"Blikající"
+"Blinkend"
+"Villogás"
+"Miganie"
+"Intermitente"
+"Blikanie"
+"Intermittente"
+"Миготіння"
+"Мігценне"
+"Mirksėjimas"
 
 MSetColorSample
 "Текст Текст Текст Текст Текст Текст"
@@ -18821,6 +18892,8 @@ MSetColorSample
 "Text Text Text Text Text Text Text"
 "[Anteprima Testo Di Esempio!]"
 "Текст Текст Текст Текст Текст Текст"
+"Тэкст Тэкст Тэкст Тэкст Тэкст Тэкст"
+"Tekstas Tekstas Tekstas Tekstas Te"
 
 MSetColorSet
 "Установить"
@@ -18828,11 +18901,13 @@ MSetColorSet
 "Nastavit"
 "Setzen"
 "A&lkalmaz"
-"Ustaw"
+"&Ustaw"
 "Poner"
 "Nastaviť"
 "&Imposta"
 "Встановити"
+"Ужыць"
+"Gerai"
 
 MSetColorCancel
 "Отменить"
@@ -18840,11 +18915,13 @@ MSetColorCancel
 "Storno"
 "Abbruch"
 "&Mégsem"
-"Anuluj"
+"&Anuluj"
 "Cancelar"
 "Storno"
 "&Annulla"
 "Скасувати"
+"Адмяніць"
+"Atšaukti"
 
 MSetConfirmTitle
 l:
@@ -18858,6 +18935,8 @@ l:
 "Potvrdiť"
 "Conferme"
 "Підтвердження"
+"Пацвержданне"
+"Patvirtinti"
 
 MSetConfirmCopy
 "Перезапись файлов при &копировании"
@@ -18870,6 +18949,8 @@ MSetConfirmCopy
 "&Kopírovanie"
 "&Copia"
 "Перезапис файлів при &копіюванні"
+"Перезапісаць файлы пры &капіяванні"
+"&Kopijuojant"
 
 MSetConfirmMove
 "Перезапись файлов при &переносе"
@@ -18882,6 +18963,8 @@ MSetConfirmMove
 "&Presunutie"
 "&Spostamento"
 "Перезапис файлів при &перемішенні"
+"Перезапісаць файлы пры &пераносе"
+"&Perkeliant"
 
 MSetConfirmRO
 "Перезапись и удаление R/O &файлов"
@@ -18889,17 +18972,19 @@ MSetConfirmRO
 "Př&epsání a smazání R/O souborů"
 upd:"&Overwrite and delete R/O files"
 "&Csak olv. fájlok felülírása/törlése"
-upd:"&Overwrite and delete R/O files"
+"&Nadpisz i usuń pliki R/O"
 "S&obrescribir y borrar archivos de Sólo-lectura"
 "Pr&epísanie a zmazanie súborov R/O"
 "Sovrascri&vi/Elimina Sola Lettura"
 "Перезапис і видалення R/O &файлів"
+"Перезапісаць і выдаліць &файлы 'толькі для чытання'"
+upd:"&Overwrite and delete R/O files"
 
 
 MSetConfirmDrag
 "Пере&таскивание"
 "&Drag and drop"
-"&Drag and drop"
+upd:"&Drag and drop"
 "&Ziehen und Ablegen"
 "&Húzd és ejtsd"
 "P&rzeciąganie i upuszczanie"
@@ -18907,6 +18992,8 @@ MSetConfirmDrag
 "Po&tiahni a pusť"
 "&Trascinamento"
 "Пере&тягування"
+"Пера&цягванне"
+"Pert&empiant pele"
 
 MSetConfirmDelete
 "&Удаление"
@@ -18919,6 +19006,8 @@ MSetConfirmDelete
 "Z&mazanie"
 "&Eliminazione"
 "&Видалення"
+"&Выдаленне"
+"&Trinant"
 
 MSetConfirmDeleteFolders
 "У&даление непустых папок"
@@ -18926,11 +19015,13 @@ MSetConfirmDeleteFolders
 "Mazat &neprázdné adresáře"
 "Löschen von Ordnern mit &Inhalt"
 "Nem &üres mappák törlése"
-"Usuwanie &niepustych katalogów"
+"Usuwanie n&iepustych folderów"
 "Borrar &directorios no-vacíos"
 "Zmazanie &neprázdnych priečinkov"
 "Ca&ncella Cartelle Non Vuote"
 "Ви&далення непорожніх папок"
+"Вы&даленне непустых каталогаў"
+"Trinant &netuščius katalogus"
 
 MSetConfirmEsc
 "Прерыва&ние операций"
@@ -18938,11 +19029,13 @@ MSetConfirmEsc
 "Pře&rušit operaci"
 "&Unterbrechen von Vorgängen"
 "Mű&velet megszakítása"
-"&Przerwanie operacji"
+"Przerw&anie operacji"
 "&Interrumpir operación"
 "Pre&rušenie operácie"
 "&Operazione Interrotta"
 "Перерива&ння операцій"
+"Перапы&ненне дзеянняў"
+upd:"&Interrupt operation"
 
 MSetConfirmRemoveConnection
 "&Отсоединение сетевого диска"
@@ -18955,30 +19048,36 @@ MSetConfirmRemoveConnection
 "Odpojenie &sieťovej jednotky"
 "Disconnessione &Unità Rete"
 "В&ід'єднання мережевого диска"
+"&Адключэнне сеткавага дыску"
+upd:"Disconnect &network drive"
 
 MSetConfirmRemoveSUBST
 "Удаление SUBST-диска"
 "Delete &SUBST-disk"
-upd:"Odpojení SUBST-d&isku"
+"Odpojení virtuálního d&isku"
 upd:"Trennen von &Substlaufwerken"
 upd:"Virt&uális meghajtó törlése"
-upd:"Odłączenie dysku &SUBST"
+"Odłączenie dysku SU&BST"
 upd:"Desconectar disco s&ustituido"
 "Odstránenie d&isku SUBST"
 "Disconnetti Dischi SUBS&T"
 "Видалення SUBST-диска"
+"Выдаленне SUBST-ды&ска"
+upd:"Delete &SUBST-disk"
 
 MSetConfirmDetachVHD
 "Отсоедиение виртуального диска"
-"Detach virtual disk"
+"Detach &virtual disk"
 "Odpojení virtuálního disku"
 "Trennung von virtuelle Laufwerke"
 upd:"Detach virtual disk"
-upd:"Detach virtual disk"
+"Odłącz dysk wir&tualny"
 "Desmontar disco virtual"
 "Odpojenie virtuálneho disku"
 "Smontaggio Periferica &Virtuale"
 "Від'єднання віртуального диска"
+"Адключэнне уяўнага дыску"
+upd:"Detach &virtual disk"
 
 MSetConfirmRemoveHotPlug
 "Отключение HotPlug-у&стройства"
@@ -18986,11 +19085,13 @@ MSetConfirmRemoveHotPlug
 "Odpojení vyjímatelného zařízení"
 "Sicheres Entfernen von Hardware"
 "H&otPlug eszköz eltávolítása"
-"Odłączanie urządzenia HotPlug"
+"Odłączanie urządzenia &HotPlug"
 "Remover dispositivo Hot&Plug"
 "Odpojenie vyberateľného zariadenia"
 "Rimuovi Periferiche &HotPlug"
 "Відключення HotPlug-при&строю"
+"Адключэнне прыладаў гарачай &устаноўкі"
+upd:"Hot&Plug-device removal"
 
 MSetConfirmAllowReedit
 "Повто&рное открытие файла в редакторе"
@@ -19003,6 +19104,8 @@ MSetConfirmAllowReedit
 "&Obnovenie upravovaného súboru"
 "&Ricarica File Editati"
 "Повто&рне відкриття файлу в редакторі"
+"Паўто&рнае адкрыццё файла для змены"
+upd:"&Reload edited file"
 
 MSetConfirmHistoryClear
 "Очистка списка &истории"
@@ -19010,23 +19113,27 @@ MSetConfirmHistoryClear
 "Vymazat seznam &historie"
 "&Historielisten löschen"
 "&Előzménylista törlése"
-"Czyszczenie &historii"
+"&Czyszczenie historii"
 "Limpiar listado de &historial"
 "Vymazanie zoznamu &histórie"
 "A&zzeramento Cronologia"
 "Очищення списку історії"
+"Чысціць сіс г&історыі"
+upd:"Clear &history list"
 
 MSetConfirmExit
 "&Выход"
 "E&xit"
 "U&končení"
 "Be&enden"
-"K&ilépés a FAR-ból"
+"K&ilépés a Far-ból"
 "&Wyjście"
 "&Salir"
 "Uk&ončenie"
 "&Uscita"
 "Ви&хід"
+"&Выйсці"
+"I&šeinant"
 
 MPluginsManagerSettingsTitle
 l:
@@ -19035,11 +19142,13 @@ l:
 "Nastavení správce modulů"
 "Plugin Manager Parameter"
 upd:"Plugins manager settings"
-upd:"Plugins manager settings"
+"Ustawienia managera wtyczek"
 "Configuración de gestor de complementos"
 "Nastavenia správcu modulov"
 "Gestore Selezione Plug-In"
 "Параметри менеджера плагінів"
+"Налады распараднік дадаткаў"
+upd:"Plugins manager settings"
 
 MPluginsManagerOEMPluginsSupport
 "&Поддержка OEM-плагинов"
@@ -19047,11 +19156,13 @@ MPluginsManagerOEMPluginsSupport
 "Podpora OEM modulů"
 "OEM Plugins Unterstützung"
 upd:"OEM plugins support"
-upd:"OEM plugins support"
+"Obsługa wtyczek w werji &OEM"
 "Soporte de complementos OEM"
 "Podpora modulov OEM"
 "Supporto Plugin OEM"
 "&Підтримка OEM-плагінів"
+"&Падтрымка убудаваных дадаткаў"
+upd:"&OEM plugins support"
 
 MPluginsManagerScanSymlinks
 "&Сканировать символические ссылки"
@@ -19064,6 +19175,8 @@ MPluginsManagerScanSymlinks
 "Prehľadávať s&ymbolické prepojenia"
 "Scansione Link S&imbolici"
 "&Сканувати символічні посилання"
+"&Сканаваць сімвалічныя спасылкі"
+upd:"Scan s&ymbolic links"
 
 MPluginsManagerOFP
 "Обработка &файла"
@@ -19071,11 +19184,13 @@ MPluginsManagerOFP
 "Zpra&cování souboru"
 upd:"&File processing"
 "&Fájl feldolgozása"
-upd:"&File processing"
+"&Przetwarzanie pliku"
 "Procesado de archivo"
 "Spra&covanie súboru"
 "Percorso Plugin &Personali"
 "Обробка &файлу"
+"Апрацоўка &файла"
+upd:"&File processing"
 
 MPluginsManagerStdAssoc
 "Пункт вызова стандартной &ассоциации"
@@ -19083,11 +19198,13 @@ MPluginsManagerStdAssoc
 "Zobrazi&t položku standardní asociace"
 upd:"Show standard &association item"
 "Szabvány társítás megjelenítése"
-upd:"Show standard &association item"
+"Pokaż &standardowe powiązanie"
 "Mostrar &asociaciones normales de ítems"
 "Zobrazi&ť položku štandardnej asociácie"
 "Mostra Voce &Associazione Standard"
 "Елемент виклику стандартної &асоціації"
+"Пункт выкліку звычайнага прызн&ачэння"
+upd:"Show standard &association item"
 
 MPluginsManagerEvenOne
 "Даже если найден всего &один плагин"
@@ -19095,11 +19212,13 @@ MPluginsManagerEvenOne
 "I pokud se naj&de jen jeden modul"
 upd:"Even if only &one plugin found"
 "Akkor is, ha csak egy plugin van"
-upd:"Even if only &one plugin found"
+"Nawet, gdy tylko &jedna wtyczka"
 "Aún si solo se &encontró un complemento"
 "aj keď sa náj&de len jeden modul"
 "Anche Se Solo &Un Plugin E' Presente"
 "Навіть якщо знайдено лише &один плагін"
+"Нават калі знойдзены ўсяг&о аднаго дадатку"
+upd:"&Even if only one plugin found"
 
 MPluginsManagerSFL
 "&Результаты поиска (SetFindList)"
@@ -19107,11 +19226,13 @@ MPluginsManagerSFL
 "Výs&ledky hledání (SetFindList)"
 upd:"Search &results (SetFindList)"
 "Keresés eredménye (SetFindList)"
-upd:"Search &results (SetFindList)"
+"&Wyniki wyszukiwania (SetFindList)"
 "&Resultados de búsqueda (SetFindList)"
 "Výs&ledky hľadania (SetFindList)"
 "Risultati Di Ricerca (SetFindList)"
 "&Результати пошуку (SetFindList)"
+"Вынікі &пошуку (SetFindList)"
+upd:"Search &results (SetFindList)"
 
 MPluginsManagerPF
 "Обрабо&тка префикса"
@@ -19119,11 +19240,13 @@ MPluginsManagerPF
 "Z&pracování předpony"
 upd:"&Prefix processing"
 "Előtag feldolgozása"
-upd:"&Prefix processing"
+"P&rzetwarzanie przedrostków"
 "Procesado de &prefijo"
 "S&pracovanie predpony"
 "Prefisso Elaborazione"
 "Обро&бка префікса"
+"Апрацоўка прыс&таўкі"
+upd:"&Prefix processing"
 
 MPluginConfirmationTitle
 "Выбор плагина"
@@ -19131,11 +19254,13 @@ MPluginConfirmationTitle
 "Výběr modulu"
 upd:"Plugin selection"
 "Plugin választás"
-upd:"Plugin selection"
+"Wybór wtyczki"
 "Selección de complemento"
 "Výber modulu"
 "Selezione Plug-In"
 "Вибір плагіну"
+"Абраць дадатак"
+upd:"Plugin selection"
 
 MMenuPluginStdAssociation
 "Стандартная ассоциация"
@@ -19143,11 +19268,13 @@ MMenuPluginStdAssociation
 "Standardní asociace"
 upd:"Standard association"
 "Szabvány társítás"
-upd:"Standard association"
+"Standardowe powiązanie"
 "Asociación normal"
 "Štandardné asociácie"
 "Associazione Standard"
 "Стандартна асоціація"
+"Звычайнае прызначэнне"
+upd:"Standard association"
 
 MFindFolderTitle
 l:
@@ -19161,6 +19288,8 @@ l:
 "Nájsť priečinok"
 "Cartella Di Ricerca"
 "Пошук папки"
+"Пошук каталогу"
+"Rasti katalogą"
 
 MFolderTreeF1
 l:
@@ -19175,6 +19304,8 @@ l:// Find folder Tree KeyBar
 "Pomocník"
 "Aiuto"
 "Допом."
+"Дапамога"
+upd:"Help"
 
 MFolderTreeF2
 "Обновить"
@@ -19182,13 +19313,17 @@ MFolderTreeF2
 "Obnovit"
 "Aktual"
 "FaFris"
-"Czytaj ponownie"
+"Odśwież"
 "ReExpl"
 "Obnoviť"
 "Aggiorna"
 "Оновити"
+"Перачытаць"
+upd:"Rescan"
 
 MFolderTreeF3
+""
+""
 ""
 ""
 ""
@@ -19211,6 +19346,8 @@ MFolderTreeF4
 ""
 ""
 ""
+""
+""
 
 MFolderTreeF5
 "Размер"
@@ -19223,8 +19360,12 @@ MFolderTreeF5
 "Zoom"
 "Zoom"
 "Розмір"
+"Памер"
+upd:"Zoom"
 
 MFolderTreeF6
+""
+""
 ""
 ""
 ""
@@ -19247,8 +19388,12 @@ MFolderTreeF7
 ""
 ""
 ""
+""
+""
 
 MFolderTreeF8
+""
+""
 ""
 ""
 ""
@@ -19271,6 +19416,8 @@ MFolderTreeF9
 ""
 ""
 ""
+""
+""
 
 MFolderTreeF10
 "Выход"
@@ -19283,8 +19430,12 @@ MFolderTreeF10
 "Koniec"
 "Quit"
 "Вихід"
+"Выйсці"
+upd:"Quit"
 
 MFolderTreeF11
+""
+""
 ""
 ""
 ""
@@ -19307,21 +19458,13 @@ MFolderTreeF12
 ""
 ""
 ""
-
-
-MFolderTreeShiftF1 
-""
-""
-""
-""
-""
-""
-""
-""
 ""
 ""
 
-MFolderTreeShiftF2 
+
+MFolderTreeShiftF1
+""
+""
 ""
 ""
 ""
@@ -19333,19 +19476,9 @@ MFolderTreeShiftF2
 ""
 ""
 
-MFolderTreeShiftF3 
+MFolderTreeShiftF2
 ""
 ""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MFolderTreeShiftF4 
 ""
 ""
 ""
@@ -19357,19 +19490,9 @@ MFolderTreeShiftF4
 ""
 ""
 
-MFolderTreeShiftF5 
+MFolderTreeShiftF3
 ""
 ""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MFolderTreeShiftF6 
 ""
 ""
 ""
@@ -19381,19 +19504,9 @@ MFolderTreeShiftF6
 ""
 ""
 
-MFolderTreeShiftF7 
+MFolderTreeShiftF4
 ""
 ""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MFolderTreeShiftF8 
 ""
 ""
 ""
@@ -19405,7 +19518,65 @@ MFolderTreeShiftF8
 ""
 ""
 
-MFolderTreeShiftF9 
+MFolderTreeShiftF5
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeShiftF6
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeShiftF7
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeShiftF8
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeShiftF9
+""
+""
 ""
 ""
 ""
@@ -19428,8 +19599,12 @@ MFolderTreeShiftF10
 ""
 ""
 ""
+""
+""
 
 MFolderTreeShiftF11
+""
+""
 ""
 ""
 ""
@@ -19452,20 +19627,12 @@ MFolderTreeShiftF12
 ""
 ""
 ""
-
-MFolderTreeAltF1 
-""
-""
-""
-""
-""
-""
-""
-""
 ""
 ""
 
-MFolderTreeAltF2 
+MFolderTreeAltF1
+""
+""
 ""
 ""
 ""
@@ -19477,19 +19644,9 @@ MFolderTreeAltF2
 ""
 ""
 
-MFolderTreeAltF3 
+MFolderTreeAltF2
 ""
 ""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MFolderTreeAltF4 
 ""
 ""
 ""
@@ -19501,19 +19658,9 @@ MFolderTreeAltF4
 ""
 ""
 
-MFolderTreeAltF5 
+MFolderTreeAltF3
 ""
 ""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MFolderTreeAltF6 
 ""
 ""
 ""
@@ -19525,19 +19672,9 @@ MFolderTreeAltF6
 ""
 ""
 
-MFolderTreeAltF7 
+MFolderTreeAltF4
 ""
 ""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MFolderTreeAltF8 
 ""
 ""
 ""
@@ -19549,7 +19686,63 @@ MFolderTreeAltF8
 ""
 ""
 
-MFolderTreeAltF9 
+MFolderTreeAltF5
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeAltF6
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeAltF7
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeAltF8
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeAltF9
 "Видео"
 "Video"
 "Video"
@@ -19560,8 +19753,12 @@ MFolderTreeAltF9
 "Video"
 "Video"
 "Відео"
+"Відэа"
+"Video"
 
 MFolderTreeAltF10
+""
+""
 ""
 ""
 ""
@@ -19584,6 +19781,8 @@ MFolderTreeAltF11
 ""
 ""
 ""
+""
+""
 
 MFolderTreeAltF12
 ""
@@ -19596,20 +19795,12 @@ MFolderTreeAltF12
 ""
 ""
 ""
-
-MFolderTreeCtrlF1 
-""
-""
-""
-""
-""
-""
-""
-""
 ""
 ""
 
-MFolderTreeCtrlF2 
+MFolderTreeCtrlF1
+""
+""
 ""
 ""
 ""
@@ -19621,19 +19812,9 @@ MFolderTreeCtrlF2
 ""
 ""
 
-MFolderTreeCtrlF3 
+MFolderTreeCtrlF2
 ""
 ""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MFolderTreeCtrlF4 
 ""
 ""
 ""
@@ -19645,19 +19826,9 @@ MFolderTreeCtrlF4
 ""
 ""
 
-MFolderTreeCtrlF5 
+MFolderTreeCtrlF3
 ""
 ""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MFolderTreeCtrlF6 
 ""
 ""
 ""
@@ -19669,19 +19840,9 @@ MFolderTreeCtrlF6
 ""
 ""
 
-MFolderTreeCtrlF7 
+MFolderTreeCtrlF4
 ""
 ""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MFolderTreeCtrlF8 
 ""
 ""
 ""
@@ -19693,7 +19854,65 @@ MFolderTreeCtrlF8
 ""
 ""
 
-MFolderTreeCtrlF9 
+MFolderTreeCtrlF5
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeCtrlF6
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeCtrlF7
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeCtrlF8
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeCtrlF9
+""
+""
 ""
 ""
 ""
@@ -19716,6 +19935,8 @@ MFolderTreeCtrlF10
 ""
 ""
 ""
+""
+""
 
 MFolderTreeCtrlF11
 ""
@@ -19728,21 +19949,13 @@ MFolderTreeCtrlF11
 ""
 ""
 ""
+""
+""
 
 MFolderTreeCtrlF12
-
-""
-""
-""
-""
-""
-""
-""
-""
-""
 ""
 
-MFolderTreeCtrlShiftF1 
+""
 ""
 ""
 ""
@@ -19754,19 +19967,9 @@ MFolderTreeCtrlShiftF1
 ""
 ""
 
-MFolderTreeCtrlShiftF2 
+MFolderTreeCtrlShiftF1
 ""
 ""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MFolderTreeCtrlShiftF3 
 ""
 ""
 ""
@@ -19778,19 +19981,9 @@ MFolderTreeCtrlShiftF3
 ""
 ""
 
-MFolderTreeCtrlShiftF4 
+MFolderTreeCtrlShiftF2
 ""
 ""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MFolderTreeCtrlShiftF5 
 ""
 ""
 ""
@@ -19802,19 +19995,9 @@ MFolderTreeCtrlShiftF5
 ""
 ""
 
-MFolderTreeCtrlShiftF6 
+MFolderTreeCtrlShiftF3
 ""
 ""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MFolderTreeCtrlShiftF7 
 ""
 ""
 ""
@@ -19826,7 +20009,9 @@ MFolderTreeCtrlShiftF7
 ""
 ""
 
-MFolderTreeCtrlShiftF8 
+MFolderTreeCtrlShiftF4
+""
+""
 ""
 ""
 ""
@@ -19838,7 +20023,65 @@ MFolderTreeCtrlShiftF8
 ""
 ""
 
-MFolderTreeCtrlShiftF9 
+MFolderTreeCtrlShiftF5
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeCtrlShiftF6
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeCtrlShiftF7
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeCtrlShiftF8
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeCtrlShiftF9
+""
+""
 ""
 ""
 ""
@@ -19861,8 +20104,12 @@ MFolderTreeCtrlShiftF10
 ""
 ""
 ""
+""
+""
 
 MFolderTreeCtrlShiftF11
+""
+""
 ""
 ""
 ""
@@ -19885,20 +20132,12 @@ MFolderTreeCtrlShiftF12
 ""
 ""
 ""
-
-MFolderTreeCtrlAltF1 
-""
-""
-""
-""
-""
-""
-""
-""
 ""
 ""
 
-MFolderTreeCtrlAltF2 
+MFolderTreeCtrlAltF1
+""
+""
 ""
 ""
 ""
@@ -19910,19 +20149,9 @@ MFolderTreeCtrlAltF2
 ""
 ""
 
-MFolderTreeCtrlAltF3 
+MFolderTreeCtrlAltF2
 ""
 ""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MFolderTreeCtrlAltF4 
 ""
 ""
 ""
@@ -19934,19 +20163,9 @@ MFolderTreeCtrlAltF4
 ""
 ""
 
-MFolderTreeCtrlAltF5 
+MFolderTreeCtrlAltF3
 ""
 ""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MFolderTreeCtrlAltF6 
 ""
 ""
 ""
@@ -19958,19 +20177,9 @@ MFolderTreeCtrlAltF6
 ""
 ""
 
-MFolderTreeCtrlAltF7 
+MFolderTreeCtrlAltF4
 ""
 ""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MFolderTreeCtrlAltF8 
 ""
 ""
 ""
@@ -19982,7 +20191,65 @@ MFolderTreeCtrlAltF8
 ""
 ""
 
-MFolderTreeCtrlAltF9 
+MFolderTreeCtrlAltF5
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeCtrlAltF6
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeCtrlAltF7
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeCtrlAltF8
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeCtrlAltF9
+""
+""
 ""
 ""
 ""
@@ -20005,8 +20272,12 @@ MFolderTreeCtrlAltF10
 ""
 ""
 ""
+""
+""
 
 MFolderTreeCtrlAltF11
+""
+""
 ""
 ""
 ""
@@ -20029,20 +20300,12 @@ MFolderTreeCtrlAltF12
 ""
 ""
 ""
-
-MFolderTreeAltShiftF1 
-""
-""
-""
-""
-""
-""
-""
-""
 ""
 ""
 
-MFolderTreeAltShiftF2 
+MFolderTreeAltShiftF1
+""
+""
 ""
 ""
 ""
@@ -20054,19 +20317,9 @@ MFolderTreeAltShiftF2
 ""
 ""
 
-MFolderTreeAltShiftF3 
+MFolderTreeAltShiftF2
 ""
 ""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MFolderTreeAltShiftF4 
 ""
 ""
 ""
@@ -20078,19 +20331,9 @@ MFolderTreeAltShiftF4
 ""
 ""
 
-MFolderTreeAltShiftF5 
+MFolderTreeAltShiftF3
 ""
 ""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MFolderTreeAltShiftF6 
 ""
 ""
 ""
@@ -20102,19 +20345,9 @@ MFolderTreeAltShiftF6
 ""
 ""
 
-MFolderTreeAltShiftF7 
+MFolderTreeAltShiftF4
 ""
 ""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MFolderTreeAltShiftF8 
 ""
 ""
 ""
@@ -20126,7 +20359,65 @@ MFolderTreeAltShiftF8
 ""
 ""
 
-MFolderTreeAltShiftF9 
+MFolderTreeAltShiftF5
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeAltShiftF6
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeAltShiftF7
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeAltShiftF8
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeAltShiftF9
+""
+""
 ""
 ""
 ""
@@ -20149,8 +20440,12 @@ MFolderTreeAltShiftF10
 ""
 ""
 ""
+""
+""
 
 MFolderTreeAltShiftF11
+""
+""
 ""
 ""
 ""
@@ -20173,20 +20468,12 @@ MFolderTreeAltShiftF12
 ""
 ""
 ""
-
-MFolderTreeCtrlAltShiftF1 
-""
-""
-""
-""
-""
-""
-""
-""
 ""
 ""
 
-MFolderTreeCtrlAltShiftF2 
+MFolderTreeCtrlAltShiftF1
+""
+""
 ""
 ""
 ""
@@ -20198,19 +20485,9 @@ MFolderTreeCtrlAltShiftF2
 ""
 ""
 
-MFolderTreeCtrlAltShiftF3 
+MFolderTreeCtrlAltShiftF2
 ""
 ""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MFolderTreeCtrlAltShiftF4 
 ""
 ""
 ""
@@ -20222,19 +20499,9 @@ MFolderTreeCtrlAltShiftF4
 ""
 ""
 
-MFolderTreeCtrlAltShiftF5 
+MFolderTreeCtrlAltShiftF3
 ""
 ""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MFolderTreeCtrlAltShiftF6 
 ""
 ""
 ""
@@ -20246,19 +20513,9 @@ MFolderTreeCtrlAltShiftF6
 ""
 ""
 
-MFolderTreeCtrlAltShiftF7 
+MFolderTreeCtrlAltShiftF4
 ""
 ""
-""
-""
-""
-""
-""
-""
-""
-""
-
-MFolderTreeCtrlAltShiftF8 
 ""
 ""
 ""
@@ -20270,7 +20527,65 @@ MFolderTreeCtrlAltShiftF8
 ""
 ""
 
-MFolderTreeCtrlAltShiftF9 
+MFolderTreeCtrlAltShiftF5
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeCtrlAltShiftF6
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeCtrlAltShiftF7
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeCtrlAltShiftF8
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+""
+
+MFolderTreeCtrlAltShiftF9
+""
+""
 ""
 ""
 ""
@@ -20293,8 +20608,12 @@ MFolderTreeCtrlAltShiftF10
 ""
 ""
 ""
+""
+""
 
 MFolderTreeCtrlAltShiftF11
+""
+""
 ""
 ""
 ""
@@ -20317,6 +20636,8 @@ MFolderTreeCtrlAltShiftF12
 ""
 ""
 ""
+""
+""
 
 MTreeTitle
 "Дерево"
@@ -20329,6 +20650,8 @@ MTreeTitle
 "Stromové zobrazenie"
 "Albero"
 "Дерево"
+"Дрэва"
+"Medis"
 
 MCannotSaveTree
 "Ошибка записи дерева папок в файл"
@@ -20336,23 +20659,27 @@ MCannotSaveTree
 "Adresářový strom nelze uložit do souboru"
 "Konnte Ordnerliste nicht in Datei speichern."
 "A mappák fastruktúrája nem menthető fájlba"
-"Nie mogę zapisać drzewa katalogów do pliku"
+"Nie można zapisać drzewa folderów do pliku"
 "No se puede guardar árbol de directorios al archivo"
 "Strom priečinkov sa nedá uložiť do súboru"
 "Non Posso Salvare Albero Di Ricerca In Un File"
 "Помилка запису дерева папок у файл"
+"Немагчыма захаваць дрэва каталогаў у файл"
+"Negaliu išsaugoti katalogų medžio faile"
 
 MReadingTree
 "Чтение дерева папок"
 "Reading the folders tree"
 "Načítám adresářový strom"
 "Lese Ordnerliste"
-"Mappaszerkezet újraolvasása..."
-"Odczytuję drzewo katalogów"
+"Mappaszerkezet újraolvasása"
+"Odczytuję drzewo folderów"
 "Leyendo árbol de directorios"
 "Načítavam strom priečinkov"
 "Lettura Albero Delle Cartelle"
 "Читання дерева папок"
+"Чытанне дрэва каталогаў"
+"Skaitau katalogų medį"
 
 MUserMenuTitle
 l:
@@ -20366,6 +20693,8 @@ l:
 "Užívateľské menu"
 "Menu Utente"
 "Меню користувача"
+"Карыстальніцкае меню"
+"Vartotojo meniu"
 
 MChooseMenuType
 "Выберите тип пользовательского меню для редактирования"
@@ -20378,6 +20707,8 @@ MChooseMenuType
 "Zvoľte typ užívateľského menu na úpravu"
 "Scegliete Il Menu Da Modificare"
 "Виберіть тип меню користувача для редагування"
+"Выбраць тып карыстальніцкага меню для змены"
+"Pasirinkite kurį vartotojo meniu redaguoti"
 
 MChooseMenuMain
 "&Главное"
@@ -20390,6 +20721,8 @@ MChooseMenuMain
 "&Hlavné"
 "&Principale"
 "&Головне"
+"&Галоўнае"
+"Pagrindinį"
 
 MChooseMenuLocal
 "&Местное"
@@ -20402,6 +20735,8 @@ MChooseMenuLocal
 "&Miestne"
 "&Locale"
 "&Локальне"
+"&Мясцовае"
+"Vietinį"
 
 MMainMenuTitle
 "Главное меню"
@@ -20414,6 +20749,8 @@ MMainMenuTitle
 "Hlavné menu"
 "Menu Principale"
 "Головне меню"
+"Галоўнае меню"
+"Pagrindinis meniu"
 
 MMainMenuUser
 l:
@@ -20423,11 +20760,13 @@ l:// <...menu (User)>
 "Uživatel"
 "Benutzermenü"
 upd:"User"
-upd:"User"
+"Użytkownika"
 "Usuario"
 "Užívateľ"
 "Utente"
 "Меню користувача"
+"Карыстальніцкае"
+upd:"User"
 
 MMainMenuGlobal
 "Глобальное"
@@ -20435,11 +20774,13 @@ MMainMenuGlobal
 "Global"
 "Globalmenü"
 upd:"Global"
-upd:"Global"
+"Globalne"
 "Global"
 "Global"
 "Globale"
 "Глобальне"
+"Усеагульны"
+upd:"Global"
 
 MLocalMenuTitle
 "Местное меню"
@@ -20452,66 +20793,64 @@ MLocalMenuTitle
 "Miestne menu"
 "Menu Locale"
 "Локальне меню"
-
-MMainMenuBottomTitle
-"Редактирование: Del,Ins,F4,Alt+F4"
-"Edit: Del,Ins,F4,Alt+F4"
-"Změnit: Del,Ins,F4,Alt+F4"
-"Bearb.: Entf,Einf,F4,Alt+F4"
-"Szerk.: Del,Ins,F4,Alt+F4"
-"Edycja: Del,Ins,F4,Alt+F4"
-"Editar: Del,Ins,F4,Alt+F4"
-"Upraviť: Del,Ins,F4,Alt+F4"
-"Edita: [DEL] [INS] [F4] [ALT-F4]"
-"Редагування: Del,Ins,F4,Alt+F4"
+"Мясцовае меню"
+"Vietinis meniu"
 
 MAskDeleteMenuItem
 "Вы хотите удалить пункт меню"
 "Do you wish to delete the menu item"
 "Přejete si smazat položku v menu"
-"Do you wish to delete the menu item"
+upd:"Do you wish to delete the menu item"
 "Biztosan törli a menüelemet?"
 "Czy usunąć pozycję menu"
 "Desea borrar el ítem del menú"
 "chcete zmazať položku v menu"
 "Vuoi Cancellare Questa Voce"
 "Ви бажаєте видалити пункт меню"
+"Вы жадаеце выдаліць пункт меню?"
+"Ar norite ištrinti iš meniu"
 
 MAskDeleteSubMenuItem
 "Вы хотите удалить вложенное меню"
 "Do you wish to delete the submenu"
 "Přejete si smazat podmenu"
-"Do you wish to delete the submenu"
+upd:"Do you wish to delete the submenu"
 "Biztosan törli az almenüt?"
-"Czy usunąć podmenu"
+"Czy usunąć podmenu?"
 "Desea borrar el submenú"
 "Chcete zmazať podmenu"
 "Vuoi Eliminare Questo Sotto Menu"
 "Ви бажаєте видалити вкладене меню"
+"Вы жадаеце выдаліць укладзенае меню?"
+upd:"Do you wish to delete the submenu"
 
 MUserMenuInvalidInputLabel
 "Неправильный формат метки меню"
 "Invalid format for UserMenu Label"
 "Neplatný formát pro název uživatelského menu"
-"Invalid format for UserMenu Label"
+upd:"Invalid format for UserMenu Label"
 "A felhasználói menü névformátuma érvénytelen"
 "Błędny format etykiety menu użytkownika"
 "Formato inválido para etiqueta de menú usuario"
 "Neplatný formát názvu užívateľského menu"
 "Formato Invalido Della Etichetta Del Menu!"
 "Неправильний формат мітки меню"
+"Несапраўдны фармат меткі меню"
+upd:"Invalid format for UserMenu Label"
 
 MUserMenuInvalidInputHotKey
 "Неправильный формат горячей клавиши"
 "Invalid format for Hot Key"
 "Neplatný formát pro klávesovou zkratku"
-"Invalid format for Hot Key"
+upd:"Invalid format for Hot Key"
 "A gyorsbillentyű formátuma érvénytelen"
 "Błędny format klawisza skrótu"
 "Formato inválido para tecla de atajo"
 "Neplatný formát klávesovej skratky"
 "Formato Invalido Del Tasto Rapido!"
 "Неправильний формат гарячої клавіші"
+"Несапраўдны фармат хуткай клавішы"
+upd:"Invalid format for Hot Key"
 
 MEditMenuTitle
 l:
@@ -20525,6 +20864,8 @@ l:
 "Úprava užívateľského menu"
 "Edita Menu Utente"
 "Редагування меню користувача"
+"Змена карыстальніцкага меню"
+"Redaguoti vartotojo meniu"
 
 MEditMenuHotKey
 "&Горячая клавиша:"
@@ -20537,6 +20878,8 @@ MEditMenuHotKey
 "K&lávesová skratka:"
 "&Tasto Scelta Rapida:"
 "&Гаряча клавіша:"
+"&Хуткая клавіша:"
+"&Greitraktis:"
 
 MEditMenuLabel
 "&Метка:"
@@ -20549,6 +20892,8 @@ MEditMenuLabel
 "&Názov:"
 "&Descrizione:"
 "&Мітка:"
+"&Подпіс:"
+"&Vardas:"
 
 MEditMenuCommands
 "&Команды:"
@@ -20561,6 +20906,8 @@ MEditMenuCommands
 "Prí&kazy:"
 "&Comando:"
 "&Команди:"
+"&Каманда:"
+"&Komandos:"
 
 MAskInsertMenuOrCommand
 l:
@@ -20574,6 +20921,8 @@ l:
 "Chcete vložiť nový príkaz alebo nové menu?"
 "Vuoi Inserire Un Comando Oppure Un Nuovo Menu?"
 "Ви бажаєте вставити нову команду чи нове меню?"
+"Вы жадаеце ўставіць новую каманду ці новае меню?"
+"Ar norite įterpti naują komandą ar naują meniu?"
 
 MMenuInsertCommand
 "Вставить команду"
@@ -20586,6 +20935,8 @@ MMenuInsertCommand
 "Vložiť príkaz"
 "Inserimento Comando"
 "Вставити команду"
+"Уставіць каманду"
+"Įterpti komandą"
 
 MMenuInsertMenu
 "Вставить меню"
@@ -20598,6 +20949,8 @@ MMenuInsertMenu
 "Vložiť menu"
 "Inserimento Menu"
 "Вставити меню"
+"Уставіць меню"
+"Įterpti meniu"
 
 MEditSubmenuTitle
 l:
@@ -20611,6 +20964,8 @@ l:
 "Úprava názvu podmenu"
 "Edita Sotto-Menu Descrizioni"
 "Редагування мітки вкладеного меню"
+"Змена подпісу укладзенага меню"
+"Redaguoti submeniu vardą"
 
 MEditSubmenuHotKey
 "&Горячая клавиша:"
@@ -20623,6 +20978,8 @@ MEditSubmenuHotKey
 "Klávesová &skratka:"
 "&Tasto Di Scelta Rapida:"
 "&Гаряча клавіша:"
+"&Хуткая клавіша:"
+"&Greitraktis:"
 
 MEditSubmenuLabel
 "&Метка:"
@@ -20635,30 +20992,36 @@ MEditSubmenuLabel
 "&Názov:"
 "&Descrizione:"
 "&Мітка:"
+"&Подпіс:"
+"&Vardas:"
 
 MEditMenuConfirmation
 "Сохранить изменения?"
 "Save changes?"
-upd:"Save changes?"
+"Uložit změny?"
 "Wollen Sie die Änderungen speichern?"
 upd:"Save changes?"
-upd:"Save changes?"
+"Zapisać zmiany?"
 "Guardar cambios?"
 "Uložiť zmeny?"
 "Salva I Cambiamenti?"
 "Зберегти зміни?"
+"Захаваць змены?"
+upd:"Save changes?"
 
 MEditMenuError
 "Не удалось обновить меню"
 "Cannot update menu"
+"Nemohu aktualizovat menu"
 upd:"Cannot update menu"
 upd:"Cannot update menu"
-upd:"Cannot update menu"
-upd:"Cannot update menu"
+"Nie można uaktualnić menu"
 "No se puede actualizar menú"
 "Nemožno aktualizovať menu"
-upd:"Cannot update menu"
+"Non Posso Aggiornare Il Menu"
 "Не вдалося оновити меню"
+"Не атрымалася абнавіць меню"
+upd:"Cannot update menu"
 
 MViewerTitle
 l:
@@ -20672,6 +21035,8 @@ l:
 "Zobrazovač"
 "Visualizzatore"
 "Перегляд"
+"Прагляд"
+"Peržiūra"
 
 MViewerCannotOpenFile
 "Ошибка открытия файла"
@@ -20679,23 +21044,28 @@ MViewerCannotOpenFile
 "Nelze otevřít soubor"
 "Kann Datei nicht öffnen"
 "A fájl nem nyitható meg"
-"Nie mogę otworzyć pliku"
+"Nie można otworzyć pliku"
 "No se puede abrir el archivo"
 "Nemôžem otvoriť súbor"
 "Non Posso Aprire Il File"
 "Помилка відкриття файлу"
+"Немагчыма адчыніць файл"
+"Negaliu atidaryti failo"
 
 MViewerStatusCol
+l:// Up to 3 characters
 "Кол"
 "Col"
-"Sloupec"
-"Spalte"
-"Oszlop"
-"Kolumna"
+"Slp"
+upd:"Spl"
+upd:"Osz"
+"Kol"
 "Col"
-"Stĺpec"
+"Stĺ"
 "Col"
-"Кіл"
+"Кол"
+"Кал"
+"Stl"
 
 MViewSearchTitle
 l:
@@ -20709,6 +21079,8 @@ l:
 "Hľadanie"
 "Ricerca"
 "Пошук"
+"Пошук"
+"Paieška"
 
 MViewSearchFor
 "&Искать"
@@ -20721,6 +21093,8 @@ MViewSearchFor
 "H&ľadať"
 "&Ricerca Di"
 "&Шукати"
+"&Шукаць"
+"&Rasti"
 
 MViewSearchForText
 "Искать &текст"
@@ -20733,18 +21107,22 @@ MViewSearchForText
 "Hľadať &text"
 "Ricerca Di &Testo"
 "Шукати &текст"
+"Шукаць &тэкст"
+"Ieškoti &teksto"
 
 MViewSearchForHex
 "Искать 16-ричный &код"
 "Search for &hex"
 "Hledat he&x"
-"Suchen nach &Hex (xx xx ...)"
+"Suchen nach &Hex (xx xx …)"
 "&Hexa keresése"
 "Szukaj &wartości szesnastkowych"
 "Buscar cadena &hexadecimal"
 "Hľadať he&x"
 "Ricerca &Esadecimale"
 "Шукати 16-ричний &код"
+"Шука&ць hex"
+"Ieškoti &hex"
 
 MViewSearchCase
 "&Учитывать регистр"
@@ -20752,11 +21130,13 @@ MViewSearchCase
 "&Rozlišovat velikost písmen"
 "Gr&oß-/Kleinschreibung"
 "&Nagy/kisbetű érzékeny"
-"&Uwzględnij wielkość liter"
+"&Uwzględnij wielkość znaków"
 "Sensible min./ma&y."
 "&malé a VEĽKÉ"
 "&MAIUSCOLE/minuscole"
 "&Учитивать регистр"
+"&Улічваць рэгістр"
+"&Didžiosios skiriasi"
 
 MViewSearchWholeWords
 "Только &целые слова"
@@ -20764,11 +21144,13 @@ MViewSearchWholeWords
 "Celá &slova"
 "Ganze &Wörter"
 "Csak e&gész szavak"
-"Tylko całe słowa"
+"Tylko &całe słowa"
 "&Palabras enteras"
 "Celé &slová"
 "Parole Intere"
 "Только &целие слова"
+"Толькі по&ўныя словы"
+upd:"&Whole words"
 
 MViewSearchReverse
 "Обратн&ый поиск"
@@ -20781,6 +21163,8 @@ MViewSearchReverse
 "&Opačné hľadanie"
 "Ricerca In&versa"
 "Обратн&ий Пошук"
+"Адваротн&ы пошук"
+"At&virkščia paieška"
 
 MViewSearchRegexp
 "&Регулярные выражения"
@@ -20788,11 +21172,13 @@ MViewSearchRegexp
 "Re&gulární výrazy"
 "&Reguläre Ausdrücke"
 upd:"Re&gular expressions"
-upd:"Re&gular expressions"
+"Wyrażenie &regularne"
 "Expresiones re&gulares"
 "Re&gulárne výrazy"
 "Espressione Re&golare"
 "&Регулярние виражения"
+"&Рэгулярныя выразы"
+upd:"Re&gular expressions"
 
 MViewSearchSearch
 "Искать"
@@ -20805,6 +21191,8 @@ MViewSearchSearch
 "Hľadať"
 "R&icerca"
 "Шукати"
+"Шукаць"
+"&Ieškoti"
 
 MViewSearchCancel
 "Отменить"
@@ -20817,6 +21205,8 @@ MViewSearchCancel
 "Storno"
 "&Annulla"
 "Скасувати"
+"Адмяніць"
+"&Atšaukti"
 
 MViewSearchingFor
 l:
@@ -20830,6 +21220,8 @@ l:
 "Vyhľadávam"
 "Ricerca Di"
 "Пошук"
+"Пошук"
+"Ieškau"
 
 MViewSearchingHex
 "Поиск байтов"
@@ -20842,6 +21234,8 @@ MViewSearchingHex
 "Vyhľadávam sled bajtov"
 "Ricerca Di Bytes"
 "Пошук байтів"
+"Пошук байтаў"
+upd:"Searching for bytes"
 
 MViewSearchCannotFind
 "Строка не найдена"
@@ -20849,11 +21243,13 @@ MViewSearchCannotFind
 "Nelze najít řetězec"
 "Konnte Zeichenkette nicht finden"
 "Nem találtam a szöveget:"
-"Nie mogę odnaleźć ciągu znaków"
+"Nie można odnaleźć ciągu znaków"
 "No se puede encontrar la cadena"
 "Nemôžem nájsť reťazec"
 "Non Posso Trovare La Stringa"
 "Рядок не знайдено"
+"Радок не знойдзены"
+"Negalėjau surasti eilutės"
 
 MViewSearchCannotFindHex
 "Байты не найдены"
@@ -20861,25 +21257,29 @@ MViewSearchCannotFindHex
 "Nelze najít sekvenci bytů"
 "Konnte Bytefolge nicht finden"
 "Nem találtam a bájtokat:"
-"Nie mogę odnaleźć bajtów"
+"Nie można odnaleźć bajtów"
 "No se puede encontrar los bytes"
 "Nemôžem nájsť sekvenciu bajtov"
 "Non Posso Trovare I Bites"
 "Байти не знайдено"
+"Байты не знойдзены"
+upd:"Could not find the bytes"
 
 #fixed order begin
 #
 MViewSearchEod
 "Достигнут конец документа"
 "End of the document reached"
-upd:"End of the document reached"
+"Dosažen konec souboru"
 "Das Ende des Dokuments ist erreicht"
 upd:"End of the document reached"
-upd:"End of the document reached"
+"Koniec dokumentu"
 "Fin del documento alcanzado"
 "Dosiahnutý koniec dokumentu"
 "Raggiunta La Fine Del Documento"
 "Досягнуто кінець документа"
+"Дасягнуты канец дакументу"
+upd:"End of the document reached"
 
 MViewSearchFromBegin
 "Продолжить поиск с начала документа?"
@@ -20892,18 +21292,22 @@ MViewSearchFromBegin
 "Pokračovať v hľadaní od začiatku dokumentu?"
 "Continua La Ricerca Da Inizio Documento?"
 "Продовжити пошук з початку документа?"
+"Працягнуць пошук з пачатку дакумента?"
+upd:"Continue from the beginning of the document?"
 
 MViewSearchBod
 "Достигнуто начало документа"
 "Begin of the document reached"
-upd:"Begin of the document reached"
+"Dosažen začátek souboru"
 "Der Anfang des Dokuments ist erreicht"
 upd:"Begin of the document reached"
-upd:"Begin of the document reached"
+"Początek dokumentu"
 "Comienzo del documento alcanzado"
 "Dosiahnutý začiatok dokumentu"
 "Raggiunto L'Inizio Del Documento"
 "Досягнуто початок документа"
+"Дасягнуты пачатак дакументу"
+upd:"Begin of the document reached"
 
 MViewSearchFromEnd
 "Продолжить поиск с конца документа?"
@@ -20916,32 +21320,38 @@ MViewSearchFromEnd
 "Pokračovať v hľadaní od konca dokumentu?"
 "Continua La Ricerca Dalla Fine Del Documento?"
 "Продовжити пошук з кінця документа?"
+"Працягнуць пошук з канца дакумента?"
+upd:"Continue from the end of the document?"
 
 MViewSearchCycle
 "Просмотрен весь документ"
 "The whole document scanned"
-upd:"The Whole document scanned"
+"Celý soubor byl prohledán"
 "Das Dokument wurde bereits durchgesehen"
 upd:"The Whole document scanned"
-upd:"The Whole document scanned"
+"Przeszukany cały dokument"
 "Documento completo escaneado"
 "Celý dokument prehľadaný"
 "Intero Documento Scansionato"
 "Переглянуто увесь документ"
+"Прагляедзены ўвесь дакумент"
+upd:"The whole document scanned"
 
 MViewSearchRepeat
 "Повторить поиск в документе?"
 "Repeat the search in the document?"
-upd:"Repeat the search in the document?"
+"Opakovat hledání v souboru?"
 "Wollen Sie die Suche im Dokument wiederholen?"
 upd:"Repeat the search in the document?"
-upd:"Repeat the search in the document?"
+"Powtórzyć szukanie w dokumencie?"
 "Repetir la búsqueda en el documento?"
 "Zopakovať hľadanie v dokumente?"
 "Ripetere La Ricerca Nel Documento?"
 "Повторити пошук в документі?"
 #
 #fixed order end
+"Паўтарыць пошук у дакуменце?"
+upd:"Repeat the search in the document?"
 
 MPrintTitle
 l:
@@ -20955,6 +21365,8 @@ l:
 "Tlač"
 "Stampa"
 "Друк"
+"Друк"
+"Spausdinti"
 
 MPrintTo
 "Печатать {0} на"
@@ -20967,6 +21379,8 @@ MPrintTo
 "Vytlačiť {0} na"
 "Stampa {0} Su"
 "Друкувати {0} на"
+"Друк {0} на"
+"Spausdinti {0} su"
 
 MPrintFilesTo
 "Печатать {0} файлов на"
@@ -20979,6 +21393,8 @@ MPrintFilesTo
 "Vytlačiť {0} súborov na"
 "Stampa {0} Files Su"
 "Друкувати {0} файлів на"
+"Друк {0} файлаў на"
+"Spausdinti {0} failus su"
 
 MPreparingForPrinting
 "Подготовка файлов к печати"
@@ -20991,6 +21407,8 @@ MPreparingForPrinting
 "Pripravujem súbory na tlač"
 "Preparazione Dei Files Per La Stampa"
 "Підготовка файлів до друку"
+"Падрыхтоўка файлаў да друку"
+"Ruošiu failus spausdinimui"
 
 MCannotEnumeratePrinters
 "Не удалось получить список доступных принтеров"
@@ -20998,11 +21416,13 @@ MCannotEnumeratePrinters
 "Nelze zjistit seznam dostupných tiskáren"
 upd:"Cannot enumerate available printers list"
 "Az elérhető nyomtatók listája nem állítható össze"
-upd:"Cannot enumerate available printers list"
+"Nie można odczytać listy drukarek"
 "No se puede enumerar lista de impresoras disponibles"
-"Cannot enumerate available printers list"
+upd:"Cannot enumerate available printers list"
 "Non Riesco A Trovare Nessuna Stampante"
 "Не вдалося отримати список доступних принтерів"
+"Немагчыма атрымаць спіс наяўных друкарак"
+upd:"Cannot enumerate available printers list"
 
 MCannotOpenPrinter
 "Не удалось открыть принтер"
@@ -21010,11 +21430,13 @@ MCannotOpenPrinter
 "Nelze otevřít tiskárnu"
 "Fehler beim öffnen des Druckers"
 "Nyomtató nem elérhető"
-"Nie mogę połączyć się z drukarką"
+"Nie można połączyć się z drukarką"
 "No se puede abrir impresora"
 "Nemôžem otvoriť tlačiareň"
 "Non Posso Comunicare Con La Stampante"
 "Не вдалося відкрити принтер"
+"Немагчыма адчыніць друкарку"
+"Negaliu susisiekti su spausdintuvu"
 
 MCannotPrint
 "Не удалось распечатать"
@@ -21022,11 +21444,13 @@ MCannotPrint
 "Nelze tisknout"
 "Fehler beim Drucken"
 "Nem nyomtatható"
-"Nie mogę drukować"
+"Nie można drukować"
 "No se puede imprimir"
 "Nemôžem tlačiť"
 "Non Riesco A Stampare"
 "Не вдалося роздрукувати"
+"Немагчыма надрукаваць"
+"Negaliu spausdinti"
 
 MDescribeFiles
 l:
@@ -21040,6 +21464,8 @@ l:
 "Súbor popisov"
 "Descrivi L'Oggetto"
 "Опис файла"
+"Апісанне файла"
+"Aprašymo failas"
 
 MEnterDescription
 "Введите описание для"
@@ -21052,6 +21478,8 @@ upd:"Írja be megjegyzését:"
 "Zadajte popis"
 "Inserisci Descrizione Per"
 "Введіть опис для"
+"Увядзіце апісанне для"
+"Įveskite aprašymą"
 
 MReadingDiz
 l:
@@ -21065,6 +21493,8 @@ l:
 "Načítavam popisy súboru"
 "Lettura Delle Descrizioni"
 "Читання описів файлів"
+"Чытанне апісання файлаў"
+"Skaitau failo aprašymą"
 
 MCannotUpdateDiz
 "Не удалось обновить описания файлов"
@@ -21072,23 +21502,13 @@ MCannotUpdateDiz
 "Nelze aktualizovat popisy souboru"
 "Dateibeschreibungen konnten nicht aktualisiert werden."
 "A fájlmegjegyzések nem frissíthetők"
-"Nie moge aktualizować opisów plików"
+"Nie można aktualizować opisów plików"
 "No se puede actualizar descripción de archivos"
 "Nemôžem aktualizovať popisy súboru"
 "Non Posso Aggiornare Le Descrizioni"
 "Не вдалося оновити описи файлів"
-
-MCannotUpdateRODiz
-"Файл описаний защищён от записи"
-"The description file is read only"
-"Popisový soubor má atribut ""Jen pro čtení"""
-"Die Beschreibungsdatei ist schreibgeschützt."
-"A megjegyzésfájl csak olvasható"
-"Opis jest plikiem tylko do odczytu"
-"El archivo descripción es de sólo-lectura"
-"Súbor popisov je len na čítanie"
-"File Delle Descrizioni Di Sola Lettura"
-"Файл описів захищено від запису"
+"Не атрымалася абнавіць апісанні файлаў"
+"Negaliu atnaujinti failo aprašymo"
 
 MCfgDizTitle
 l:
@@ -21102,6 +21522,8 @@ l:
 "Popisy súborov"
 "Descrizione File"
 "Описи файлів"
+"Апісанні файлаў"
+"Failų aprašymai"
 
 MCfgDizListNames
 "Имена &списков описаний, разделённые запятыми:"
@@ -21114,30 +21536,36 @@ MCfgDizListNames
 "Zoznam pop&isov súborov oddelených čiarkami:"
 "Nomi Files Contenenti &Descrizioni Divisi Da Virgola:"
 "Імена &списків описів, розділені комами:"
+"Імёны &спісаў апісанняў, падзеленых коскамі:"
+"Aprašymo failų &sąrašas, vardai atskirti kableliais:"
 
 MCfgDizSetHidden
-"Устанавливать &атрибут ""Скрытый"" на новые списки описаний"
-"Set ""&Hidden"" attribute to new description lists"
-"Novým souborům s popisy nastavit atribut ""&Skrytý"""
+"Устанавливать &атрибут \"Скрытый\" на новые списки описаний"
+"Set \"&Hidden\" attribute to new description lists"
+"Novým souborům s popisy nastavit atribut \"&Skrytý\""
 "Setze das '&Versteckt'-Attribut für neu angelegte Dateien"
-"Az új megjegyzésfájl ""&rejtett"" attribútumú legyen"
-"Ustaw atrybut ""&Ukryty"" dla nowych plików z opisami"
-"Poner atributo"
-"Nové súbory s popismi nastaviť s atribútom ""&Skrytý"""
+"Az új megjegyzésfájl \"&rejtett\" attribútumú legyen"
+"Ustaw atrybut \"&Ukryty\" dla nowych plików z opisami"
+"Poner atributo \"Oculto\" en nuevas listas de descripción"
+"Nové súbory s popismi nastaviť s atribútom \"&Skrytý\""
 "Rendi I Files Con Le Descri&zioni Di Sola Lettura"
-"Встановлювати &атрибут ""Прихований"" на нові списки описів"
+"Встановлювати &атрибут \"Прихований\" на нові списки описів"
+"Ужыць &атрыбут \"Зхаваны\" на новыя спісы апісанняў"
+"Uždėti \"&Hidden\" atributą naujiems aprašymų failams"
 
 MCfgDizROUpdate
-"Обновлять файл описаний с атрибутом ""Толь&ко для чтения"""
+"Обновлять файл описаний с атрибутом \"Толь&ко для чтения\""
 "Update &read only description file"
-"Aktualizovat popisové soubory s atributem ""Jen pro čtení"""
+"Aktualizovat popisové soubory s atributem \"Jen pro čtení\""
 "Schreibgeschützte Dateien aktualisie&ren"
 "&Csak olvasható megjegyzésfájlok frissítése"
 "Aktualizuj plik opisu tylko do odczytu"
 "&Actualizar archivo descripción de sólo lectura"
 "Aktualizovať popisové súbory s atribútom Len na čítanie"
 "&Aggiorna File Di Sola Lettura"
-"Оновлювати файл описів з атрибутом ""Лише для читання"""
+"Оновлювати файл описів з атрибутом \"Лише для читання\""
+"Абнаўляць файл апісанняў з атрыбутам \"Толь&кі для чытання\""
+upd:"Update &read only description file"
 
 MCfgDizStartPos
 "&Позиция новых описаний в строке"
@@ -21150,6 +21578,8 @@ MCfgDizStartPos
 "&Pozícia nových popisov v reťazci"
 "&Posizione Delle Descrizioni Nel File"
 "&Позиція нових описів у рядку"
+"Месцазнаходжанне новых а&пісанняў у радке"
+"Naujų aprašymų &pozicija eilutėje"
 
 MCfgDizNotUpdate
 "&Не обновлять описания"
@@ -21162,6 +21592,8 @@ MCfgDizNotUpdate
 "&Neaktualizovať popisy"
 "Non Aggiornare Le Descri&zioni"
 "&Не оновлювати описи"
+"&Не абнаўляць апісанні"
+"&Neatnaujinti aprašymų"
 
 MCfgDizUpdateIfDisplayed
 "&Обновлять, если они выводятся на экран"
@@ -21174,6 +21606,8 @@ MCfgDizUpdateIfDisplayed
 "Aktualizovať, ak sa &zobrazuje"
 "&Aggiorna Se Visualizzata"
 "&Оновлювати, якщо вони виводяться на екран"
+"Абнаўляць, калі яны выв&одзяцца на экран"
+"Atnaujinti jei &rodomi"
 
 MCfgDizAlwaysUpdate
 "&Всегда обновлять"
@@ -21186,6 +21620,8 @@ MCfgDizAlwaysUpdate
 "&Vždy aktualizovať"
 "A&ggiorna Comunque"
 "&Завжди оновлювати"
+"За&ўсёды абнаўляць"
+"&Visada atnaujinti"
 
 MCfgDizAnsiByDefault
 "&Использовать кодовую страницу ANSI по умолчанию"
@@ -21198,18 +21634,22 @@ upd:"Dateien standardmäßig mit Windows-Kod&ierung öffnen"
 "Automaticky otvárať súbory v kódovaní &WIN"
 "AN&SI Per Default"
 "&Використовувати кодову сторінку ANSI за замовчуванням"
+"Уж&ыць прадвызначаную кадыроўку ANSI"
+upd:"Use ANS&I code page by default"
 
 MCfgDizSaveInUTF
-"Сохранять в UTF8"
-"Save in UTF8"
-"Uložit v UTF8"
-"In UTF8 speichern"
-upd:"Save in UTF8"
-upd:"Save in UTF8"
-"Guardar en UTF8"
-"Uložiť v UTF8"
-"Salva In &UTF8"
-"Зберігати в UTF8"
+"Сохранять в UTF-&8"
+"Save in UTF-&8"
+"Uložit v UTF-&8"
+"In UTF-&8 speichern"
+upd:"Save in UTF-&8"
+"Zapisz w UTF-&8"
+"Guardar en UTF-&8"
+"Uložiť v UTF-&8"
+"Salva In UTF-&8"
+"Зберігати в UTF-&8"
+"Захоўваць у UTF-&8"
+upd:"Save in UTF-&8"
 
 MReadingTitleFiles
 l:
@@ -21223,6 +21663,8 @@ l:
 "Aktualizácia panelov"
 "Aggiornamento Dei Pannelli"
 "Оновлення панелей"
+"Абнаўленне панэляў"
+upd:"Update of panels"
 
 MReadingFiles
 "Чтение: {0} файлов"
@@ -21235,6 +21677,8 @@ MReadingFiles
 "Načítavam: {0} súborov"
 "Lettura: {0} Files"
 "Читання: {0} файлів"
+"Чытанне: {0} файлаў"
+"Skaitau: {0} failus"
 
 MOperationNotCompleted
 "Операция не завершена"
@@ -21242,11 +21686,13 @@ MOperationNotCompleted
 "Operace se nedokončila"
 "Vorgang nicht abgeschlossen"
 "A művelet félbeszakadt"
-"Operacja nie doprowadzona do końca"
+"Operacja nie zakończona"
 "Operación no completada"
 "Operácia sa nedokončila"
 "Operazione Interrotta"
 "Операцію не закінчено"
+"Дзеянне не закончана"
+"Operacija nepabaigta"
 
 MEditPanelModes
 l:
@@ -21260,18 +21706,8 @@ l:
 "Upraviť módy panelov"
 "Editor Delle Modalità"
 "Режими панелі"
-
-MEditPanelModesBottom
-"Ins,Del,F4,Ctrl+Enter,Ctrl+Shift+Enter"
-"Ins,Del,F4,Ctrl+Enter,Ctrl+Shift+Enter"
-"Ins,Del,F4,Ctrl+Enter,Ctrl+Shift+Enter"
-"Ins,Del,F4,Ctrl+Enter,Ctrl+Shift+Enter"
-"Ins,Del,F4,Ctrl+Enter,Ctrl+Shift+Enter"
-"Ins,Del,F4,Ctrl+Enter,Ctrl+Shift+Enter"
-"Ins,Del,F4,Ctrl+Enter,Ctrl+Shift+Enter"
-"Ins,Del,F4,Ctrl+Enter,Ctrl+Shift+Enter"
-"Ins,Del,F4,Ctrl+Enter,Ctrl+Shift+Enter"
-"Ins,Del,F4,Ctrl+Enter,Ctrl+Shift+Enter"
+"Становішча панэляў"
+"Redaguoti langų režimus"
 
 MEditPanelModeName
 l:
@@ -21285,6 +21721,8 @@ l:
 "Meno"
 "Nome"
 "Им'я"
+"&Імя"
+"&Vardas"
 
 MEditPanelModeTypes
 "&Типы колонок"
@@ -21297,6 +21735,8 @@ MEditPanelModeTypes
 "&Typ stĺpcov"
 "Tipi Di &Colonne"
 "&Типи стовпців"
+"&Тыпы слупкоў"
+"Stulpelių &tipai"
 
 MEditPanelModeWidths
 "&Ширина колонок"
@@ -21309,6 +21749,8 @@ MEditPanelModeWidths
 "Šír&ka stĺpcov"
 "&Larghezze Colonne"
 "&Ширина стовпців"
+"&Шырыня слупкоў"
+"Stulpelių &pločiai"
 
 MEditPanelModeStatusTypes
 "Типы колонок строки ст&атуса"
@@ -21321,6 +21763,8 @@ MEditPanelModeStatusTypes
 "T&yp stĺpcov stavového riadka"
 "Colonne &Barra Di Stato"
 "Типи стовпців ст&атусного рядка"
+"Тыпы слупкоў радка ст&ану"
+"St&atuso juostos stulpelių tipai"
 
 MEditPanelModeStatusWidths
 "Ширина колонок строки стат&уса"
@@ -21333,6 +21777,8 @@ MEditPanelModeStatusWidths
 "Šírka stĺ&pcov stavového riadka"
 "Larghe&zza Barra Di Stato"
 "Ширина стовпців стат&усного рядка"
+"Шырыня слупкоў радка ст&ану"
+"Statuso j&uostos stulpelių pločiai"
 
 MEditPanelModeFullscreen
 "&Полноэкранный режим"
@@ -21345,6 +21791,8 @@ MEditPanelModeFullscreen
 "&Celoobrazovkový režim"
 "&Vista A Tutto Schermo"
 "&На весь екран"
+"&Прагляд на ўвесь экран"
+"Pilnaekranis &vaizdas"
 
 MEditPanelModeAlignExtensions
 "&Выравнивать расширения файлов"
@@ -21357,6 +21805,8 @@ MEditPanelModeAlignExtensions
 "Zarovnať príp&ony súborov"
 "Allinea Estensioni &Files"
 "&Вирівнювати розширення файлів"
+"&Выраўнованне пашырэнняў файлаў"
+"Sulygiuoti failų p&lėtinius"
 
 MEditPanelModeAlignFolderExtensions
 "Выравнивать расширения пап&ок"
@@ -21369,6 +21819,8 @@ MEditPanelModeAlignFolderExtensions
 "Zarovnať prípony prieči&nkov"
 "Allinea Estensioni &Cartelle"
 "Вирівнювати розширення пап&ок"
+"Выраўноўваць пашырэнні катал&огаў"
+"Sulygiuoti katalogus plėtinius"
 
 MEditPanelModeFoldersUpperCase
 "Показывать папки &заглавными буквами"
@@ -21376,11 +21828,13 @@ MEditPanelModeFoldersUpperCase
 "Zobrazit adresáře &velkými písmeny"
 "Ordner in Großb&uchstaben zeigen"
 "Mappák NAG&YBETŰVEL mutatva"
-"Nazwy katalogów &WIELKIMI LITERAMI"
+"Nazwy folderów &WIELKIMI LITERAMI"
 "Mostrar &directorios en mayúsculas"
 "Zobraziť priečinky &VEĽKÝMI písmenami"
 "Mostra Le Cartelle In &MAIUSCOLO"
 "Показувати папки &заголовними літерами"
+"Адлюстроўваць каталогі в&ялікімі літарамі"
+"Rodyti katalogus &didžiosiomis"
 
 MEditPanelModeFilesLowerCase
 "Показывать файлы ст&рочными буквами"
@@ -21393,6 +21847,8 @@ MEditPanelModeFilesLowerCase
 "Zobraziť súbory ma&lými písmenami"
 "Mostra I Files In m&inuscolo"
 "Показувати файли малими літерами"
+"Адлюстроўваць каталогі малымі літа&рамі"
+"Rodyti failų vardus &mažosiomis"
 
 MEditPanelModeUpperToLowerCase
 "Показывать имена файлов из заглавных букв &строчными буквами"
@@ -21405,6 +21861,8 @@ MEditPanelModeUpperToLowerCase
 "Zobraziť veľké znaky v názvoch súborov ako &malé písmená"
 "Mostra Nomi Files MAIUSCOLO In minuscol&o"
 "Показувати имена файлів из заголовних літер малими літерами"
+"Адлю&строўваць імёны файлаў з віялікімі літарамі як малымі літарамі"
+"Rodyti didžiosiomis parašytus failų vardus ma&žosiomis"
 
 MSetFolderInfoTitle
 l:
@@ -21413,11 +21871,13 @@ l:
 "Popisy adresářů"
 "Ordnerbeschreibungen"
 "Mappa megjegyzésfájlok"
-"Pliki opisu katalogu"
+"Pliki opisu folderów"
 "Archivos de descripción de directorios"
 "Súbory s popisom priečinka"
 "File Di Informazioni Per Cartelle"
 "Файли информації про папки"
+"Файлы апісанняў аб каталогах"
+"Katalogo aprašymo failai"
 
 MSetFolderInfoNames
 "Введите имена файлов, разделённые запятыми (допускаются маски)"
@@ -21430,6 +21890,8 @@ MSetFolderInfoNames
 "Zadajte názvy súborov oddelené čiarkami (* je povolené)"
 "Inserite Nomi Dei Files Divisi Da Virgola [*/?] Sono Permessi"
 "Введіть имена файлів, розділені комами (дозволено маски)"
+"Увядзіце імёны файлаў, падзеленыя коскамі (магчыма маскі)"
+"Įveskite failų vardus atskirtus kableliais (* ir ? leidžiami)"
 
 MScreensTitle
 l:
@@ -21443,6 +21905,8 @@ l:
 "Okná"
 "Schermo"
 "Екрани"
+"Экраны"
+"Ekranai"
 
 MScreensPanels
 "Панели"
@@ -21455,6 +21919,8 @@ MScreensPanels
 "Panely"
 "Pannelli"
 "Панелі"
+"Панэлі"
+"Langai"
 
 MScreensView
 "Просмотр"
@@ -21467,6 +21933,8 @@ MScreensView
 "Zobraziť"
 "Vista"
 "Перегляд"
+"Прагляд"
+"Žiūrėti"
 
 MScreensEdit
 "Редактор"
@@ -21479,6 +21947,8 @@ MScreensEdit
 "Upraviť"
 "Modifica"
 "Редактор"
+"Змена"
+"Redaguoti"
 
 MAskApplyCommandTitle
 l:
@@ -21492,6 +21962,8 @@ l:
 "Použiť príkaz"
 "Applica Comando"
 "Застосувати команду"
+"Скарыстаць каманду"
+"Panaudoti komandą"
 
 MAskApplyCommand
 "Введите команду для обработки выбранных файлов"
@@ -21504,6 +21976,8 @@ MAskApplyCommand
 "Zadajte príkaz na spracovanie vybraných súborov"
 "Applica Comando Alla Selezione"
 "Введіть команду для обробки вибраних файлів"
+"Увядзіце каманду для апрацоўкі абраных файлаў"
+"Įveskite komandą pažymėtų failų apdorojimui"
 
 MPluginConfigTitle
 l:
@@ -21512,11 +21986,13 @@ l:
 "Nastavení modulů"
 "Konfiguration von Plugins"
 "Plugin beállítások"
-"Konfiguracja pluginów"
+"Konfiguracja wtyczek"
 "Configuración de complementos"
 "Nastavenie modulov"
 "Configurazione Plug-IN"
 "Конфігурація плагінів"
+"Налады дадаткаў"
+"Priedų konfigūracija"
 
 MPluginCommandsMenuTitle
 "Команды плагинов"
@@ -21524,11 +22000,13 @@ MPluginCommandsMenuTitle
 "Příkazy modulů"
 "Pluginbefehle"
 "Plugin parancsok"
-"Dostępne pluginy"
+"Dostępne wtyczki"
 "Comandos de complemento"
 "Príkazy modulov"
 "Comandi Dei Plug-IN"
 "Команди плагінів"
+"Каманды дадаткаў"
+"Komandos - priedai"
 
 MPreparingList
 l:
@@ -21542,6 +22020,8 @@ l:
 "Pripravujem zoznam súborov"
 "Preparazione Della Lista"
 "Створення списку файлів"
+"Стварэнне спіса файлаў"
+"Ruošiu failų sąrašą"
 
 MLangTitle
 l:
@@ -21555,6 +22035,8 @@ l:
 "Hlavný jazyk"
 "Lingua Programma"
 "Основна мова"
+"Асноўная мова"
+"Pagrindinė kalba"
 
 MHelpLangTitle
 "Язык помощи"
@@ -21567,6 +22049,8 @@ MHelpLangTitle
 "Jazyk Pomocníka"
 "Lingua File Aiuto"
 "Мова допомоги"
+"Мова дапамогі"
+"Pagalbos kalba"
 
 MDefineMacroTitle
 l:
@@ -21580,6 +22064,8 @@ l:
 "Definovať makro"
 "Definizione Macro"
 "Задання макрокоманди"
+"Задаць каманду макраса"
+"Apibrėžti makro"
 
 MDefineMacro
 "Нажмите желаемую клавишу"
@@ -21592,6 +22078,8 @@ MDefineMacro
 "Stlačte požadovaný kláves"
 "Premere Il Tasto Desiderato"
 "Натисніть бажану клавішу"
+"Націсніце жадаемую клавішу"
+"Paspauskite pasirinktą klavišą"
 
 MMacroReDefinedKey
 "Макроклавиша '{0}' уже определена."
@@ -21604,6 +22092,8 @@ MMacroReDefinedKey
 "Kláves makra '{0}' je už definovaný."
 "Tasto '{0}' Già Definito"
 "Макроклавішу '{0}' вже визначено."
+"Клавіша макрасу '{0}' ужо вызначана."
+upd:"Macro key '{0}' already defined."
 
 MMacroDeleteKey
 "Макроклавиша '{0}' будет удалена."
@@ -21616,6 +22106,8 @@ MMacroDeleteKey
 "Kláves makra '{0}' bude odstránený."
 "Tasti '{0}' Sarà Rimosso"
 "Макроклавішу '{0}' буде видалено."
+"Клавіша макрасу '{0}' будзе выдалена."
+upd:"Macro key '{0}' will be removed."
 
 MMacroCommonReDefinedKey
 "Общая макроклавиша '{0}' уже определена."
@@ -21628,6 +22120,8 @@ MMacroCommonReDefinedKey
 "Kláves pre bežné makro '{0}' je už definovaný."
 "Tasto Macro Comune '{0}' Già Impostata"
 "Загальну макроклавішу '{0}' вже визначено."
+"Агульная клавіша макрасу '{0}' ужо вызначана."
+upd:"Common macro key '{0}' already defined."
 
 MMacroCommonDeleteKey
 "Общая макроклавиша '{0}' будет удалена."
@@ -21640,6 +22134,8 @@ MMacroCommonDeleteKey
 "Kláves pre bežné makro '{0}' bude odstránený."
 "Tasto Macro Comune '{0}' Sarà Rimossa"
 "Загальну макроклавішу '{0}' буде видалено."
+"Агульная клавіша макрасу '{0}' будзы выдалена."
+upd:"Common macro key '{0}' will be removed."
 
 MMacroSequence
 "Последовательность:"
@@ -21652,18 +22148,8 @@ MMacroSequence
 "Postupnosť:"
 "Sequenza:"
 "Послідовність:"
-
-MMacroDescription
-"Описание:"
-"Description:"
-"Popis:"
-"Beschreibung:"
-"Megjegyzés:"
-"Opis:"
-"Descripción:"
-"Popis:"
-"Descrizione"
-"Опис:"
+"Паслядоўнасць:"
+upd:"Sequence:"
 
 MMacroReDefinedKey2
 "Переопределить?"
@@ -21676,6 +22162,8 @@ MMacroReDefinedKey2
 "Predefinovať?"
 "Reimposta?"
 "Перевизначити?"
+"Перавызначыць?"
+upd:"Redefine?"
 
 MMacroDeleteKey2
 "Удалить?"
@@ -21688,18 +22176,22 @@ MMacroDeleteKey2
 "Odstrániť?"
 "Elimina?"
 "Видалити?"
+"Выдаліць?"
+upd:"Delete?"
 
 MMacroEditKey
 "Изменить"
-"Change"
+"Chan&ge"
 "Změnit"
 "Verändern"
 upd:"Change"
-upd:"Change"
+"Zmienić?"
 "Cambiar?"
 "Zmeniť"
 "Cambia"
 "Змінити"
+"Змяніць?"
+upd:"Chan&ge"
 
 MMacroSettingsTitle
 l:
@@ -21713,6 +22205,36 @@ l:
 "Nastavenia makra pre '{0}'"
 "Configurazione Macro Per '{0}'"
 "Параметри макрокоманди для '{0}'"
+"Налады каманды макрасу для '{0}'"
+"Makro parametrai dėl '{0}'"
+
+MMacroSettingsSequence
+"Последовательность:"
+"Se&quence:"
+"Posloupnost:"
+"Sequenz:"
+"Szekvencia:"
+"Sekwencja:"
+"Secuencia:"
+"Postupnosť:"
+"Sequenza:"
+"Послідовність:"
+"Паслядоўнасць:"
+upd:"Se&quence:"
+
+MMacroSettingsDescription
+"Описание:"
+"&Description:"
+"Popis:"
+"Beschreibung:"
+"Megjegyzés:"
+"Opis:"
+"Descripción:"
+"Popis:"
+"Descrizione"
+"Опис:"
+"Апісанне:"
+upd:"&Description:"
 
 MMacroSettingsEnableOutput
 "Разрешить во время &выполнения вывод на экран"
@@ -21725,18 +22247,22 @@ MMacroSettingsEnableOutput
 "Povoliť &výstup na obrazovku, kým sa vykonáva makro"
 "&Abilita Schermo Quando Si Esegue Macro"
 "Дозволити під час &виконання виведення на екран"
+"Дазволіць у час &выканання вываду на экран"
+"Išvedimą į ekraną kol vykdoma makro"
 
 MMacroSettingsRunAfterStart
-"В&ыполнять после запуска FAR"
-"Execute after FAR &start"
-"&Spustit po spuštění FARu"
-"Ausführen beim &Starten von FAR"
-"Végrehajtás a FAR &indítása után"
-"Wykonaj po &starcie FAR-a"
-"Ejecutar luego de &iniciar FAR"
-"&Spustiť po spustení FARu"
-"Esegui Ad &Avvio Di FAR"
+"В&ыполнять после запуска Far"
+"Execute after Far &start"
+"&Spustit po spuštění Faru"
+"Ausführen beim &Starten von Far"
+"Végrehajtás a Far &indítása után"
+"Wykonaj po &starcie Far"
+"Ejecutar luego de &iniciar Far"
+"&Spustiť po spustení Faru"
+"Esegui Ad &Avvio Di Far"
 "В&иконувати після запуску Far"
+"В&ыканаць пасля запуску Far"
+"Vykdyti po Far &paleidimo"
 
 MMacroSettingsActivePanel
 "&Активная панель"
@@ -21749,6 +22275,8 @@ MMacroSettingsActivePanel
 "&Aktívny panel"
 "Pannello &Attivo"
 "&Активна панель"
+"&Дзейная панэль"
+upd:"&Active panel"
 
 MMacroSettingsPassivePanel
 "&Пассивная панель"
@@ -21761,6 +22289,8 @@ MMacroSettingsPassivePanel
 "Pa&sívny panel"
 "Pannello &Passivo"
 "&Пасивна панель"
+"&Бяздзейная панэль"
+upd:"&Passive panel"
 
 MMacroSettingsPluginPanel
 "На панели пла&гина"
@@ -21768,11 +22298,13 @@ MMacroSettingsPluginPanel
 "Panel modu&lů"
 "P&lugin Panel"
 "Ha &plugin panel"
-"Panel p&luginów"
+"Panel wtyczek"
 "Panel de comp&lementos"
 "Panel modu&lov"
 "Pannello Pl&ug-IN"
 "На панелі пла&гіна"
+"На панэлі дадатка&ў"
+upd:"P&lugin panel"
 
 MMacroSettingsFolders
 "Выполнять для папо&к"
@@ -21785,6 +22317,8 @@ MMacroSettingsFolders
 "Spustiť pre p&riečinky"
 "&Esegui Per Cartelle"
 "Виконувати для папок"
+"Выканаць для &каталогаў"
+upd:"Execute for &folders"
 
 MMacroSettingsSelectionPresent
 "&Отмечены файлы"
@@ -21797,6 +22331,8 @@ MMacroSettingsSelectionPresent
 "E&xistujúci výber"
 "Selezione &Presente"
 "П&означені файли"
+"&Абраныя файлы"
+upd:"Se&lection present"
 
 MMacroSettingsCommandLine
 "Пустая командная &строка"
@@ -21809,6 +22345,8 @@ MMacroSettingsCommandLine
 "Prázdny prí&kazový riadok"
 "Linea Di Comando &Vuota"
 "Порожній командний рядок"
+"Пусты камандны &радок"
+"Komandinė eilutė tuščia"
 
 MMacroSettingsSelectionBlockPresent
 "Отмечен б&лок"
@@ -21821,30 +22359,36 @@ MMacroSettingsSelectionBlockPresent
 "Existujúci blok výber&u"
 "Selezione Blocco &Presente"
 "Позначено б&лок"
+"Адзначаны б&лок"
+upd:"Selection &block present"
 
 MMacroPluginLuamacroNotLoaded
 "Плагин LuaMacro не загружен"
 "Plugin LuaMacro is not loaded"
-upd:"Plugin LuaMacro is not loaded"
+"Plugin LuaMacro není nahrán"
 "Plugin LuaMacro wurde nicht geladen"
 upd:"Plugin LuaMacro is not loaded"
-upd:"Plugin LuaMacro is not loaded"
+"Wtyczka LuaMacro nie została wczytana"
 "Complemento LuaMacro no está cargado"
 "Modul LuaMacro nie je spustený"
 "Plugin LuaMacro Non Caricato"
 "Плагін LuaMacro не завантажено"
+"Дадатак LuMacro не запампаваны"
+upd:"Plugin LuaMacro is not loaded"
 
 MMacroRecordingIsDisabled
 "Запись макросов запрещена"
 "Macro recording is disabled"
-upd:"Macro recording is disabled"
+"Nahrávání maker je vypnuto"
 "Macro Screiben is verhindert"
 upd:"Macro recording is disabled"
-upd:"Macro recording is disabled"
+"Nagrywanie makr jest wyłączone"
 "Grabación de macro está desactivada"
 "Záznam makra je zrušený"
 "Registrazione Macro Disabilitata"
 "Запис макросів заборонено"
+"Запіс макрасаў забаронена"
+upd:"Macro recording is disabled"
 
 MCannotSaveFile
 l:
@@ -21853,11 +22397,13 @@ l:
 "Nelze uložit soubor"
 "Kann Datei nicht speichern"
 "A fájl nem menthető"
-"Nie mogę zapisać pliku"
+"Nie można zapisać pliku"
 "No se puede guardar archivo"
 "Nemôžem uložiť súbor"
 "Non Posso Salvare Il File"
 "Помилка збереження файлу"
+"Немагчыма захаваць файл"
+"Negaliu išsaugoti failo"
 
 MTextSavedToTemp
 "Отредактированный текст записан в"
@@ -21870,6 +22416,8 @@ MTextSavedToTemp
 "Upravený text je uložený v"
 "File Salvato In"
 "Відредагований текст записано в"
+"Зменены тэкст запісаны ў"
+"Redaguotas tekstas išsaugotas"
 
 MPluginHotKeyTitle
 l:
@@ -21878,11 +22426,13 @@ l:
 "Přidělit horkou klávesu modulu"
 "Dem Plugin eine Kurztaste zuweisen"
 "Plugin gyorsbillentyű hozzárendelés"
-"Przypisz klawisz skrótu do pluginu"
+"Przypisz klawisz skrótu do wtyczki"
 "Asignar tecla de atajo a complemento"
 "Prideliť skratkový kláves modulu"
 "Assegna Tasto Funzione Al PlugIN"
 "Призначення гарячої клавіші"
+"Прызначэнне хуткай клавішы"
+"Priskirti priedui greitraktį"
 
 MPluginHotKey
 "Введите горячую клавишу (букву или цифру)"
@@ -21895,6 +22445,8 @@ MPluginHotKey
 "Zadajte skratkový kláves (písmeno alebo číslicu)"
 "Inserire Il Tasto Funzione [Lettera/Numero]"
 "Введіть гарячу клавішу (букву або цифру)"
+"Увыдзіце хуткую клавішу (літару ці лічбу)"
+"Įveskite greitraktį (raidė ar skaitmuo)"
 
 MPluginInformation
 "Информация о плагине"
@@ -21902,11 +22454,13 @@ MPluginInformation
 "Informace o modulu"
 "Information über Plugin"
 upd:"Plugin information"
-upd:"Plugin information"
+"Informacje o wtyczce"
 "Información de complemento"
 "Informácie o module"
 "Informazioni Plugin"
 "Інформація про плагін"
+"Даведка аб дадатку"
+upd:"Plugin information"
 
 MPluginModuleTitle
 "&Название:"
@@ -21914,11 +22468,13 @@ MPluginModuleTitle
 "&Nadpis:"
 "&Titel:"
 upd:"&Title:"
-upd:"&Title:"
+"&Tytuł:"
 "&Título:"
 "&Názov:"
 "&Titolo:"
 "&Назва"
+"&Назва:"
+upd:"&Title:"
 
 MPluginDescription
 "&Описание:"
@@ -21926,11 +22482,13 @@ MPluginDescription
 "&Popis:"
 "&Beschreibung:"
 upd:"&Description:"
-upd:"&Description:"
+"&Opis:"
 "&Descripción:"
 "&Opis:"
 "&Descrizione:"
 "&Опис:"
+"Ап&ісанне:"
+upd:"&Description:"
 
 MPluginAuthor
 "&Автор:"
@@ -21938,11 +22496,13 @@ MPluginAuthor
 "&Autor:"
 "&Autor:"
 upd:"&Author:"
-upd:"&Author:"
+"&Autor:"
 "&Autor:"
 "&Autor:"
 "&Autore:"
 "&Автор:"
+"&Аўтар:"
+upd:"&Author:"
 
 MPluginVersion
 "&Версия:"
@@ -21950,11 +22510,13 @@ MPluginVersion
 "&Verze:"
 upd:"&Version:"
 upd:"&Version:"
-upd:"&Version:"
+"&Wersja:"
 "&Versión:"
 "&Verzia:"
 "&Versione:"
 "&Версія:"
+"&Версія:"
+upd:"&Version:"
 
 MPluginModulePath
 "&Файл плагина:"
@@ -21962,35 +22524,41 @@ MPluginModulePath
 "Cesta k &modulu:"
 "&Plugin-Datei:"
 upd:"&Module path:"
-upd:"&Module path:"
+"Ścieżka &modułu:"
 "Ruta de &módulo:"
 "Cesta k &modulu:"
 "&Percorso:"
 "&Файл плагіна:"
+"&Шлях да дадатку:"
+upd:"&Module path:"
 
-MPluginGUID
-"&GUID плагина:"
-"Plugin &GUID:"
-"&GUID modulu:"
-"Pludin GUID"
-upd:"Plugin &GUID:"
-upd:"Plugin &GUID:"
-"&GUID complemento:"
-"&GUID modulu:"
-"&GUID:"
-"&GUID плагіна:"
+MPluginUUID
+"&UUID плагина:"
+"Plugin &UUID:"
+"&UUID modulu:"
+"Pludin UUID"
+upd:"Plugin &UUID:"
+"&UUID wtyczki:"
+"&UUID complemento:"
+"&UUID modulu:"
+"&UUID:"
+"&UUID плагіна:"
+"UUID &дадатак:"
+upd:"Plugin &UUID:"
 
-MPluginItemGUID
-"GU&ID пункта:"
-"Plugin &item GUID:"
-"GUID položky m&odulu:"
-"&Punkt GUID:"
-upd:"Plugin &item GUID:"
-upd:"Plugin &item GUID:"
-"&Item GUID complemento:"
-"GUID položky m&odulu:"
-"&item GUID:"
-"GU&ID пункту:"
+MPluginItemUUID
+"UU&ID пункта:"
+"Plugin &item UUID:"
+"UUID položky m&odulu:"
+"&Punkt UUID:"
+upd:"Plugin &item UUID:"
+"U&UID menu wtyczki:"
+"&Item UUID complemento:"
+"UUID položky m&odulu:"
+"&item UUID:"
+"UU&ID пункту:"
+"UUID &элемент:"
+upd:"Plugin &item UUID:"
 
 MPluginPrefix
 "&Префикс плагина:"
@@ -21998,169 +22566,112 @@ MPluginPrefix
 "Předpona mo&dulu:"
 "Plugin &Präfix:"
 upd:"Plugin &prefix:"
-upd:"Plugin &prefix:"
+"&Przedrostek wtyczki:"
 "&Prefijo de complemento:"
 "Predpona mo&dulu:"
 "Prefi&sso:"
 "&Префікс плагіна:"
+"&Прыстаўка дадатку:"
+upd:"Plugin &prefix:"
 
-MPluginHotKeyBottom
-"F4 - задать горячую клавишу, F3 - информация"
-"F4 - set hot key, F3 - information"
-"F4 - nastavení horké klávesy, F3 - informace"
-upd:"Kurztaste setzen: F4, information: F3"
-upd:"F4 - gyorsbillentyű hozzárendelés, F3 - information"
-upd:"F4 - ustaw klawisz skrótu, F3 - information"
-"F4 - tecla de atajo, F3 - información"
-"F4 - nastavenie skratkového klávesu, F3 - informácia"
-"[F4] Assegna Tasto [F3] Informazioni"
-"F4 - задати гарячу клавішу, F3 - інформація"
+MExceptionDialogTitle
+"Ой"
+"Oops"
+"Jejda"
+"Hoppla"
+"Hoppá"
+"Ojej"
+"Vaya"
+"Ľutujeme"
+"Ops"
+"Отакої"
+"Вой"
+"Oi"
 
+MExceptionDialogMessage1
+"Что-то пошло не так."
+"Something went wrong."
+"Něco se nepovedlo."
+"Da hat etwas nicht geklappt."
+"Hiba történt."
+"Coś poszło źle."
+"Algo salió mal."
+"Stalo sa niečo nepríjemné."
+"Qualcosa non ha funzionato."
+"Щось пішло не так."
+"Нешта пайшло не так."
+"Kažkas nepavyko."
 
-MRightCtrl
-l:
-"ПравыйCtrl"
-"RightCtrl"
-"PravýCtrl"
-"StrgRechts"
-"JobbCtrl"
-"PrawyCtrl"
-"CtrlDrcho"
-"PravýCtrl"
-"CtrlDestra"
-"ПравийCtrl"
+MExceptionDialogMessage2
+"Пожалуйста, отправьте отчет об ошибке разработчикам:"
+"Please send the bug report to the developers:"
+"Zašlete zprávu o chybě vývojářům:"
+"Bitte senden Sie den Fehlerbericht an die Entwickler:"
+"Kérjük, küldje el a hibajelentést a fejlesztőknek:"
+"Proszę wysłać raport błędu do programistów:"
+"Por favor, envíe el informe de errores a los desarrolladores:"
+"Prosím, pošlite správu o chybách vývojárom:"
+"Per favore, invia il rapporto del bug agli sviluppatori:"
+"Будь ласка, надішліть звіт про помилку розробникам:"
+"Калі ласка, адпраўце справаздачу пра памылку распрацоўшчыкаў:"
+"Prašome siųsti klaidų ataskaitą kūrėjams:"
 
-MExcTrappedException
-"Исключительная ситуация"
-"Exception occurred"
-"Vyskytla se výjimka"
-"Ausnahmefehler aufgetreten"
-"Kivétel történt"
-"Wystąpił wyjątek"
-"Error de excepción"
-"Vyskytla sa výnimka"
-"Eccezione Interna"
-"Виняткова ситуація"
-
-MExcException
-"Исключение:"
-"Exception:"
-"Výjimka:"
-"Ausnahmesituation:"
-upd:"Exception:"
-upd:"Exception:"
-"Excepción:"
-"Výnimka:"
-"Eccezione:"
-"Виняток:"
-
-MExcDetails
-"Подробности:"
-"Details:"
-upd:"Details:"
-upd:"Details:"
-upd:"Details:"
-upd:"Details:"
-"Detalles:"
-"Detaily:"
-upd:"Details:"
-"Подробиці:"
-
-MExcAddress
-"Адрес:"
-"Address:"
-"Adresa:"
-"Adresse:"
-upd:"Address:"
-upd:"Address:"
-"Dirección:"
-"Adresa:"
-"Indirizzo:"
-"Адреса:"
-
-MExcSource
-"Источник:"
-"Source:"
-upd:"Source:"
-upd:"Source:"
-upd:"Source:"
-upd:"Source:"
-"Origen:"
-"Zdroje:"
-upd:"Source:"
-"Джерело:"
-
-MExcFunction
-"Функция:"
-"Function:"
-"Funkce:"
-"Funktion:"
-upd:"Function:"
-upd:"Function:"
-"Función:"
-"Funkcia:"
-"Funzione:"
-"Функція:"
-
-MExcModule
-"Модуль:"
-"Module:"
-"Modul:"
-upd:"Module:"
-upd:"Module:"
-upd:"Module:"
-"Módulo:"
-"Modul:"
-"Modulo:"
-"Модуль:"
+MExceptionDialogClipboard
+"Буфер обмена"
+"Clipboard"
+"Schránka"
+"Zwischenablage"
+"Vágólap"
+"Schowek"
+"Portapapeles"
+"Schránka"
+"Appunti"
+"Буфер обміну"
+"Буфер абмену"
+"Mainų sritis"
 
 MExcTerminate
 "Завершить Far"
-"Terminate Far"
+"&Terminate Far"
 "Ukončit Far"
 "Far beenden"
 upd:"Terminate Far"
-upd:"Terminate Far"
+"Zamknięcie Far"
 "Terminar Far"
-"Ukončiť FAR"
-"Termina FAR"
+"Ukončiť Far"
+"Termina Far"
 "Завершити Far"
+"Забіць Far"
+upd:"&Terminate Far"
 
 MExcUnload
 "Выгрузить плагин"
-"Unload plugin"
+"&Unload plugin"
 "Ukončit modul"
 upd:"Unload plugin"
 upd:"Unload plugin"
-upd:"Unload plugin"
+"Wyłącz wtyczkę"
 "Descargar de memoria complemento"
 "Zatvoriť modul"
 "Scarica Plugin"
 "Вивантажити плагін"
+"Выгрузіць дадатак"
+upd:"&Unload plugin"
 
-MExcStack
-"Стек"
-"Stack"
-upd:"Stack"
-upd:"Stack"
-upd:"Stack"
-upd:"Stack"
-upd:"Stack"
-"Halda"
-upd:"Stack"
-"Стек"
+MExcFullDump
+"Полный дамп"
+"Full dump"
+"Úplný výpis"
+"Vollständiges Abbild"
+"Teljes memóriakép"
+"Pełny zrzut"
+"Volcado completo"
+"Úplný výpis"
+"Dump completo"
+"Повний дамп"
+"Поўны дамп"
+"Visa iškeltis"
 
-MExcMinidump
-"Минидамп"
-"Minidump"
-upd:"Minidump"
-upd:"Minidump"
-upd:"Minidump"
-upd:"Minidump"
-upd:"Minidump"
-"Minivýpis"
-upd:"Minidump"
-"Мінідамп"
 
 MNetUserName
 l:
@@ -22174,6 +22685,8 @@ l:
 "Meno užívateľa"
 "Nome Utente"
 "Ім'я користувача"
+"Імя карыстальніка"
+upd:"User name"
 
 MNetUserPassword
 "Пароль пользователя"
@@ -22186,6 +22699,8 @@ MNetUserPassword
 "Heslo užívateľa"
 "Password"
 "Пароль користувача"
+"Пароль карыстальніка"
+upd:"User password"
 
 MReadFolderError
 l:
@@ -22199,19 +22714,23 @@ l:
 "Nemôžem načítať obsah priečinka"
 "Non Posso Leggere Il Contenuto Della Cartella"
 "Не вдалося прочитати вміст папки"
+"Немагчыма прачытаць змест каталогу"
+upd:"Cannot read folder contents"
 
 MPlgBadVers
 l:
 "Для работы этого плагина требуется более новая версия Far"
 "This plugin requires more recent version of Far"
-"Tento modul vyžaduje vyšší verzi FARu"
-"Das Plugin benötigt eine aktuellere Version von FAR"
-"A pluginhez újabb FAR verzió kell"
-"Do uruchomienia pluginu wymagana jest wyższa wersja FAR-a"
-"Este complemento requiere versión más actual de FAR"
-"Tento modul si vyžaduje vyššiu verziu FARu"
-"Questo Plugin Richiede Una Versione Maggiore Di FAR"
+"Tento modul vyžaduje vyšší verzi Faru"
+"Das Plugin benötigt eine aktuellere Version von Far"
+"A pluginhez újabb Far verzió kell"
+"Do uruchomienia wtyczki wymagana jest wyższa wersja Far"
+"Este complemento requiere versión más actual de Far"
+"Tento modul si vyžaduje vyššiu verziu Faru"
+"Questo Plugin Richiede Una Versione Maggiore Di Far"
 "Для роботи цього плагіна потрібна новіша версія Far"
+"Для працы дадатку патрабуецца больш новая версія Far"
+upd:"This plugin requires more recent version of Far"
 
 MPlgRequired
 "Требуемая версия Far - {0},"
@@ -22219,23 +22738,27 @@ MPlgRequired
 "Požadovaná verze Faru je {0},"
 "Benötigte Far-Version ist {0},"
 "A szükséges Far verzió: {0},"
-"Wymagana wersja Far-a to {0},"
+"Wymagana wersja Far to {0},"
 "Requiere la versión Far {0},"
-"Požadovaná verzia FARu je {0},"
-"Richiesta La Versione {0} Di FAR"
+"Požadovaná verzia Faru je {0},"
+"Richiesta La Versione {0} Di Far"
 "Потрібна версія Far - {0},"
+"Патрабуемая версія Far - {0},"
+upd:"Required Far version is {0},"
 
 MPlgRequired2
 "текущая версия Far - {0}."
 "current Far version is {0}."
-"nynější verze FARu je {0}."
+"nynější verze Faru je {0}."
 "aktuelle Far-Version ist {0}."
 "a jelenlegi Far verzió: {0}."
-"bieżąca wersja Far-a: {0}."
+"bieżąca wersja Far: {0}."
 "La versión actual de Far es {0}."
-"terajšia verzia FARu je {0}."
+"terajšia verzia Faru je {0}."
 "Versione Attuale: {0}"
 "поточна версія Far - {0}."
+"бягучая версія Far - {0}."
+upd:"current Far version is {0}."
 
 MPlgLoadPluginError
 "Ошибка при загрузке плагина"
@@ -22243,24 +22766,13 @@ MPlgLoadPluginError
 "Chyba při nahrávání modulu"
 upd:"Fehler beim Laden des Pluginmoduls"
 upd:"Plugin betöltési hiba"
-upd:"Błąd ładowania modułu plugina"
+"Błąd ładowania modułu wtyczek"
 "Error al cargar complemento"
 "Chyba pri nahrávaní zásuvného modulu"
 "Errore Di Caricamento Del Modulo Plugin"
 "Помилка при завантаженні плагіна"
-
-MCheckBox2State
-l:
-"?"
-"?"
-"?"
-"?"
-"?"
-"?"
-"?"
-"?"
-"?"
-"?"
+"Памылка пры запамоўцы дадатку"
+upd:"Error loading plugin"
 
 MHelpTitle
 l:
@@ -22274,6 +22786,8 @@ l:
 "Pomocník"
 "Aiuto"
 "Допомога"
+"Дапамога"
+upd:"Help"
 
 MHelpActivatorURL
 "Эта ссылка запускает внешнее приложение"
@@ -22286,6 +22800,8 @@ MHelpActivatorURL
 "Tento odkaz spúšťa externú aplikáciu"
 "Questa Voce Avvia Una Applicazione Esterna"
 "Це посилання запускає зовнішній додаток"
+"Гэты спасылак запускае знешнюю праграму"
+upd:"This reference starts an external application"
 
 MHelpActivatorFormat
 "с параметром:"
@@ -22298,6 +22814,8 @@ MHelpActivatorFormat
 "s parametrom:"
 "Con Il Parametro:"
 "з параметром:"
+"з параметрамі:"
+upd:"with parameter:"
 
 MHelpActivatorQ
 "Желаете запустить?"
@@ -22310,6 +22828,8 @@ MHelpActivatorQ
 "Chcete ju spustiť?"
 "Vuoi Avviarla?"
 "Бажаєте запустити?"
+"Вы жадаеце запусіць?"
+upd:"Do you wish to start it?"
 
 MCannotOpenHelp
 "Ошибка открытия файла"
@@ -22322,6 +22842,8 @@ MCannotOpenHelp
 "Nemôžem otvoriť súbor"
 "Non Posso Aprire Il File"
 "Помилка відкриття файлу"
+"Немагчыма адчыніць файл"
+upd:"Cannot open the file"
 
 MHelpTopicNotFound
 "Не найден запрошенный раздел помощи:"
@@ -22334,6 +22856,8 @@ MHelpTopicNotFound
 "Požadovaná téma Pomocníka nenájdená:"
 "Aiuto Richiesto Non Trovato"
 "Не знайдено запитаний розділ допомоги:"
+"Не знойдзенны запытаны падзел дапамогі:"
+upd:"Requested help topic not found:"
 
 MPluginsHelpTitle
 l:
@@ -22342,11 +22866,13 @@ l:
 "Nápověda k modulům"
 "Pluginhilfe"
 "Pluginek súgói"
-"Pomoc dla pluginów"
+"Pomoc dla wtyczek"
 "Ayuda de complementos"
 "Pomocník k modulom"
 "Aiuto Plugins"
 "Плагіни"
+"Дапамога дадаткаў"
+"Priedų pagalba"
 
 MDocumentsHelpTitle
 "Документы"
@@ -22359,6 +22885,8 @@ MDocumentsHelpTitle
 "Pomocník k dokumentom"
 "Aiuto Documenti"
 "Документи"
+"Дакументы"
+upd:"Documents help"
 
 MHelpSearchTitle
 l:
@@ -22372,6 +22900,8 @@ l:
 "Hľadanie"
 "Ricerca"
 "Пошук"
+"Пошук"
+upd:"Search"
 
 MHelpSearchingFor
 "&Искать"
@@ -22384,6 +22914,8 @@ MHelpSearchingFor
 "&Hľadať"
 "Cerca"
 "&Шукати"
+"&Шукаць"
+upd:"&Search for"
 
 MHelpSearchCannotFind
 "Строка не найдена"
@@ -22391,11 +22923,13 @@ MHelpSearchCannotFind
 "Nelze najít řetězec"
 "Konnte Zeichenkette nicht finden"
 "A szöveg nem található:"
-"Nie mogę odnaleźć ciągu znaków"
+"Nie można odnaleźć ciągu znaków"
 "No se encontró la cadena"
 "Nemôžem nájsť reťazec"
 "Non Posso Trovare La Stringa"
 "Рядок не знайдено"
+"Радок не знойдзены"
+upd:"Could not find the string"
 
 MHelpF1
 l:
@@ -22410,8 +22944,12 @@ l:// Help KeyBar F1-12
 "Pomocník"
 "Aiuto"
 "Допом"
+"Дапамога"
+upd:"Help"
 
 MHelpF2
+""
+""
 ""
 ""
 ""
@@ -22434,8 +22972,12 @@ MHelpF3
 ""
 ""
 ""
+""
+""
 
 MHelpF4
+""
+""
 ""
 ""
 ""
@@ -22458,8 +23000,12 @@ MHelpF5
 "Zoom"
 "Zoom"
 "Розмір"
+"Памер"
+upd:"Zoom"
 
 MHelpF6
+""
+""
 ""
 ""
 ""
@@ -22482,8 +23028,12 @@ MHelpF7
 "Hľadať"
 "Cerca"
 "Пошук"
+"Пошук"
+upd:"Search"
 
 MHelpF8
+""
+""
 ""
 ""
 ""
@@ -22506,6 +23056,8 @@ MHelpF9
 ""
 ""
 ""
+""
+""
 
 MHelpF10
 "Выход"
@@ -22518,6 +23070,8 @@ MHelpF10
 "Koniec"
 "Esci"
 "Вихід"
+"Выйсці"
+upd:"Quit"
 
 MHelpF11
 ""
@@ -22530,8 +23084,12 @@ MHelpF11
 ""
 ""
 ""
+""
+""
 
 MHelpF12
+""
+""
 ""
 ""
 ""
@@ -22556,6 +23114,8 @@ l:// Help KeyBar Shift+F1-12
 "Index"
 "Indice"
 "Зміст"
+"Змест"
+upd:"Index"
 
 MHelpShiftF2
 "Плагин"
@@ -22563,11 +23123,13 @@ MHelpShiftF2
 "Modul"
 "Plugin"
 "PlgSúg"
-"Plugin"
+"Wtyczki"
 "Comple"
 "Modul"
 "Plugin"
 "Плагін"
+"Дадатак"
+upd:"Plugin"
 
 MHelpShiftF3
 "Докум"
@@ -22580,8 +23142,12 @@ MHelpShiftF3
 "Dokume"
 "Docum."
 "Докум"
+"Дакумент"
+upd:"Docums"
 
 MHelpShiftF4
+""
+""
 ""
 ""
 ""
@@ -22604,8 +23170,12 @@ MHelpShiftF5
 ""
 ""
 ""
+""
+""
 
 MHelpShiftF6
+""
+""
 ""
 ""
 ""
@@ -22628,8 +23198,12 @@ MHelpShiftF7
 "Nasl."
 "Avanti"
 "Далі"
+"Наступны"
+upd:"Next"
 
 MHelpShiftF8
+""
+""
 ""
 ""
 ""
@@ -22652,8 +23226,12 @@ MHelpShiftF9
 ""
 ""
 ""
+""
+""
 
 MHelpShiftF10
+""
+""
 ""
 ""
 ""
@@ -22676,8 +23254,12 @@ MHelpShiftF11
 ""
 ""
 ""
+""
+""
 
 MHelpShiftF12
+""
+""
 ""
 ""
 ""
@@ -22702,8 +23284,12 @@ l:// Help KeyBar Alt+F1-12
 "Predch"
 "Preced"
 "Попер."
+"Папярэдні"
+upd:"Prev"
 
 MHelpAltF2
+""
+""
 ""
 ""
 ""
@@ -22726,8 +23312,12 @@ MHelpAltF3
 ""
 ""
 ""
+""
+""
 
 MHelpAltF4
+""
+""
 ""
 ""
 ""
@@ -22750,8 +23340,12 @@ MHelpAltF5
 ""
 ""
 ""
+""
+""
 
 MHelpAltF6
+""
+""
 ""
 ""
 ""
@@ -22774,8 +23368,12 @@ MHelpAltF7
 ""
 ""
 ""
+""
+""
 
 MHelpAltF8
+""
+""
 ""
 ""
 ""
@@ -22793,13 +23391,17 @@ MHelpAltF9
 "Video"
 "Ansich"
 "Video"
-"Video"
+"Wideo"
 "Video"
 "Video"
 "Video"
 "Відео"
+"Відэа"
+"Video"
 
 MHelpAltF10
+""
+""
 ""
 ""
 ""
@@ -22822,8 +23424,12 @@ MHelpAltF11
 ""
 ""
 ""
+""
+""
 
 MHelpAltF12
+""
+""
 ""
 ""
 ""
@@ -22848,8 +23454,12 @@ l:// Help KeyBar Ctrl+F1-12
 ""
 ""
 ""
+""
+""
 
 MHelpCtrlF2
+""
+""
 ""
 ""
 ""
@@ -22872,8 +23482,12 @@ MHelpCtrlF3
 ""
 ""
 ""
+""
+""
 
 MHelpCtrlF4
+""
+""
 ""
 ""
 ""
@@ -22896,8 +23510,12 @@ MHelpCtrlF5
 ""
 ""
 ""
+""
+""
 
 MHelpCtrlF6
+""
+""
 ""
 ""
 ""
@@ -22920,8 +23538,12 @@ MHelpCtrlF7
 ""
 ""
 ""
+""
+""
 
 MHelpCtrlF8
+""
+""
 ""
 ""
 ""
@@ -22944,8 +23566,12 @@ MHelpCtrlF9
 ""
 ""
 ""
+""
+""
 
 MHelpCtrlF10
+""
+""
 ""
 ""
 ""
@@ -22968,8 +23594,12 @@ MHelpCtrlF11
 ""
 ""
 ""
+""
+""
 
 MHelpCtrlF12
+""
+""
 ""
 ""
 ""
@@ -22994,8 +23624,12 @@ l:// Help KeyBar AltShiftF1-12
 ""
 ""
 ""
+""
+""
 
 MHelpAltShiftF2
+""
+""
 ""
 ""
 ""
@@ -23018,8 +23652,12 @@ MHelpAltShiftF3
 ""
 ""
 ""
+""
+""
 
 MHelpAltShiftF4
+""
+""
 ""
 ""
 ""
@@ -23042,8 +23680,12 @@ MHelpAltShiftF5
 ""
 ""
 ""
+""
+""
 
 MHelpAltShiftF6
+""
+""
 ""
 ""
 ""
@@ -23066,8 +23708,12 @@ MHelpAltShiftF7
 ""
 ""
 ""
+""
+""
 
 MHelpAltShiftF8
+""
+""
 ""
 ""
 ""
@@ -23090,8 +23736,12 @@ MHelpAltShiftF9
 ""
 ""
 ""
+""
+""
 
 MHelpAltShiftF10
+""
+""
 ""
 ""
 ""
@@ -23114,8 +23764,12 @@ MHelpAltShiftF11
 ""
 ""
 ""
+""
+""
 
 MHelpAltShiftF12
+""
+""
 ""
 ""
 ""
@@ -23140,8 +23794,12 @@ l:// Help KeyBar CtrlShiftF1-12
 ""
 ""
 ""
+""
+""
 
 MHelpCtrlShiftF2
+""
+""
 ""
 ""
 ""
@@ -23164,8 +23822,12 @@ MHelpCtrlShiftF3
 ""
 ""
 ""
+""
+""
 
 MHelpCtrlShiftF4
+""
+""
 ""
 ""
 ""
@@ -23188,8 +23850,12 @@ MHelpCtrlShiftF5
 ""
 ""
 ""
+""
+""
 
 MHelpCtrlShiftF6
+""
+""
 ""
 ""
 ""
@@ -23212,8 +23878,12 @@ MHelpCtrlShiftF7
 ""
 ""
 ""
+""
+""
 
 MHelpCtrlShiftF8
+""
+""
 ""
 ""
 ""
@@ -23236,8 +23906,12 @@ MHelpCtrlShiftF9
 ""
 ""
 ""
+""
+""
 
 MHelpCtrlShiftF10
+""
+""
 ""
 ""
 ""
@@ -23260,8 +23934,12 @@ MHelpCtrlShiftF11
 ""
 ""
 ""
+""
+""
 
 MHelpCtrlShiftF12
+""
+""
 ""
 ""
 ""
@@ -23286,8 +23964,12 @@ l:// Help KeyBar CtrlAltF1-12
 ""
 ""
 ""
+""
+""
 
 MHelpCtrlAltF2
+""
+""
 ""
 ""
 ""
@@ -23310,8 +23992,12 @@ MHelpCtrlAltF3
 ""
 ""
 ""
+""
+""
 
 MHelpCtrlAltF4
+""
+""
 ""
 ""
 ""
@@ -23334,8 +24020,12 @@ MHelpCtrlAltF5
 ""
 ""
 ""
+""
+""
 
 MHelpCtrlAltF6
+""
+""
 ""
 ""
 ""
@@ -23358,8 +24048,12 @@ MHelpCtrlAltF7
 ""
 ""
 ""
+""
+""
 
 MHelpCtrlAltF8
+""
+""
 ""
 ""
 ""
@@ -23382,8 +24076,12 @@ MHelpCtrlAltF9
 ""
 ""
 ""
+""
+""
 
 MHelpCtrlAltF10
+""
+""
 ""
 ""
 ""
@@ -23406,8 +24104,12 @@ MHelpCtrlAltF11
 ""
 ""
 ""
+""
+""
 
 MHelpCtrlAltF12
+""
+""
 ""
 ""
 ""
@@ -23432,8 +24134,12 @@ l:// Help KeyBar CtrlAltShiftF1-12
 ""
 ""
 ""
+""
+""
 
 MHelpCtrlAltShiftF2
+""
+""
 ""
 ""
 ""
@@ -23456,8 +24162,12 @@ MHelpCtrlAltShiftF3
 ""
 ""
 ""
+""
+""
 
 MHelpCtrlAltShiftF4
+""
+""
 ""
 ""
 ""
@@ -23480,8 +24190,12 @@ MHelpCtrlAltShiftF5
 ""
 ""
 ""
+""
+""
 
 MHelpCtrlAltShiftF6
+""
+""
 ""
 ""
 ""
@@ -23504,8 +24218,12 @@ MHelpCtrlAltShiftF7
 ""
 ""
 ""
+""
+""
 
 MHelpCtrlAltShiftF8
+""
+""
 ""
 ""
 ""
@@ -23528,8 +24246,12 @@ MHelpCtrlAltShiftF9
 ""
 ""
 ""
+""
+""
 
 MHelpCtrlAltShiftF10
+""
+""
 ""
 ""
 ""
@@ -23552,8 +24274,12 @@ MHelpCtrlAltShiftF11
 ""
 ""
 ""
+""
+""
 
 MHelpCtrlAltShiftF12
+""
+""
 ""
 ""
 ""
@@ -23578,6 +24304,8 @@ l:// InfoPanel KeyBar F1-F12
 "Pomoc"
 "Aiuto"
 "Допом"
+"Дапамога"
+upd:"Help"
 
 MInfoF2
 "Сверн"
@@ -23590,6 +24318,8 @@ MInfoF2
 "Zalam"
 "A Capo"
 "Згорн"
+"Згарнуць"
+upd:"Wrap"
 
 MInfoF3
 "СмОпис"
@@ -23597,11 +24327,13 @@ MInfoF3
 "Zobraz"
 "BetDiz"
 "MjMnéz"
-"VieDiz"
+"PodglDiz"
 "VerDiz"
 "Zobraz"
 "Ve.Diz"
 "ДивОпс"
+"ГлАпіс"
+upd:"VieDiz"
 
 MInfoF4
 "РедОпи"
@@ -23609,13 +24341,17 @@ MInfoF4
 "Edit"
 "BeaDiz"
 "MjSzrk"
-"EdtDiz"
+"EdytDiz"
 "EdtDiz"
 "Uprav."
 "Ed.Diz"
 "РедОпс"
+"ЗмАпіс"
+upd:"EdtDiz"
 
 MInfoF5
+""
+""
 ""
 ""
 ""
@@ -23638,6 +24374,8 @@ MInfoF6
 ""
 ""
 ""
+""
+""
 
 MInfoF7
 "Поиск"
@@ -23645,21 +24383,25 @@ MInfoF7
 "Hledat"
 "Suchen"
 "Keres"
-"Search"
+"Szukaj"
 "Buscar"
 "Hľadať"
 "Cerca"
 "Пошук"
+"Пошук"
+upd:"Search"
 
 MInfoF8
 "ANSI"
 "ANSI"
-"WIN"
 "ANSI"
 "ANSI"
 "ANSI"
 "ANSI"
-"WIN"
+"ANSI"
+"ANSI"
+"ANSI"
+"ANSI"
 "ANSI"
 "ANSI"
 
@@ -23669,11 +24411,13 @@ MInfoF9
 "KonfMn"
 "KonfMn"
 "KonfMn"
-"ConfMn"
+"MenuGł"
 "BarMnú"
 "KonfMn"
 "ConfMn"
 "КонфМн"
+"КанфМеню"
+upd:"ConfMn"
 
 MInfoF10
 "Выход"
@@ -23686,6 +24430,8 @@ MInfoF10
 "Koniec"
 "Esci"
 "Вихід"
+"Выйсці"
+upd:"Quit"
 
 MInfoF11
 "Плагины"
@@ -23693,11 +24439,13 @@ MInfoF11
 "Modul"
 "Plugin"
 "Plugin"
-"Plugin"
+"Wtyczki"
 "Comple"
 "Modul"
 "Plugin"
 "Плагіни"
+"Дадаткі"
+upd:"Plugin"
 
 MInfoF12
 "Экраны"
@@ -23705,15 +24453,19 @@ MInfoF12
 "Obraz."
 "Seiten"
 "Képrny"
-"Ekran"
+"Ekrany"
 "Pantal"
 "Okno"
 "Video"
 "Екрани"
+"Экраны"
+upd:"Screen"
 
 MInfoShiftF1
 l:
 l:// InfoPanel KeyBar Shift+F1-F12
+""
+""
 ""
 ""
 ""
@@ -23731,13 +24483,17 @@ MInfoShiftF2
 "ZalSlo"
 "WUmbr"
 "SzóTör"
-"ZawijS"
+"ZawijSł"
 "ConDiv"
 "ZalSlo"
 "A Capo"
 "Слова"
+"Словы"
+upd:"WWrap"
 
 MInfoShiftF3
+""
+""
 ""
 ""
 ""
@@ -23760,8 +24516,12 @@ MInfoShiftF4
 ""
 ""
 ""
+""
+""
 
 MInfoShiftF5
+""
+""
 ""
 ""
 ""
@@ -23784,6 +24544,8 @@ MInfoShiftF6
 ""
 ""
 ""
+""
+""
 
 MInfoShiftF7
 "Дальше"
@@ -23796,6 +24558,8 @@ MInfoShiftF7
 "Nasl."
 "Avanti"
 "Далі"
+"Наступны"
+upd:"Next"
 
 MInfoShiftF8
 "КодСтр"
@@ -23808,6 +24572,8 @@ upd:"Tabell"
 "TabZn"
 "Tavola"
 "КодСтр"
+"Кадыроўка"
+upd:"CodePg"
 
 MInfoShiftF9
 "Сохран"
@@ -23820,6 +24586,8 @@ MInfoShiftF9
 "Uložiť"
 "Salva"
 "Зберег"
+"Захаваць"
+upd:"Save"
 
 MInfoShiftF10
 "Послдн"
@@ -23827,11 +24595,13 @@ MInfoShiftF10
 "Posled"
 "Letzt"
 "UtsMnü"
-"Ostat."
+"OstMenu"
 "Ultimo"
 "Posled"
 "Ultimo"
 "Остан"
+"Апошні"
+upd:"Last"
 
 MInfoShiftF11
 ""
@@ -23844,8 +24614,12 @@ MInfoShiftF11
 ""
 ""
 ""
+""
+""
 
 MInfoShiftF12
+""
+""
 ""
 ""
 ""
@@ -23870,6 +24644,8 @@ l:// InfoPanel KeyBar Alt+F1-F12
 "Ľavý"
 "Sinist"
 "Ліва"
+"Левы"
+upd:"Left"
 
 MInfoAltF2
 "Правая"
@@ -23882,8 +24658,12 @@ MInfoAltF2
 "Pravý"
 "Destra"
 "Права"
+"Правы"
+upd:"Right"
 
 MInfoAltF3
+""
+""
 ""
 ""
 ""
@@ -23906,8 +24686,12 @@ MInfoAltF4
 ""
 ""
 ""
+""
+""
 
 MInfoAltF5
+""
+""
 ""
 ""
 ""
@@ -23930,6 +24714,8 @@ MInfoAltF6
 ""
 ""
 ""
+""
+""
 
 MInfoAltF7
 "Искать"
@@ -23942,6 +24728,8 @@ MInfoAltF7
 "Hľadať"
 "Cerca"
 "Шукати"
+"Шукаць"
+upd:"Find"
 
 MInfoAltF8
 "Строка"
@@ -23950,10 +24738,12 @@ MInfoAltF8
 "GeheZu"
 "Ugrás"
 "IdźDo"
-"Ir a.."
+"Ir a…"
 "Ísť na"
 "Vai A"
 "Рядок"
+"Радок"
+upd:"Goto"
 
 MInfoAltF9
 "Видео"
@@ -23961,11 +24751,13 @@ MInfoAltF9
 "Video"
 "Ansich"
 "Video"
-"Video"
+"Wideo"
 "Video"
 "Video"
 "Video"
 "Відео"
+"Відэа"
+"Video"
 
 MInfoAltF10
 "Дерево"
@@ -23978,6 +24770,8 @@ MInfoAltF10
 "Strom"
 "Albero"
 "Дерево"
+"Дрэва"
+upd:"Tree"
 
 MInfoAltF11
 "ИстПр"
@@ -23985,11 +24779,13 @@ MInfoAltF11
 "ProhHs"
 "BetrHs"
 "NézElő"
-"Historia"
+"HistPlik"
 "VerHis"
 "HsZobr"
 "VediCr"
 "ІстПер"
+"Гісторыя праглядаў"
+upd:"ViewHs"
 
 MInfoAltF12
 "ИстПап"
@@ -23997,11 +24793,13 @@ MInfoAltF12
 "AdrsHs"
 "OrdnHs"
 "MapElő"
-"FoldHs"
+"HistFold"
 "HisDir"
 "HsPrie"
 "CartCr"
 "ІстПап"
+"Гісторыя каталогаў"
+upd:"FoldHs"
 
 MInfoCtrlF1
 l:
@@ -24016,6 +24814,8 @@ l:// InfoPanel KeyBar Ctrl+F1-F12
 "Ľavý"
 "Sinist"
 "Ліва"
+"Левы"
+upd:"Left"
 
 MInfoCtrlF2
 "Правая"
@@ -24028,8 +24828,12 @@ MInfoCtrlF2
 "Pravý"
 "Destra"
 "Права"
+"Правы"
+upd:"Right"
 
 MInfoCtrlF3
+""
+""
 ""
 ""
 ""
@@ -24052,8 +24856,12 @@ MInfoCtrlF4
 ""
 ""
 ""
+""
+""
 
 MInfoCtrlF5
+""
+""
 ""
 ""
 ""
@@ -24076,8 +24884,12 @@ MInfoCtrlF6
 ""
 ""
 ""
+""
+""
 
 MInfoCtrlF7
+""
+""
 ""
 ""
 ""
@@ -24100,8 +24912,12 @@ MInfoCtrlF8
 ""
 ""
 ""
+""
+""
 
 MInfoCtrlF9
+""
+""
 ""
 ""
 ""
@@ -24124,8 +24940,12 @@ MInfoCtrlF10
 ""
 ""
 ""
+""
+""
 
 MInfoCtrlF11
+""
+""
 ""
 ""
 ""
@@ -24140,18 +24960,22 @@ MInfoCtrlF11
 MInfoCtrlF12
 "Режим"
 "Mode"
-upd:"Mode"
-upd:"Mode"
-upd:"Mode"
-upd:"Mode"
+"Režim"
+"Modus"
+"Mód"
+"TrybInfo"
 "Modo"
 "Režim"
-upd:"Mode"
+"Modo"
 "Режим"
+"Рэжым"
+"Režimas"
 
 MInfoAltShiftF1
 l:
 l:// InfoPanel KeyBar AltShiftF1-12
+""
+""
 ""
 ""
 ""
@@ -24174,8 +24998,12 @@ MInfoAltShiftF2
 ""
 ""
 ""
+""
+""
 
 MInfoAltShiftF3
+""
+""
 ""
 ""
 ""
@@ -24198,8 +25026,12 @@ MInfoAltShiftF4
 ""
 ""
 ""
+""
+""
 
 MInfoAltShiftF5
+""
+""
 ""
 ""
 ""
@@ -24222,8 +25054,12 @@ MInfoAltShiftF6
 ""
 ""
 ""
+""
+""
 
 MInfoAltShiftF7
+""
+""
 ""
 ""
 ""
@@ -24246,8 +25082,12 @@ MInfoAltShiftF8
 ""
 ""
 ""
+""
+""
 
 MInfoAltShiftF9
+""
+""
 ""
 ""
 ""
@@ -24270,6 +25110,8 @@ MInfoAltShiftF10
 ""
 ""
 ""
+""
+""
 
 MInfoAltShiftF11
 ""
@@ -24282,8 +25124,12 @@ MInfoAltShiftF11
 ""
 ""
 ""
+""
+""
 
 MInfoAltShiftF12
+""
+""
 ""
 ""
 ""
@@ -24308,8 +25154,12 @@ l:// InfoPanel KeyBar CtrlShiftF1-12
 ""
 ""
 ""
+""
+""
 
 MInfoCtrlShiftF2
+""
+""
 ""
 ""
 ""
@@ -24332,8 +25182,12 @@ MInfoCtrlShiftF3
 ""
 ""
 ""
+""
+""
 
 MInfoCtrlShiftF4
+""
+""
 ""
 ""
 ""
@@ -24356,8 +25210,12 @@ MInfoCtrlShiftF5
 ""
 ""
 ""
+""
+""
 
 MInfoCtrlShiftF6
+""
+""
 ""
 ""
 ""
@@ -24380,8 +25238,12 @@ MInfoCtrlShiftF7
 ""
 ""
 ""
+""
+""
 
 MInfoCtrlShiftF8
+""
+""
 ""
 ""
 ""
@@ -24404,8 +25266,12 @@ MInfoCtrlShiftF9
 ""
 ""
 ""
+""
+""
 
 MInfoCtrlShiftF10
+""
+""
 ""
 ""
 ""
@@ -24428,8 +25294,12 @@ MInfoCtrlShiftF11
 ""
 ""
 ""
+""
+""
 
 MInfoCtrlShiftF12
+""
+""
 ""
 ""
 ""
@@ -24454,8 +25324,12 @@ l:// InfoPanel KeyBar CtrlAltF1-12
 ""
 ""
 ""
+""
+""
 
 MInfoCtrlAltF2
+""
+""
 ""
 ""
 ""
@@ -24478,8 +25352,12 @@ MInfoCtrlAltF3
 ""
 ""
 ""
+""
+""
 
 MInfoCtrlAltF4
+""
+""
 ""
 ""
 ""
@@ -24502,8 +25380,12 @@ MInfoCtrlAltF5
 ""
 ""
 ""
+""
+""
 
 MInfoCtrlAltF6
+""
+""
 ""
 ""
 ""
@@ -24526,8 +25408,12 @@ MInfoCtrlAltF7
 ""
 ""
 ""
+""
+""
 
 MInfoCtrlAltF8
+""
+""
 ""
 ""
 ""
@@ -24550,8 +25436,12 @@ MInfoCtrlAltF9
 ""
 ""
 ""
+""
+""
 
 MInfoCtrlAltF10
+""
+""
 ""
 ""
 ""
@@ -24574,8 +25464,12 @@ MInfoCtrlAltF11
 ""
 ""
 ""
+""
+""
 
 MInfoCtrlAltF12
+""
+""
 ""
 ""
 ""
@@ -24600,8 +25494,12 @@ l:// InfoPanel KeyBar CtrlAltShiftF1-12
 ""
 ""
 ""
+""
+""
 
 MInfoCtrlAltShiftF2
+""
+""
 ""
 ""
 ""
@@ -24624,8 +25522,12 @@ MInfoCtrlAltShiftF3
 ""
 ""
 ""
+""
+""
 
 MInfoCtrlAltShiftF4
+""
+""
 ""
 ""
 ""
@@ -24648,8 +25550,12 @@ MInfoCtrlAltShiftF5
 ""
 ""
 ""
+""
+""
 
 MInfoCtrlAltShiftF6
+""
+""
 ""
 ""
 ""
@@ -24672,8 +25578,12 @@ MInfoCtrlAltShiftF7
 ""
 ""
 ""
+""
+""
 
 MInfoCtrlAltShiftF8
+""
+""
 ""
 ""
 ""
@@ -24696,8 +25606,12 @@ MInfoCtrlAltShiftF9
 ""
 ""
 ""
+""
+""
 
 MInfoCtrlAltShiftF10
+""
+""
 ""
 ""
 ""
@@ -24720,8 +25634,12 @@ MInfoCtrlAltShiftF11
 ""
 ""
 ""
+""
+""
 
 MInfoCtrlAltShiftF12
+""
+""
 ""
 ""
 ""
@@ -24746,6 +25664,8 @@ l:// QView KeyBar F1-F12
 "Pomoc"
 "Aiuto"
 "Допом"
+"Дапамога"
+upd:"Help"
 
 MQViewF2
 "Сверн"
@@ -24758,6 +25678,8 @@ MQViewF2
 "Zalam"
 "A Capo"
 "Згорн"
+"Згарнуць"
+upd:"Wrap"
 
 MQViewF3
 "Просм"
@@ -24770,6 +25692,8 @@ MQViewF3
 "Zobraz"
 "Vedi"
 "Перегл"
+"Прагляд"
+upd:"View"
 
 MQViewF4
 "Код"
@@ -24782,8 +25706,12 @@ MQViewF4
 "Hex"
 "Hex"
 "Код"
+"Код"
+upd:"Hex"
 
 MQViewF5
+""
+""
 ""
 ""
 ""
@@ -24806,6 +25734,8 @@ MQViewF6
 ""
 ""
 ""
+""
+""
 
 MQViewF7
 "Поиск"
@@ -24818,17 +25748,21 @@ MQViewF7
 "Hľadať"
 "Cerca"
 "Пошук"
+"Пошук"
+upd:"Search"
 
 MQViewF8
 "ANSI"
 "ANSI"
-"WIN"
 "ANSI"
 "ANSI"
 "ANSI"
 "ANSI"
-"WIN"
-"Win"
+"ANSI"
+"ANSI"
+"ANSI"
+"ANSI"
+"ANSI"
 "ANSI"
 
 MQViewF9
@@ -24837,11 +25771,13 @@ MQViewF9
 "KonfMn"
 "KonfMn"
 "KonfMn"
-"ConfMn"
+"MenuKonf"
 "BarMnú"
 "KonfMn"
 "ConfMn"
 "КонфМн"
+"КанфМеню"
+upd:"ConfMn"
 
 MQViewF10
 "Выход"
@@ -24854,6 +25790,8 @@ MQViewF10
 "Koniec"
 "Esci"
 "Вихід"
+"Выйсці"
+upd:"Quit"
 
 MQViewF11
 "Плагины"
@@ -24861,11 +25799,13 @@ MQViewF11
 "Modul"
 "Plugin"
 "Plugin"
-"Plugin"
+"Wyczki"
 "Comple"
 "Modul"
 "Plugin"
 "Плагіни"
+"Дадаткі"
+upd:"Plugin"
 
 MQViewF12
 "Экраны"
@@ -24878,10 +25818,14 @@ MQViewF12
 "Okno"
 "Video"
 "Екрани"
+"Экраны"
+upd:"Screen"
 
 MQViewShiftF1
 l:
 l:// QView KeyBar Shift+F1-F12
+""
+""
 ""
 ""
 ""
@@ -24899,13 +25843,17 @@ MQViewShiftF2
 "ZalSlo"
 "WUmbr"
 "SzóTör"
-"WWrap"
+"ZawińSł"
 "ConDiv"
 "ZalSlo"
 "A Capo"
 "Слова"
+"Словы"
+upd:"WWrap"
 
 MQViewShiftF3
+""
+""
 ""
 ""
 ""
@@ -24928,8 +25876,12 @@ MQViewShiftF4
 ""
 ""
 ""
+""
+""
 
 MQViewShiftF5
+""
+""
 ""
 ""
 ""
@@ -24952,6 +25904,8 @@ MQViewShiftF6
 ""
 ""
 ""
+""
+""
 
 MQViewShiftF7
 "Дальше"
@@ -24964,6 +25918,8 @@ MQViewShiftF7
 "Nasl."
 "Avanti"
 "Далі"
+"Наступны"
+upd:"Next"
 
 MQViewShiftF8
 "КодСтр"
@@ -24976,6 +25932,8 @@ upd:"Tabell"
 "TabZn"
 "Tavola"
 "КодСтр"
+"Кадыроўка"
+upd:"CodePg"
 
 MQViewShiftF9
 "Сохран"
@@ -24988,6 +25946,8 @@ MQViewShiftF9
 "Uložiť"
 "Salva"
 "Зберег"
+"Захаваць"
+upd:"Save"
 
 MQViewShiftF10
 "Послдн"
@@ -25000,6 +25960,8 @@ MQViewShiftF10
 "Posled"
 "Ultimo"
 "Остан"
+"Апошні"
+upd:"Last"
 
 MQViewShiftF11
 ""
@@ -25012,8 +25974,12 @@ MQViewShiftF11
 ""
 ""
 ""
+""
+""
 
 MQViewShiftF12
+""
+""
 ""
 ""
 ""
@@ -25038,6 +26004,8 @@ l:// QView KeyBar Alt+F1-F12
 "Ľavý"
 "Sinist"
 "Ліва"
+"Левы"
+upd:"Left"
 
 MQViewAltF2
 "Правая"
@@ -25050,8 +26018,12 @@ MQViewAltF2
 "Pravý"
 "Destra"
 "Права"
+"Правы"
+upd:"Right"
 
 MQViewAltF3
+""
+""
 ""
 ""
 ""
@@ -25074,8 +26046,12 @@ MQViewAltF4
 ""
 ""
 ""
+""
+""
 
 MQViewAltF5
+""
+""
 ""
 ""
 ""
@@ -25098,6 +26074,8 @@ MQViewAltF6
 ""
 ""
 ""
+""
+""
 
 MQViewAltF7
 "Искать"
@@ -25110,6 +26088,8 @@ MQViewAltF7
 "Hľadať"
 "Cerca"
 "Шукати"
+"Шукаць"
+upd:"Find"
 
 MQViewAltF8
 "Строка"
@@ -25122,6 +26102,8 @@ MQViewAltF8
 "Ísť na"
 "Vai A"
 "Рядок"
+"Радок"
+upd:"Goto"
 
 MQViewAltF9
 "Видео"
@@ -25129,11 +26111,13 @@ MQViewAltF9
 "Video"
 "Ansich"
 "Video"
-"Video"
+"Wideo"
 "Video"
 "Video"
 "Video"
 "Відео"
+"Відэа"
+"Video"
 
 MQViewAltF10
 "Дерево"
@@ -25146,6 +26130,8 @@ MQViewAltF10
 "Strom"
 "Albero"
 "Дерево"
+"Дрэва"
+upd:"Tree"
 
 MQViewAltF11
 "ИстПр"
@@ -25153,11 +26139,13 @@ MQViewAltF11
 "ProhHs"
 "BetrHs"
 "NézElő"
-"Historia"
+"HistPlik"
 "VerHis"
 "HsZobr"
 "VediCr"
 "ІстПер"
+"Гісторыя праглядаў"
+upd:"ViewHs"
 
 MQViewAltF12
 "ИстПап"
@@ -25166,10 +26154,12 @@ MQViewAltF12
 "OrdnHs"
 "MapElő"
 "FoldHs"
-"HisDir"
+"HistCarp"
 "HsPrieč"
 "CrCart"
 "ІстПап"
+"Гісторыя каталогаў"
+upd:"FoldHs"
 
 MQViewCtrlF1
 l:
@@ -25184,6 +26174,8 @@ l:// QView KeyBar Ctrl+F1-F12
 "Ľavý"
 "Sinist"
 "Ліва"
+"Левы"
+upd:"Left"
 
 MQViewCtrlF2
 "Правая"
@@ -25196,8 +26188,12 @@ MQViewCtrlF2
 "Pravý"
 "Destra"
 "Права"
+"Правы"
+upd:"Right"
 
 MQViewCtrlF3
+""
+""
 ""
 ""
 ""
@@ -25220,8 +26216,12 @@ MQViewCtrlF4
 ""
 ""
 ""
+""
+""
 
 MQViewCtrlF5
+""
+""
 ""
 ""
 ""
@@ -25244,8 +26244,12 @@ MQViewCtrlF6
 ""
 ""
 ""
+""
+""
 
 MQViewCtrlF7
+""
+""
 ""
 ""
 ""
@@ -25268,8 +26272,12 @@ MQViewCtrlF8
 ""
 ""
 ""
+""
+""
 
 MQViewCtrlF9
+""
+""
 ""
 ""
 ""
@@ -25292,6 +26300,8 @@ MQViewCtrlF10
 ""
 ""
 ""
+""
+""
 
 MQViewCtrlF11
 ""
@@ -25304,8 +26314,12 @@ MQViewCtrlF11
 ""
 ""
 ""
+""
+""
 
 MQViewCtrlF12
+""
+""
 ""
 ""
 ""
@@ -25330,8 +26344,12 @@ l:// QView KeyBar AltShiftF1-12
 ""
 ""
 ""
+""
+""
 
 MQViewAltShiftF2
+""
+""
 ""
 ""
 ""
@@ -25354,8 +26372,12 @@ MQViewAltShiftF3
 ""
 ""
 ""
+""
+""
 
 MQViewAltShiftF4
+""
+""
 ""
 ""
 ""
@@ -25378,8 +26400,12 @@ MQViewAltShiftF5
 ""
 ""
 ""
+""
+""
 
 MQViewAltShiftF6
+""
+""
 ""
 ""
 ""
@@ -25402,8 +26428,12 @@ MQViewAltShiftF7
 ""
 ""
 ""
+""
+""
 
 MQViewAltShiftF8
+""
+""
 ""
 ""
 ""
@@ -25426,8 +26456,12 @@ MQViewAltShiftF9
 ""
 ""
 ""
+""
+""
 
 MQViewAltShiftF10
+""
+""
 ""
 ""
 ""
@@ -25450,8 +26484,12 @@ MQViewAltShiftF11
 ""
 ""
 ""
+""
+""
 
 MQViewAltShiftF12
+""
+""
 ""
 ""
 ""
@@ -25476,8 +26514,12 @@ l:// QView KeyBar CtrlShiftF1-12
 ""
 ""
 ""
+""
+""
 
 MQViewCtrlShiftF2
+""
+""
 ""
 ""
 ""
@@ -25500,8 +26542,12 @@ MQViewCtrlShiftF3
 ""
 ""
 ""
+""
+""
 
 MQViewCtrlShiftF4
+""
+""
 ""
 ""
 ""
@@ -25524,8 +26570,12 @@ MQViewCtrlShiftF5
 ""
 ""
 ""
+""
+""
 
 MQViewCtrlShiftF6
+""
+""
 ""
 ""
 ""
@@ -25548,8 +26598,12 @@ MQViewCtrlShiftF7
 ""
 ""
 ""
+""
+""
 
 MQViewCtrlShiftF8
+""
+""
 ""
 ""
 ""
@@ -25572,8 +26626,12 @@ MQViewCtrlShiftF9
 ""
 ""
 ""
+""
+""
 
 MQViewCtrlShiftF10
+""
+""
 ""
 ""
 ""
@@ -25596,8 +26654,12 @@ MQViewCtrlShiftF11
 ""
 ""
 ""
+""
+""
 
 MQViewCtrlShiftF12
+""
+""
 ""
 ""
 ""
@@ -25622,8 +26684,12 @@ l:// QView KeyBar CtrlAltF1-12
 ""
 ""
 ""
+""
+""
 
 MQViewCtrlAltF2
+""
+""
 ""
 ""
 ""
@@ -25646,8 +26712,12 @@ MQViewCtrlAltF3
 ""
 ""
 ""
+""
+""
 
 MQViewCtrlAltF4
+""
+""
 ""
 ""
 ""
@@ -25670,8 +26740,12 @@ MQViewCtrlAltF5
 ""
 ""
 ""
+""
+""
 
 MQViewCtrlAltF6
+""
+""
 ""
 ""
 ""
@@ -25694,8 +26768,12 @@ MQViewCtrlAltF7
 ""
 ""
 ""
+""
+""
 
 MQViewCtrlAltF8
+""
+""
 ""
 ""
 ""
@@ -25718,8 +26796,12 @@ MQViewCtrlAltF9
 ""
 ""
 ""
+""
+""
 
 MQViewCtrlAltF10
+""
+""
 ""
 ""
 ""
@@ -25742,8 +26824,12 @@ MQViewCtrlAltF11
 ""
 ""
 ""
+""
+""
 
 MQViewCtrlAltF12
+""
+""
 ""
 ""
 ""
@@ -25768,8 +26854,12 @@ l:// QView KeyBar CtrlAltShiftF1-12
 ""
 ""
 ""
+""
+""
 
 MQViewCtrlAltShiftF2
+""
+""
 ""
 ""
 ""
@@ -25792,8 +26882,12 @@ MQViewCtrlAltShiftF3
 ""
 ""
 ""
+""
+""
 
 MQViewCtrlAltShiftF4
+""
+""
 ""
 ""
 ""
@@ -25816,8 +26910,12 @@ MQViewCtrlAltShiftF5
 ""
 ""
 ""
+""
+""
 
 MQViewCtrlAltShiftF6
+""
+""
 ""
 ""
 ""
@@ -25840,8 +26938,12 @@ MQViewCtrlAltShiftF7
 ""
 ""
 ""
+""
+""
 
 MQViewCtrlAltShiftF8
+""
+""
 ""
 ""
 ""
@@ -25864,8 +26966,12 @@ MQViewCtrlAltShiftF9
 ""
 ""
 ""
+""
+""
 
 MQViewCtrlAltShiftF10
+""
+""
 ""
 ""
 ""
@@ -25888,8 +26994,12 @@ MQViewCtrlAltShiftF11
 ""
 ""
 ""
+""
+""
 
 MQViewCtrlAltShiftF12
+""
+""
 ""
 ""
 ""
@@ -25914,6 +27024,8 @@ l:// Tree KeyBar F1-F12
 "Pomoc"
 "Aiuto"
 "Допом"
+"Дапамога"
+upd:"Help"
 
 MKBTreeF2
 "ПользМ"
@@ -25921,13 +27033,17 @@ MKBTreeF2
 "UživMn"
 "BenuMn"
 "FelhMn"
-"UserMn"
+"MenuUżyt"
 "MenúUs"
 "UžívMn"
 "MenuUT"
 "КорисМ"
+"Карыстальніцкае меню"
+upd:"UserMn"
 
 MKBTreeF3
+""
+""
 ""
 ""
 ""
@@ -25950,6 +27066,8 @@ MKBTreeF4
 "Atr"
 "Attr."
 "Атриб"
+"Атрыбут"
+upd:"Attr"
 
 MKBTreeF5
 "Копир"
@@ -25962,6 +27080,8 @@ MKBTreeF5
 "Kopír."
 "Copia"
 "Копія"
+"Капіяваць"
+upd:"Copy"
 
 MKBTreeF6
 "Перен"
@@ -25969,11 +27089,13 @@ MKBTreeF6
 "PřjPřs"
 "RenMov"
 "ÁtnMoz"
-"Zamień"
+"ZmNazwę"
 "RenMov"
 "PrmPrs"
 "Sposta"
 "Перен"
+"Перанос"
+upd:"RenMov"
 
 MKBTreeF7
 "Папка"
@@ -25981,11 +27103,13 @@ MKBTreeF7
 "VytAdr"
 "VerzEr"
 "ÚjMapp"
-"NowyFldr"
+"NowyFold"
 "CrDIR"
 "VytPri"
 "FaiDir"
 "Папка"
+"Каталог"
+upd:"MkFold"
 
 MKBTreeF8
 "Удален"
@@ -25998,6 +27122,8 @@ MKBTreeF8
 "Zmazať"
 "Elimin"
 "Видал"
+"Выдаленне"
+upd:"Delete"
 
 MKBTreeF9
 "КонфМн"
@@ -26005,11 +27131,13 @@ MKBTreeF9
 "KonfMn"
 "KonfMn"
 "KonfMn"
-"KonfMenu"
+"MenuKonf"
 "BarMnú"
 "KonfMn"
 "ConfMn"
 "КонфМн"
+"КанфМеню"
+upd:"ConfMn"
 
 MKBTreeF10
 "Выход"
@@ -26022,6 +27150,8 @@ MKBTreeF10
 "Koniec"
 "Esci"
 "Вихід"
+"Выйсці"
+upd:"Quit"
 
 MKBTreeF11
 "Плагины"
@@ -26029,11 +27159,13 @@ MKBTreeF11
 "Modul"
 "Plugin"
 "Plugin"
-"Plugin"
+"Wtyczki"
 "Comple"
 "Modul"
 "Plugin"
 "Плагіни"
+"Дадаткі"
+upd:"Plugin"
 
 MKBTreeF12
 "Экраны"
@@ -26041,15 +27173,19 @@ MKBTreeF12
 "Obraz."
 "Seiten"
 "Képrny"
-"Ekran"
+"Ekrany"
 "Pantal"
 "Okno"
 "Video"
 "Екрани"
+"Экраны"
+upd:"Screen"
 
 MKBTreeShiftF1
 l:
 l:// Tree KeyBar Shift+F1-F12
+""
+""
 ""
 ""
 ""
@@ -26072,8 +27208,12 @@ MKBTreeShiftF2
 ""
 ""
 ""
+""
+""
 
 MKBTreeShiftF3
+""
+""
 ""
 ""
 ""
@@ -26096,6 +27236,8 @@ MKBTreeShiftF4
 ""
 ""
 ""
+""
+""
 
 MKBTreeShiftF5
 "Копир"
@@ -26108,6 +27250,8 @@ MKBTreeShiftF5
 "Kopír."
 "Copia"
 "Копія"
+"Капіяваць"
+upd:"Copy"
 
 MKBTreeShiftF6
 "Перен"
@@ -26115,13 +27259,17 @@ MKBTreeShiftF6
 "Přejm."
 "Umben"
 "ÁtnMoz"
-"Zamień"
+"ZmNazwę"
 "RenMov"
 "Premen"
 "Rinomi"
 "Перен"
+"Перанесці"
+upd:"Rename"
 
 MKBTreeShiftF7
+""
+""
 ""
 ""
 ""
@@ -26144,6 +27292,8 @@ MKBTreeShiftF8
 ""
 ""
 ""
+""
+""
 
 MKBTreeShiftF9
 "Сохран"
@@ -26156,6 +27306,8 @@ MKBTreeShiftF9
 "Uložiť"
 "Salva"
 "Зберег"
+"Захаваць"
+upd:"Save"
 
 MKBTreeShiftF10
 "Послдн"
@@ -26168,6 +27320,8 @@ MKBTreeShiftF10
 "Posled"
 "Ultimo"
 "Остан"
+"Апошні"
+upd:"Last"
 
 MKBTreeShiftF11
 "Группы"
@@ -26180,6 +27334,8 @@ MKBTreeShiftF11
 "Skupin"
 "Gruppo"
 "Групи"
+"Суполккі"
+upd:"Group"
 
 MKBTreeShiftF12
 "Выбран"
@@ -26192,6 +27348,8 @@ MKBTreeShiftF12
 "VybPrv"
 "Sel.Su"
 "Вибран"
+"Абраны"
+upd:"SelUp"
 
 MKBTreeAltF1
 l:
@@ -26206,6 +27364,8 @@ l:// Tree KeyBar Alt+F1-F12
 "Ľavý"
 "Sinist"
 "Ліва"
+"Левы"
+upd:"Left"
 
 MKBTreeAltF2
 "Правая"
@@ -26218,8 +27378,12 @@ MKBTreeAltF2
 "Pravý"
 "Destra"
 "Права"
+"Правы"
+upd:"Right"
 
 MKBTreeAltF3
+""
+""
 ""
 ""
 ""
@@ -26242,8 +27406,12 @@ MKBTreeAltF4
 ""
 ""
 ""
+""
+""
 
 MKBTreeAltF5
+""
+""
 ""
 ""
 ""
@@ -26266,6 +27434,8 @@ MKBTreeAltF6
 ""
 ""
 ""
+""
+""
 
 MKBTreeAltF7
 "Искать"
@@ -26278,6 +27448,8 @@ MKBTreeAltF7
 "Hľadať"
 "Cerca"
 "Шукати"
+"Шукаць"
+upd:"Find"
 
 MKBTreeAltF8
 "Истор"
@@ -26290,6 +27462,8 @@ MKBTreeAltF8
 "Histór"
 "Cronol"
 "Істор"
+"Гісторыя"
+upd:"Histry"
 
 MKBTreeAltF9
 "Видео"
@@ -26297,11 +27471,13 @@ MKBTreeAltF9
 "Video"
 "Ansich"
 "Video"
-"Video"
+"Wideo"
 "Video"
 "Video"
 "Video"
 "Відео"
+"Відэа"
+"Video"
 
 MKBTreeAltF10
 "Дерево"
@@ -26314,6 +27490,8 @@ MKBTreeAltF10
 "Strom"
 "Albero"
 "Дерево"
+"Дрэва"
+upd:"Tree"
 
 MKBTreeAltF11
 "ИстПр"
@@ -26321,11 +27499,13 @@ MKBTreeAltF11
 "ProhHs"
 "BetrHs"
 "NézElő"
-"Historia"
+"HistPlik"
 "HisVer"
 "HsZobr"
 "VediCr"
 "ІстПер"
+"Гісторыя праглядаў"
+upd:"ViewHs"
 
 MKBTreeAltF12
 "ИстПап"
@@ -26333,11 +27513,13 @@ MKBTreeAltF12
 "AdrsHs"
 "OrdnHs"
 "MapElő"
-"FoldHs"
+"HistFold"
 "HisDir"
 "HsPrieč"
 "CartCr"
 "ІстПап"
+"Гісторыя каталогаў"
+upd:"FoldHs"
 
 MKBTreeCtrlF1
 l:
@@ -26352,6 +27534,8 @@ l:// Tree KeyBar Ctrl+F1-F12
 "Ľavý"
 "Sinist"
 "Ліва"
+"Левы"
+upd:"Left"
 
 MKBTreeCtrlF2
 "Правая"
@@ -26364,8 +27548,12 @@ MKBTreeCtrlF2
 "Pravý"
 "Destra"
 "Права"
+"Правы"
+upd:"Right"
 
 MKBTreeCtrlF3
+""
+""
 ""
 ""
 ""
@@ -26388,8 +27576,12 @@ MKBTreeCtrlF4
 ""
 ""
 ""
+""
+""
 
 MKBTreeCtrlF5
+""
+""
 ""
 ""
 ""
@@ -26412,8 +27604,12 @@ MKBTreeCtrlF6
 ""
 ""
 ""
+""
+""
 
 MKBTreeCtrlF7
+""
+""
 ""
 ""
 ""
@@ -26436,8 +27632,12 @@ MKBTreeCtrlF8
 ""
 ""
 ""
+""
+""
 
 MKBTreeCtrlF9
+""
+""
 ""
 ""
 ""
@@ -26460,6 +27660,8 @@ MKBTreeCtrlF10
 ""
 ""
 ""
+""
+""
 
 MKBTreeCtrlF11
 ""
@@ -26472,8 +27674,12 @@ MKBTreeCtrlF11
 ""
 ""
 ""
+""
+""
 
 MKBTreeCtrlF12
+""
+""
 ""
 ""
 ""
@@ -26498,8 +27704,12 @@ l:// Tree KeyBar AltShiftF1-12
 ""
 ""
 ""
+""
+""
 
 MKBTreeAltShiftF2
+""
+""
 ""
 ""
 ""
@@ -26522,8 +27732,12 @@ MKBTreeAltShiftF3
 ""
 ""
 ""
+""
+""
 
 MKBTreeAltShiftF4
+""
+""
 ""
 ""
 ""
@@ -26546,8 +27760,12 @@ MKBTreeAltShiftF5
 ""
 ""
 ""
+""
+""
 
 MKBTreeAltShiftF6
+""
+""
 ""
 ""
 ""
@@ -26570,8 +27788,12 @@ MKBTreeAltShiftF7
 ""
 ""
 ""
+""
+""
 
 MKBTreeAltShiftF8
+""
+""
 ""
 ""
 ""
@@ -26594,8 +27816,12 @@ MKBTreeAltShiftF9
 ""
 ""
 ""
+""
+""
 
 MKBTreeAltShiftF10
+""
+""
 ""
 ""
 ""
@@ -26618,8 +27844,12 @@ MKBTreeAltShiftF11
 ""
 ""
 ""
+""
+""
 
 MKBTreeAltShiftF12
+""
+""
 ""
 ""
 ""
@@ -26644,8 +27874,12 @@ l:// Tree KeyBar CtrlShiftF1-12
 ""
 ""
 ""
+""
+""
 
 MKBTreeCtrlShiftF2
+""
+""
 ""
 ""
 ""
@@ -26668,8 +27902,12 @@ MKBTreeCtrlShiftF3
 ""
 ""
 ""
+""
+""
 
 MKBTreeCtrlShiftF4
+""
+""
 ""
 ""
 ""
@@ -26692,8 +27930,12 @@ MKBTreeCtrlShiftF5
 ""
 ""
 ""
+""
+""
 
 MKBTreeCtrlShiftF6
+""
+""
 ""
 ""
 ""
@@ -26716,8 +27958,12 @@ MKBTreeCtrlShiftF7
 ""
 ""
 ""
+""
+""
 
 MKBTreeCtrlShiftF8
+""
+""
 ""
 ""
 ""
@@ -26740,8 +27986,12 @@ MKBTreeCtrlShiftF9
 ""
 ""
 ""
+""
+""
 
 MKBTreeCtrlShiftF10
+""
+""
 ""
 ""
 ""
@@ -26764,8 +28014,12 @@ MKBTreeCtrlShiftF11
 ""
 ""
 ""
+""
+""
 
 MKBTreeCtrlShiftF12
+""
+""
 ""
 ""
 ""
@@ -26790,8 +28044,12 @@ l:// Tree KeyBar CtrlAltF1-12
 ""
 ""
 ""
+""
+""
 
 MKBTreeCtrlAltF2
+""
+""
 ""
 ""
 ""
@@ -26814,8 +28072,12 @@ MKBTreeCtrlAltF3
 ""
 ""
 ""
+""
+""
 
 MKBTreeCtrlAltF4
+""
+""
 ""
 ""
 ""
@@ -26838,8 +28100,12 @@ MKBTreeCtrlAltF5
 ""
 ""
 ""
+""
+""
 
 MKBTreeCtrlAltF6
+""
+""
 ""
 ""
 ""
@@ -26862,8 +28128,12 @@ MKBTreeCtrlAltF7
 ""
 ""
 ""
+""
+""
 
 MKBTreeCtrlAltF8
+""
+""
 ""
 ""
 ""
@@ -26886,8 +28156,12 @@ MKBTreeCtrlAltF9
 ""
 ""
 ""
+""
+""
 
 MKBTreeCtrlAltF10
+""
+""
 ""
 ""
 ""
@@ -26910,8 +28184,12 @@ MKBTreeCtrlAltF11
 ""
 ""
 ""
+""
+""
 
 MKBTreeCtrlAltF12
+""
+""
 ""
 ""
 ""
@@ -26936,8 +28214,12 @@ l:// Tree KeyBar CtrlAltShiftF1-12
 ""
 ""
 ""
+""
+""
 
 MKBTreeCtrlAltShiftF2
+""
+""
 ""
 ""
 ""
@@ -26960,8 +28242,12 @@ MKBTreeCtrlAltShiftF3
 ""
 ""
 ""
+""
+""
 
 MKBTreeCtrlAltShiftF4
+""
+""
 ""
 ""
 ""
@@ -26984,8 +28270,12 @@ MKBTreeCtrlAltShiftF5
 ""
 ""
 ""
+""
+""
 
 MKBTreeCtrlAltShiftF6
+""
+""
 ""
 ""
 ""
@@ -27008,8 +28298,12 @@ MKBTreeCtrlAltShiftF7
 ""
 ""
 ""
+""
+""
 
 MKBTreeCtrlAltShiftF8
+""
+""
 ""
 ""
 ""
@@ -27032,8 +28326,12 @@ MKBTreeCtrlAltShiftF9
 ""
 ""
 ""
+""
+""
 
 MKBTreeCtrlAltShiftF10
+""
+""
 ""
 ""
 ""
@@ -27056,6 +28354,8 @@ MKBTreeCtrlAltShiftF11
 ""
 ""
 ""
+""
+""
 
 MKBTreeCtrlAltShiftF12
 ""
@@ -27068,19 +28368,52 @@ MKBTreeCtrlAltShiftF12
 ""
 ""
 ""
+""
+""
 
-MCopyTimeInfo
+MCopyTimeInfoElapsed
 l:
-"Время: {0}    Осталось: {1}    {2}Б/с"
-"Time: {0}    Remaining: {1}    {2}B/s"
-"Čas: {0}      Zbývá: {1}       {2}B/s"
-"Zeit: {0}     Restzeit: {1}    {2}B/s"
-"Eltelt: {0}    Maradt: {1}     {2}B/s"
-"Czas: {0}    Pozostało: {1}    {2}B/s"
-"Tiempo: {0}    Restante: {1}   {2}b/s"
-"Čas: {0}      Zostáva: {1}     {2}B/s"
-"Tempo: {0}     Manca: {1}      {2}B/s"
-"Час: {0}    Залишилося: {1}    {2}Б/с"
+"Время:"
+"Time:"
+"Čas:"
+"Zeit:"
+"Eltelt:"
+"Czas:"
+"Tiempo:"
+"Čas:"
+"Tempo:"
+"Час:"
+"Час:"
+upd:"Time:"
+
+MCopyTimeInfoRemaining
+"Осталось:"
+"Remaining:"
+"Zbývá:"
+"Restzeit:"
+"Maradt:"
+"Pozostało:"
+"Restante:"
+"Zostáva:"
+"Manca:"
+"Залишилося:"
+"Засталося:"
+upd:"Remaining:"
+
+MCopyTimeInfoSpeed
+l:// Bytes per second
+"Б/с"
+"B/s"
+"B/s"
+"B/s"
+"B/s"
+"B/s"
+"b/s"
+"B/s"
+"B/s"
+"Б/с"
+"Б/с"
+upd:"B/s"
 
 MKeyESCWasPressed
 l:
@@ -27094,6 +28427,8 @@ l:
 "Operácia bola prerušená"
 "Operazione Interrotta"
 "Дію було перервано"
+"Дзеянне было перапынена"
+upd:"Operation has been interrupted"
 
 MDoYouWantToCancel
 "Вы действительно хотите отменить действие?"
@@ -27101,11 +28436,13 @@ MDoYouWantToCancel
 "Opravdu chcete operaci stornovat?"
 "Wollen Sie den Vorgang wirklich abbrechen?"
 "Valóban le akarja állítani?"
-"Czy naprawdę chcesz ją anulować?"
+"Czy naprawdę chcesz ją przerwać?"
 "Desea realmente cancelar la operación?"
 "Chcete operáciu zrušiť?"
 "Vuoi Veramente Interrottmperla?"
 "Ви дійсно бажаєте скасувати дію?"
+"Вы сапраўды жадаеце адмяніць дзеянне?"
+upd:"Do you really want to cancel it?"
 
 MDoYouWantToContinue
 "Продолжить выполнение?"
@@ -27118,6 +28455,8 @@ MDoYouWantToContinue
 "Pokračovať v práci?"
 "Continua Il Lavoro?"
 "Продовжити виконання?"
+"Працягнуць выкананне?"
+upd:"Continue work?"
 
 MCheckingFileInPlugin
 l:
@@ -27126,11 +28465,13 @@ l:
 "Soubor je právě kontrolován modulem"
 "Datei wird von Plugin überprüft"
 "A fájlt ez a plugin használja:"
-"Plugin sprawdza plik"
+"Wtyczka sprawdza plik"
 "El archivo está siendo chequeado por el complemento"
 "Súbor je práve kontrolovaný modulom"
 "Il File Sta Per Essere Controllato Dal Plugin"
 "Файл перевіряється у плагіні"
+"Файл правяраецца ў дадатку"
+upd:"The file is being checked by the plugin"
 
 MDialogType
 l:
@@ -27144,6 +28485,8 @@ l:
 "Dialóg"
 "Dialogo"
 "Діалог"
+"Гутарка"
+"Dialogas"
 
 MHelpType
 "Помощь"
@@ -27156,6 +28499,8 @@ MHelpType
 "Pomocník"
 "Aiuto"
 "Допомога"
+"Дапамога"
+upd:"Help"
 
 MFolderTreeType
 "ПоискКаталогов"
@@ -27168,6 +28513,8 @@ MFolderTreeType
 "StromPriečinkov"
 "Cartelle"
 "ПошукКаталогів"
+"ПошукКаталогаў"
+upd:"FolderTree"
 
 MVMenuType
 "Меню"
@@ -27180,6 +28527,8 @@ MVMenuType
 "Menu"
 "Menu"
 "Меню"
+"Меню"
+"Meniu"
 
 MIncorrectMask
 l:
@@ -27193,9 +28542,13 @@ l:
 "Reťazec masky súboru obsahuje chyby"
 "La Stringa Del Filtro Contiene Errori!"
 "Некоректна маска файлів"
+"Маска файлаў змяшчае памылкі"
+upd:"File-mask string contains errors"
 
 MPanelBracketsForLongName
 l:
+"{}"
+"{}"
 "{}"
 "{}"
 "{}"
@@ -27219,19 +28572,8 @@ l:
 "Premenná prostredia %COMSPEC% nie je definovaná"
 "Variabile Ambiente %COMSPEC% Non Definita!"
 "Змінну оточення %COMSPEC% не визначено"
-
-MOpenPluginCannotOpenFile
-l:
-"Ошибка открытия файла"
-"Cannot open the file"
-"Nelze otevřít soubor"
-"Kann Datei nicht öffnen"
-"A fájl nem nyitható meg"
-"Nie można otworzyć pliku"
-"No se puede abrir el archivo"
-"Nemôžem otvoriť súbor"
-"Non Posso Aprire Il File"
-"Помилка відкриття файлу"
+"Зменная асяроддзя %COMSPEC% не вызначана"
+upd:"Environment variable %COMSPEC% not defined"
 
 MFileFilterTitle
 l:
@@ -27245,6 +28587,8 @@ l:
 "Filter"
 "Filtro"
 "Фільтр"
+"Фільтр"
+upd:"Filter"
 
 MFileHilightTitle
 "Раскраска файлов"
@@ -27257,18 +28601,22 @@ MFileHilightTitle
 "Zvýrazňovanie súborov"
 "E&videnzia File:"
 "Розмальовка файлів"
+"Разфарбоўка файлаў"
+upd:"Files highlighting"
 
 MFileFilterName
-"Имя &фильтра:"
-"Filter &name:"
-"Jmé&no filtru:"
-"Filter&name:"
-"Szűrő &neve:"
-"Nazwa &filtra:"
-"&Nombre filtro:"
-"&Názov filtra:"
-"&Nome Filtro:"
-"Ім'я &фільтра:"
+"Им&я:"
+"&Name:"
+"Jmé&no:"
+"&Name:"
+"&Neve:"
+"&Nazwa:"
+"&Nombre:"
+"&Názov:"
+"&Nome:"
+"Ім'&я:"
+"Ім&я:"
+upd:"&Name:"
 
 MFileFilterMatchMask
 "&Маска:"
@@ -27281,6 +28629,8 @@ MFileFilterMatchMask
 "&Maska"
 "&Maschera Filtro"
 "&Маска:"
+"&Маска:"
+upd:"&Mask:"
 
 MFileFilterSize
 "Разм&ер:"
@@ -27288,59 +28638,71 @@ MFileFilterSize
 "Vel&ikost"
 "G&röße:"
 "M&éret:"
-"Ro&zmiar:"
+"&Rozmiar:"
 "&Tamaño:"
 "Ve&ľkosť"
 "&Dimensione"
 "Розм&ір:"
+"Пам&ер:"
+upd:"Si&ze:"
 
 MFileFilterSizeFromSign
-">="
-">="
-">="
-">="
-">="
-">="
-">="
-">="
-"=&>"
-">="                      
+l:// up to 4 characters
+">&="
+">&="
+">&="
+">&="
+">&="
+">&="
+">&="
+">&="
+">&="
+">&="
+">&="
+">&="
 
 MFileFilterSizeToSign
-"<="
-"<="
-"<="
-"<="
-"<="
-"<="
-"<="
-"<="
+l:// up to 4 characters
 "&<="
-"<="
+"&<="
+"&<="
+"&<="
+"&<="
+"&<="
+"&<="
+"&<="
+"&<="
+"&<="
+"&<="
+"&<="
 
 MFileHardLinksCount
 "Болee одной жёсткой ссылки"
-"Has more than one hardlink"
+"Has more than one hardlin&k"
 "Má více než jeden pevný link"
 "Mehr als ein harder Link"
 upd:"Has more than one hardlink"
-upd:"Has more than one hardlink"
+"Ma &więcej niż jeden twardy link"
 "Tiene mas de un enlace duro"
 "Má viac než jedno pevné prepojenie"
 "Ha Più Di Un Collegamento"
 "Понад одне жорстке посилання"
+"Больш адной жорсткай спасылкі"
+upd:"Has more than one hardlin&k"
 
 MFileFilterDate
 "&Дата/Время:"
-"Da&te/Time:"
+"Date&/Time:"
 "Dat&um/Čas:"
 "Da&tum/Zeit:"
 "&Dátum/Idő:"
-"Da&ta/Czas:"
+"&Data/Czas:"
 "&Fecha/Hora:"
 "Dát&um/Čas:"
 "Data&/Ora:"
 "&Дата/Час:"
+"&дата/Час"
+upd:"Date&/Time:"
 
 MFileFilterWrited
 "&записи"
@@ -27348,11 +28710,13 @@ MFileFilterWrited
 "&zápisu"
 "&Schreiben"
 upd:"&write"
-upd:"&write"
+"&zapisu"
 "&modificación"
 "&zápisu"
 "&Scrittura"
 "&запису"
+"&запісу"
+upd:"&write"
 
 MFileFilterCreated
 "&создания"
@@ -27365,6 +28729,8 @@ MFileFilterCreated
 "&vytvorenia"
 "&Creazione"
 "&створення"
+"&стварэння"
+upd:"&creation"
 
 MFileFilterOpened
 "&доступа"
@@ -27377,6 +28743,8 @@ MFileFilterOpened
 "&prístupu"
 "Acce&sso"
 "д&оступу"
+"&доступу"
+upd:"&access"
 
 MFileFilterChanged
 "&изменения"
@@ -27384,11 +28752,13 @@ MFileFilterChanged
 "z&měny"
 "Änderung"
 upd:"c&hange"
-upd:"c&hange"
+"z&miany"
 "c&ambio"
 "z&meny"
 "&Modifica"
 "&змінення"
+"з&мены"
+upd:"c&hange"
 
 MFileFilterDateRelative
 "Относительна&я"
@@ -27396,13 +28766,16 @@ MFileFilterDateRelative
 "Relati&vní"
 "Relat&iv"
 "Relat&ív"
-"Relat&ive"
+"Relatywn&y"
 "Relat&ivo"
 "Relatí&vny"
 "Relati&vo"
 "Відносна"
+"Адносна&я"
+upd:"Relat&ive"
 
 MFileFilterDateAfterSign
+l:// up to 4 characters
 ">="
 ">="
 ">="
@@ -27411,10 +28784,13 @@ MFileFilterDateAfterSign
 ">="
 ">="
 ">="
-"Do&po:"
+">="
+">="
+">="
 ">="
 
 MFileFilterDateBeforeSign
+l:// up to 4 characters
 "<="
 "<="
 "<="
@@ -27423,7 +28799,9 @@ MFileFilterDateBeforeSign
 "<="
 "<="
 "<="
-"&Prima:"
+"<="
+"<="
+"<="
 "<="
 
 MFileFilterCurrent
@@ -27432,11 +28810,13 @@ MFileFilterCurrent
 "Aktuá&lní"
 "Akt&uell"
 "&Jelenlegi"
-"&Bieżący"
+"&Bieżąca"
 "Act&ual"
 "Aktuá&lny"
 "C&orrente"
 "Пото&чна"
+"Бяг&учая"
+upd:"C&urrent"
 
 MFileFilterBlank
 "С&брос"
@@ -27444,11 +28824,13 @@ MFileFilterBlank
 "Práz&dný"
 "&Leer"
 "&Üres"
-"&Wyczyść"
+"Wyc&zyść"
 "En b&lanco"
 "Práz&dny"
 "&Vuoto"
 "С&кидання"
+"Зкі&д"
+upd:"B&lank"
 
 MFileFilterAttr
 "Атрибут&ы"
@@ -27461,8 +28843,24 @@ MFileFilterAttr
 "Atri&búty"
 "A&ttributi"
 "Атрибут&и"
+"Атр&ыбуты"
+upd:"Attri&butes"
 
-MFileFilterAttrR
+MFileFilterAttrChoose
+"&..."
+"&..."
+"&..."
+"&..."
+"&..."
+"&..."
+"&..."
+"&..."
+"&..."
+"&..."
+"&..."
+"&..."
+
+MFileFilterAttrReadOnly
 "&Только для чтения"
 "&Read only"
 "Jen pro čt&ení"
@@ -27473,8 +28871,10 @@ MFileFilterAttrR
 "Len na čít&anie"
 "&Sola Lettura"
 "&Лише для читання"
+"&Толькі для чытання"
+upd:"&Read only"
 
-MFileFilterAttrA
+MFileFilterAttrArcive
 "&Архивный"
 "&Archive"
 "Arc&hivovat"
@@ -27485,8 +28885,10 @@ MFileFilterAttrA
 "Arc&hivovať"
 "Arc&hivio"
 "&Архівний"
+"З&апакаваны"
+upd:"&Archive"
 
-MFileFilterAttrH
+MFileFilterAttrHidden
 "&Скрытый"
 "&Hidden"
 "Skry&tý"
@@ -27497,8 +28899,10 @@ MFileFilterAttrH
 "Skry&tý"
 "&Nascosto"
 "&Прихований"
+"Зхаван&ы"
+upd:"&Hidden"
 
-MFileFilterAttrS
+MFileFilterAttrSystem
 "С&истемный"
 "&System"
 "Systémo&vý"
@@ -27509,8 +28913,10 @@ MFileFilterAttrS
 "Systémo&vý"
 "S&istema"
 "С&истемний"
+"С&істэмны"
+upd:"&System"
 
-MFileFilterAttrC
+MFileFilterAttrCompressed
 "С&жатый"
 "&Compressed"
 "Kompri&movaný"
@@ -27521,8 +28927,10 @@ MFileFilterAttrC
 "Kompri&movaný"
 "Co&mpresso"
 "Стиснутий"
+"З&ціснуты"
+upd:"&Compressed"
 
-MFileFilterAttrE
+MFileFilterAttrEncrypted
 "&Зашифрованный"
 "&Encrypted"
 "Ši&frovaný"
@@ -27533,20 +28941,24 @@ MFileFilterAttrE
 "Ši&frovaný"
 "C&riptato"
 "&Зашифрований"
+"Та&йнапісны"
+upd:"&Encrypted"
 
-MFileFilterAttrD
+MFileFilterAttrDirectory
 "&Каталог"
 "&Directory"
 "Adr&esář"
 "Ver&zeichnis"
 "Map&pa"
-"&Katalog"
+"&Folder"
 "&Directorio"
 "Pri&ečinok"
 "Carte&lla"
 "&Каталог"
+"&Каталог"
+upd:"&Directory"
 
-MFileFilterAttrNI
+MFileFilterAttrNotIndexed
 "&Неиндексируемый"
 "Not &indexed"
 "Neinde&xovaný"
@@ -27557,6 +28969,8 @@ MFileFilterAttrNI
 "Neinde&xovaný"
 "Non &Indicizzato"
 "&Неіндексований"
+"Неін&дэксаваны"
+upd:"Not &indexed"
 
 MFileFilterAttrSparse
 "&Разрежённый"
@@ -27564,13 +28978,15 @@ MFileFilterAttrSparse
 "Říd&ký"
 "Reserve"
 "Ritk&ított"
-"S&parse"
+"Rzadki"
 "Dispers&o"
 "Ried&ky"
 "&Sparso"
 "&Розріджений"
+"Разрэджаны"
+upd:"S&parse"
 
-MFileFilterAttrT
+MFileFilterAttrTemporary
 "&Временный"
 "Temporar&y"
 "Doča&sný"
@@ -27581,18 +28997,22 @@ MFileFilterAttrT
 "Doča&sný"
 "&Temporaneo"
 "&Тимчасовий"
+"&Часовы"
+upd:"Temporar&y"
 
 MFileFilterAttrReparse
 "Точка повторного анализа"
-"Reparse point"
+"Reparse poin&t"
 "Reparse point"
 "Analysepunkt"
 upd:"Reparse point"
-upd:"Reparse point"
+"Punkt analizy"
 "&Enlace simbólico"
 "Reparse point"
 "P&unto Di Reparse"
 "Точка повторного аналізу"
+"Кропка паўторнага аналізу"
+upd:"Reparse poin&t"
 
 MFileFilterAttrOffline
 "Автономны&й"
@@ -27605,6 +29025,8 @@ MFileFilterAttrOffline
 "O&ffline"
 "Non In &Linea"
 "Автономни&й"
+"Аўтаномн&ы"
+upd:"O&ffline"
 
 MFileFilterAttrVirtual
 "Вирт&уальный"
@@ -27617,35 +29039,110 @@ MFileFilterAttrVirtual
 "Virtuálny"
 "&Virtuale"
 "Вірт&уальний"
+"&Уяўны"
+upd:"&Virtual"
 
 MFileFilterAttrIntegrityStream
 "Поток целостности"
+"Inte&grity stream"
 "Integrity stream"
-upd:"Integrity stream"
 "Integrität"
 upd:"Integrity stream"
-upd:"Integrity stream"
+"Strumień integralności"
 "Cadena de integridad"
 "Integrita dát"
-upd:"Integrity stream"
+"Integrità Flusso"
 "Потік цілісності"
+"Струмень цэласнасці"
+upd:"Inte&grity stream"
 
 MFileFilterAttrNoScrubData
 "Нет данных очистки"
+"No scru&b data"
 "No scrub data"
-upd:"No scrub data"
 "Keine Datenbereinigung"
 upd:"No scrub data"
-upd:"No scrub data"
+"Brak danych kontrolnych"
 "No hay datos depurados"
 "Žiadne dáta pre skener integrity dát"
-upd:"No scrub data"
+"Dati Scrub Mancanti"
 "Нема даних очищення"
+"Няма дадзеных ачысткі"
+upd:"No scru&b data"
 
+MFileFilterAttrPinned
+"Закреплённый"
+"Pi&nned"
+"Připnuto"
+upd:"Pinned"
+upd:"Pinned"
+"Przypięty"
+"Anclado"
+upd:"Pinned"
+upd:"Pinned"
+"Закріплений"
+upd:"Pinned"
+upd:"Pi&nned"
+
+MFileFilterAttrUnpinned
+"Откреплённый"
+"&Unpinned"
+"Odepnuto"
+upd:"Unpinned"
+upd:"Unpinned"
+"Odpięty"
+"Desanclado"
+upd:"Unpinned"
+upd:"Unpinned"
+"Відкріплений"
+upd:"Unpinned"
+upd:"&Unpinned"
+
+MFileFilterAttrRecallOnOpen
+upd:"Recall on open"
+"Recal&l on open"
+"Zavolat při otevření"
+upd:"Recall on open"
+upd:"Recall on open"
+"Odtwórz przy otwarciu"
+upd:"Recall on open"
+upd:"Recall on open"
+upd:"Recall on open"
+upd:"Recall on open"
+upd:"Recall on open"
+upd:"Recal&l on open"
+
+MFileFilterAttrRecallOnDataAccess
+upd:"Recall on data access"
+"Recall &on data access"
+"Zavolat při přístupu k datům"
+upd:"Recall on data access"
+upd:"Recall on data access"
+"Odtwórz przy dostępie danych"
+upd:"Recall on data access"
+upd:"Recall on data access"
+upd:"Recall on data access"
+upd:"Recall on data access"
+upd:"Recall on data access"
+upd:"Recall &on data access"
+
+MFileFilterAttrStrictlySequential
+upd:"Strictly sequential"
+"Strictly se&quential"
+"Striktně sekvenční"
+upd:"Strictly sequential"
+upd:"Strictly sequential"
+"Dokładnie sekwencyjnie"
+upd:"Strictly sequential"
+upd:"Strictly sequential"
+upd:"Strictly sequential"
+upd:"Strictly sequential"
+upd:"Strictly sequential"
+upd:"Strictly se&quential"
 
 MFileFilterReset
 "Очистит&ь"
-"Reset"
+"&Reset"
 "Reset"
 "Rücksetzen"
 "Reset"
@@ -27654,6 +29151,22 @@ MFileFilterReset
 "Reset"
 "&Resetta"
 "Очистит&и"
+"Зкінуц&ь"
+upd:"&Reset"
+
+MFileFilterMakeTransparent
+"Выставить прозрачность"
+"Make &transparent"
+"Zprůhlednit"
+"Transparent"
+"Legyen átlátszó"
+"Ustaw jako przezroczysty"
+"Hacer transparente"
+"Spriehľadniť"
+"Traspar&ente"
+"Виставити прозорість"
+"Усталяваць празрыстасць"
+upd:"Make &transparent"
 
 MFileFilterCancel
 "Отмена"
@@ -27666,18 +29179,8 @@ MFileFilterCancel
 "Storno"
 "&Annulla"
 "Скасув."
-
-MFileFilterMakeTransparent
-"Выставить прозрачность"
-"Make transparent"
-"Zprůhlednit"
-"Transparent"
-"Legyen átlátszó"
-"Ustaw jako przezroczysty"
-"Hacer transparente"
-"Spriehľadniť"
-"Traspar&ente"
-"Виставити прозорість"
+"Адмяніць"
+upd:"Cancel"
 
 MBadFileSizeFormat
 "Неправильно заполнено поле размера"
@@ -27690,19 +29193,23 @@ MBadFileSizeFormat
 "Veľkosť súboru neobsahuje správnu hodnotu"
 "Dimensione File Non Corretta!"
 "Неправильно заповнено поле розміру"
+"Неправільна запоўнена радок памеру"
+upd:"File size field is incorrectly filled"
 
 MFarTitleAddonsAdmin
 l:
 "Администратор"
 "Administrator"
 "Administrátor"
-upd:"Administrator"
-upd:"Administrator"
-upd:"Administrator"
+"Administrator"
+"Adminisztrátor"
+"Administrator"
 "Administrador"
 "Správca"
 "Amministratore"
 "Адміністратор"
+"Адміністратар"
+"Administratorius"
 
 MElevationRequired
 "Нужно обладать правами администратора"
@@ -27710,11 +29217,13 @@ MElevationRequired
 "Musíte poskytnout práva administrátora"
 "Man muss Administratorrechte haben"
 upd:"You need to provide administrator permission"
-upd:"You need to provide administrator permission"
+"Musisz posiadać uprawnienia administratora"
 "Usted necesita permisos de administrador"
 "Musíte poskytnúť práva správcu"
 "Occorrono I Permessi Di Amministratore"
 "Потрібно мати права адміністратора"
+"Вам трэба валодаць правамі адміністратару"
+upd:"You need to provide administrator permission"
 
 MElevationRequiredPrivileges
 "Требуются дополнительные привилегии"
@@ -27722,11 +29231,13 @@ MElevationRequiredPrivileges
 "Další práva se vyžadují na"
 "Man benötigt zusätzliche Vorrechten"
 upd:"Additional privileges required"
-upd:"Additional privileges required"
+"Wymagane dodatkowe uprawnienia"
 "Privilegios adicionales requeridos"
 "Ďalšie práva sa vyžadujú na"
 "Sono Richiesti Ulteriori Privilegi"
 "Потрібні додаткові привілеї"
+"Патрабуюцца дадатковыя прывілеі"
+upd:"Additional privileges required"
 
 MElevationRequiredProcess
 "для обработки этого объекта:"
@@ -27734,23 +29245,13 @@ MElevationRequiredProcess
 "zpracování tohoto objektu:"
 "um dieses Objekt zu bearbeiten:"
 upd:"to process this object:"
-upd:"to process this object:"
+"aby przetwarzać ten obiekt:"
 "para procesar este objeto:"
 "spracovanie tohto objektu:"
 "Per Elaborare Questo Oggetto:"
 "для обробки цього об'єкта:"
-
-MElevationRequiredCreate
-"для открытия этого объекта:"
-"to open this object:"
-"otevření tohoto objektu:"
-"um dieses Objekt zu öffnen:"
-upd:"to open this object:"
-upd:"to open this object:"
-"para abrir este objeto:"
-"otvorenie tohto objektu:"
-"Per Aprire Questo Oggetto:"
-"для відкриття цього об'єкта:"
+"для апрацоўкі гэтага аб'екту:"
+upd:"to process this object:"
 
 MElevationRequiredDelete
 "для удаления этого объекта:"
@@ -27758,11 +29259,13 @@ MElevationRequiredDelete
 "smazání tohoto objektu:"
 "um dieses Objekt zu löschen:"
 upd:"to delete this object:"
-upd:"to delete this object:"
+"aby usunąć ten obiekt:"
 "para eliminar este objeto:"
 "zmazanie tohto objektu:"
 "Per Eliminare Questo Oggetto:"
 "для видалення цього об'єкта:"
+"для выдалення гэтага аб'екту:"
+upd:"to delete this object:"
 
 MElevationRequiredCopy
 "для копирования этого объекта:"
@@ -27770,11 +29273,13 @@ MElevationRequiredCopy
 "kopírování tohoto objektu:"
 "um dieses Objekt zu kopieren:"
 upd:"to copy this object:"
-upd:"to copy this object:"
+"aby skopiować ten obiekt:"
 "para copiar este objeto:"
 "kopírovanie tohto objektu:"
 "Per Copiare Questo Oggetto:"
 "для копіювання цього об'єкта:"
+"для капіявання гэтага аб'екту:"
+upd:"to copy this object:"
 
 MElevationRequiredMove
 "для перемещения этого объекта:"
@@ -27782,11 +29287,27 @@ MElevationRequiredMove
 "přesunutí tohoto objektu:"
 "um dieses Objekt zu verschieben:"
 upd:"to move this object:"
-upd:"to move this object:"
+"aby przenieść ten obiekt:"
 "para mover este objeto:"
 "presunutie tohto objektu:"
 "Per Spostare Questo Oggetto:"
 "для переміщення цього об'єкта:"
+"для пераносу гэтага аб'екту:"
+upd:"to move this object:"
+
+MElevationRequiredReplace
+"для замещения этого объекта:"
+"to replace this object:"
+"nahrazení tohoto objektu:"
+upd:"um dieses Objekt zu ersetzen:"
+upd:"to replace this object:"
+"aby zastąpić ten obiekt"
+upd:"para reemplazar este objeto:"
+upd:"nahradenie tohto objektu:"
+upd:"Per Sostituire Questo Oggetto:"
+"для заміщення цього об'єкта:"
+"для замены гэтага аб'екту:"
+upd:"to replace this object:"
 
 MElevationRequiredGetAttributes
 "для получения атрибутов этого объекта:"
@@ -27794,11 +29315,13 @@ MElevationRequiredGetAttributes
 "získání atributů tohoto objektu:"
 "um Attribute dieses Objektes zu bekommen:"
 upd:"to get attributes of this object:"
-upd:"to get attributes of this object:"
+"aby pobrać atrybuty tego obiektu:"
 "para obtener atributos de este objeto:"
 "získanie atribútov tohto objektu:"
 "Per Leggere Gli Attributi Di Questo Oggetto:"
 "для отримання атрибутів цього об'єкта:"
+"для атрымання атрыбутаў гэтага аб'екту:"
+upd:"to get attributes of this object:"
 
 MElevationRequiredSetAttributes
 "для установки атрибутов этого объекта:"
@@ -27806,11 +29329,13 @@ MElevationRequiredSetAttributes
 "nastavení atributů tohoto objektu:"
 "um Attribute für dieses Objekt zu setzen:"
 upd:"to set attributes of this object:"
-upd:"to set attributes of this object:"
+"aby ustawić atrybuty tego obiektu:"
 "para poner atributos a este objeto:"
 "nastavenie atribútov tohto objektu:"
 "Per Impostare Gli Attributi Di Questo Oggetto:"
 "для встановлення атрибутів цього об'єкта:"
+"для стварэння атрыбутаў гэтага аб'екту:"
+upd:"to set attributes of this object:"
 
 MElevationRequiredHardLink
 "для создания этой жёсткой ссылки:"
@@ -27818,11 +29343,13 @@ MElevationRequiredHardLink
 "vytvoření tohoto pevného linku:"
 "um harden Link zu erstellen:"
 upd:"to create this hard link:"
-upd:"to create this hard link:"
+"aby utworzyć twardy link:"
 "para crear este enlace duro:"
 "vytvorenie tohto pevného prepojenia:"
 "Per Creare Questo Hard-Link:"
 "для створення цього жорсткого посилання:"
+"для стварэння гэтай жорсткай спасылкі:"
+upd:"to create this hard link:"
 
 MElevationRequiredSymLink
 "для создания этой символической ссылки:"
@@ -27830,11 +29357,13 @@ MElevationRequiredSymLink
 "vytvoření tohoto symbolického linku:"
 "um symbolischen Link zu erstellen:"
 upd:"to create this symbolic link:"
-upd:"to create this symbolic link:"
+"aby utworzyć symboliczny link:"
 "para crear este enlace simbólico:"
 "vytvorenie tohto symbolického prepojenia:"
 "Per Creare Questo Link Simbolico:"
 "для створення цього символічного посил.:"
+"для стварэння гэтай сімвалічнай спасылкі:"
+upd:"to create this symbolic link:"
 
 MElevationRequiredRecycle
 "для перемещения этого объекта в корзину:"
@@ -27842,11 +29371,13 @@ MElevationRequiredRecycle
 "přesunutí tohoto objektu do koše:"
 "um dieses Objekt in den Papierkorb zu verschieben:"
 upd:"to move this object to recycle bin:"
-upd:"to move this object to recycle bin:"
+"aby przenieść obiekt do kosza:"
 "para mover este objeto a la papelera:"
 "presunutie tohto objektu do Koša:"
 "Per Spostare L'Oggetto Nel Cestino:"
 "для переміщення цього об'єкта в кошик:"
+"для пераносу гэтага аб'екту ў Сметнік:"
+upd:"to move this object to recycle bin:"
 
 MElevationRequiredList
 "для просмотра этого объекта:"
@@ -27854,11 +29385,13 @@ MElevationRequiredList
 "zobrazení tohoto objektu:"
 "um dieses Objekt zu sehen:"
 upd:"to list this object:"
-upd:"to list this object:"
+"aby wyświetlić ten obiekt:"
 "para listar este objeto:"
 "zobrazenie tohto objektu:"
 "Per Elencare Questo Oggetto:"
 "для перегляду цього об'єкта:"
+"для прагляду гэтага аб'екту:"
+upd:"to list this object:"
 
 MElevationRequiredSetOwner
 "для установки владельца этого объекта:"
@@ -27866,11 +29399,13 @@ MElevationRequiredSetOwner
 "nastavení vlastníka tohoto objektu:"
 "um den Besitzer des Objektes zu setzen:"
 upd:"to set owner of this object:"
-upd:"to set owner of this object:"
+"aby ustawić właściciela tego obiektu:"
 "para poner como dueño de este objeto:"
 "nastavenie vlastníka tohto objektu:"
 "Per Impostare Il Proprietario Dell'Oggetto:"
 "для встановлення власника цього об'єкта:"
+"для усталёўкі ўладальніка гэтага аб'екту:"
+upd:"to set owner of this object:"
 
 MElevationRequiredOpen
 "для открытия этого объекта:"
@@ -27878,11 +29413,13 @@ MElevationRequiredOpen
 "otevření tohoto objektu:"
 "um dieses Objekt zu öffnen:"
 upd:"to open this object:"
-upd:"to open this object:"
+"aby otworzyć ten obiekt:"
 "para abrir este objeto:"
 "otvorenie tohto objektu:"
 "Per Aprire Questo Oggetto:"
 "для відкриття цього об'єкта:"
+"для адчынення гэтага аб'екту:"
+upd:"to open this object:"
 
 MElevationRequiredEncryptFile
 "для шифрования этого объекта:"
@@ -27890,11 +29427,13 @@ MElevationRequiredEncryptFile
 "zašifrování tohoto objektu:"
 "um dieses Objekt zu verschlüsseln:"
 upd:"to encrypt this object:"
-upd:"to encrypt this object:"
+"aby zaszyfrować ten obiekt:"
 "para cifrar este objeto:"
 "zašifrovanie tohto objektu:"
 "Per Criptare Questo Oggetto:"
 "для шифрування цього об'єкта:"
+"для тайпапісу гэтага аб'екту:"
+upd:"to encrypt this object:"
 
 MElevationRequiredDecryptFile
 "для расшифрования этого объекта:"
@@ -27902,11 +29441,13 @@ MElevationRequiredDecryptFile
 "dešifrování tohoto objektu:"
 "um dieses Objekt zu entschlüsseln:"
 upd:"to decrypt this object:"
-upd:"to decrypt this object:"
+"aby odszyfrować ten obiekt:"
 "para descifrar este objeto:"
 "dešifrovanie tohto objektu:"
 "Per Decriptare Questo Oggetto:"
 "для розшифрування цього об'єкта:"
+"для адчынення тайнапісу гэтага аб'екту:"
+upd:"to decrypt this object:"
 
 MElevationDoForAll
 "Выполнить это действие для &всех текущих объектов"
@@ -27914,11 +29455,13 @@ MElevationDoForAll
 "Udělat toto se všemi &aktuálními objekty"
 "Diese Aktion für &alle aktuelle Objekte ausführen"
 upd:"Do this for &all current objects"
-upd:"Do this for &all current objects"
+"Wykonaj dla &wszystkich obiektów"
 "Hacer esto para todos los objetos actuales"
 "Urobiť to so všetkými &aktuálnymi objektmi"
 "Esegui Per &Tutti Gli Oggetti"
 "Виконати цю дію для &всіх поточних об'єктів"
+"&Выканаць гэтае дзеянне для ўсіх бягучых аб'ектаў:"
+upd:"Do this for &all current objects"
 
 MElevationDoNotAskAgainInTheCurrentSession
 "Больше не спрашивать в текущей сессии"
@@ -27926,11 +29469,13 @@ MElevationDoNotAskAgainInTheCurrentSession
 "Neptat se znovu v aktuální relaci"
 "In der aktuelle Sitzung nochmal nicht fragen"
 upd:"Do not ask again in the current session"
-upd:"Do not ask again in the current session"
+"Nie pytaj ponownie dla tej sesji"
 "No preguntar nuevamente en la sesión actual"
 "Nepýtať sa znova v aktuálnej relácii"
 "Non Richiedere Per Questa Sessione"
 "Більше не запитувати в поточній сесії"
+"Больш не пытаць у бягучай сэсіі"
+upd:"Do not ask again in the current session"
 
 MCompletionHistoryTitle
 "История"
@@ -27938,23 +29483,27 @@ MCompletionHistoryTitle
 "Historie"
 upd:"History"
 upd:"History"
-upd:"History"
+"Historia"
 "Historial"
 "História"
 "Cronologia"
 "Історія"
+"Гісторыя"
+upd:"History"
 
 MCompletionEnvironmentTitle
 "Окружение"
 "Environment"
-upd:"Environment"
+"Prostředí"
 "Umgebung"
 upd:"Environment"
-upd:"Environment"
+"Środowisko"
 "Entorno"
 "Prostredie"
-upd:"Environment"
+"Ambiente"
 "Оточення"
+"Асяроддзе"
+upd:"Environment"
 
 MCompletionFilesTitle
 "Файлы"
@@ -27962,11 +29511,13 @@ MCompletionFilesTitle
 "Soubory"
 "Dateien"
 upd:"Files"
-upd:"Files"
+"Pliki"
 "Archivos"
 "Súbory"
 "Files"
 "Файли"
+"Файлы"
+upd:"Files"
 
 MObjectLockedReason
 "Объект {0} в:"
@@ -27974,11 +29525,13 @@ MObjectLockedReason
 "Objekt je {0} v:"
 "Objekt {0} ist in:"
 upd:"Object is being {0} in:"
-upd:"Object is being {0} in:"
+"Obiekt jest {0} w:"
 "El objeto ha sido {0} por:"
 "Objekt {0} v:"
 "L'Oggetto è {0} in:"
 "Об'єкт {0} у:"
+"Аб'ект {0} у:"
+upd:"Object is being {0} in:"
 
 MObjectLockedReasonPlayed
 "воспроизводится"
@@ -27986,11 +29539,13 @@ MObjectLockedReasonPlayed
 "přehráván"
 "vorgespielt"
 upd:"played"
-upd:"played"
+"odtwarzany"
 "reproducido"
 "sa prehráva"
 "esegui"
 "відтворюється"
+"граецца"
+upd:"played"
 
 MObjectLockedReasonEdited
 "редактируется"
@@ -27998,11 +29553,13 @@ MObjectLockedReasonEdited
 "editován"
 "bearbeitet"
 upd:"edited"
-upd:"edited"
+"edytowany"
 "editado"
 "sa upravuje"
 "modifi"
 "редагується"
+"мяняецца"
+upd:"edited"
 
 MObjectLockedReasonOpened
 "открыт"
@@ -28010,23 +29567,27 @@ MObjectLockedReasonOpened
 "otevřený"
 "geöffnet"
 upd:"opened"
-upd:"opened"
+"otwarty"
 "abierto"
 "je otvorený"
 "aperto"
 "відкритий"
+"адчынены"
+upd:"opened"
 
 MObjectLockedAndMore
 "и ещё {0} процессах"
 "and {0} more processes."
+"a {0} více procesů."
 upd:"and {0} more processes."
 upd:"and {0} more processes."
-upd:"and {0} more processes."
-upd:"and {0} more processes."
+"i {0} więcej procesów."
 "y {0} procesos mas."
 "a {0} procesov."
-upd:"and {0} more processes."
+"e {0} altri processi"
 "i ще {0} процесах"
+"і яшчэ {0} працэсах"
+upd:"and {0} more processes."
 
 MObjectLockedSwitchTo
 "Переключиться"
@@ -28034,11 +29595,13 @@ MObjectLockedSwitchTo
 "Přepnout na"
 "Gehe zu"
 upd:"Switch to"
-upd:"Switch to"
+"Przełącz do"
 "Cambiar a"
 "Prepnúť na"
 "Vai A"
 "Перемкнутися"
+"Пераключыцца на"
+upd:"Switch to"
 
 MObjectLockedClose
 "Закрыть файл"
@@ -28046,59 +29609,69 @@ MObjectLockedClose
 "Zavřít soubor"
 "Datei schließen"
 upd:"Close file"
-upd:"Close file"
+"Zamknij plik"
 "Cerrar archivo"
 "Zatvoriť súbor"
 "Chiudi File"
 "Закрити файл"
+"Зачыніць файл"
+upd:"Close file"
 
 MObjectLockedReasonSessionMismatch
 "Один или несколько процессов выполняются в другом сеансе служб терминалов."
 "One or more processes are running in another Terminal Services session."
+"Jeden nebo více procesů běží v instanci terminálových služeb."
 upd:"One or more processes are running in another Terminal Services session."
 upd:"One or more processes are running in another Terminal Services session."
-upd:"One or more processes are running in another Terminal Services session."
-upd:"One or more processes are running in another Terminal Services session."
+"Jeden lub więcej procesów jest uruchomionych w innej Sesji Terminalowej."
 "Uno o más procesos están corriendo en otra sesión de Servicios de Terminal."
 "Jeden, alebo viac procesov je spustených v inom sedení Terminal Services."
-upd:"One or more processes are running in another Terminal Services session."
+"Uno O Più Processi Sono In Esecuzione In Altre Sessioni Di Terminali"
 "Один або кілька процесів виконуються у іншому сеансі служб терміналів"
+"Адзін альбо некалькі працэсаў выконваюцца ў другім сеансе служб тэрміналаў."
+upd:"One or more processes are running in another Terminal Services session."
 
 MObjectLockedReasonCriticalProcess
 "Один или несколько процессов являются критическими процессами."
 "One or more processes are critical processes."
+"Jeden nebo více procesů jsou kritické procesy."
 upd:"One or more processes are critical processes."
 upd:"One or more processes are critical processes."
-upd:"One or more processes are critical processes."
-upd:"One or more processes are critical processes."
+"Jeden lub więce procesów są procesami krytycznymi."
 "Uno o más procesos son procesos críticos."
 "Jeden, alebo viac procesov je kritických."
-upd:"One or more processes are critical processes."
+"Uno O Più Processi Sono Processi Critici"
 "Один або кілька процесів є критичними процесами."
+"Адзін альбо некалькі працэсаў з'яўляюцца крытычнымі працэсамі."
+upd:"One or more processes are critical processes."
 
 MObjectLockedReasonCriticalService
 "Одна или несколько служб являются критическими службами."
 "One or more services are critical services."
+"Jeden nebo více procesů jsou kritické služby."
 upd:"One or more services are critical services."
 upd:"One or more services are critical services."
-upd:"One or more services are critical services."
-upd:"One or more services are critical services."
+"Jedna lub więcej usług są usługami krytycznymi."
 "Uno o más servicios son servicios críticos."
 "Jeden, alebo viac servisov je kritických."
-upd:"One or more services are critical services."
+"Uno O Più Servizi Sono Servizi Critici"
 "Одна або кілька служб є критичними службами."
+"Адзін альбо некалькі служб з'яўляюцца крытычнымі службамі."
+upd:"One or more services are critical services."
 
 MObjectLockedReasonDetectedSelf
 "Файл открыт текущим процессом."
 "The file is opened by the current process."
+"Soubor je otevřen tímto procesem."
 upd:"The file is opened by the current process."
 upd:"The file is opened by the current process."
-upd:"The file is opened by the current process."
-upd:"The file is opened by the current process."
+"Plik jest otwarty przez bieżący proces."
 "El archivo está abierto por el proceso actual."
 "Súbor je otvorený aktuálnym procesom."
-upd:"The file is opened by the current process."
+"Il File E' Aperto Dal Processo Corrente"
 "Файл відкрито поточним процесом."
+"Файл адчынены бягучым працэсам."
+upd:"The file is opened by the current process."
 
 MProblemDb
 "Проблемы с БД настроек"
@@ -28106,11 +29679,13 @@ MProblemDb
 "Problém s konfigurací DB"
 "Fehler mit der DB Einstellungen"
 upd:"Problem configuration DB"
-upd:"Problem configuration DB"
+"Problem konfiguracji bazy"
 "Problema de configuración DB"
 "Problém s konfiguráciou DB"
 "Problema Al dBase Di Configurazione"
 "Проблеми з БД налаштувань"
+"Праблемы з базай дадзеных наладаў"
+upd:"Problem configuration DB"
 
 MShowConfigFolders
 "Показать каталоги настроек"
@@ -28118,38 +29693,60 @@ MShowConfigFolders
 "Zobrazit konfigurační adresáře"
 "Einstellungsverzeichnis anzeigen"
 upd:"Show configuration folders"
-upd:"Show configuration folders"
+"Pokaż foldery konfiguracyjne"
 "Mostrar directorios de configuración"
 "Zobraziť konfiguračné priečinky"
 "Mostra Cartella Configurazione"
 "Показати каталоги налаштувань"
+"Адлючтраваць каталогі наладаў"
+upd:"Show configuration folders"
 
 MBadLanguageFile
 "Некорректный языковой файл"
 "Incorrect language file"
+"Chybný jazykový soubor"
 upd:"Incorrect language file"
 upd:"Incorrect language file"
-upd:"Incorrect language file"
-upd:"Incorrect language file"
+"Niewłaściwy plik językowy"
 "Archivo de idioma incorrecto"
 "Nesprávny jazykový súbor"
-upd:"Incorrect language file"
+"File Di Lingua Errato"
 "Некоректний мовний файл"
+"Неправільны моўны файл"
+upd:"Incorrect language file"
 
 MLanguageStringNotFound
 "Строка {0} не найдена"
 "String {0} not found"
+"Řetězec {0} nebyl nalezen"
 upd:"String {0} not found"
 upd:"String {0} not found"
-upd:"String {0} not found"
-upd:"String {0} not found"
+"Nie znaleziono łańcucha {0}"
 "Cadena {0} no encontrada"
 "Reťazec {0} nenájdený"
-upd:"String {0} not found"
+"Stringa {0} Non Trovata"
 "Рядок {0} не знайдено"
+"Радок {0} не знойдзены"
+upd:"String {0} not found"
+
+MCharacterIsNotSupportedByTheCodepage
+"Символ "{0}" не поддерживается выбранной кодовой страницей"
+"The "{0}" character is not supported by the selected code page"
+"Vybraná znaková stránka znak "{0}" nepodporuje"
+"Das Zeichen "{0}" wird von der ausgewählten Codepage nicht unterstützt"
+"Az "{0}" karaktert a kiválasztott kódlap nem támogatja"
+"Znak "{0}" nie jest obsługiwany przez wybraną stronę kodową"
+"El carácter "{0}" no es compatible con la página de códigos seleccionada"
+"Vybraná kódová stránka znak "{0}" nepodporuje"
+"Il carattere "{0}" non è supportato dalla tabella codici selezionata"
+"Вибрана кодова сторінка не підтримує символ "{0}""
+"Выбраная кодавая старонка не падтрымлівае сімвал "{0}""
+upd:"The "{0}" character is not supported by the selected code page"
 
 MKeyLaunchMediaSelect
 l:// keys
+""
+""
 ""
 ""
 ""
@@ -28172,8 +29769,12 @@ MKeyBrowserFavorites
 ""
 ""
 ""
+""
+""
 
 MKeyMediaPrevTrack
+""
+""
 ""
 ""
 ""
@@ -28196,8 +29797,12 @@ MKeyMediaPlayPause
 ""
 ""
 ""
+""
+""
 
 MKeyMediaNextTrack
+""
+""
 ""
 ""
 ""
@@ -28220,8 +29825,12 @@ MKeyBrowserRefresh
 ""
 ""
 ""
+""
+""
 
 MKeyBrowserForward
+""
+""
 ""
 ""
 ""
@@ -28244,8 +29853,12 @@ MKeyBrowserSearch
 ""
 ""
 ""
+""
+""
 
 MKeyMswheelRight
+""
+""
 ""
 ""
 ""
@@ -28268,8 +29881,12 @@ MKeyMswheelDown
 ""
 ""
 ""
+""
+""
 
 MKeyMswheelLeft
+""
+""
 ""
 ""
 ""
@@ -28292,8 +29909,12 @@ MKeyBrowserStop
 ""
 ""
 ""
+""
+""
 
 MKeyBrowserHome
+""
+""
 ""
 ""
 ""
@@ -28316,8 +29937,12 @@ MKeyBrowserBack
 ""
 ""
 ""
+""
+""
 
 MKeyVolumeMute
+""
+""
 ""
 ""
 ""
@@ -28340,8 +29965,12 @@ MKeyVolumeDown
 ""
 ""
 ""
+""
+""
 
 MKeyScrolllock
+""
+""
 ""
 ""
 ""
@@ -28364,8 +29993,12 @@ MKeyLaunchMail
 ""
 ""
 ""
+""
+""
 
 MKeyLaunchApp2
+""
+""
 ""
 ""
 ""
@@ -28388,8 +30021,12 @@ MKeyLaunchApp1
 ""
 ""
 ""
+""
+""
 
 MKeyMswheelUp
+""
+""
 ""
 ""
 ""
@@ -28412,8 +30049,12 @@ MKeyMediaStop
 ""
 ""
 ""
+""
+""
 
 MKeyBackslash
+""
+""
 ""
 ""
 ""
@@ -28436,8 +30077,12 @@ MKeyMsm1click
 ""
 ""
 ""
+""
+""
 
 MKeyMsm2click
+""
+""
 ""
 ""
 ""
@@ -28460,8 +30105,12 @@ MKeyMsm3click
 ""
 ""
 ""
+""
+""
 
 MKeyMslclick
+""
+""
 ""
 ""
 ""
@@ -28484,8 +30133,12 @@ MKeyMsrclick
 ""
 ""
 ""
+""
+""
 
 MKeyVolumeUp
+""
+""
 ""
 ""
 ""
@@ -28508,8 +30161,12 @@ MKeySubtract
 "Gray -"
 "Num -"
 "Grey -"
+"Gray -"
+upd:"Gray -"
 
 MKeyNumenter
+""
+""
 ""
 ""
 ""
@@ -28532,8 +30189,12 @@ MKeyMultiply
 "Gray *"
 "Num *"
 "Grey *"
+"Gray *"
+upd:"Gray *"
 
 MKeyCapslock
+""
+""
 ""
 ""
 ""
@@ -28556,8 +30217,12 @@ MKeyPrntscrn
 ""
 ""
 ""
+""
+""
 
 MKeyNumlock
+""
+""
 ""
 ""
 ""
@@ -28580,8 +30245,12 @@ MKeyDecimal
 ""
 ""
 ""
+""
+""
 
 MKeyStandby
+""
+""
 ""
 ""
 ""
@@ -28604,8 +30273,12 @@ MKeyDivide
 ""
 ""
 ""
+""
+""
 
 MKeyNumdel
+""
+""
 ""
 ""
 ""
@@ -28628,8 +30301,12 @@ MKeySpace
 ""
 ""
 ""
+""
+""
 
 MKeyRight
+""
+""
 ""
 ""
 ""
@@ -28652,8 +30329,12 @@ MKeyPause
 ""
 ""
 ""
+""
+""
 
 MKeyEnter
+""
+""
 ""
 ""
 ""
@@ -28676,8 +30357,12 @@ MKeyClear
 ""
 ""
 ""
+""
+""
 
 MKeyBreak
+""
+""
 ""
 ""
 ""
@@ -28700,8 +30385,12 @@ MKeyPgup
 ""
 ""
 ""
+""
+""
 
 MKeyPgdn
+""
+""
 ""
 ""
 ""
@@ -28724,8 +30413,12 @@ MKeyLeft
 ""
 ""
 ""
+""
+""
 
 MKeyHome
+""
+""
 ""
 ""
 ""
@@ -28748,8 +30441,12 @@ MKeyDown
 ""
 ""
 ""
+""
+""
 
 MKeyApps
+""
+""
 ""
 ""
 ""
@@ -28772,8 +30469,12 @@ MKeyRwin
 ""
 ""
 ""
+""
+""
 
 MKeyNumpad9
+""
+""
 ""
 ""
 ""
@@ -28796,8 +30497,12 @@ MKeyNumpad8
 ""
 ""
 ""
+""
+""
 
 MKeyNumpad7
+""
+""
 ""
 ""
 ""
@@ -28820,8 +30525,12 @@ MKeyNumpad6
 ""
 ""
 ""
+""
+""
 
 MKeyNumpad5
+""
+""
 ""
 ""
 ""
@@ -28844,8 +30553,12 @@ MKeyNumpad4
 ""
 ""
 ""
+""
+""
 
 MKeyNumpad3
+""
+""
 ""
 ""
 ""
@@ -28868,8 +30581,12 @@ MKeyNumpad2
 ""
 ""
 ""
+""
+""
 
 MKeyNumpad1
+""
+""
 ""
 ""
 ""
@@ -28892,8 +30609,12 @@ MKeyNumpad0
 ""
 ""
 ""
+""
+""
 
 MKeyLwin
+""
+""
 ""
 ""
 ""
@@ -28916,8 +30637,12 @@ MKeyTab
 ""
 ""
 ""
+""
+""
 
 MKeyIns
+""
+""
 ""
 ""
 ""
@@ -28940,8 +30665,12 @@ MKeyF10
 ""
 ""
 ""
+""
+""
 
 MKeyF11
+""
+""
 ""
 ""
 ""
@@ -28964,8 +30693,12 @@ MKeyF12
 ""
 ""
 ""
+""
+""
 
 MKeyF13
+""
+""
 ""
 ""
 ""
@@ -28988,8 +30721,12 @@ MKeyF14
 ""
 ""
 ""
+""
+""
 
 MKeyF15
+""
+""
 ""
 ""
 ""
@@ -29012,8 +30749,12 @@ MKeyF16
 ""
 ""
 ""
+""
+""
 
 MKeyF17
+""
+""
 ""
 ""
 ""
@@ -29036,8 +30777,12 @@ MKeyF18
 ""
 ""
 ""
+""
+""
 
 MKeyF19
+""
+""
 ""
 ""
 ""
@@ -29060,8 +30805,12 @@ MKeyF20
 ""
 ""
 ""
+""
+""
 
 MKeyF21
+""
+""
 ""
 ""
 ""
@@ -29084,8 +30833,12 @@ MKeyF22
 ""
 ""
 ""
+""
+""
 
 MKeyF23
+""
+""
 ""
 ""
 ""
@@ -29108,8 +30861,12 @@ MKeyF24
 ""
 ""
 ""
+""
+""
 
 MKeyEsc
+""
+""
 ""
 ""
 ""
@@ -29132,8 +30889,12 @@ MKeyEnd
 ""
 ""
 ""
+""
+""
 
 MKeyDel
+""
+""
 ""
 ""
 ""
@@ -29156,8 +30917,12 @@ MKeyAdd
 "Gray +"
 "Num +"
 "Grey +"
+"Gray +"
+upd:"Gray +"
 
 MKeyUp
+""
+""
 ""
 ""
 ""
@@ -29180,8 +30945,12 @@ MKeyF9
 ""
 ""
 ""
+""
+""
 
 MKeyF8
+""
+""
 ""
 ""
 ""
@@ -29204,8 +30973,12 @@ MKeyF7
 ""
 ""
 ""
+""
+""
 
 MKeyF6
+""
+""
 ""
 ""
 ""
@@ -29228,8 +31001,12 @@ MKeyF5
 ""
 ""
 ""
+""
+""
 
 MKeyF4
+""
+""
 ""
 ""
 ""
@@ -29252,8 +31029,12 @@ MKeyF3
 ""
 ""
 ""
+""
+""
 
 MKeyF2
+""
+""
 ""
 ""
 ""
@@ -29276,8 +31057,12 @@ MKeyF1
 ""
 ""
 ""
+""
+""
 
 MKeyBs
+""
+""
 ""
 ""
 ""
@@ -29300,8 +31085,12 @@ MKeyBackbracket
 ""
 ""
 ""
+""
+""
 
 MKeyQuote
+""
+""
 ""
 ""
 ""
@@ -29324,8 +31113,12 @@ MKeyBracket
 ""
 ""
 ""
+""
+""
 
 MKeyColon
+""
+""
 ""
 ""
 ""
@@ -29348,8 +31141,12 @@ MKeySemicolon
 ""
 ""
 ""
+""
+""
 
 MKeySlash
+""
+""
 ""
 ""
 ""
@@ -29372,8 +31169,12 @@ MKeyDot
 ""
 ""
 ""
+""
+""
 
 MKeyComma
+""
+""
 ""
 ""
 ""
@@ -29396,8 +31197,12 @@ MKeyRCtrl
 ""
 ""
 ""
+""
+"DešinysCtrl"
 
 MKeyShift
+""
+""
 ""
 ""
 ""
@@ -29420,8 +31225,12 @@ MKeyCtrl
 ""
 ""
 ""
+""
+""
 
 MKeyRAlt
+""
+""
 ""
 ""
 ""
@@ -29435,6 +31244,8 @@ MKeyRAlt
 
 MKeyAlt
 l:// keys end
+""
+""
 ""
 ""
 ""
@@ -29459,3 +31270,5 @@ l:
 "?Nový súbor?"
 "* Nuovo File *"
 "?Новий файл?"
+"?Новы файл?"
+upd:"?New File?"

@@ -39,11 +39,19 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "modal.hpp"
 #include "bitflags.hpp"
 #include "farcolor.hpp"
 
+// Platform:
+
+// Common:
 #include "common/range.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 // Цветовые атрибуты - индексы в массиве цветов
 enum vmenu_colors
@@ -52,7 +60,7 @@ enum vmenu_colors
 	VMenuColorBox                 = 1,     // рамка
 	VMenuColorTitle               = 2,     // заголовок - верхний и нижний
 	VMenuColorText                = 3,     // Текст пункта
-	VMenuColorHilite              = 4,     // HotKey
+	VMenuColorHighlight           = 4,     // HotKey
 	VMenuColorSeparator           = 5,     // separator
 	VMenuColorSelected            = 6,     // Выбранный
 	VMenuColorHSelect             = 7,     // Выбранный - HotKey
@@ -69,28 +77,28 @@ enum vmenu_colors
 
 enum VMENU_FLAGS
 {
-	VMENU_NONE                 =0x00000000,
-	VMENU_ALWAYSSCROLLBAR      =0x00000100, // всегда показывать скроллбар
-	VMENU_LISTBOX              =0x00000200, // Это список в диалоге
-	VMENU_SHOWNOBOX            =0x00000400, // показать без рамки
-	VMENU_AUTOHIGHLIGHT        =0x00000800, // автоматически выбирать симолы подсветки
-	VMENU_REVERSEHIGHLIGHT     =0x00001000, // ... только с конца
-	VMENU_UPDATEREQUIRED       =0x00002000, // лист необходимо обновить (перерисовать)
-	VMENU_DISABLEDRAWBACKGROUND=0x00004000, // подложку не рисовать
-	VMENU_WRAPMODE             =0x00008000, // зацикленный список (при перемещении)
-	VMENU_SHOWAMPERSAND        =0x00010000, // символ '&' показывать AS IS
-	VMENU_WARNDIALOG           =0x00020000, //
-	VMENU_LISTHASFOCUS         =0x00200000, // меню является списком в диалоге и имеет фокус
-	VMENU_COMBOBOX             =0x00400000, // меню является комбобоксом и обрабатывается менеджером по-особому.
-	VMENU_MOUSEDOWN            =0x00800000, //
-	VMENU_CHANGECONSOLETITLE   =0x01000000, //
-	VMENU_MOUSEREACTION        =0x02000000, // реагировать на движение мыши? (перемещать позицию при перемещении курсора мыши?)
-	VMENU_DISABLED             =0x04000000, //
-	VMENU_NOMERGEBORDER        =0x08000000, //
-	VMENU_REFILTERREQUIRED     =0x10000000, // перед отрисовкой необходимо обновить фильтр
-	VMENU_LISTSINGLEBOX        =0x20000000, // список, всегда с одинарной рамкой
-	VMENU_COMBOBOXEVENTKEY     =0x40000000, // посылать события клавиатуры в диалоговую проц. для открытого комбобокса
-	VMENU_COMBOBOXEVENTMOUSE   =0x80000000, // посылать события мыши в диалоговую проц. для открытого комбобокса
+	VMENU_NONE                 = 0,
+	VMENU_ALWAYSSCROLLBAR      = 8_bit,  // всегда показывать скроллбар
+	VMENU_LISTBOX              = 9_bit,  // Это список в диалоге
+	VMENU_SHOWNOBOX            = 10_bit, // показать без рамки
+	VMENU_AUTOHIGHLIGHT        = 11_bit, // автоматически выбирать симолы подсветки
+	VMENU_REVERSEHIGHLIGHT     = 12_bit, // ... только с конца
+	VMENU_UPDATEREQUIRED       = 13_bit, // лист необходимо обновить (перерисовать)
+	VMENU_DISABLEDRAWBACKGROUND= 14_bit, // подложку не рисовать
+	VMENU_WRAPMODE             = 15_bit, // зацикленный список (при перемещении)
+	VMENU_SHOWAMPERSAND        = 16_bit, // символ '&' показывать AS IS
+	VMENU_WARNDIALOG           = 17_bit, //
+	VMENU_LISTHASFOCUS         = 21_bit, // меню является списком в диалоге и имеет фокус
+	VMENU_COMBOBOX             = 22_bit, // меню является комбобоксом и обрабатывается менеджером по-особому.
+	VMENU_MOUSEDOWN            = 23_bit, //
+	VMENU_CHANGECONSOLETITLE   = 24_bit, //
+	VMENU_MOUSEREACTION        = 25_bit, // реагировать на движение мыши? (перемещать позицию при перемещении курсора мыши?)
+	VMENU_DISABLED             = 26_bit, //
+	VMENU_NOMERGEBORDER        = 27_bit, //
+	VMENU_REFILTERREQUIRED     = 28_bit, // перед отрисовкой необходимо обновить фильтр
+	VMENU_LISTSINGLEBOX        = 29_bit, // список, всегда с одинарной рамкой
+	VMENU_COMBOBOXEVENTKEY     = 30_bit, // посылать события клавиатуры в диалоговую проц. для открытого комбобокса
+	VMENU_COMBOBOXEVENTMOUSE   = 31_bit, // посылать события мыши в диалоговую проц. для открытого комбобокса
 };
 
 class Dialog;
@@ -105,31 +113,35 @@ struct menu_item
 	menu_item() = default;
 
 	explicit menu_item(string_view const Text):
-		Name(string(Text))
+		Name(Text)
 	{
 	}
 
 	menu_item(string_view const Text, LISTITEMFLAGS const Flags, DWORD const AccelKey = 0):
-		Name(string(Text)),
+		Name(Text),
 		Flags(Flags),
 		AccelKey(AccelKey)
 	{
 	}
 
-	unsigned long long SetCheck(int Value)
+	unsigned long long SetCheck()
 	{
-		if (Value)
-		{
-			Flags|=LIF_CHECKED;
-			Flags &= ~0xFFFF;
+		Flags &= ~0xFFFF;
+		Flags |= LIF_CHECKED;
+		return Flags;
+	}
 
-			if (Value!=1) Flags|=Value&0xFFFF;
-		}
-		else
-		{
-			Flags&=~(0xFFFF|LIF_CHECKED);
-		}
+	unsigned long long SetCustomCheck(wchar_t Char)
+	{
+		Flags &= ~0xFFFF;
+		Flags |= LIF_CHECKED | Char;
+		return Flags;
+	}
 
+	unsigned long long ClearCheck()
+	{
+		Flags &= ~0xFFFF;
+		Flags &= ~LIF_CHECKED;
 		return Flags;
 	}
 
@@ -150,8 +162,9 @@ struct MenuItemEx: menu_item
 	std::any ComplexUserData;
 	intptr_t SimpleUserData{};
 
-	int ShowPos{};
-	short AmpPos{};                  // Позиция автоназначенной подсветки
+	size_t ShowPos{};
+	wchar_t AutoHotkey{};
+	size_t AutoHotkeyPos{};
 	short Len[2]{};                  // размеры 2-х частей
 	short Idx2{};                    // начало 2-й части
 	std::list<std::pair<int, int>> Annotations;
@@ -169,7 +182,7 @@ class VMenu: public SimpleModal
 {
 	struct private_tag {};
 public:
-	static vmenu_ptr create(string Title, range<const menu_item*> Data, int MaxHeight = 0, DWORD Flags = 0, dialog_ptr ParentDialog = nullptr);
+	static vmenu_ptr create(string Title, span<menu_item const> Data, int MaxHeight = 0, DWORD Flags = 0, dialog_ptr ParentDialog = nullptr);
 
 	VMenu(private_tag, string Title, int MaxHeight, dialog_ptr ParentDialog);
 	~VMenu() override;
@@ -186,11 +199,12 @@ public:
 	void ResizeConsole() override;
 	void SetDeleting() override;
 	void ShowConsoleTitle() override;
+	void OnClose() override;
 
 	void FastShow() { ShowMenu(); }
 	void ResetCursor();
-	void SetTitle(const string& Title);
-	void SetBottomTitle(const wchar_t *BottomTitle);
+	void SetTitle(string_view Title);
+	void SetBottomTitle(string_view BottomTitle);
 	string &GetBottomTitle(string &strDest) const;
 	void SetDialogStyle(bool Style) { ChangeFlags(VMENU_WARNDIALOG, Style); SetColors(nullptr); }
 	void SetUpdateRequired(bool SetUpdate) { ChangeFlags(VMENU_UPDATEREQUIRED, SetUpdate); }
@@ -200,30 +214,30 @@ public:
 	bool CheckFlags(DWORD Flags) const { return VMFlags.Check(Flags); }
 	DWORD GetFlags() const { return VMFlags.Flags(); }
 	DWORD ChangeFlags(DWORD Flags, bool Status) { return VMFlags.Change(Flags, Status); }
-	void AssignHighlights(int Reverse);
+	void AssignHighlights(bool Reverse = false);
 	void SetColors(const FarDialogItemColors *ColorsIn = nullptr);
 	void GetColors(FarDialogItemColors *ColorsOut);
 	void SetOneColor(int Index, PaletteColors Color);
 	bool ProcessFilterKey(int Key);
 	void clear();
 	int DeleteItem(int ID, int Count = 1);
-	int AddItem(MenuItemEx&& NewItem, int PosAdd = 0x7FFFFFFF);
-	int AddItem(const FarList *NewItem);
+	int AddItem(MenuItemEx&& NewItem, int PosAdd = std::numeric_limits<int>::max());
+	int AddItem(const FarList *List);
 	int AddItem(const wchar_t *NewStrItem);
 	int InsertItem(const FarListInsert *NewItem);
 	bool UpdateItem(const FarListUpdate *NewItem);
-	int FindItem(const FarListFind *FindItem);
-	int FindItem(int StartIndex, const string& Pattern, unsigned long long Flags = 0);
+	int FindItem(const FarListFind *FItem);
+	int FindItem(int StartIndex, string_view Pattern, unsigned long long Flags = 0);
 	void RestoreFilteredItems();
 	void FilterStringUpdated();
 	void FilterUpdateHeight(bool bShrink = false);
 	void SetFilterEnabled(bool bEnabled) { bFilterEnabled = bEnabled; }
 	void SetFilterLocked(bool bLocked) { bFilterEnabled = bLocked; }
 	bool AddToFilter(string_view Str);
-	void SetFilterString(const wchar_t *str);
+	size_t size() const { return Items.size(); }
+	bool empty() const { return Items.empty(); }
 	// SelectPos == -1 & non-empty Items - everything is filtered
-	size_t size() const { return SelectPos == -1? 0 : Items.size(); }
-	bool empty() const { return SelectPos == -1 || Items.empty(); }
+	bool HasVisible() const { return SelectPos > -1 && !Items.empty(); }
 	int GetShowItemCount() const { return static_cast<int>(Items.size() - ItemHiddenCount); }
 	int GetVisualPos(int Pos);
 	int VisualPosToReal(int VPos);
@@ -244,7 +258,9 @@ public:
 	int SetSelectPos(const FarListPos *ListPos, int Direct = 0);
 	int SetSelectPos(int Pos, int Direct, bool stop_on_edge = false);
 	int GetCheck(int Position = -1);
-	void SetCheck(int Check, int Position = -1);
+	void SetCheck(int Position = -1);
+	void SetCustomCheck(wchar_t Char, int Position = -1);
+	void ClearCheck(int Position = -1);
 	bool UpdateRequired() const;
 	void UpdateItemFlags(int Pos, unsigned long long NewFlags);
 	MenuItemEx& at(size_t n);
@@ -254,8 +270,8 @@ public:
 	void SetMaxHeight(int NewMaxHeight);
 	size_t GetVDialogItemID() const { return DialogItemID; }
 	void SetVDialogItemID(size_t NewDialogItemID) { DialogItemID = NewDialogItemID; }
-	void SetId(const GUID& Id);
-	const GUID& Id() const;
+	void SetId(const UUID& Id);
+	const UUID& Id() const;
 	bool IsComboBox() const { return GetDialog() && CheckFlags(VMENU_COMBOBOX); }
 	dialog_ptr GetDialog() const {return ParentDialog.lock();}
 
@@ -273,59 +289,61 @@ public:
 		SetMenuFlags(VMENU_UPDATEREQUIRED);
 	}
 
-	static FarListItem *MenuItem2FarList(const MenuItemEx *ListItem, FarListItem *Item);
-	static std::vector<string> AddHotkeys(range<menu_item*> MenuItems);
+	static FarListItem *MenuItem2FarList(const MenuItemEx *MItem, FarListItem *FItem);
+	static std::vector<string> AddHotkeys(span<menu_item> MenuItems);
+
+	size_t MaxItemLength() const;
 
 private:
-	void init(range<const menu_item*> Data, DWORD Flags);
+	void init(span<menu_item const> Data, DWORD Flags);
 
 	void DisplayObject() override;
 
 	void ShowMenu(bool IsParent = false);
 	void DrawTitles() const;
 	int GetItemPosition(int Position) const;
-	bool CheckKeyHiOrAcc(DWORD Key,int Type,int Translate,bool ChangePos,int& NewPos);
-	int CheckHighlights(wchar_t Chr,int StartPos=0);
-	wchar_t GetHighlights(const MenuItemEx *_item) const;
+	bool CheckKeyHiOrAcc(DWORD Key, int Type, bool Translate, bool ChangePos, int& NewPos);
+	int CheckHighlights(wchar_t CheckSymbol,int StartPos=0);
+	wchar_t GetHighlights(const MenuItemEx *Item) const;
 	bool ShiftItemShowPos(int Pos,int Direct);
-	bool ItemCanHaveFocus(unsigned long long Flags) const;
-	bool ItemCanBeEntered(unsigned long long Flags) const;
-	bool ItemIsVisible(unsigned long long Flags) const;
 	void UpdateMaxLengthFromTitles();
 	void UpdateMaxLength(size_t Length);
-	void UpdateInternalCounters(unsigned long long OldFlags, unsigned long long NewFlags);
-	bool ShouldSendKeyToFilter(int Key) const;
+	bool ShouldSendKeyToFilter(unsigned Key) const;
 	//корректировка текущей позиции и флагов SELECTED
 	void UpdateSelectPos();
+	void EnableFilter(bool Enable);
+	size_t GetServiceAreaSize();
+
+	size_t Text(string_view Str) const;
+	size_t Text(wchar_t Char) const;
 
 	string strTitle;
 	string strBottomTitle;
-	int SelectPos;
-	int SelectPosResult;
-	int TopPos;
+	int SelectPos{-1};
+	int SelectPosResult{-1};
+	int TopPos{};
 	int MaxHeight;
-	bool WasAutoHeight;
-	size_t m_MaxLength;
+	bool WasAutoHeight{};
+	size_t m_MaxItemLength{};
 	int m_BoxType;
 	window_ptr CurrentWindow;
-	bool PrevCursorVisible;
-	DWORD PrevCursorSize;
+	bool PrevCursorVisible{};
+	size_t PrevCursorSize{};
 	// переменная, отвечающая за отображение scrollbar в DI_LISTBOX & DI_COMBOBOX
 	BitFlags VMFlags;
-	BitFlags VMOldFlags;
 	// Для LisBox - родитель в виде диалога
 	std::weak_ptr<Dialog> ParentDialog;
-	size_t DialogItemID;
-	bool bFilterEnabled;
-	bool bFilterLocked;
+	size_t DialogItemID{};
+	bool bFilterEnabled{};
+	bool bFilterLocked{};
 	string strFilter;
 	std::vector<MenuItemEx> Items;
-	intptr_t ItemHiddenCount;
-	intptr_t ItemSubMenusCount;
-	FarColor Colors[VMENU_COLOR_COUNT];
-	size_t MaxLineWidth;
-	bool bRightBtnPressed;
-	GUID MenuId;
+	intptr_t ItemHiddenCount{};
+	intptr_t ItemSubMenusCount{};
+	FarColor Colors[VMENU_COLOR_COUNT]{};
+	size_t MaxLineWidth{};
+	bool bRightBtnPressed{};
+	UUID MenuId;
 };
 
 #endif // VMENU_HPP_DF9F4258_12AF_4721_9D5F_BE29A59649C2

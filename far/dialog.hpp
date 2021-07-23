@@ -38,43 +38,50 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "window.hpp"
 #include "bitflags.hpp"
 #include "modal.hpp"
 
+// Platform:
+
+// Common:
 #include "common/range.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 class History;
 
 // Флаги текущего режима диалога
 enum DIALOG_MODES
 {
-	DMODE_NONE                  =0x00000000,
-	DMODE_OBJECTS_INITED        =0x00000001, // элементы инициализарованы?
-	DMODE_OBJECTS_CREATED       =0x00000002, // объекты (Edit,...) созданы?
-	DMODE_WARNINGSTYLE          =0x00000004, // Warning Dialog Style?
-	DMODE_KEYDRAGGED            =0x00000008, // диалог двигается клавиатурой?
-	DMODE_ISCANMOVE             =0x00000010, // можно ли двигать диалог?
-	DMODE_MOUSEDRAGGED          =0x00000020, // диалог двигается мышью?
-	DMODE_SMALLDIALOG           =0x00000040, // "короткий диалог"
-	DMODE_DRAWING               =0x00001000, // диалог рисуется?
-	DMODE_KEY                   =0x00002000, // Идет посылка клавиш?
-	DMODE_SHOW                  =0x00004000, // Диалог виден?
-	DMODE_INPUTEVENT            =0x00008000, // Нужно посылать DN_INPUT в обработчик?
-	DMODE_RESIZED               =0x00010000, //
-	DMODE_ENDLOOP               =0x00020000, // Конец цикла обработки диалога?
-	DMODE_BEGINLOOP             =0x00040000, // Начало цикла обработки диалога?
-	DMODE_ISMENU                =0x00080000, // диалог является экземпляром VMenu2
-	DMODE_NODRAWSHADOW          =0x00100000, // не рисовать тень?
-	DMODE_NODRAWPANEL           =0x00200000, // не рисовать подложку?
-	DMODE_FULLSHADOW            =0x00400000,
-	DMODE_NOPLUGINS             =0x00800000,
-	DMODE_NEEDUPDATE            =0x01000000, // необходимо обновить весь диалог?
-	DMODE_VISIBLE               =0x02000000, // отображать диалог на экране (DM_SHOWDIALOG)
-	DMODE_KEEPCONSOLETITLE      =0x10000000, // не изменять заголовок консоли
-	DMODE_CLICKOUTSIDE          =0x20000000, // было нажатие мыши вне диалога?
-	DMODE_MSGINTERNAL           =0x40000000, // Внутренняя Message?
-	DMODE_OLDSTYLE              =0x80000000, // Диалог в старом (до 1.70) стиле
+	DMODE_NONE                  = 0,
+	DMODE_OBJECTS_INITED        = 0_bit,  // элементы инициализарованы?
+	DMODE_OBJECTS_CREATED       = 1_bit,  // объекты (Edit,...) созданы?
+	DMODE_WARNINGSTYLE          = 2_bit,  // Warning Dialog Style?
+	DMODE_KEYDRAGGED            = 3_bit,  // диалог двигается клавиатурой?
+	DMODE_ISCANMOVE             = 4_bit,  // можно ли двигать диалог?
+	DMODE_MOUSEDRAGGED          = 5_bit,  // диалог двигается мышью?
+	DMODE_SMALLDIALOG           = 6_bit,  // "короткий диалог"
+	DMODE_DRAWING               = 12_bit, // диалог рисуется?
+	DMODE_KEY                   = 13_bit, // Идет посылка клавиш?
+	DMODE_SHOW                  = 14_bit, // Диалог виден?
+	DMODE_INPUTEVENT            = 15_bit, // Нужно посылать DN_INPUT в обработчик?
+	DMODE_RESIZED               = 16_bit, //
+	DMODE_ENDLOOP               = 17_bit, // Конец цикла обработки диалога?
+	DMODE_BEGINLOOP             = 18_bit, // Начало цикла обработки диалога?
+	DMODE_ISMENU                = 19_bit, // диалог является экземпляром VMenu2
+	DMODE_NODRAWSHADOW          = 20_bit, // не рисовать тень?
+	DMODE_NODRAWPANEL           = 21_bit, // не рисовать подложку?
+	DMODE_FULLSHADOW            = 22_bit,
+	DMODE_NOPLUGINS             = 23_bit,
+	DMODE_NEEDUPDATE            = 24_bit, // необходимо обновить весь диалог?
+	DMODE_VISIBLE               = 25_bit, // отображать диалог на экране (DM_SHOWDIALOG)
+	DMODE_KEEPCONSOLETITLE      = 28_bit, // не изменять заголовок консоли
+	DMODE_CLICKOUTSIDE          = 29_bit, // было нажатие мыши вне диалога?
+	DMODE_OLDSTYLE              = 31_bit, // Диалог в старом (до 1.70) стиле
 };
 
 /*
@@ -86,15 +93,15 @@ struct DialogItemEx: public FarDialogItem
 	// Структура, описывающая автоматизацию для DIF_AUTOMATION
 	struct DialogItemAutomation;
 
-	int ListPos;
+	int ListPos{};
 	string strHistory;
 	string strMask;
 	string strData;
 	BitFlags IFlags;
 	std::vector<DialogItemAutomation> Auto;
-	void *ObjPtr;
+	void* ObjPtr{};
 	vmenu_ptr ListPtr;
-	struct DlgUserControl *UCData;
+	struct DlgUserControl* UCData{};
 
 	DialogItemEx();
 	~DialogItemEx();
@@ -115,16 +122,32 @@ struct DialogItemEx: public FarDialogItem
 		FARDIALOGITEMFLAGS Checked3Set, FARDIALOGITEMFLAGS Checked3Skip);
 };
 
-bool IsKeyHighlighted(string_view Str, int Key, int Translate, int AmpPos = -1);
-void ItemsToItemsEx(range<const FarDialogItem*> Items, range<DialogItemEx*> ItemsEx, bool Short = false);
+bool IsKeyHighlighted(string_view Str, int Key, bool Translate, wchar_t CharKey = {});
+void ItemsToItemsEx(span<const FarDialogItem> Items, span<DialogItemEx> ItemsEx, bool Short = false);
 
-template<size_t N>
-auto MakeDialogItemsEx(const FarDialogItem (&InitData)[N])
+
+struct InitDialogItem
 {
-	std::vector<DialogItemEx> Items(N);
-	ItemsToItemsEx(make_span(InitData), make_span(Items));
-	return Items;
+	enum FARDIALOGITEMTYPES Type;
+	struct
+	{
+		point TopLeft, BottomRight;
+	}
+	Position;
+	FARDIALOGITEMFLAGS Flags;
+	string_view Data;
+};
+
+std::vector<DialogItemEx> MakeDialogItems(span<const InitDialogItem> Items);
+
+template<size_t Size, size_t N>
+std::vector<DialogItemEx> MakeDialogItems(InitDialogItem const (&Items)[N])
+{
+	static_assert(Size == N);
+
+	return MakeDialogItems(Items);
 }
+
 
 class DlgEdit;
 class Plugin;
@@ -142,22 +165,22 @@ public:
 	static dialog_ptr create(T&& Src, intptr_t(O::*function)(Dialog*, intptr_t, intptr_t, void*), O* object, void* InitParam = nullptr)
 	{
 		auto Handler = (object && function)? [=](Dialog* Dlg, intptr_t Msg, intptr_t Param1, void* Param2) { return std::invoke(function, object, Dlg, Msg, Param1, Param2); } : dialog_handler();
-		return std::make_shared<Dialog>(private_tag(), Src, Handler, InitParam);
+		return std::make_shared<Dialog>(private_tag(), span(Src), Handler, InitParam);
 	}
 
 	template<class T>
-	static dialog_ptr create(T&& Src, const dialog_handler& handler = nullptr, void* InitParam = nullptr)
+	static dialog_ptr create(
+		T&& Src, const dialog_handler& handler = nullptr, void* InitParam = nullptr)
 	{
-		return std::make_shared<Dialog>(private_tag(), Src, handler, InitParam);
+		return std::make_shared<Dialog>(private_tag(), span(Src), handler, InitParam);
 	}
 
 	template<class T>
-	Dialog(private_tag, T&& Src, const dialog_handler& Handler, void* InitParam):
-		bInitOK(),
+	Dialog(private_tag, span<T> const Src, const dialog_handler& Handler, void* InitParam):
 		DataDialog(InitParam),
 		m_handler(Handler)
 	{
-		Construct(make_span(Src));
+		Construct(Src);
 	}
 
 	~Dialog() override;
@@ -173,7 +196,7 @@ public:
 	int GetType() const override { return windowtype_dialog; }
 	bool CanFastHide() const override;
 	void ResizeConsole() override;
-	void SetPosition(int X1,int Y1,int X2,int Y2) override;
+	void SetPosition(rectangle Where) override;
 	void FastShow() {ShowDialog();}
 	void SetDeleting() override;
 	void ShowConsoleTitle() override;
@@ -203,16 +226,16 @@ public:
 	void ClearDone();
 	intptr_t CloseDialog();
 	// For MACRO
-	const std::vector<DialogItemEx>& GetAllItem() const { return Items; }
+	const auto& GetAllItem() const { return Items; }
 	size_t GetDlgFocusPos() const {return m_FocusPos;}
 	int SetAutomation(WORD IDParent,WORD id, FARDIALOGITEMFLAGS UncheckedSet,FARDIALOGITEMFLAGS UncheckedSkip, FARDIALOGITEMFLAGS CheckedSet,FARDIALOGITEMFLAGS CheckedSkip,
 		FARDIALOGITEMFLAGS Checked3Set=DIF_NONE,FARDIALOGITEMFLAGS Checked3Skip=DIF_NONE);
 
 	intptr_t DlgProc(intptr_t Msg,intptr_t Param1,void* Param2);
 	bool IsInited() const;
-	void SetId(const GUID& Id);
-	const GUID& GetId() const {return m_Id;}
-	intptr_t SendMessage(intptr_t Msg,intptr_t Param1,void* Param2);
+	void SetId(const UUID& Id);
+	const UUID& GetId() const {return m_Id;}
+	virtual intptr_t SendMessage(intptr_t Msg,intptr_t Param1,void* Param2);
 	intptr_t DefProc(intptr_t Msg,intptr_t Param1,void* Param2);
 	int GetDropDownOpened() const { return DropDownOpened; }
 	bool IsRedrawEnabled() const { return m_DisableRedraw == 0; }
@@ -228,8 +251,20 @@ public:
 		return std::any_cast<T>(GetListItemComplexUserData(ListId, ItemId));
 	}
 
+	class suppress_redraw
+	{
+	public:
+		NONCOPYABLE(suppress_redraw);
+
+		explicit suppress_redraw(Dialog* Dlg);
+		~suppress_redraw();
+
+	private:
+		Dialog* m_Dlg;
+	};
+
 protected:
-	size_t InitDialogObjects(size_t ID = (size_t)-1);
+	void InitDialogObjects(size_t ID = static_cast<size_t>(-1));
 
 private:
 	friend class History;
@@ -241,35 +276,35 @@ private:
 	void AddToList();
 	void RemoveFromList();
 
-	void Construct(range<DialogItemEx*> SrcItems);
-	void Construct(range<const FarDialogItem*> SrcItems);
+	void Construct(span<DialogItemEx> SrcItems);
+	void Construct(span<const FarDialogItem> SrcItems);
 	void Init();
 	void DeleteDialogObjects();
-	int LenStrItem(size_t ID, const string& Str) const;
+	int LenStrItem(size_t ID, string_view Str) const;
 	int LenStrItem(size_t ID);
 	int LenStrItem(const DialogItemEx& Item);
-	void ShowDialog(size_t ID=(size_t)-1);  //    ID=-1 - отрисовать весь диалог
+	void ShowDialog(size_t ID=static_cast<size_t>(-1));  //    ID=-1 - отрисовать весь диалог
 	intptr_t CtlColorDlgItem(FarColor Color[4], size_t ItemPos, FARDIALOGITEMTYPES Type, bool Focus, bool Default,FARDIALOGITEMFLAGS Flags);
 	/* $ 28.07.2000 SVS
 		+ Изменяет фокус ввода между двумя элементами.
 		    Вынесен отдельно для того, чтобы обработать DMSG_KILLFOCUS & DMSG_SETFOCUS
 	*/
 	void ChangeFocus2(size_t SetFocusPos);
-	size_t ChangeFocus(size_t FocusPos, int Step, bool SkipGroup) const;
-	bool SelectFromEditHistory(const DialogItemEx *CurItem, DlgEdit *EditLine, const string& HistoryName);
+	size_t ChangeFocus(size_t CurFocusPos, int Step, bool SkipGroup) const;
+	bool SelectFromEditHistory(DialogItemEx const* CurItem, DlgEdit* EditLine, string_view HistoryName);
 	int SelectFromComboBox(DialogItemEx *CurItem,DlgEdit*EditLine);
-	bool AddToEditHistory(const DialogItemEx* CurItem, const string& AddStr) const;
+	bool AddToEditHistory(DialogItemEx const* CurItem, string_view AddStr) const;
 	void ProcessLastHistory(DialogItemEx *CurItem, int MsgIndex);  // обработка DIF_USELASTHISTORY
-	bool ProcessHighlighting(int Key,size_t FocusPos,int Translate);
-	int CheckHighlights(WORD Chr,int StartPos=0);
+	bool ProcessHighlighting(int Key, size_t FocusPos, bool Translate);
+	int CheckHighlights(WORD CheckSymbol, int StartPos = 0);
 	void SelectOnEntry(size_t Pos, bool Selected);
 	void CheckDialogCoord();
 	bool GetItemRect(size_t I,SMALL_RECT& Rect);
 	bool SetItemRect(size_t ID, const SMALL_RECT& Rect);
-	bool SetItemRect(DialogItemEx& item, const SMALL_RECT& Rect);
+	bool SetItemRect(DialogItemEx& Item, const SMALL_RECT& Rect);
 	void SetDropDownOpened(int Status) { DropDownOpened=Status; }
 	void ProcessCenterGroup();
-	size_t ProcessRadioButton(size_t);
+	size_t ProcessRadioButton(size_t CurRB, bool UncheckAll);
 	bool ProcessOpenComboBox(FARDIALOGITEMTYPES Type,DialogItemEx *CurItem,size_t CurFocusPos);
 	bool ProcessMoveDialog(DWORD Key);
 	bool Do_ProcessTab(bool Next);
@@ -277,38 +312,43 @@ private:
 	bool Do_ProcessFirstCtrl();
 	bool Do_ProcessSpace();
 	void SetComboBoxPos(DialogItemEx* Item=nullptr);
-	void CalcComboBoxPos(const DialogItemEx* CurItem, intptr_t ItemCount, int &X1, int &Y1, int &X2, int &Y2) const;
+	rectangle CalcComboBoxPos(const DialogItemEx* CurItem, intptr_t ItemCount) const;
 	void ProcessKey(int Key, size_t ItemPos);
 	void ProcessDrag(const MOUSE_EVENT_RECORD *MouseEvent);
 
 	static bool ItemHasDropDownArrow(const DialogItemEx *Item);
 
 
-	bool bInitOK;               // диалог был успешно инициализирован
-	class Plugin* PluginOwner;       // Плагин, для формирования HelpTopic
-	size_t m_FocusPos;               // всегда известно какой элемент в фокусе
-	size_t PrevFocusPos;           // всегда известно какой элемент был в фокусе
-	int m_DisableRedraw;         // Разрешена перерисовка диалога? ( 0 - разрешена)
-	BitFlags DialogMode;        // Флаги текущего режима диалога
-	void* DataDialog;        // Данные, специфические для конкретного экземпляра диалога (первоначально здесь параметр, переданный в конструктор)
-	std::vector<DialogItemEx> Items; // массив элементов диалога
-	DialogItemEx* SavedItems; // пользовательский массив элементов диалога
+	bool bInitOK{};                   // диалог был успешно инициализирован
+	class Plugin* PluginOwner{};      // Плагин, для формирования HelpTopic
+	size_t m_FocusPos{};              // всегда известно какой элемент в фокусе
+	size_t PrevFocusPos{};            // всегда известно какой элемент был в фокусе
+	int m_DisableRedraw{};            // Разрешена перерисовка диалога? ( 0 - разрешена)
+	BitFlags DialogMode;              // Флаги текущего режима диалога
+	void* DataDialog{};               // Данные, специфические для конкретного экземпляра диалога (первоначально здесь параметр, переданный в конструктор)
+	std::vector<DialogItemEx> Items;  // массив элементов диалога
+	DialogItemEx* SavedItems{};       // пользовательский массив элементов диалога
 
 	dialog_handler m_handler;
 
 	// переменные для перемещения диалога
 	struct
 	{
-		int OldX1,OldX2,OldY1,OldY2;
+		rectangle OldRect;
 		int MsX, MsY;
-	} m_Drag;
+	}
+	m_Drag{};
 	string HelpTopic;
-	int DropDownOpened;// Содержит статус комбобокса и хистори: TRUE - открыт, FALSE - закрыт.
-	int RealWidth, RealHeight;
-	GUID m_Id;
-	bool IdExist;
-	MOUSE_EVENT_RECORD PrevMouseRecord;
+	int DropDownOpened{}; // Содержит статус комбобокса и хистори: TRUE - открыт, FALSE - закрыт.
+	int RealWidth{};
+	int RealHeight{};
+	UUID m_Id{};
+	bool IdExist{};
+	MOUSE_EVENT_RECORD PrevMouseRecord{};
 	string m_ConsoleTitle;
 };
+
+// BUGBUG
+extern std::chrono::steady_clock::duration WaitUserTime;
 
 #endif // DIALOG_HPP_7A9BE12B_EE5C_441F_84C9_64E9A63ABEFE

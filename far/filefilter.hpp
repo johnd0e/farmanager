@@ -35,11 +35,20 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "panelfwd.hpp"
 #include "plugin.hpp"
 
+// Platform:
 #include "platform.chrono.hpp"
 #include "platform.fwd.hpp"
+
+// Common:
+#include "common/noncopyable.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 enum enumFileFilterFlagsType: int;
 class FileFilterParams;
@@ -61,16 +70,16 @@ class FileFilter: noncopyable
 public:
 	FileFilter(Panel *HostPanel, FAR_FILE_FILTER_TYPE FilterType);
 
-	bool FilterEdit();
+	void FilterEdit();
 	void UpdateCurrentTime();
 	bool FileInFilter(const FileListItem* fli, filter_status* FilterStatus = nullptr);
-	bool FileInFilter(const os::fs::find_data& fde, filter_status* FilterStatus = nullptr, const string* FullName = nullptr);
+	bool FileInFilter(const os::fs::find_data& fde, filter_status* FilterStatus = nullptr, string_view FullName = {});
 	bool FileInFilter(const PluginPanelItem& fd, filter_status* FilterStatus = nullptr);
 	bool IsEnabledOnPanel();
 
 	static void InitFilter();
-	static void LoadFilter(const HierarchicalConfig* cfg, unsigned long long Key, FileFilterParams& Item, bool& OldFormat);
-	static void SaveFilter(HierarchicalConfig *cfg, unsigned long long Key, const FileFilterParams& Item);
+	static FileFilterParams LoadFilter(/*const*/ HierarchicalConfig& cfg, unsigned long long KeyId);
+	static void SaveFilter(HierarchicalConfig& cfg, unsigned long long KeyId, const FileFilterParams& Item);
 	static void CloseFilter();
 	static void SwapFilter();
 	static void Save(bool always);
@@ -78,9 +87,7 @@ public:
 private:
 	void ProcessSelection(VMenu2 *FilterList) const;
 	enumFileFilterFlagsType GetFFFT() const;
-	int  GetCheck(const FileFilterParams& FFP) const;
-	static void SwapPanelFlags(FileFilterParams& CurFilterData);
-	static int  ParseAndAddMasks(std::list<std::pair<string, int>>& Extensions, const string& FileName, DWORD FileAttr, int Check);
+	wchar_t GetCheck(const FileFilterParams& FFP) const;
 
 	Panel *m_HostPanel;
 	FAR_FILE_FILTER_TYPE m_FilterType;

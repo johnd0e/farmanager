@@ -31,328 +31,402 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "cddrv.hpp"
 
-#include "drivemix.hpp"
-#include "flink.hpp"
+// Internal:
+#include "exception.hpp"
+#include "log.hpp"
 #include "pathmix.hpp"
-#include "string_utils.hpp"
 
+// Platform:
 #include "platform.fs.hpp"
 
+// Common:
 #include "common/null_iterator.hpp"
+#include "common/string_utils.hpp"
+#include "common/utility.hpp"
 
-enum CDROM_DeviceCapabilities
+// External:
+
+//----------------------------------------------------------------------------
+
+enum cdrom_device_capabilities
 {
-	CAPABILITIES_NONE            = 0,
+	CAPABILITIES_NONE     = 0,
 
-	//CD
-	CAPABILITIES_READ_CDROM      = bit(0),
-	CAPABILITIES_READ_CDR        = bit(1),
-	CAPABILITIES_READ_CDRW       = bit(2),
+	CAPABILITIES_CDROM    = 0_bit,
+	CAPABILITIES_CDR      = 1_bit,
+	CAPABILITIES_CDRW     = 2_bit,
 
-	CAPABILITIES_WRITE_CDR       = bit(3),
-	CAPABILITIES_WRITE_CDRW      = bit(4),
+	CAPABILITIES_DVDROM   = 3_bit,
+	CAPABILITIES_DVDR     = 4_bit,
+	CAPABILITIES_DVDRW    = 5_bit,
+	CAPABILITIES_DVDRAM   = 6_bit,
 
-	//DVD
-	CAPABILITIES_READ_DVDROM     = bit(5),
-	CAPABILITIES_READ_DVDR       = bit(6),
-	CAPABILITIES_READ_DVDRW      = bit(7),
-	CAPABILITIES_READ_DVDRAM     = bit(8),
+	CAPABILITIES_BDROM    = 7_bit,
+	CAPABILITIES_BDR      = 8_bit,
+	CAPABILITIES_BDRW     = 9_bit,
 
-	CAPABILITIES_WRITE_DVDR      = bit(9),
-	CAPABILITIES_WRITE_DVDRW     = bit(10),
-	CAPABILITIES_WRITE_DVDRAM    = bit(11),
-
-	//BlueRay
-	CAPABILITIES_READ_BDROM      = bit(12),
-	CAPABILITIES_WRITE_BDROM     = bit(13),
-
-	//HD-DVD
-	CAPABILITIES_READ_HDDVD      = bit(14),
-	CAPABILITIES_WRITE_HDDVD     = bit(15),
-
-	//GENERIC
-
-	CAPABILITIES_GENERIC_CDROM   = CAPABILITIES_READ_CDROM | CAPABILITIES_READ_CDR | CAPABILITIES_READ_CDRW,
-	CAPABILITIES_GENERIC_CDRW    = CAPABILITIES_WRITE_CDR | CAPABILITIES_WRITE_CDRW,
-	CAPABILITIES_GENERIC_DVDROM  = CAPABILITIES_READ_DVDROM | CAPABILITIES_READ_DVDR | CAPABILITIES_READ_DVDRW | CAPABILITIES_READ_DVDRAM,
-	CAPABILITIES_GENERIC_DVDRW   = CAPABILITIES_WRITE_DVDR | CAPABILITIES_WRITE_DVDRW,
-	CAPABILITIES_GENERIC_DVDRAM  = CAPABILITIES_WRITE_DVDRAM,
-
-	CAPABILITIES_GENERIC_BDROM   = CAPABILITIES_READ_BDROM,
-	CAPABILITIES_GENERIC_BDRW    = CAPABILITIES_WRITE_BDROM,
-
-	CAPABILITIES_GENERIC_HDDVD   = CAPABILITIES_READ_HDDVD,
-	CAPABILITIES_GENERIC_HDDVDRW = CAPABILITIES_WRITE_HDDVD
+	CAPABILITIES_HDDVDROM = 10_bit,
+	CAPABILITIES_HDDVDR   = 11_bit,
+	CAPABILITIES_HDDVDRW  = 12_bit,
+	CAPABILITIES_HDDVDRAM = 13_bit,
 };
 
-static CDROM_DeviceCapabilities getCapsUsingProductId(const char* prodID)
+static auto operator | (cdrom_device_capabilities const This, cdrom_device_capabilities const Rhs)
 {
-	std::string productID;
-	const auto Iterator = null_iterator(prodID);
-	std::copy_if(Iterator, Iterator.end(), std::back_inserter(productID), is_alpha);
+	return static_cast<cdrom_device_capabilities>(as_underlying_type(This) | Rhs);
+}
 
-	static const std::pair<std::string_view, int> Capabilities[] =
+static auto& operator |= (cdrom_device_capabilities& This, cdrom_device_capabilities const Rhs)
+{
+	return This = This | Rhs;
+}
+
+template<typename T, size_t N, size_t... I>
+static auto write_value_to_big_endian_impl(unsigned char (&Dest)[N], T const Value, std::index_sequence<I...>)
+{
+	(..., (Dest[N - I - 1] = (Value >> (8 * I) & 0xFF)));
+}
+
+template<typename T, size_t N>
+static auto write_value_to_big_endian(unsigned char (&Dest)[N], T const Value)
+{
+	return write_value_to_big_endian_impl(Dest, Value, std::make_index_sequence<N>{});
+}
+
+template<typename T, size_t N, size_t... I>
+static auto read_value_from_big_endian_impl(unsigned char const (&Src)[N], std::index_sequence<I...>)
+{
+	static_assert(sizeof(T) >= N);
+	return T((... | (T(Src[I]) << (8 * (N - I - 1)))));
+}
+
+template<typename T, size_t N>
+static auto read_value_from_big_endian(unsigned char const (&Src)[N])
+{
+	return read_value_from_big_endian_impl<T>(Src, std::make_index_sequence<N>{});
+}
+
+template<typename T>
+static auto& edit_as(void* const Buffer)
+{
+	static_assert(std::is_trivially_copyable_v<T>);
+
+	return *static_cast<T*>(Buffer);
+}
+
+struct SCSI_PASS_THROUGH_WITH_BUFFERS: SCSI_PASS_THROUGH
+{
+	UCHAR SenseBuf[32];
+	UCHAR DataBuf[512];
+};
+
+static void InitSCSIPassThrough(SCSI_PASS_THROUGH_WITH_BUFFERS& Spt)
+{
+	Spt = {};
+
+	Spt.Length = sizeof(SCSI_PASS_THROUGH);
+	Spt.PathId = 0;
+	Spt.TargetId = 1;
+	Spt.SenseInfoLength = sizeof(Spt.SenseBuf);
+	Spt.DataIn = SCSI_IOCTL_DATA_IN;
+	Spt.DataTransferLength = sizeof(Spt.DataBuf);
+	Spt.TimeOutValue = 2;
+
+WARNING_PUSH()
+WARNING_DISABLE_GCC("-Winvalid-offsetof")
+WARNING_DISABLE_CLANG("-Winvalid-offsetof")
+
+	Spt.DataBufferOffset = offsetof(SCSI_PASS_THROUGH_WITH_BUFFERS, DataBuf);
+	Spt.SenseInfoOffset = static_cast<ULONG>(offsetof(SCSI_PASS_THROUGH_WITH_BUFFERS, SenseBuf));
+
+WARNING_POP()
+}
+
+// http://www.13thmonkey.org/documentation/SCSI/
+// https://doc.xdevs.com/doc/Seagate/INF-8090.PDF
+
+static auto profile_to_capabilities(FEATURE_PROFILE_TYPE const Profile)
+{
+WARNING_PUSH()
+WARNING_DISABLE_MSC(4063) // case 'identifier' is not a valid value for switch of enum 'enumeration'
+WARNING_DISABLE_GCC("-Wswitch")
+WARNING_DISABLE_CLANG("-Wswitch")
+
+	switch (Profile)
 	{
-		{"CD"sv, CAPABILITIES_GENERIC_CDROM},
-		{"CDRW"sv, CAPABILITIES_GENERIC_CDROM|CAPABILITIES_GENERIC_CDRW},
-		{"DVD"sv, CAPABILITIES_GENERIC_CDROM|CAPABILITIES_GENERIC_DVDROM},
-		{"DVDRW"sv, CAPABILITIES_GENERIC_CDROM|CAPABILITIES_GENERIC_DVDROM|CAPABILITIES_GENERIC_DVDRW},
-		{"DVDRAM"sv, CAPABILITIES_GENERIC_CDROM|CAPABILITIES_GENERIC_DVDROM|CAPABILITIES_GENERIC_DVDRW|CAPABILITIES_GENERIC_DVDRAM},
-		{"BDROM"sv, CAPABILITIES_GENERIC_CDROM|CAPABILITIES_GENERIC_DVDROM|CAPABILITIES_GENERIC_DVDRAM},
-		{"HDDVD"sv, CAPABILITIES_GENERIC_CDROM|CAPABILITIES_GENERIC_DVDROM|CAPABILITIES_GENERIC_HDDVD},
+	case ProfileCdrom:                     return CAPABILITIES_CDROM;     // 0008h | CD-ROM                                | Read only Compact Disc capable
+	case ProfileCdRecordable:              return CAPABILITIES_CDR;       // 0009h | CD-R                                  | Write once Compact Disc capable
+	case ProfileCdRewritable:              return CAPABILITIES_CDRW;      // 000Ah | CD-RW                                 | Re-writable Compact Disc capable
+	case ProfileDvdRom:                    return CAPABILITIES_DVDROM;    // 0010h | DVD-ROM                               | Read only DVD
+	case ProfileDvdRecordable:             return CAPABILITIES_DVDR;      // 0011h | DVD-R Sequential Recording            | Write once DVD using Sequential recording
+	case ProfileDvdRam:                    return CAPABILITIES_DVDRAM;    // 0012h | DVD-RAM                               | Re-writable DVD
+	case ProfileDvdRewritable:             return CAPABILITIES_DVDRW;     // 0013h | DVD-RW Restricted Overwrite           | Re-recordable DVD using Restricted Overwrite
+	case ProfileDvdRWSequential:           return CAPABILITIES_DVDRW;     // 0014h | DVD-RW Sequential recording           | Re-recordable DVD using Sequential recording
+	case ProfileDvdDashRDualLayer:         return CAPABILITIES_DVDRW;     // 0015h | DVD-R Dual Layer Sequential Recording | Dual Layer DVD-R using Sequential recording
+	case ProfileDvdDashRLayerJump:         return CAPABILITIES_DVDRW;     // 0016h | DVD-R Dual Layer Jump Recording       | Dual Layer DVD-R using Layer Jump recording
+	case 0x17:                             return CAPABILITIES_DVDRW;     // 0017h | DVD-RW Dual Layer                     | Re-recordable DVD for Dual Layer
+	case 0x18:                             return CAPABILITIES_DVDR;      // 0018h | DVD-Download Disc Recording           | Write once DVD for CSS managed recording
+	case ProfileDvdPlusRW:                 return CAPABILITIES_DVDRW;     // 001Ah | DVD+RW                                | DVD+ReWritable
+	case ProfileDvdPlusR:                  return CAPABILITIES_DVDR;      // 001Bh | DVD+R                                 | DVD+Recordable
+	case ProfileDDCdrom:                   return CAPABILITIES_CDROM;     // 0020h | DDCD-ROM                              | Read only DDCD
+	case ProfileDDCdRecordable:            return CAPABILITIES_CDR;       // 0021h | DDCD-R                                | Write only DDCD
+	case ProfileDDCdRewritable:            return CAPABILITIES_CDRW;      // 0022h | DDCD-RW                               | Re-Write only DDCD
+	case ProfileDvdPlusRWDualLayer:        return CAPABILITIES_DVDRW;     // 002Ah | DVD+RW Dual Layer                     | DVD+Rewritable Dual Layer
+	case ProfileDvdPlusRDualLayer:         return CAPABILITIES_DVDR;      // 002Bh | DVD+R Dual Layer                      | DVD+Recordable Dual Layer
+	case ProfileBDRom:                     return CAPABILITIES_BDROM;     // 0040h | BD-ROM                                | Blu-ray Disc ROM
+	case ProfileBDRSequentialWritable:     return CAPABILITIES_BDR;       // 0041h | BD-R SRM                              | Blu-ray Disc Recordable – Sequential Recording Mode
+	case ProfileBDRRandomWritable:         return CAPABILITIES_BDR;       // 0042h | BD-R RRM                              | Blu-ray Disc Recordable – Random Recording Mode
+	case ProfileBDRewritable:              return CAPABILITIES_BDRW;      // 0043h | BD-RE                                 | Blu-ray Disc Rewritable
+	case ProfileHDDVDRom:                  return CAPABILITIES_HDDVDROM;  // 0050h | HD DVD-ROM                            | Read-only HD DVD
+	case ProfileHDDVDRecordable:           return CAPABILITIES_HDDVDR;    // 0051h | HD DVD-R                              | Write-once HD DVD
+	case ProfileHDDVDRam:                  return CAPABILITIES_HDDVDRAM;  // 0052h | HD DVD-RAM                            | Rewritable HD DVD
+	case ProfileHDDVDRewritable:           return CAPABILITIES_HDDVDRW;   // 0053h | HD DVD-RW                             | Re-recordable HD DVD
+	case ProfileHDDVDRDualLayer:           return CAPABILITIES_HDDVDR;    // 0058h | HD DVD-R Dual Layer                   | Write once HD DVD Dual Layer
+	case ProfileHDDVDRWDualLayer:          return CAPABILITIES_HDDVDRW;   // 005Ah | HD DVD-RW Dual Layer                  | Re-recordable HD DVD Dual Layer
+	default:                               return CAPABILITIES_NONE;
+	}
+
+WARNING_POP()
+}
+
+static auto capatibilities_from_scsi_configuration(const os::fs::file& Device)
+{
+	SCSI_PASS_THROUGH_WITH_BUFFERS Spt;
+	InitSCSIPassThrough(Spt);
+
+#if !IS_MICROSOFT_SDK()
+	// GCC headers incorrectly reserve only one bit for RequestType
+	struct CDB_FIXED
+	{
+		struct
+		{
+			UCHAR OperationCode;
+			UCHAR RequestType : 2;
+			UCHAR Reserved1 : 6;
+			UCHAR StartingFeature[2];
+			UCHAR Reserved2[3];
+			UCHAR AllocationLength[2];
+			UCHAR Control;
+		}
+		GET_CONFIGURATION;
 	};
+#define CDB CDB_FIXED
+#endif
 
-	return std::accumulate(ALL_CONST_RANGE(Capabilities), CAPABILITIES_NONE, [&productID](auto Value, const auto& i)
+	auto& GetConfiguration = edit_as<CDB>(Spt.Cdb).GET_CONFIGURATION;
+
+#if !IS_MICROSOFT_SDK()
+#undef CDB
+#endif
+
+	GetConfiguration.OperationCode = SCSIOP_GET_CONFIGURATION;
+	GetConfiguration.RequestType = SCSI_GET_CONFIGURATION_REQUEST_TYPE_ONE;
+	write_value_to_big_endian(GetConfiguration.StartingFeature, FeatureProfileList);
+	write_value_to_big_endian(GetConfiguration.AllocationLength, sizeof(Spt.DataBuf));
+	Spt.CdbLength = CDB10GENERIC_LENGTH;
+
+	if (!Device.IoControl(IOCTL_SCSI_PASS_THROUGH, &Spt, sizeof(SCSI_PASS_THROUGH), &Spt, sizeof(Spt)) || Spt.ScsiStatus != SCSISTAT_GOOD)
 	{
-		return static_cast<CDROM_DeviceCapabilities>(Value | (contains(productID, i.first)? i.second : 0));
+		LOGWARNING(L"SCSIOP_GET_CONFIGURATION: {}"sv, last_error());
+		return CAPABILITIES_NONE;
+	}
+
+	span const Buffer(Spt.DataBuf, Spt.DataTransferLength);
+
+	const auto ConfigurationHeader = view_as_if<GET_CONFIGURATION_HEADER>(Buffer);
+	if (!ConfigurationHeader || Buffer.size() < sizeof(ConfigurationHeader->DataLength) + read_value_from_big_endian<size_t>(ConfigurationHeader->DataLength))
+		return CAPABILITIES_NONE;
+
+	const auto FeatureList = view_as_if<FEATURE_DATA_PROFILE_LIST>(Buffer, sizeof(*ConfigurationHeader));
+	if (!FeatureList)
+		return CAPABILITIES_NONE;
+
+	if (read_value_from_big_endian<FEATURE_NUMBER>(FeatureList->Header.FeatureCode) != FeatureProfileList)
+		return CAPABILITIES_NONE;
+
+	const span Profiles(FeatureList->Profiles, FeatureList->Header.AdditionalLength / sizeof(*FeatureList->Profiles));
+
+	return std::accumulate(ALL_CONST_RANGE(Profiles), CAPABILITIES_NONE, [](auto const Value, auto const& i)
+	{
+		return Value | profile_to_capabilities(read_value_from_big_endian<FEATURE_PROFILE_TYPE>(i.ProfileNumber));
 	});
 }
 
-static void InitSCSIPassThrough(SCSI_PASS_THROUGH_WITH_BUFFERS& Sptwb)
+static auto capatibilities_from_scsi_mode_sense(const os::fs::file& Device)
 {
-	Sptwb = {};
+	SCSI_PASS_THROUGH_WITH_BUFFERS Spt;
+	InitSCSIPassThrough(Spt);
 
-	Sptwb.Spt.PathId = 0;
-	Sptwb.Spt.TargetId = 1;
-	Sptwb.Spt.Length = sizeof(Sptwb.Spt);
-	Sptwb.Spt.SenseInfoLength = 24;
-	Sptwb.Spt.SenseInfoOffset = static_cast<ULONG>(offsetof(SCSI_PASS_THROUGH_WITH_BUFFERS, SenseBuf));
-	Sptwb.Spt.DataTransferLength = sizeof(Sptwb.DataBuf);
-	Sptwb.Spt.DataBufferOffset = offsetof(SCSI_PASS_THROUGH_WITH_BUFFERS, DataBuf);
-	Sptwb.Spt.DataIn = SCSI_IOCTL_DATA_IN;
-	Sptwb.Spt.TimeOutValue = 2;
-}
+	auto& ModeSense = edit_as<CDB>(Spt.Cdb).MODE_SENSE;
+	ModeSense.OperationCode = SCSIOP_MODE_SENSE;
+	ModeSense.Dbd = true;
+	ModeSense.Pc = MODE_SENSE_CURRENT_VALUES;
+	ModeSense.PageCode = MODE_PAGE_CAPABILITIES;
+	ModeSense.AllocationLength = sizeof(MODE_PARAMETER_HEADER) + sizeof(CDVD_CAPABILITIES_PAGE);
+	Spt.CdbLength = CDB6GENERIC_LENGTH;
 
-static CDROM_DeviceCapabilities getCapsUsingMagic(const os::fs::file& Device)
-{
-	int caps = CAPABILITIES_NONE;
-
-	SCSI_PASS_THROUGH_WITH_BUFFERS sptwb;
-	const auto sDataLength = sizeof(sptwb.DataBuf);
-
-	InitSCSIPassThrough(sptwb);
-
-	//MODE SENSE FIRST
-	sptwb.Spt.Cdb[0] = SCSIOP_MODE_SENSE;
-	sptwb.Spt.Cdb[1] = 0x08;                    // target shall not return any block descriptors
-	sptwb.Spt.Cdb[2] = MODE_PAGE_CAPABILITIES;
-	sptwb.Spt.Cdb[4] = 192;
-	sptwb.Spt.CdbLength = 6;
-
-	DWORD returned = 0;
-
-	if (Device.IoControl(IOCTL_SCSI_PASS_THROUGH, &sptwb, sizeof(sptwb), &sptwb, sizeof(sptwb), &returned) && !sptwb.Spt.ScsiStatus)
+	if (!Device.IoControl(IOCTL_SCSI_PASS_THROUGH, &Spt, sizeof(SCSI_PASS_THROUGH), &Spt, sizeof(Spt)) || Spt.ScsiStatus != SCSISTAT_GOOD)
 	{
-		// Notes:
-		// 1. The header of 6-byte MODE commands is 4 bytes long.
-		// 2. No Block Descriptors returned before parameter page as was specified when building the Mode command.
-		// 3. First two bytes of a parameter page are the Page Code and Page Length bytes.
-		// Therefore, our useful data starts at the 7th byte in the data buffer.
-		caps = CAPABILITIES_READ_CDROM;
-
-		if ( sptwb.DataBuf[6] & 0x01 )
-			caps |= CAPABILITIES_READ_CDR;
-
-		if ( sptwb.DataBuf[6] & 0x02 )
-			caps |= CAPABILITIES_READ_CDRW;
-
-		if ( sptwb.DataBuf[6] & 0x08 )
-			caps |= CAPABILITIES_READ_DVDROM;
-
-		if ( sptwb.DataBuf[6] & 0x10 )
-			caps |= (CAPABILITIES_READ_DVDR | CAPABILITIES_READ_DVDRW);
-
-		if ( sptwb.DataBuf[6] & 0x20 )
-			caps |= CAPABILITIES_READ_DVDRAM;
-
-		if ( sptwb.DataBuf[7] & 0x01 )
-			caps |= CAPABILITIES_WRITE_CDR;
-
-		if ( sptwb.DataBuf[7] & 0x02 )
-			caps |= CAPABILITIES_WRITE_CDRW;
-
-		if ( sptwb.DataBuf[7] & 0x10 )
-			caps |= (CAPABILITIES_WRITE_DVDR | CAPABILITIES_WRITE_DVDRW);
-
-		if ( sptwb.DataBuf[7] & 0x20 )
-			caps |= CAPABILITIES_WRITE_DVDRAM;
+		LOGWARNING(L"SCSIOP_MODE_SENSE: {}"sv, last_error());
+		return CAPABILITIES_NONE;
 	}
 
-	// GET CONFIGURATION NOW
-	InitSCSIPassThrough(sptwb);
+	const auto& CapsPage = view_as<CDVD_CAPABILITIES_PAGE>(Spt.DataBuf + sizeof(MODE_PARAMETER_HEADER));
 
-	sptwb.Spt.Cdb[0] = 0x46; //GET CONFIGURATION
-	sptwb.Spt.Cdb[7] = static_cast<unsigned char>(sDataLength >> 8);	// Allocation length (MSB).
-	sptwb.Spt.Cdb[8] = static_cast<unsigned char>(sDataLength & 0xff);	// Allocation length (LSB).
-	sptwb.Spt.Cdb[9] = 0x00;
-	sptwb.Spt.CdbLength = 10;
+	auto caps = CAPABILITIES_CDROM;
 
-	returned = 0;
+	if (CapsPage.CDRRead)
+		caps |= CAPABILITIES_CDROM;
 
-	if (Device.IoControl(IOCTL_SCSI_PASS_THROUGH, &sptwb, sizeof(sptwb), &sptwb, sizeof(sptwb), &returned) && !sptwb.Spt.ScsiStatus)
+	if (CapsPage.CDERead)
+		caps |= CAPABILITIES_CDROM;
+
+	if (CapsPage.DVDROMRead)
+		caps |= CAPABILITIES_DVDROM;
+
+	if (CapsPage.DVDRRead)
+		caps |= CAPABILITIES_DVDROM;
+
+	if (CapsPage.DVDRAMRead)
+		caps |= CAPABILITIES_DVDRAM;
+
+	if (CapsPage.CDRWrite)
+		caps |= CAPABILITIES_CDR;
+
+	if (CapsPage.CDEWrite)
+		caps |= CAPABILITIES_CDRW;
+
+	if (CapsPage.DVDRWrite)
+		caps |= CAPABILITIES_DVDR;
+
+	if (CapsPage.DVDRAMWrite)
+		caps |= CAPABILITIES_DVDRAM;
+
+	return caps;
+}
+
+static auto product_id_to_capatibilities(const char* const ProductId)
+{
+	string ProductIdFiltered;
+	const auto Iterator = null_iterator(ProductId);
+	std::copy_if(Iterator, Iterator.end(), std::back_inserter(ProductIdFiltered), isalpha);
+
+	static const struct
 	{
-		const auto* ptr = sptwb.DataBuf;
-		const auto* ptr_end = &sptwb.DataBuf[sDataLength];
+		string_view Pattern;
+		std::initializer_list<string_view> AntipatternsBefore, AntipatternsAfter;
+		cdrom_device_capabilities Capabilities;
+	}
+	Capabilities[]
+	{
+		{ L"CDROM"sv,     {},        {},                            CAPABILITIES_CDROM    },
+		{ L"CDR"sv,       {},        { L"OM"sv, L"W"sv },           CAPABILITIES_CDR      },
+		{ L"CDRW"sv,      {},        {},                            CAPABILITIES_CDRW     },
+		{ L"DVDROM"sv,    {L"HD"sv}, {},                            CAPABILITIES_DVDROM   },
+		{ L"DVDR"sv,      {L"HD"sv}, { L"OM"sv, L"W"sv, L"AM"sv },  CAPABILITIES_DVDR     },
+		{ L"DVDRW"sv,     {L"HD"sv}, {},                            CAPABILITIES_DVDRW    },
+		{ L"DVDRAM"sv,    {L"HD"sv}, {},                            CAPABILITIES_DVDRAM   },
+		{ L"BDROM"sv,     {},        {},                            CAPABILITIES_BDROM    },
+		{ L"BDR"sv,       {},        { L"OM"sv, L"W"sv },           CAPABILITIES_BDR      },
+		{ L"BDRW"sv,      {},        {},                            CAPABILITIES_BDRW     },
+		{ L"HDDVDROM"sv,  {},        {},                            CAPABILITIES_HDDVDROM },
+		{ L"HDDVDR"sv,    {},        { L"OM"sv, L"W"sv, L"AM"sv },  CAPABILITIES_HDDVDR   },
+		{ L"HDDVDRW"sv,   {},        {},                            CAPABILITIES_HDDVDRW  },
+		{ L"HDDVDRAM"sv,  {},        {},                            CAPABILITIES_HDDVDRAM },
+	};
 
-		ptr += 8;
+	return std::accumulate(ALL_CONST_RANGE(Capabilities), CAPABILITIES_NONE, [Id = string_view(ProductIdFiltered)](auto const Value, auto const& i)
+	{
+		const auto Pos = Id.find(i.Pattern);
+		if (Pos == i.Pattern.npos)
+			return Value;
 
-		enum MMC_Features
-		{
-			MMC_FEATUREPROFILE_LIST             = 0x0000,
-			MMC_FEATURECORE                     = 0x0001,
-			MMC_FEATURE_MORPHING                = 0x0002,
-			MMC_FEATURE_REMOVABLE               = 0x0003,
-			MMC_FEATURE_WRITE_PROTECT           = 0x0004,
-			MMC_FEATURE_RANDOM_READ             = 0x0010,
-			MMC_FEATURE_MULTIREAD               = 0x001D,
-			MMC_FEATURE_CD_READ                 = 0x001E,
-			MMC_FEATURE_DVD_READ                = 0x001F,
-			MMC_FEATURE_RANDOM_WRITE            = 0x0020,
-			MMC_FEATURE_INC_STREAM_WRITE        = 0x0021,
-			MMC_FEATURE_SECTOR_ERASE            = 0x0022,
-			MMC_FEATURE_FORMAT                  = 0x0023,
-			MMC_FEATURE_HW_DEFECT_MANAGEMENT    = 0x0024,
-			MMC_FEATURE_WRITE_ONCE              = 0x0025,
-			MMC_FEATURE_RESTRICTED_OW           = 0x0026,
-			MMC_FEATURE_CWRW_CAV_WRITE          = 0x0027,
-			MMC_FEATURE_MRW                     = 0x0028,
-			MMC_FEATURE_ENH_DEFECT_REPORT       = 0x0029,
-			MMC_FEATURE_DVDPLUSRW               = 0x002A,
-			MMC_FEATURE_DVDPLUSR                = 0x002B,
-			MMC_FEATURE_RIGID_RESTRICTED_OW     = 0x002C,
-			MMC_FEATURE_CD_TAO                  = 0x002D,
-			MMC_FEATURE_CD_MASTERING            = 0x002E,
-			MMC_FEATURE_DVDMINUSR_RW_WRITE      = 0x002F,
-			MMC_FEATURE_DDCD_READ               = 0x0030,
-			MMC_FEATURE_DDCDR_WRITE             = 0x0031,
-			MMC_FEATURE_DDCDRW_WRITE            = 0x0032,
-			MMC_FEATURE_CDRW_WRITE              = 0x0037,
-			MMC_FEATURE_POWER_MANAGEMENT        = 0x0100,
-			MMC_FEATURE_SMART                   = 0x0101,
-			MMC_FEATURE_EMBEDDED_CHARGER        = 0x0102,
-			MMC_FEATURE_CD_AUDIO_ANALOG         = 0x0103,
-			MMC_FEATURE_MICROCODE_UPGRADE       = 0x0104,
-			MMC_FEATURE_TIMEOUT                 = 0x0105,
-			MMC_FEATURE_DVD_CSS                 = 0x0106,
-			MMC_FEATURE_REALTIME_STREAM         = 0x0107,
-			MMC_FEATURE_DRIVE_SN                = 0x0108,
-			MMC_FEATURE_DISC_CTRL_BLOCKS        = 0x010A,
-			MMC_FEATURE_DVD_CPRM                = 0x010B,
-			MMC_FEATURE_FIRMWARE_INFO           = 0x010C,
-			// MMC-5/MMC-6.
-			MMC_FEATURE_LAYER_JUMP_REC          = 0x0033,
-			MMC_FEATURE_BDR_POW                 = 0x0038,
-			MMC_FEATURE_DVDPLUSRW_DL            = 0x003A,
-			MMC_FEATURE_DVDPLUSR_DL             = 0x003B,
-			MMC_FEATURE_BD_READ                 = 0x0040,
-			MMC_FEATURE_BD_WRITE                = 0x0041,
-			MMC_FEATURE_TSR                     = 0x0042,
-			MMC_FEATURE_HDDVD_READ              = 0x0050,
-			MMC_FEATURE_HDDVD_WRITE             = 0x0051,
-			MMC_FEATURE_HYBRID_DISC             = 0x0080,
-			MMC_FEATURE_AACS                    = 0x010D,
-			MMC_FEATURE_VCPS                    = 0x0110
-		};
+		if (
+			const auto Prefix = Id.substr(0, Pos);
+			std::any_of(ALL_CONST_RANGE(i.AntipatternsBefore),
+				[&](string_view const Str){ return ends_with(Prefix, Str); })
+		)
+			return Value;
 
-		while ( ptr < ptr_end )
-		{
-			switch (static_cast<MMC_Features>((ptr[0] << 8) | ptr[1]))
-			{
-				default:
-					break;
+		if (
+			const auto Suffix = Id.substr(Pos + i.Pattern.size());
+			std::any_of(ALL_CONST_RANGE(i.AntipatternsAfter),
+				[&](string_view const Str){ return starts_with(Suffix, Str); })
+		)
+			return Value;
 
-					//USEFULL ONLY IF MODE SENSE FAILED
-				case MMC_FEATURE_CD_READ:
-					caps |= CAPABILITIES_READ_CDROM; //useless junk
-					break;
+		return Value | i.Capabilities;
+	});
+}
 
-				case MMC_FEATURE_DVDPLUSRW:
-					caps |= CAPABILITIES_READ_DVDRW; //if we have write support, it was determined by mode sense
-					break;
+static auto capatibilities_from_product_id(const os::fs::file& Device)
+{
+	STORAGE_DESCRIPTOR_HEADER DescriptorHeader{};
+	STORAGE_PROPERTY_QUERY PropertyQuery{ StorageDeviceProperty, PropertyStandardQuery };
 
-				case MMC_FEATURE_DVDPLUSR:
-					caps |= CAPABILITIES_READ_DVDR; //if we have write support, it was determined by mode sense
-					break;
-
-				case MMC_FEATURE_DVDPLUSRW_DL:
-					caps |= CAPABILITIES_READ_DVDRW; //if we have write support, it was determined by mode sense
-					break;
-
-				case MMC_FEATURE_DVDPLUSR_DL:
-					caps |= CAPABILITIES_READ_DVDR; //if we have write support, it was determined by mode sense
-					break;
-
-				//REALLY USEFUL
-				case MMC_FEATURE_BD_READ:
-					caps |= CAPABILITIES_READ_BDROM;
-					break;
-
-				case MMC_FEATURE_BD_WRITE:
-					caps |= CAPABILITIES_WRITE_BDROM;
-					break;
-
-				case MMC_FEATURE_HDDVD_READ:
-					caps |= CAPABILITIES_READ_HDDVD;
-					break;
-
-				case MMC_FEATURE_HDDVD_WRITE:
-					caps |= CAPABILITIES_WRITE_HDDVD;
-					break;
-			}
-
-			ptr += ptr[3];
-			ptr += 4;
-		}
+	if (!Device.IoControl(IOCTL_STORAGE_QUERY_PROPERTY, &PropertyQuery, sizeof(PropertyQuery), &DescriptorHeader, sizeof(DescriptorHeader)) || !DescriptorHeader.Size)
+	{
+		LOGWARNING(L"IOCTL_STORAGE_QUERY_PROPERTY: {}"sv, last_error());
+		return CAPABILITIES_NONE;
 	}
 
-	return static_cast<CDROM_DeviceCapabilities>(caps);
-}
-
-static CDROM_DeviceCapabilities getCapsUsingDeviceProps(const os::fs::file& Device)
-{
-	STORAGE_DESCRIPTOR_HEADER hdr{};
-	STORAGE_PROPERTY_QUERY query{ StorageDeviceProperty, PropertyStandardQuery };
-	DWORD returnedLength;
-	if (!Device.IoControl(IOCTL_STORAGE_QUERY_PROPERTY, &query, sizeof(query), &hdr, sizeof(hdr), &returnedLength) || !hdr.Size)
-		return CAPABILITIES_NONE;
-
-	std::vector<char> Buffer(hdr.Size);
-	if (!Device.IoControl(IOCTL_STORAGE_QUERY_PROPERTY, &query, sizeof(query), Buffer.data(), static_cast<DWORD>(Buffer.size()), &returnedLength))
-		return CAPABILITIES_NONE;
-
-	const auto devDesc = reinterpret_cast<const STORAGE_DEVICE_DESCRIPTOR*>(Buffer.data());
-
-	if (!devDesc->ProductIdOffset || !Buffer[devDesc->ProductIdOffset])
-		return CAPABILITIES_NONE;
-
-	return getCapsUsingProductId(&Buffer[devDesc->ProductIdOffset]);
-}
-
-static CDROM_DeviceCapabilities GetDeviceCapabilities(const os::fs::file& Device)
-{
-	const auto caps = getCapsUsingMagic(Device);
-	if (caps != CAPABILITIES_NONE)
-		return caps;
-
-	return getCapsUsingDeviceProps(Device);
-}
-
-static UINT GetDeviceTypeByCaps(CDROM_DeviceCapabilities caps)
-{
-	static const std::pair<int, int> DeviceCaps[] =
+	const char_ptr_n<os::default_buffer_size> Buffer(DescriptorHeader.Size);
+	if (!Device.IoControl(IOCTL_STORAGE_QUERY_PROPERTY, &PropertyQuery, sizeof(PropertyQuery), Buffer.data(), static_cast<DWORD>(Buffer.size())))
 	{
-		{DRIVE_BD_RW, CAPABILITIES_GENERIC_BDRW},
-		{DRIVE_BD_ROM, CAPABILITIES_GENERIC_BDROM},
-		{DRIVE_HDDVD_RW, CAPABILITIES_GENERIC_HDDVDRW},
-		{DRIVE_HDDVD_ROM, CAPABILITIES_GENERIC_HDDVD},
-		{DRIVE_DVD_RAM, CAPABILITIES_GENERIC_DVDRAM},
-		{DRIVE_DVD_RW, CAPABILITIES_GENERIC_DVDRW},
-		{DRIVE_CD_RWDVD, CAPABILITIES_GENERIC_CDRW|CAPABILITIES_GENERIC_DVDROM},
-		{DRIVE_DVD_ROM, CAPABILITIES_GENERIC_DVDROM},
-		{DRIVE_CD_RW, CAPABILITIES_GENERIC_CDRW},
-		{DRIVE_CDROM, CAPABILITIES_GENERIC_CDROM},
+		LOGWARNING(L"IOCTL_STORAGE_QUERY_PROPERTY: {}"sv, last_error());
+		return CAPABILITIES_NONE;
+	}
+
+	const auto& DeviceDescriptor = view_as<STORAGE_DEVICE_DESCRIPTOR>(Buffer.data());
+
+	if (!DeviceDescriptor.ProductIdOffset || !Buffer[DeviceDescriptor.ProductIdOffset])
+		return CAPABILITIES_NONE;
+
+	return product_id_to_capatibilities(&Buffer[DeviceDescriptor.ProductIdOffset]);
+}
+
+static auto get_device_capabilities(const os::fs::file& Device)
+{
+	for (const auto& Handler:
+	{
+		// Most relevant
+		capatibilities_from_scsi_configuration,
+		// Legacy
+		capatibilities_from_scsi_mode_sense,
+		// Trust your eyes
+		capatibilities_from_product_id
+	})
+	{
+		if (const auto Result = Handler(Device); Result != CAPABILITIES_NONE)
+			return Result;
+	}
+
+	return CAPABILITIES_NONE;
+}
+
+static auto get_cd_type(cdrom_device_capabilities const caps)
+{
+	static const std::pair<cd_type, int> DeviceCaps[]
+	{
+		{ cd_type::hddvdram,     CAPABILITIES_HDDVDRAM },
+		{ cd_type::hddvdrw,      CAPABILITIES_HDDVDRW },
+		{ cd_type::hddvdr,       CAPABILITIES_HDDVDR },
+		{ cd_type::hddvdrom,     CAPABILITIES_HDDVDROM },
+		{ cd_type::bdrw,         CAPABILITIES_BDRW },
+		{ cd_type::bdr,          CAPABILITIES_BDR },
+		{ cd_type::bdrom,        CAPABILITIES_BDROM },
+		{ cd_type::dvdram,       CAPABILITIES_DVDRAM },
+		{ cd_type::dvdrw,        CAPABILITIES_DVDRW },
+		{ cd_type::cdrwdvd,      CAPABILITIES_CDRW | CAPABILITIES_DVDROM },
+		{ cd_type::dvdrom,       CAPABILITIES_DVDROM },
+		{ cd_type::cdrw,         CAPABILITIES_CDRW },
+		{ cd_type::cdrom,        CAPABILITIES_CDROM },
 	};
 
 	const auto ItemIterator = std::find_if(CONST_RANGE(DeviceCaps, i)
@@ -360,68 +434,94 @@ static UINT GetDeviceTypeByCaps(CDROM_DeviceCapabilities caps)
 		return (caps & i.second) == i.second;
 	});
 
-	return ItemIterator == std::cend(DeviceCaps)? DRIVE_UNKNOWN : ItemIterator->first;
+	return ItemIterator == std::cend(DeviceCaps)? cd_type::cdrom : ItemIterator->first;
 }
 
-bool IsDriveTypeCDROM(UINT DriveType)
+bool DriveCanBeVirtual(unsigned DriveType)
 {
-	return DriveType == DRIVE_CDROM || (DriveType >= DRIVE_CD_RW && DriveType <= DRIVE_HDDVD_RW);
+	return (DriveType == DRIVE_FIXED && IsWindows7OrGreater()) || (DriveType == DRIVE_CDROM && IsWindows8OrGreater());
 }
 
-bool DriveCanBeVirtual(UINT DriveType)
+cd_type get_cdrom_type(string_view RootDir)
 {
-	return (DriveType == DRIVE_FIXED && IsWindows7OrGreater()) || (IsDriveTypeCDROM(DriveType) && IsWindows8OrGreater());
-}
+	string VolumePath(RootDir);
+	DeleteEndSlash(VolumePath);
 
-UINT FAR_GetDriveType(const string_view RootDir, const DWORD Detect)
-{
-	auto strRootDir = RootDir.empty()? GetPathRoot(os::fs::GetCurrentDirectory()) : string(RootDir);
-	AddEndSlash(strRootDir);
-
-	UINT DrvType = GetDriveType(strRootDir.c_str());
-
-	// анализ CD-привода
-	if ((Detect&1) && DrvType == DRIVE_CDROM)
+	if (starts_with(VolumePath, L"\\\\?\\"sv))
 	{
-		string VolumePath = strRootDir;
-		DeleteEndSlash(VolumePath);
-
-		if (starts_with(VolumePath, L"\\\\?\\"sv))
-		{
-			VolumePath[2] = L'.';
-		}
-		else
-		{
-			constexpr auto UncDevicePrefix = L"\\\\.\\"sv;
-			VolumePath.insert(0, UncDevicePrefix.data(), UncDevicePrefix.size());
-		}
-
-		if(const auto Device = os::fs::file(VolumePath, GENERIC_READ|GENERIC_WRITE, FILE_SHARE_READ|FILE_SHARE_WRITE, nullptr, OPEN_EXISTING))
-		{
-			DrvType = GetDeviceTypeByCaps(GetDeviceCapabilities(Device));
-		}
-
-		if (DrvType == DRIVE_UNKNOWN) // фигня могла кака-нить произойти, посему...
-			DrvType=DRIVE_CDROM;       // ...вертаем в зад сидюк.
+		VolumePath[2] = L'.';
+	}
+	else
+	{
+		VolumePath.insert(0, L"\\\\.\\"sv);
 	}
 
-	if ( 0 != (Detect & 2) && DrvType == DRIVE_REMOVABLE )
+	if (const auto Device = os::fs::file(VolumePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING))
 	{
-		// media have to be inserted!
-		//
-		string drive = HasPathPrefix(strRootDir) ? strRootDir : L"\\\\?\\"sv + strRootDir;
-		DeleteEndSlash(drive);
-
-		DrvType = DRIVE_USBDRIVE; // default type if detection failed
-		if (const auto Device = os::fs::file(drive, STANDARD_RIGHTS_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, nullptr, OPEN_EXISTING))
-		{
-			DISK_GEOMETRY g;
-			DWORD dwOutBytes;
-			if (Device.IoControl(IOCTL_DISK_GET_DRIVE_GEOMETRY, nullptr, 0, &g, sizeof(g), &dwOutBytes, nullptr))
-				if (g.MediaType != FixedMedia && g.MediaType != RemovableMedia)
-					DrvType = DRIVE_REMOVABLE;
-		}
+		if (const auto Capabilities = get_device_capabilities(Device); Capabilities != CAPABILITIES_NONE)
+			return get_cd_type(Capabilities);
 	}
 
-	return DrvType;
+	// TODO: try WMI
+
+	return cd_type::cdrom;
 }
+
+bool is_removable_usb(string_view RootDir)
+{
+	// media has to be inserted
+	string drive(HasPathPrefix(RootDir)? RootDir : L"\\\\?\\"sv + RootDir);
+	DeleteEndSlash(drive);
+
+	const auto Device = os::fs::file(drive, STANDARD_RIGHTS_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING);
+	if (!Device)
+	{
+		LOGWARNING(L"CreateFile({}): {}"sv, drive, last_error());
+		return false;
+	}
+
+	DISK_GEOMETRY DiskGeometry;
+	if (!Device.IoControl(IOCTL_DISK_GET_DRIVE_GEOMETRY, nullptr, 0, &DiskGeometry, sizeof(DiskGeometry)))
+	{
+		LOGWARNING(L"IOCTL_DISK_GET_DRIVE_GEOMETRY({}): {}"sv, drive, last_error());
+		return false;
+	}
+
+	return DiskGeometry.MediaType == FixedMedia || DiskGeometry.MediaType == RemovableMedia;
+}
+
+#ifdef ENABLE_TESTS
+
+#include "testing.hpp"
+
+TEST_CASE("product_id_to_capatibilities")
+{
+	static const struct
+	{
+		const char* Src;
+		cdrom_device_capabilities Result;
+	}
+	Tests[]
+	{
+		{ "CD-ROM",      CAPABILITIES_CDROM     },
+		{ "CD+R",        CAPABILITIES_CDR       },
+		{ "CD+-RW Foo",  CAPABILITIES_CDRW      },
+		{ "DVD ROM",     CAPABILITIES_DVDROM    },
+		{ "DVD_R_Bar",   CAPABILITIES_DVDR      },
+		{ "123+DVD+RW",  CAPABILITIES_DVDRW     },
+		{ "DVD+RAM",     CAPABILITIES_DVDRAM    },
+		{ "BD_ROM",      CAPABILITIES_BDROM     },
+		{ "UberBDR",     CAPABILITIES_BDR       },
+		{ "HDBD/RW",     CAPABILITIES_BDRW      },
+		{ "HD-DVD-ROM",  CAPABILITIES_HDDVDROM  },
+		{ "HDDVDR",      CAPABILITIES_HDDVDR    },
+		{ "HDDVD RW",    CAPABILITIES_HDDVDRW   },
+		{ "HD/DVD+RAM",  CAPABILITIES_HDDVDRAM  },
+	};
+
+	for (const auto& i : Tests)
+	{
+		REQUIRE(i.Result == product_id_to_capatibilities(i.Src));
+	}
+}
+#endif

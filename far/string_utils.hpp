@@ -34,20 +34,29 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-[[nodiscard]]
-inline bool IsEol(wchar_t x) { return x == L'\r' || x == L'\n'; }
+// Internal:
+
+// Platform:
+
+// Common:
+#include "common/range.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
+
 
 [[nodiscard]]
-inline bool IsBlankOrEos(wchar_t x) { return std::iswblank(x) || !x; }
+constexpr bool IsEol(wchar_t x) noexcept { return x == L'\r' || x == L'\n'; }
 
 [[nodiscard]]
-const string& GetSpaces();
+inline bool IsBlankOrEos(wchar_t x) noexcept { return std::iswblank(x) || !x; }
 
 [[nodiscard]]
-const string& GetEols();
+string_view GetSpaces();
 
 [[nodiscard]]
-const string& GetSpacesAndEols();
+string_view GetEols();
 
 [[nodiscard]]
 bool is_alpha(wchar_t Char);
@@ -61,14 +70,14 @@ bool is_lower(wchar_t Char);
 
 namespace inplace
 {
-	void upper(wchar_t* Str, size_t Size);
-	void lower(wchar_t* Str, size_t Size);
+	void upper(span<wchar_t> Str);
+	void lower(span<wchar_t> Str);
 
 	void upper(wchar_t* Str);
 	void lower(wchar_t* Str);
 
-	string& upper(string& Str, size_t Pos = 0, size_t Count = string::npos);
-	string& lower(string& Str, size_t Pos = 0, size_t Count = string::npos);
+	void upper(string& Str, size_t Pos = 0, size_t Count = string::npos);
+	void lower(string& Str, size_t Pos = 0, size_t Count = string::npos);
 }
 
 [[nodiscard]]
@@ -81,14 +90,26 @@ string upper(string Str);
 [[nodiscard]]
 string lower(string Str);
 
-struct hash_icase_t
+[[nodiscard]]
+string upper(string_view Str);
+[[nodiscard]]
+string lower(string_view Str);
+
+struct [[nodiscard]] hash_icase_t
 {
-	size_t operator()(const string& Str) const;
+	[[nodiscard]]
+	size_t operator()(wchar_t Char) const;
+
+	[[nodiscard]]
+	size_t operator()(string_view Str) const;
 };
 
-struct equal_icase_t
+struct [[nodiscard]] equal_icase_t
 {
+	[[nodiscard]]
 	bool operator()(wchar_t Chr1, wchar_t Chr2) const;
+
+	[[nodiscard]]
 	bool operator()(string_view Str1, string_view Str2) const;
 };
 
@@ -99,6 +120,12 @@ bool starts_with_icase(string_view Str, string_view Prefix);
 [[nodiscard]]
 bool ends_with_icase(string_view Str, string_view Suffix);
 [[nodiscard]]
-bool contains_icase(string_view Str, string_view Token);
+size_t find_icase(string_view Str, string_view What, size_t Pos = 0);
+[[nodiscard]]
+size_t find_icase(string_view Str, wchar_t What, size_t Pos = 0);
+[[nodiscard]]
+bool contains_icase(string_view Str, string_view What);
+[[nodiscard]]
+bool contains_icase(string_view Str, wchar_t What);
 
 #endif // STRING_UTILS_HPP_82ECD8BE_D484_4023_AB42_21D93B2DF8B9

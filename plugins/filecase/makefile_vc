@@ -1,8 +1,12 @@
 !include ../makefile_vc_base
 
 NAME = FileCase
-LINK_OBJS = $(OBJDIR)\FileCase.obj $(OBJDIR)\filecvt.obj $(OBJDIR)\FileMix.obj $(OBJDIR)\ProcessName.obj
-DOCS = CaseEng.hlf CaseRus.hlf CaseEng.lng CaseRus.lng CaseSky.lng CaseSpa.lng
+
+LINK_OBJS = \
+	$(OBJDIR)\FileCase.obj \
+	$(OBJDIR)\filecvt.obj \
+	$(OBJDIR)\FileMix.obj \
+	$(OBJDIR)\ProcessName.obj
 
 !include ..\makefile_vc_def_inc
 

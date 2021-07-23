@@ -35,6 +35,16 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
+
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
+
 enum TESTFOLDERCONST  // for TestFolder()
 {
 	TSTFLD_ERROR     = -2,
@@ -44,17 +54,17 @@ enum TESTFOLDERCONST  // for TestFolder()
 	TSTFLD_NOTEMPTY  =  2,
 };
 
+void set_drive_env_curdir(string_view Directory);
+
 /* $ 15.02.2002 IS
    Установка нужного диска и каталога и установление соответствующей переменной
-   окружения. В случае успеха возвращается не ноль.
-   Если ChangeDir==FALSE, то не меняем текущий  диск, а только устанавливаем
-   переменные окружения.
+   окружения.
 */
-bool FarChDir(string_view NewDir, bool ChangeDir = true);
+bool FarChDir(string_view NewDir);
 
-int TestFolder(const string& Name);
-bool CheckShortcutFolder(string& pTestPath, bool TryClosest, bool Silent);
+int TestFolder(string_view Path);
+bool CheckShortcutFolder(string& TestPath, bool TryClosest, bool Silent);
 
-void CreatePath(const string &Path, bool Simple=false);
+bool CreatePath(string_view InputPath, bool AddToTreeCache = true);
 
 #endif // DIRMIX_HPP_7386031B_A22B_4851_8BC6_24E90C9798D5

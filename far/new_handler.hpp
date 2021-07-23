@@ -33,7 +33,16 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
+
+// Platform:
 #include "platform.hpp"
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
 
 class new_handler
 {
@@ -48,7 +57,7 @@ public:
 private:
 	COORD m_BufferSize;
 	os::handle m_Screen;
-	std::new_handler m_OldHandler;
+	std::new_handler m_OldHandler{};
 };
 
 void invoke_new_handler();

@@ -32,6 +32,8 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+//----------------------------------------------------------------------------
+
 namespace detail
 {
 	template<typename...>
@@ -49,7 +51,7 @@ namespace detail
 	{
 		using icallable_base<signatures...>::operator();
 
-		virtual ~icallable_base() = default;
+		~icallable_base() override = default;
 		virtual result_type operator()(args&&...) const = 0;
 	};
 
@@ -108,6 +110,7 @@ namespace detail
 		{
 		}
 
+		[[nodiscard]]
 		std::unique_ptr<icallable<signatures...>> clone() const override
 		{
 			return std::make_unique<callable>(this->m_Callable);
@@ -120,7 +123,7 @@ class multifunction
 {
 public:
 	MOVABLE(multifunction);
-	COPY_AND_MOVE(multifunction, const multifunction&);
+	COPY_AND_MOVE(multifunction, const multifunction&)
 
 	multifunction() = default;
 
@@ -147,6 +150,7 @@ public:
 		return (*m_Callable)(FWD(Args)...);
 	}
 
+	[[nodiscard]]
 	explicit operator bool() const noexcept
 	{
 		return m_Callable.operator bool();

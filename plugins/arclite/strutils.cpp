@@ -1,20 +1,20 @@
-#include "utils.hpp"
+﻿#include "utils.hpp"
 
-bool substr_match(const wstring& str, wstring::size_type pos, wstring::const_pointer mstr) {
-  size_t mstr_len = wcslen(mstr);
+bool substr_match(const std::wstring& str, std::wstring::size_type pos, std::wstring::const_pointer mstr) {
+  size_t mstr_len = std::wcslen(mstr);
   if ((pos > str.length()) || (pos + mstr_len > str.length())) {
     return false;
   }
   return wmemcmp(str.c_str() + pos, mstr, mstr_len) == 0;
 }
 
-wstring word_wrap(const wstring& str, wstring::size_type wrap_bound) {
-  wstring result;
-  wstring::size_type begin_pos = 0;
+std::wstring word_wrap(const std::wstring& str, std::wstring::size_type wrap_bound) {
+  std::wstring result;
+  std::wstring::size_type begin_pos = 0;
   while (begin_pos < str.size()) {
-    wstring::size_type end_pos = begin_pos + wrap_bound;
+    std::wstring::size_type end_pos = begin_pos + wrap_bound;
     if (end_pos < str.size()) {
-      for (wstring::size_type i = end_pos; i > begin_pos; i--) {
+      for (std::wstring::size_type i = end_pos; i > begin_pos; i--) {
         if (str[i - 1] == L' ') {
           end_pos = i;
           break;
@@ -24,7 +24,7 @@ wstring word_wrap(const wstring& str, wstring::size_type wrap_bound) {
     else {
       end_pos = str.size();
     }
-    wstring::size_type trim_pos = end_pos;
+    std::wstring::size_type trim_pos = end_pos;
     while (trim_pos > begin_pos && str[trim_pos - 1] == L' ') trim_pos--;
     if (trim_pos > begin_pos) {
       if (!result.empty())
@@ -36,29 +36,29 @@ wstring word_wrap(const wstring& str, wstring::size_type wrap_bound) {
   return result;
 }
 
-wstring fit_str(const wstring& str, wstring::size_type size) {
+std::wstring fit_str(const std::wstring& str, std::wstring::size_type size) {
   if (str.size() <= size)
     return str;
   if (size <= 3)
     return str.substr(0, size);
   size -= 3; // place for ...
-  return wstring(str).replace(size / 2, str.size() - size, L"...");
+  return std::wstring(str).replace(size / 2, str.size() - size, L"...");
 }
 
-wstring center(const wstring& str, unsigned width) {
+std::wstring center(const std::wstring& str, unsigned width) {
   if (str.size() >= width)
     return str;
   size_t lpad = (width - str.size()) / 2;
   size_t rpad = width - str.size() - lpad;
-  wstring result(lpad, L' ');
+  std::wstring result(lpad, L' ');
   result.append(str);
   result.append(rpad, L' ');
   return result;
 }
 
-template<class CharType> basic_string<CharType> strip(const basic_string<CharType>& str) {
-  basic_string<CharType>::size_type hp = 0;
-  basic_string<CharType>::size_type tp = str.size();
+template<class CharType> std::basic_string<CharType> strip(const std::basic_string<CharType>& str) {
+  size_t hp = 0;
+  size_t tp = str.size();
   while ((hp < str.size()) && ((static_cast<unsigned>(str[hp]) <= 0x20) || (str[hp] == 0x7F)))
     hp++;
   if (hp < str.size())
@@ -67,36 +67,36 @@ template<class CharType> basic_string<CharType> strip(const basic_string<CharTyp
   return str.substr(hp, tp - hp);
 }
 
-string strip(const string& str) {
-  return strip<string::value_type>(str);
+std::string strip(const std::string& str) {
+  return strip<std::string::value_type>(str);
 }
 
-wstring strip(const wstring& str) {
-  return strip<wstring::value_type>(str);
+std::wstring strip(const std::wstring& str) {
+  return strip<std::wstring::value_type>(str);
 }
 
-int str_to_int(const string& str) {
+int str_to_int(const std::string& str) {
   return atoi(str.c_str());
 }
 
-int str_to_int(const wstring& str) {
+int str_to_int(const std::wstring& str) {
   return _wtoi(str.c_str());
 }
 
-wstring int_to_str(int val) {
+std::wstring int_to_str(int val) {
   wchar_t str[64];
   return _itow(val, str, 10);
 }
 
-unsigned __int64 str_to_uint(const wstring& str) {
-  unsigned __int64 val = 0;
+uint64_t str_to_uint(const std::wstring& str) {
+  uint64_t val = 0;
   for (unsigned i = 0; i < str.size() && str[i] >= L'0' && str[i] <= L'9'; i++) {
     val = val * 10 + (str[i] - L'0');
   }
   return val;
 }
 
-wstring uint_to_str(unsigned __int64 val) {
+std::wstring uint_to_str(uint64_t val) {
   if (val == 0)
     return L"0";
   wchar_t str[32];
@@ -106,37 +106,37 @@ wstring uint_to_str(unsigned __int64 val) {
     str[pos] = val % 10 + L'0';
     val /= 10;
   }
-  return wstring(str + pos, ARRAYSIZE(str) - pos);
+  return std::wstring(str + pos, ARRAYSIZE(str) - pos);
 }
 
-wstring widen(const string& str) {
-  return wstring(str.begin(), str.end());
+std::wstring widen(const std::string& str) {
+  return std::wstring(str.begin(), str.end());
 }
 
-list<wstring> split(const wstring& str, wchar_t sep) {
-  list<wstring> result;
+std::list<std::wstring> split(const std::wstring& str, wchar_t sep) {
+  std::list<std::wstring> result;
   size_t begin = 0;
   while (begin < str.size()) {
     size_t end = str.find(sep, begin);
-    if (end == wstring::npos)
+    if (end == std::wstring::npos)
       end = str.size();
-    wstring sub_str = str.substr(begin, end - begin);
+    std::wstring sub_str = str.substr(begin, end - begin);
     result.push_back(sub_str);
     begin = end + 1;
   }
   return result;
 }
 
-wstring combine(const list<wstring>& lst, wchar_t sep) {
+std::wstring combine(const std::list<std::wstring>& lst, wchar_t sep) {
   size_t size = 0;
-  for (list<wstring>::const_iterator str = lst.begin(); str != lst.end(); str++) {
+  for (std::list<std::wstring>::const_iterator str = lst.begin(); str != lst.end(); str++) {
     if (size)
       size++;
     size += str->size();
   }
-  wstring result;
+  std::wstring result;
   result.reserve(size);
-  for (list<wstring>::const_iterator str = lst.begin(); str != lst.end(); str++) {
+  for (std::list<std::wstring>::const_iterator str = lst.begin(); str != lst.end(); str++) {
     if (!result.empty())
       result.append(1, sep);
     result.append(*str);
@@ -144,22 +144,22 @@ wstring combine(const list<wstring>& lst, wchar_t sep) {
   return result;
 }
 
-wstring format_data_size(unsigned __int64 value, const wchar_t* suffixes[5]) {
+std::wstring format_data_size(uint64_t value, const wchar_t* suffixes[5]) {
   unsigned f = 0;
-  unsigned __int64 div = 1;
+  uint64_t div = 1;
   while ((value / div >= 1000) && (f < 4)) {
     f++;
     div *= 1024;
   }
-  unsigned __int64 v1 = value / div;
+  uint64_t v1 = value / div;
 
-  unsigned __int64 mul;
+  uint64_t mul;
   if (v1 < 10) mul = 100;
   else if (v1 < 100) mul = 10;
   else mul = 1;
 
-  unsigned __int64 v2 = value % div;
-  unsigned __int64 d = v2 * mul * 10 / div % 10;
+  uint64_t v2 = value % div;
+  uint64_t d = v2 * mul * 10 / div % 10;
   v2 = v2 * mul / div;
   if (d >= 5) {
     if (v2 + 1 == mul) {
@@ -174,14 +174,14 @@ wstring format_data_size(unsigned __int64 value, const wchar_t* suffixes[5]) {
     else v2 += 1;
   }
 
-  wstring result;
-  wchar_t buf[30];
-  _ui64tow_s(v1, buf, ARRAYSIZE(buf), 10);
+  std::wstring result;
+  wchar_t buf[65];
+  _ui64tow(v1, buf, 10);
   result += buf;
   if (v2 != 0) {
     result += L'.';
     if ((v1 < 10) && (v2 < 10)) result += L'0';
-    _ui64tow_s(v2, buf, ARRAYSIZE(buf), 10);
+    _ui64tow(v2, buf, 10);
     result += buf;
   }
   if (*suffixes[f]) {
@@ -195,23 +195,23 @@ bool is_slash(wchar_t c) {
   return c == L'\\' || c == L'/';
 }
 
-wstring unquote(const wstring& str) {
+std::wstring unquote(const std::wstring& str) {
   if (str.size() >= 2 && str[0] == L'"' && str[str.size() - 1] == L'"')
     return str.substr(1, str.size() - 2);
   else
     return str;
 }
 
-wstring search_and_replace(const wstring& str, const wstring& search_str, const wstring& replace_str) {
+std::wstring search_and_replace(const std::wstring& str, const std::wstring& search_str, const std::wstring& replace_str) {
   assert(!search_str.empty());
   if (search_str.empty())
     return str;
-  wstring result;
+  std::wstring result;
   result.reserve(str.size());
   size_t pos1 = 0;
   while (true) {
     size_t pos2 = str.find(search_str, pos1);
-    if (pos2 != wstring::npos) {
+    if (pos2 != std::wstring::npos) {
       result.append(str, pos1, pos2 - pos1);
       result.append(replace_str);
       pos1 = pos2 + search_str.size();

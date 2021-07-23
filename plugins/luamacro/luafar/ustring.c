@@ -1,4 +1,4 @@
-#include <shlobj.h>
+﻿#include <shlobj.h>
 #include "ustring.h"
 #include "compat52.h"
 
@@ -326,7 +326,7 @@ int ustring_OemToUtf8(lua_State *L)
 
 int ustring_Utf8ToOem(lua_State *L)
 {
-	size_t len;
+	size_t len = 0;
 	const wchar_t* buf = check_utf8_string(L, 1, &len);
 	push_oem_string(L, buf, len);
 	return 1;
@@ -342,7 +342,7 @@ int ustring_Utf16ToUtf8(lua_State *L)
 
 int ustring_Utf8ToUtf16(lua_State *L)
 {
-	size_t len;
+	size_t len = 0;
 	const wchar_t *ws = check_utf8_string(L, 1, &len);
 	lua_pushlstring(L, (const char*) ws, len*sizeof(wchar_t));
 	return 1;
@@ -356,6 +356,30 @@ int ustring_GetACP(lua_State* L)
 int ustring_GetOEMCP(lua_State* L)
 {
 	return lua_pushinteger(L, GetOEMCP()), 1;
+}
+
+int ustring_GetConsoleCP(lua_State* L)
+{
+	return lua_pushinteger(L, GetConsoleCP()), 1;
+}
+
+int ustring_SetConsoleCP(lua_State* L)
+{
+	if (SetConsoleCP((UINT)luaL_checkinteger(L,1)))
+		return lua_pushboolean(L,1), 1;
+	return SysErrorReturn(L);
+}
+
+int ustring_GetConsoleOutputCP(lua_State* L)
+{
+	return lua_pushinteger(L, GetConsoleOutputCP()), 1;
+}
+
+int ustring_SetConsoleOutputCP(lua_State* L)
+{
+	if (SetConsoleOutputCP((UINT)luaL_checkinteger(L,1)))
+		return lua_pushboolean(L,1), 1;
+	return SysErrorReturn(L);
 }
 
 struct EnumCP_struct
@@ -553,28 +577,21 @@ int ustring_Sleep(lua_State *L)
 
 void PushAttrString(lua_State *L, int attr)
 {
-	char buf[16], *p = buf;
-
-	if(attr & FILE_ATTRIBUTE_ARCHIVE)    *p++ = 'a';
-
-	if(attr & FILE_ATTRIBUTE_READONLY)   *p++ = 'r';
-
-	if(attr & FILE_ATTRIBUTE_HIDDEN)     *p++ = 'h';
-
-	if(attr & FILE_ATTRIBUTE_SYSTEM)     *p++ = 's';
-
-	if(attr & FILE_ATTRIBUTE_DIRECTORY)  *p++ = 'd';
-
-	if(attr & FILE_ATTRIBUTE_COMPRESSED) *p++ = 'c';
-
-	if(attr & FILE_ATTRIBUTE_OFFLINE)    *p++ = 'o';
-
-	if(attr & FILE_ATTRIBUTE_TEMPORARY)  *p++ = 't';
-
-	if(attr & FILE_ATTRIBUTE_SPARSE_FILE)   *p++ = 'p';
-
-	if(attr & FILE_ATTRIBUTE_REPARSE_POINT) *p++ = 'e';
-
+	char buf[32], *p = buf;
+	if (attr & FILE_ATTRIBUTE_ARCHIVE)             *p++ = 'a';
+	if (attr & FILE_ATTRIBUTE_COMPRESSED)          *p++ = 'c';
+	if (attr & FILE_ATTRIBUTE_DIRECTORY)           *p++ = 'd';
+	if (attr & FILE_ATTRIBUTE_REPARSE_POINT)       *p++ = 'e';
+	if (attr & FILE_ATTRIBUTE_HIDDEN)              *p++ = 'h';
+	if (attr & FILE_ATTRIBUTE_NOT_CONTENT_INDEXED) *p++ = 'i';
+	if (attr & FILE_ATTRIBUTE_ENCRYPTED)           *p++ = 'n';
+	if (attr & FILE_ATTRIBUTE_OFFLINE)             *p++ = 'o';
+	if (attr & FILE_ATTRIBUTE_SPARSE_FILE)         *p++ = 'p';
+	if (attr & FILE_ATTRIBUTE_READONLY)            *p++ = 'r';
+	if (attr & FILE_ATTRIBUTE_SYSTEM)              *p++ = 's';
+	if (attr & FILE_ATTRIBUTE_TEMPORARY)           *p++ = 't';
+	if (attr & FILE_ATTRIBUTE_NO_SCRUB_DATA)       *p++ = 'u';
+	if (attr & FILE_ATTRIBUTE_VIRTUAL)             *p++ = 'v';
 	lua_pushlstring(L, buf, p-buf);
 }
 
@@ -592,19 +609,60 @@ int DecodeAttributes(const char* str)
 	{
 		char c = *str;
 
-		if(c == 'a' || c == 'A') attr |= FILE_ATTRIBUTE_ARCHIVE;
-		else if(c == 'r' || c == 'R') attr |= FILE_ATTRIBUTE_READONLY;
-		else if(c == 'h' || c == 'H') attr |= FILE_ATTRIBUTE_HIDDEN;
-		else if(c == 's' || c == 'S') attr |= FILE_ATTRIBUTE_SYSTEM;
-		else if(c == 'd' || c == 'D') attr |= FILE_ATTRIBUTE_DIRECTORY;
+		if     (c == 'a' || c == 'A') attr |= FILE_ATTRIBUTE_ARCHIVE;
 		else if(c == 'c' || c == 'C') attr |= FILE_ATTRIBUTE_COMPRESSED;
-		else if(c == 'o' || c == 'O') attr |= FILE_ATTRIBUTE_OFFLINE;
-		else if(c == 't' || c == 'T') attr |= FILE_ATTRIBUTE_TEMPORARY;
-		else if(c == 'p' || c == 'P') attr |= FILE_ATTRIBUTE_SPARSE_FILE;
+		else if(c == 'd' || c == 'D') attr |= FILE_ATTRIBUTE_DIRECTORY;
 		else if(c == 'e' || c == 'E') attr |= FILE_ATTRIBUTE_REPARSE_POINT;
+		else if(c == 'h' || c == 'H') attr |= FILE_ATTRIBUTE_HIDDEN;
+		else if(c == 'i' || c == 'I') attr |= FILE_ATTRIBUTE_NOT_CONTENT_INDEXED;
+		else if(c == 'n' || c == 'N') attr |= FILE_ATTRIBUTE_ENCRYPTED;
+		else if(c == 'o' || c == 'O') attr |= FILE_ATTRIBUTE_OFFLINE;
+		else if(c == 'p' || c == 'P') attr |= FILE_ATTRIBUTE_SPARSE_FILE;
+		else if(c == 'r' || c == 'R') attr |= FILE_ATTRIBUTE_READONLY;
+		else if(c == 's' || c == 'S') attr |= FILE_ATTRIBUTE_SYSTEM;
+		else if(c == 't' || c == 'T') attr |= FILE_ATTRIBUTE_TEMPORARY;
+		else if(c == 'u' || c == 'U') attr |= FILE_ATTRIBUTE_NO_SCRUB_DATA;
+		else if(c == 'v' || c == 'V') attr |= FILE_ATTRIBUTE_VIRTUAL;
 	}
 
 	return attr;
+}
+
+void SetAttrWords(const wchar_t* str, DWORD* incl, DWORD* excl)
+{
+	*incl=0; *excl=0;
+	for (; *str; str++) {
+		wchar_t c = *str;
+		if      (c == L'a')  *incl |= FILE_ATTRIBUTE_ARCHIVE;
+		else if (c == L'c')  *incl |= FILE_ATTRIBUTE_COMPRESSED;
+		else if (c == L'd')  *incl |= FILE_ATTRIBUTE_DIRECTORY;
+		else if (c == L'e')  *incl |= FILE_ATTRIBUTE_REPARSE_POINT;
+		else if (c == L'h')  *incl |= FILE_ATTRIBUTE_HIDDEN;
+		else if (c == L'i')  *incl |= FILE_ATTRIBUTE_NOT_CONTENT_INDEXED;
+		else if (c == L'n')  *incl |= FILE_ATTRIBUTE_ENCRYPTED;
+		else if (c == L'o')  *incl |= FILE_ATTRIBUTE_OFFLINE;
+		else if (c == L'p')  *incl |= FILE_ATTRIBUTE_SPARSE_FILE;
+		else if (c == L'r')  *incl |= FILE_ATTRIBUTE_READONLY;
+		else if (c == L's')  *incl |= FILE_ATTRIBUTE_SYSTEM;
+		else if (c == L't')  *incl |= FILE_ATTRIBUTE_TEMPORARY;
+		else if (c == L'u')  *incl |= FILE_ATTRIBUTE_NO_SCRUB_DATA;
+		else if (c == L'v')  *incl |= FILE_ATTRIBUTE_VIRTUAL;
+
+		else if (c == L'A')  *excl |= FILE_ATTRIBUTE_ARCHIVE;
+		else if (c == L'C')  *excl |= FILE_ATTRIBUTE_COMPRESSED;
+		else if (c == L'D')  *excl |= FILE_ATTRIBUTE_DIRECTORY;
+		else if (c == L'E')  *excl |= FILE_ATTRIBUTE_REPARSE_POINT;
+		else if (c == L'H')  *excl |= FILE_ATTRIBUTE_HIDDEN;
+		else if (c == L'I')  *excl |= FILE_ATTRIBUTE_NOT_CONTENT_INDEXED;
+		else if (c == L'N')  *excl |= FILE_ATTRIBUTE_ENCRYPTED;
+		else if (c == L'O')  *excl |= FILE_ATTRIBUTE_OFFLINE;
+		else if (c == L'P')  *excl |= FILE_ATTRIBUTE_SPARSE_FILE;
+		else if (c == L'R')  *excl |= FILE_ATTRIBUTE_READONLY;
+		else if (c == L'S')  *excl |= FILE_ATTRIBUTE_SYSTEM;
+		else if (c == L'T')  *excl |= FILE_ATTRIBUTE_TEMPORARY;
+		else if (c == L'U')  *excl |= FILE_ATTRIBUTE_NO_SCRUB_DATA;
+		else if (c == L'V')  *excl |= FILE_ATTRIBUTE_VIRTUAL;
+	}
 }
 
 // for reusing code
@@ -776,6 +834,10 @@ const luaL_Reg ustring_funcs[] =
 	{"GetKeyState",         ustring_GetKeyState},
 	{"GetLogicalDriveStrings",ustring_GetLogicalDriveStrings},
 	{"GetOEMCP",            ustring_GetOEMCP},
+	{"GetConsoleCP",        ustring_GetConsoleCP},
+	{"SetConsoleCP",        ustring_SetConsoleCP},
+	{"GetConsoleOutputCP",  ustring_GetConsoleOutputCP},
+	{"SetConsoleOutputCP",  ustring_SetConsoleOutputCP},
 	{"GlobalMemoryStatus",  ustring_GlobalMemoryStatus},
 	{"MultiByteToWideChar", ustring_MultiByteToWideChar },
 	{"OemToUtf8",           ustring_OemToUtf8},

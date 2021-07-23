@@ -35,8 +35,17 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "windowsfwd.hpp"
 #include "macro.hpp"
+
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
 
 class CommandLine;
 class History;
@@ -59,10 +68,11 @@ public:
 	~ControlObject();
 
 	void Init(int DirCount);
+	void close();
 	FilePanels *Cp() const;
 	window_ptr Panels() const;
 	void CreateDummyFilePanels();
-	static void ShowCopyright(DWORD Flags=0);
+	static void ShowVersion(bool Direct = true);
 
 	KeyMacro Macro;
 	std::unique_ptr<highlight::configuration> HiFiles;

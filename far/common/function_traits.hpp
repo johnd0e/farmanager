@@ -32,39 +32,38 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+//----------------------------------------------------------------------------
+
 namespace detail
 {
-	template<typename T>
-	using root_type_t = std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<T>>>;
-
-	template<typename result, typename... args>
+	template<typename result, typename, typename... args>
 	struct function_traits_impl
 	{
 		using result_type = result;
 
-		template <size_t i>
-		using arg = std::tuple_element_t<i, std::tuple<args...>>;
+		static constexpr auto arity = sizeof...(args);
 
-		using root_result_type = root_type_t<result>;
+		template<size_t i>
+		using arg = std::tuple_element_t<i, std::tuple<args...>>;
 	};
 }
 
-template<typename>
-struct function_traits;
+template<typename object>
+struct function_traits: function_traits<decltype(&object::operator())> {};
 
 template<typename result, typename... args>
-struct function_traits<result(args...)>: detail::function_traits_impl<result, args...> {};
+struct function_traits<result(args...)>: ::detail::function_traits_impl<result, void, args...> {};
 
 template<typename result, typename... args>
-struct function_traits<result(*)(args...)> : detail::function_traits_impl<result, args...> {};
+struct function_traits<result(*)(args...)>: ::detail::function_traits_impl<result, void, args...> {};
 
 template<typename result, typename object, typename... args>
-struct function_traits<result(object::*)(args...)>: detail::function_traits_impl<result, args...> {};
+struct function_traits<result(object::*)(args...)>: ::detail::function_traits_impl<result, object, args...> {};
 
 template<typename result, typename object, typename... args>
-struct function_traits<result(object::*)(args...) const>: detail::function_traits_impl<result, args...> {};
+struct function_traits<result(object::*)(args...) const>: ::detail::function_traits_impl<result, object, args...> {};
 
 
-#define FN_RETURN_TYPE(...) function_traits<decltype(&__VA_ARGS__)>::root_result_type
+#define FN_RETURN_TYPE(...) std::decay_t<function_traits<decltype(&__VA_ARGS__)>::result_type>
 
 #endif // FUNCTION_TRAITS_HPP_071DD1DD_F933_40DC_A662_CB85F7BE7F00

@@ -1,18 +1,26 @@
 !include ../makefile_vc_base
 
-NAME = Proclist
-LINK_OBJS = $(OBJDIR)\fileio.obj \
-$(OBJDIR)\handles.obj \
-$(OBJDIR)\PCFG.OBJ \
-$(OBJDIR)\Pclass.obj \
-$(OBJDIR)\perfthread.obj \
-$(OBJDIR)\Plist.obj \
-$(OBJDIR)\Pmix.obj \
-$(OBJDIR)\WMI.obj \
-$(OBJDIR)\Proclist.obj
-DOCS = ProcEng.hlf ProcRus.hlf ProcEng.lng ProcRus.lng
+NAME = ProcList
 
-USERCPP = /I".\WMI" -D"_WIN32_DCOM"
+LINK_OBJS = $(OBJDIR)\fileio.obj \
+	$(OBJDIR)\format.obj \
+	$(OBJDIR)\handles.obj \
+	$(OBJDIR)\Pcfg.obj \
+	$(OBJDIR)\Pclass.obj \
+	$(OBJDIR)\perfthread.obj \
+	$(OBJDIR)\Plist.obj \
+	$(OBJDIR)\Pmix.obj \
+	$(OBJDIR)\wmi.obj \
+	$(OBJDIR)\wmi_init.obj \
+	$(OBJDIR)\Proclist.obj
+
+!ifndef FARDIR
+FAR_DIRECTORY=../../far
+!else
+FAR_DIRECTORY=$(FARDIR)
+!endif
+
+USERCPP = /EHsc -D"_WIN32_DCOM" -I"$(FAR_DIRECTORY)/common" -I"$(FAR_DIRECTORY)/thirdparty/fmt"
 
 !include ..\makefile_vc_def_inc
 
@@ -27,4 +35,3 @@ $(OBJDIR)\Plist.obj : Plist.cpp Proclist.hpp guid.hpp perfthread.hpp Proclng.hpp
 $(OBJDIR)\Pmix.obj : Pmix.cpp Proclist.hpp guid.hpp perfthread.hpp Proclng.hpp version.hpp $(COMINC)\PluginSettings.hpp $(COMINC)\DlgBuilder.hpp $(COMINC)\plugin.hpp
 $(OBJDIR)\Proclist.obj : Proclist.cpp Proclist.hpp guid.hpp perfthread.hpp Proclng.hpp version.hpp $(COMINC)\PluginSettings.hpp $(COMINC)\DlgBuilder.hpp $(COMINC)\plugin.hpp
 $(OBJDIR)\WMI.obj : WMI.cpp Proclist.hpp guid.hpp perfthread.hpp Proclng.hpp version.hpp $(COMINC)\plugin.hpp
-

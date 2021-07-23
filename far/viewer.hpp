@@ -35,6 +35,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "scrobj.hpp"
 #include "namelist.hpp"
 #include "poscache.hpp"
@@ -43,14 +44,19 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "encoding.hpp"
 #include "codepage_selection.hpp"
 
+// Platform:
 #include "platform.fs.hpp"
 
+// Common:
 #include "common/monitored.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 class FileViewer;
 class KeyBar;
 class Dialog;
-class time_check;
 enum SEARCHER_RESULT: int;
 
 class Viewer:public SimpleScreenObject
@@ -63,7 +69,7 @@ public:
 	bool ProcessMouse(const MOUSE_EVENT_RECORD *MouseEvent) override;
 	long long VMProcess(int OpCode,void *vParam=nullptr,long long iParam=0) override;
 
-	bool OpenFile(const string& Name, int warning);
+	bool OpenFile(string_view Name, bool Warn);
 	void SetViewKeyBar(KeyBar *ViewKeyBar);
 	void UpdateViewKeyBar(KeyBar& ViewKeyBar);
 	void SetStatusMode(int Mode);
@@ -74,18 +80,18 @@ public:
 	void SetWrapType(bool TypeWrap);
 	void KeepInitParameters() const;
 	const string& GetFileName() const { return strFullFileName; }
-	void SetTempViewName(const string& Name, bool DeleteFolder);
-	void SetTitle(const string& Title);
+	void SetTempViewName(string_view Name, bool DeleteFolder);
+	void SetTitle(string_view Title);
 	string GetTitle() const;
 	void SetFilePos(long long Pos);
 	long long GetFilePos() const { return FilePos; }
 	long long GetViewFilePos() const { return FilePos; }
 	long long GetViewFileSize() const { return FileSize; }
-	void SetPluginData(const wchar_t *PluginData);
+	void SetPluginData(string_view PluginData);
 	void SetNamesList(NamesList& List);
 	int  ViewerControl(int Command, intptr_t Param1, void *Param2);
 	void SetHostFileViewer(FileViewer *Viewer) {HostFileViewer=Viewer;}
-	void GoTo(bool ShowDlg = true, long long NewPos = 0, unsigned long long Flags = 0);
+	void GoTo(bool ShowDlg = true, long long Offset = 0, unsigned long long Flags = 0);
 	void GetSelectedParam(long long &Pos, long long &Length, DWORD &Flags) const;
 	void SelectText(const long long &MatchPos,const long long &SearchLength, DWORD Flags=0x1);
 	bool GetShowScrollbar() const { return ViOpt.ShowScrollbar; }
@@ -98,6 +104,10 @@ public:
 	int GetId() const { return ViewerID; }
 	void OnDestroy();
 
+protected:
+	void ReadEvent();
+	void CloseEvent();
+
 private:
 	struct ViewerString;
 
@@ -105,7 +115,7 @@ private:
 
 	bool process_key(const Manager::Key& Key);
 	void ShowPage(int nMode);
-	void Up(int n, bool adjust);
+	void Up(int nlines, bool adjust);
 	void CacheLine(long long start, int length, bool have_eol);
 	int CacheFindUp(long long start);
 	void ShowHex();
@@ -119,7 +129,7 @@ private:
 	void DrawScrollbar();
 	void AdjustWidth();
 	void AdjustFilePos();
-   bool CheckChanged();
+	bool CheckChanged();
 	void ReadString(ViewerString *pString, int MaxSize, bool update_cache=true);
 	long long EndOfScreen(int line);
 	long long BegOfScreen();
@@ -137,7 +147,7 @@ private:
 	int vread(wchar_t *Buf, int Count, wchar_t *Buf2 = nullptr);
 	bool vseek(long long Offset, int Whence);
 	long long vtell() const;
-	bool vgetc(wchar_t *ch);
+	bool vgetc(wchar_t *pCh);
 	bool veof() const;
 	wchar_t vgetc_prev();
 	void SetFileSize();
@@ -146,7 +156,7 @@ private:
 	void SavePosition();
 	intptr_t ViewerSearchDlgProc(Dialog* Dlg, intptr_t Msg,intptr_t Param1,void* Param2);
 	int getCharSize() const;
-	int txt_dump(const char *line, size_t nr, size_t width, string& outstr, wchar_t zch, int tail) const;
+	int txt_dump(std::string_view Str, size_t ClientWidth, string& OutStr, wchar_t ZeroChar, int tail) const;
 
 	static uintptr_t GetDefaultCodePage();
 
@@ -156,20 +166,17 @@ private:
 	wchar_t ZeroChar() const;
 	size_t MaxViewLineSize() const { return ViOpt.MaxLineSize; }
 	size_t MaxViewLineBufferSize() const { return ViOpt.MaxLineSize + 15; }
+	int CalculateMaxBytesPerLineByScreenWidth() const;
+	void AdjustBytesPerLine(int Amount);
 
-protected:
-	void ReadEvent();
-	void CloseEvent();
-
-private:
 	friend class FileViewer;
 
 	Options::ViewerOptions ViOpt;
 
-	bool Signature;
+	bool Signature{};
 
 	NamesList ViewNamesList;
-	KeyBar *m_ViewKeyBar;
+	KeyBar *m_ViewKeyBar{};
 
 	std::list<ViewerString> Strings;
 
@@ -183,70 +190,67 @@ private:
 
 	string strTempViewName;
 
-	bool m_DeleteFolder;
+	bool m_DeleteFolder{true};
 
 	string strLastSearchStr;
 	bool LastSearchCase,LastSearchWholeWords,LastSearchReverse,LastSearchHex,LastSearchRegexp;
 	int LastSearchDirection;
-	long long StartSearchPos;
+	long long StartSearchPos{};
 
 	uintptr_t m_DefCodepage;
 	uintptr_t m_Codepage;
 	monitored<bool> m_Wrap;
 	monitored<bool> m_WordWrap;
 	monitored<VIEWER_MODE_TYPE> m_DisplayMode;
-	bool m_DumpTextMode;
+	bool m_DumpTextMode{};
 
 	MultibyteCodepageDecoder MB;
 
-	long long FilePos;
-	long long SecondPos;
-	long long FileSize;
-	long long LastSelectPos, LastSelectSize;
+	long long FilePos{};
+	long long SecondPos{};
+	long long FileSize{};
+	long long LastSelectPos{}, LastSelectSize{-1};
 
-	long long LeftPos;
-	bool LastPage;
-	long long SelectPos,SelectSize, ManualSelectPos;
-	DWORD SelectFlags;
-	int ShowStatusLine;
-	int m_HideCursor;
+	long long LeftPos{};
+	bool LastPage{};
+	long long SelectPos{}, SelectSize{-1}, ManualSelectPos{-1};
+	DWORD SelectFlags{};
+	int ShowStatusLine{true};
+	int m_HideCursor{true};
 
 	string strTitle;
 
 	string strPluginData;
-	int ReadStdin;
-	int InternalKey;
+	int ReadStdin{};
+	int InternalKey{};
 
 	Bookmarks<viewer_bookmark> BMSavePos;
 
 	struct ViewerUndoData;
 	std::list<ViewerUndoData> UndoData;
 
-	int LastKeyUndo;
-	int Width,XX2;  // , используется при расчете ширины при скролбаре
+	int LastKeyUndo{};
+	int Width{}, XX2{};  // используется при расчете ширины при скролбаре
 	int ViewerID;
-	bool OpenFailed;
-	bool bVE_READ_Sent;
-	FileViewer *HostFileViewer;
-	bool AdjustSelPosition;
-	bool redraw_selection;
+	bool OpenFailed{};
+	bool bVE_READ_Sent{};
+	FileViewer *HostFileViewer{};
+	bool AdjustSelPosition{};
+	bool redraw_selection{};
 
 	bool m_bQuickView;
 
-	std::unique_ptr<time_check> m_TimeCheck;
-	std::unique_ptr<time_check> m_IdleCheck;
-
 	std::vector<char> vread_buffer;
 
-	long long  lcache_first;
-	long long  lcache_last;
+	long long  lcache_first{-1};
+	long long  lcache_last{-1};
 	std::vector<long long> lcache_lines;
-	int      lcache_count;
-	int      lcache_base;
-	bool     lcache_ready;
-	int      lcache_wrap;
-	int      lcache_wwrap;
-	int      lcache_width;
+	int      lcache_count{};
+	int      lcache_base{};
+	bool     lcache_ready{};
+	int      lcache_wrap{-1};
+	int      lcache_wwrap{-1};
+	int      lcache_width{-1};
 
 	int      max_backward_size;
 	std::vector<int> llengths;
@@ -263,17 +267,44 @@ private:
 		int  eol_length;
 		bool bSelection;
 	}
-	vString;
+	vString{};
 
-	char vgetc_buffer[64];
-	bool vgetc_ready;
-	int  vgetc_cb;
-	int  vgetc_ib;
-	wchar_t vgetc_composite;
+	class vgetc_cache
+	{
+	public:
+		char* begin() { return m_Iterator; }
+		char* end() { return m_End; }
+		const char* begin() const { return m_Iterator; }
+		const char* end() const { return m_End; }
+		const char* cbegin() const { return m_Iterator; }
+		const char* cend() const { return m_End; }
+
+		void clear() { m_End = m_Iterator = m_Buffer; }
+		bool ready() const { return m_End != m_Buffer; }
+		char top() const { return *m_Iterator; }
+		char pop() { return *m_Iterator++; }
+		void pop(size_t Count) { m_Iterator += Count; }
+		size_t size() const { return m_End - m_Iterator; }
+		bool empty() const { return m_Iterator == m_End; }
+		size_t free_size() const { return std::end(m_Buffer) - m_End; }
+		void compact();
+
+	private:
+		char m_Buffer[64]{};
+
+	public: // BUGBUG
+		char* m_Iterator{ m_Buffer };
+		char* m_End{ m_Buffer };
+	}
+	VgetcCache;
+
+	wchar_t vgetc_composite{};
 
 	std::vector<wchar_t> ReadBuffer;
-	F8CP f8cps;
-	std::pair<bool, bool> m_GotoHex;
+	F8CP f8cps{true};
+	std::optional<bool> m_GotoHex;
+	int m_PrevXX2{};
+	size_t m_BytesPerLine{ 16 };
 };
 
 class ViewerContainer

@@ -13,7 +13,7 @@
       <UniqueIdentifier>{0d74ff07-ebff-40b7-839c-6953ed4c6e2e}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl</Extensions>
     </Filter>
-    <Filter Include="Header Files\sdk">
+    <Filter Include="Header Files\platform.sdk">
       <UniqueIdentifier>{581cdf3b-8152-4a6b-8f7c-56cdd69d68a1}</UniqueIdentifier>
     </Filter>
     <Filter Include="Resource Files">
@@ -27,6 +27,12 @@
     <Filter Include="Header Files\common">
       <UniqueIdentifier>{ca030415-47e9-45af-a4e4-d9f85f7b220e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\common\2d">
+      <UniqueIdentifier>{48d61e8c-4499-4899-935c-29b328d7be2c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\common\view">
+      <UniqueIdentifier>{9ffceef1-367c-4a47-b676-76c5753d73a1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cache.cpp">
@@ -35,7 +41,7 @@
     <ClCompile Include="cddrv.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="chgprior.cpp">
+    <ClCompile Include="char_width.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="clipboard.cpp">
@@ -44,7 +50,13 @@
     <ClCompile Include="cmdline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="codepage_selection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="colormix.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="common.tests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="components.cpp">
@@ -53,10 +65,22 @@
     <ClCompile Include="config.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="configdb.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="console.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="console_session.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="constitle.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="copy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="copy_progress.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ctrlobj.cpp">
@@ -83,10 +107,10 @@
     <ClCompile Include="dirmix.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="dizlist.cpp">
+    <ClCompile Include="diskmenu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="FarDlgBuilder.cpp">
+    <ClCompile Include="dizlist.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="dlgedit.cpp">
@@ -119,10 +143,25 @@
     <ClCompile Include="exception.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="exception_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="exception_handler_test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="execute.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="farexcpt.cpp">
+    <ClCompile Include="FarDlgBuilder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="farversion.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="fastfind.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="file_io.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="fileattr.cpp">
@@ -150,6 +189,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="filestr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="filesystemwatcher.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="filetype.cpp">
@@ -203,9 +245,6 @@
     <ClCompile Include="imports.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="initguid.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="infolist.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -221,13 +260,13 @@
     <ClCompile Include="language.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="lasterror.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="locale.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="lockscrn.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="log.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="macro.cpp">
@@ -263,7 +302,13 @@
     <ClCompile Include="network.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="new_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="notification.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="nsUniversalDetectorEx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="palette.cpp">
@@ -278,13 +323,19 @@
     <ClCompile Include="pathmix.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="platform.cpp">
+    <ClCompile Include="pipe.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="platform.chrono.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="platform.com.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="platform.concurrency.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="platform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="platform.env.cpp">
@@ -296,10 +347,19 @@
     <ClCompile Include="platform.memory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="platform.process.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="platform.reg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="platform.security.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="platform.version.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="plclass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="plist.cpp">
@@ -362,6 +422,15 @@
     <ClCompile Include="setcolor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="shortcuts.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sqlite.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sqlitedb.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="stddlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -374,10 +443,16 @@
     <ClCompile Include="strmix.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="syslog.cpp">
+    <ClCompile Include="taskbar.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="taskbar.cpp">
+    <ClCompile Include="testing.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tinyxml.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tracer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="treelist.cpp">
@@ -389,6 +464,9 @@
     <ClCompile Include="usermenu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="vc_crt_fix_impl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="viewer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -398,77 +476,17 @@
     <ClCompile Include="vmenu2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="xlat.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="console.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="wm_listener.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="shortcuts.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="configdb.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="farversion.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="pipe.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="plclass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="tinyxml.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="sqlite.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="sqlite_unicode.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="nsUniversalDetectorEx.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="vc_crt_fix_impl.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="sqlitedb.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="filesystemwatcher.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="codepage_selection.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="diskmenu.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="tracer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="copy_progress.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="new_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="console_session.cpp">
+    <ClCompile Include="xlat.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="elevation.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="bitflags.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -478,7 +496,7 @@
     <ClInclude Include="cddrv.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="chgprior.hpp">
+    <ClInclude Include="char_width.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="clipboard.hpp">
@@ -487,11 +505,134 @@
     <ClInclude Include="cmdline.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="codepage_selection.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="colormix.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="common.hpp">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\2d\algorithm.hpp">
+      <Filter>Header Files\common\2d</Filter>
+    </ClInclude>
+    <ClInclude Include="common\2d\matrix.hpp">
+      <Filter>Header Files\common\2d</Filter>
+    </ClInclude>
+    <ClInclude Include="common\2d\point.hpp">
+      <Filter>Header Files\common\2d</Filter>
+    </ClInclude>
+    <ClInclude Include="common\2d\rectangle.hpp">
+      <Filter>Header Files\common\2d</Filter>
+    </ClInclude>
+    <ClInclude Include="common\view\enumerate.hpp">
+      <Filter>Header Files\common\view</Filter>
+    </ClInclude>
+    <ClInclude Include="common\view\reverse.hpp">
+      <Filter>Header Files\common\view</Filter>
+    </ClInclude>
+    <ClInclude Include="common\view\select.hpp">
+      <Filter>Header Files\common\view</Filter>
+    </ClInclude>
+    <ClInclude Include="common\view\where.hpp">
+      <Filter>Header Files\common\view</Filter>
+    </ClInclude>
+    <ClInclude Include="common\view\zip.hpp">
+      <Filter>Header Files\common\view</Filter>
+    </ClInclude>
+    <ClInclude Include="common\algorithm.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\base64.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\bytes_view.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\chrono.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\compiler.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\enum_substrings.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\enum_tokens.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\enumerator.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\from_string.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\function_ref.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\function_traits.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\io.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\keep_alive.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\lazy.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\monitored.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\movable.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\multifunction.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\nifty_counter.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\noncopyable.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\null_iterator.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\placement.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\preprocessor.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\range.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\rel_ops.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\scope_exit.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\singleton.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\smart_ptr.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\string_utils.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\type_traits.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\utility.hpp">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="common\uuid.hpp">
+      <Filter>Header Files\common</Filter>
     </ClInclude>
     <ClInclude Include="components.hpp">
       <Filter>Header Files</Filter>
@@ -499,10 +640,22 @@
     <ClInclude Include="config.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="configdb.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="console.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="console_session.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="constitle.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="copy.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="copy_progress.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="cpp.hpp">
@@ -532,13 +685,25 @@
     <ClInclude Include="dirmix.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="disable_warnings_in_std_begin.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="disable_warnings_in_std_end.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="disabled_warnings.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="diskmenu.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="dizlist.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="dlgedit.hpp">
+    <ClInclude Include="dizviewer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DlgGuid.hpp">
+    <ClInclude Include="dlgedit.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="drivemix.hpp">
@@ -556,6 +721,9 @@
     <ClInclude Include="eject.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="elevation.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="encoding.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -563,6 +731,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="exception.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="exception_handler.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="exception_handler_test.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="execute.hpp">
@@ -574,10 +748,13 @@
     <ClInclude Include="FarDlgBuilder.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="farexcpt.hpp">
+    <ClInclude Include="farversion.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FarGuid.hpp">
+    <ClInclude Include="fastfind.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="file_io.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="fileattr.hpp">
@@ -605,6 +782,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="filestr.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="filesystemwatcher.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="filetype.hpp">
@@ -667,7 +847,16 @@
     <ClInclude Include="keyboard.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="KnownGuids.hpp">
+    <ClInclude Include="keys.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="uuids.far.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="uuids.far.dialogs.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="uuids.plugins.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="lang.hpp">
@@ -676,13 +865,13 @@
     <ClInclude Include="language.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="lasterror.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="locale.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="lockscrn.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="log.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="macro.hpp">
@@ -692,9 +881,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="manager.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="matrix.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="memcheck.hpp">
@@ -721,13 +907,25 @@
     <ClInclude Include="network.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="new_handler.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="notification.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="nsUniversalDetectorEx.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="palette.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="panel.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="panelctype.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="panelfwd.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="panelmix.hpp">
@@ -739,10 +937,10 @@
     <ClInclude Include="pipe.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="platform.hpp">
+    <ClInclude Include="platform.chrono.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="platform.chrono.hpp">
+    <ClInclude Include="platform.com.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="platform.concurrency.hpp">
@@ -757,13 +955,34 @@
     <ClInclude Include="platform.fwd.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="platform.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="platform.headers.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="platform.memory.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="platform.process.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="platform.reg.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="platform.security.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="platform.sdk.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="platform.sdk\sdk_common.h">
+      <Filter>Header Files\platform.sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="platform.sdk\sdk_vc.h">
+      <Filter>Header Files\platform.sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="platform.version.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="plclass.hpp">
@@ -808,6 +1027,9 @@
     <ClInclude Include="refreshwindowmanager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="regex_helpers.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="RegExp.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -829,16 +1051,19 @@
     <ClInclude Include="scrsaver.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="sdk\sdk_common.h">
-      <Filter>Header Files\sdk</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\sdk_vc.h">
-      <Filter>Header Files\sdk</Filter>
-    </ClInclude>
     <ClInclude Include="setattr.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="setcolor.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="shortcuts.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sqlite.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sqlitedb.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="stddlg.hpp">
@@ -853,13 +1078,22 @@
     <ClInclude Include="strmix.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="syslog.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="taskbar.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="testing.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tinyxml.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="TPreRedrawFunc.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tracer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="transactional.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="treelist.hpp">
@@ -877,13 +1111,10 @@
     <ClInclude Include="vmenu.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="vmenu2.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="wakeful.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="xlat.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="console.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="window.hpp">
@@ -895,177 +1126,27 @@
     <ClInclude Include="wm_listener.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="shortcuts.hpp">
+    <ClInclude Include="xlat.hpp">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="configdb.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="farversion.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="sqlite.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="sqlite_unicode.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="tinyxml.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="nsUniversalDetectorEx.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="keys.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="panelctype.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="sqlitedb.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="filesystemwatcher.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vmenu2.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\algorithm.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="common\enumerator.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="common\function_traits.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="common\noncopyable.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="common\preprocessor.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="common\scope_exit.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="common\smart_ptr.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="transactional.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\any.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="common\monitored.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="disabled_warnings.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="disable_warnings_in_std_begin.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="disable_warnings_in_std_end.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\null_iterator.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="regex_helpers.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\chrono.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="common\compiler.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="codepage_selection.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="diskmenu.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\rel_ops.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="panelfwd.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="tracer.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\enum_substrings.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="common\zip_view.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="copy_progress.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\movable.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="common\multifunction.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="common\string_utils.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="common\string_view.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="dizviewer.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\type_traits.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="common\range.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="new_handler.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="console_session.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\placement.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="common\singleton.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="common\utility.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="common\bytes_view.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="common\enum_tokens.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="common\nifty_counter.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="common\io.hpp">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
-    <ClInclude Include="common\keep_alive.hpp">
-      <Filter>Header Files\common</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Far.ico">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="FarA.ico">
+    <None Include="Far.black.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Far.hack.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Far.mono.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Far.msg.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Far.red.ico">
       <Filter>Resource Files</Filter>
     </None>
     <None Include="farversion.m4">
@@ -1077,7 +1158,7 @@
     <None Include="vbuild.m4">
       <Filter>Dependencies</Filter>
     </None>
-    <None Include="changelog" />
+    <None Include="far.natjmc" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="far.rc">
@@ -1085,7 +1166,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="bootstrap\farlang.templ">
+    <CustomBuild Include="$(BootstrapDir)farlang.templ">
       <Filter>Generated Files</Filter>
     </CustomBuild>
     <CustomBuild Include="copyright.inc.m4">
@@ -1103,13 +1184,28 @@
     <CustomBuild Include="FarEng.hlf.m4">
       <Filter>Dependencies</Filter>
     </CustomBuild>
+    <CustomBuild Include="FarGer.hlf.m4">
+      <Filter>Dependencies</Filter>
+    </CustomBuild>
     <CustomBuild Include="FarHun.hlf.m4">
       <Filter>Dependencies</Filter>
     </CustomBuild>
     <CustomBuild Include="farlang.templ.m4">
       <Filter>Dependencies</Filter>
     </CustomBuild>
+    <CustomBuild Include="FarPol.hlf.m4">
+      <Filter>Dependencies</Filter>
+    </CustomBuild>
     <CustomBuild Include="FarRus.hlf.m4">
+      <Filter>Dependencies</Filter>
+    </CustomBuild>
+    <CustomBuild Include="FarUkr.hlf.m4">
+      <Filter>Dependencies</Filter>
+    </CustomBuild>
+    <CustomBuild Include="FarCze.hlf.m4">
+      <Filter>Dependencies</Filter>
+    </CustomBuild>
+    <CustomBuild Include="FarSky.hlf.m4">
       <Filter>Dependencies</Filter>
     </CustomBuild>
     <CustomBuild Include="farversion.inc.m4">
@@ -1121,14 +1217,8 @@
     <CustomBuild Include="plugin.hpp">
       <Filter>Header Files</Filter>
     </CustomBuild>
-    <CustomBuild Include="Far.exe.example.ini">
-      <Filter>Dependencies</Filter>
-    </CustomBuild>
     <CustomBuild Include="api_test.c">
       <Filter>Source Files</Filter>
-    </CustomBuild>
-    <CustomBuild Include="DlgBuilder.hpp">
-      <Filter>Header Files</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
@@ -1138,5 +1228,9 @@
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="far.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="changelog" />
+    <CopyFileToFolders Include="Far.exe.example.ini" />
   </ItemGroup>
 </Project>

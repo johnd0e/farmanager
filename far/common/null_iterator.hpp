@@ -34,8 +34,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "rel_ops.hpp"
 
+//----------------------------------------------------------------------------
+
 template <class T>
-class null_iterator_t: public rel_ops<null_iterator_t<T>>
+class null_iterator: public rel_ops<null_iterator<T>>
 {
 public:
 	using iterator_category = std::forward_iterator_tag;
@@ -44,22 +46,30 @@ public:
 	using pointer = T*;
 	using reference = T&;
 
-	explicit null_iterator_t(T* Data): m_Data(Data) {}
-	auto& operator++() { ++m_Data; return *this; }
-	auto operator++(int) { return null_iterator_t(m_Data++); }
-	auto& operator*() { return *m_Data; }
+	explicit null_iterator(T* Data) noexcept: m_Data(Data) {}
+	auto& operator++() noexcept { ++m_Data; return *this; }
+	auto operator++(int) noexcept { return null_iterator(m_Data++); }
+
+	[[nodiscard]]
+	auto& operator*() noexcept { return *m_Data; }
+
+	[[nodiscard]]
 	auto operator->() noexcept { return m_Data; }
-	auto& operator*() const { return *m_Data; }
+
+	[[nodiscard]]
+	auto& operator*() const noexcept { return *m_Data; }
+
+	[[nodiscard]]
 	auto operator->() const noexcept { return m_Data; }
-	static const auto& end() { static T Empty{}; static const null_iterator_t Iter(&Empty); return Iter; }
-	bool operator==(const null_iterator_t& rhs) const { return m_Data == rhs.m_Data || (rhs.m_Data == end().m_Data && !*m_Data); }
+
+	[[nodiscard]]
+	static const auto& end() noexcept { static T Empty{}; static const null_iterator Iter(&Empty); return Iter; }
+
+	[[nodiscard]]
+	bool operator==(const null_iterator& rhs) const noexcept { return m_Data == rhs.m_Data || (rhs.m_Data == end().m_Data && !*m_Data); }
 
 private:
 	T* m_Data;
 };
-
-template <class T>
-[[nodiscard]]
-auto null_iterator(T* Data) { return null_iterator_t<T>(Data); }
 
 #endif // NULL_ITERATOR_HPP_18FC84FA_D7EE_47C4_9979_72EC06E57C37

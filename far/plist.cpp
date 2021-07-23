@@ -31,8 +31,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "plist.hpp"
 
+// Internal:
 #include "keys.hpp"
 #include "help.hpp"
 #include "vmenu.hpp"
@@ -43,12 +48,21 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "imports.hpp"
 #include "string_sort.hpp"
 #include "exception.hpp"
+#include "exception_handler.hpp"
+#include "console.hpp"
+#include "keyboard.hpp"
+#include "log.hpp"
 
+// Platform:
 #include "platform.fs.hpp"
 
+// Common:
 #include "common/scope_exit.hpp"
 
+// External:
 #include "format.hpp"
+
+//----------------------------------------------------------------------------
 
 struct menu_data
 {
@@ -59,10 +73,24 @@ struct menu_data
 
 struct ProcInfo
 {
-	VMenu2 *procList;
-	bool ShowImage;
+	std::vector<std::pair<HWND, DWORD>> Windows;
 	std::exception_ptr ExceptionPtr;
 };
+
+static bool is_cloaked_window(HWND const Window)
+{
+	if (!imports.DwmGetWindowAttribute)
+		return false;
+
+	int Cloaked = 0;
+	if (const auto Result = imports.DwmGetWindowAttribute(Window, DWMWA_CLOAKED, &Cloaked, sizeof(Cloaked)); FAILED(Result))
+	{
+		LOGWARNING(L"DwmGetWindowAttribute"sv, os::format_error(Result));
+		return false;
+	}
+
+	return Cloaked != 0;
+}
 
 // https://blogs.msdn.microsoft.com/oldnewthing/20071008-00/?p=24863/
 static bool is_alttab_window(HWND const Window)
@@ -82,65 +110,68 @@ static bool is_alttab_window(HWND const Window)
 	if (Walk != Window)
 		return false;
 
-	// the following removes some task tray programs and "Program Manager"
-	TITLEBARINFO Info{sizeof(Info)};
-	if (GetTitleBarInfo(Window, &Info) && Info.rgstate[0] & STATE_SYSTEM_INVISIBLE)
-		return false;
-
 	// Tool windows should not be displayed either, these do not appear in the task bar
 	if (GetWindowLongPtr(Window, GWL_EXSTYLE) & WS_EX_TOOLWINDOW)
 		return false;
 
-	if (IsWindows8OrGreater())
-	{
-		int Cloaked = 0;
-		if (SUCCEEDED(imports.DwmGetWindowAttribute(Window, DWMWA_CLOAKED, &Cloaked, sizeof(Cloaked))) && Cloaked)
-			return false;
-	}
-
-	return true;
+	return !is_cloaked_window(Window);
 }
 
-static BOOL CALLBACK EnumWindowsProc(HWND Window, LPARAM Param)
+static BOOL CALLBACK EnumWindowsProc(HWND const Window, LPARAM const Param)
 {
-	const auto Info = reinterpret_cast<ProcInfo*>(Param);
+	auto& Info = *reinterpret_cast<ProcInfo*>(Param);
 
-	try
+	return cpp_try(
+	[&]
 	{
 		if (!is_alttab_window(Window))
 			return true;
 
-		string WindowTitle;
-		os::GetWindowText(Window, WindowTitle);
+		DWORD Pid;
+		GetWindowThreadProcessId(Window, &Pid);
 
-		DWORD ProcID;
-		GetWindowThreadProcessId(Window, &ProcID);
-
-		string MenuItem;
-
-		if (Info->ShowImage)
-		{
-			if (const auto Process = os::handle(OpenProcess(imports.QueryFullProcessImageNameW? PROCESS_QUERY_LIMITED_INFORMATION : PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, false, ProcID)))
-				os::fs::GetModuleFileName(Process.native_handle(), nullptr, MenuItem);
-			
-			if (MenuItem.empty())
-				MenuItem = L"???"s;
-		}
-		else
-		{
-			MenuItem = WindowTitle;
-		}
-
-		MenuItemEx NewItem(format(L"{0:9} {1} {2}", ProcID, BoxSymbols[BS_V1], MenuItem));
-		// for sorting
-		NewItem.ComplexUserData = menu_data{ WindowTitle, ProcID, Window };
-		Info->procList->AddItem(NewItem);
-
+		Info.Windows.emplace_back(Window, Pid);
 		return true;
-	}
-	CATCH_AND_SAVE_EXCEPTION_TO(Info->ExceptionPtr)
+	},
+	[&]
+	{
+		SAVE_EXCEPTION_TO(Info.ExceptionPtr);
+		return false;
+	});
+}
 
-	return false;
+static void AddMenuItem(HWND const Window, DWORD const Pid, size_t const PidWidth, bool const ShowImage, vmenu2_ptr const& Menu)
+{
+	string WindowTitle;
+	os::GetWindowText(Window, WindowTitle);
+
+	string MenuItem;
+
+	if (ShowImage)
+	{
+		if (const auto Process = os::handle(OpenProcess(imports.QueryFullProcessImageNameW ? PROCESS_QUERY_LIMITED_INFORMATION : PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, false, Pid)))
+		{
+			// BUGBUG check result
+			if (!os::fs::get_module_file_name(Process.native_handle(), {}, MenuItem))
+			{
+				LOGWARNING(L"GetModuleFileName({}): {}"sv, Pid, last_error());
+			}
+		}
+
+		if (MenuItem.empty())
+			MenuItem = L"???"sv;
+	}
+	else
+	{
+		MenuItem = WindowTitle;
+	}
+
+	const auto Self = Pid == GetCurrentProcessId() || Window == console.GetWindow();
+
+	MenuItemEx NewItem(format(FSTR(L"{:{}} {} {}"sv), Pid, PidWidth, BoxSymbols[BS_V1], MenuItem), Self? MIF_CHECKED : MIF_NONE);
+	// for sorting
+	NewItem.ComplexUserData = menu_data{ WindowTitle, Pid, Window };
+	Menu->AddItem(NewItem);
 }
 
 void ShowProcessList()
@@ -152,22 +183,35 @@ void ShowProcessList()
 	SCOPE_EXIT{ Active = false; };
 
 	const auto ProcList = VMenu2::create(msg(lng::MProcessListTitle), {}, ScrY - 4);
-	ProcList->SetMenuFlags(VMENU_WRAPMODE);
-	ProcList->SetPosition(-1,-1,0,0);
+	ProcList->SetMenuFlags(VMENU_WRAPMODE | VMENU_SHOWAMPERSAND);
+	ProcList->SetPosition({ -1, -1, 0, 0 });
 	bool ShowImage = false;
 
-	const auto& FillProcList = [&]
-	{
-		ProcList->clear();
+	ProcInfo Info;
+	Info.Windows.reserve(128);
 
-		ProcInfo Info{ ProcList.get(), ShowImage };
+	const auto FillProcList = [&]
+	{
+		SCOPED_ACTION(Dialog::suppress_redraw)(ProcList.get());
+
+		ProcList->clear();
+		Info.Windows.clear();
+
 		if (!EnumWindows(EnumWindowsProc, reinterpret_cast<LPARAM>(&Info)))
 		{
-			RethrowIfNeeded(Info.ExceptionPtr);
+			rethrow_if(Info.ExceptionPtr);
 			return false;
 		}
 
-		ProcList->SortItems([](const MenuItemEx& a, const MenuItemEx& b, SortItemParam& p)
+		const auto MaxPid = std::max_element(ALL_CONST_RANGE(Info.Windows), [](const auto& a, const auto& b) { return a.second < b.second; })->second;
+		const auto PidWidth = static_cast<size_t>(std::log10(MaxPid)) + 1;
+
+		for (const auto& [Window, Pid]: Info.Windows)
+		{
+			AddMenuItem(Window, Pid, PidWidth, ShowImage, ProcList);
+		}
+
+		ProcList->SortItems([](const MenuItemEx& a, const MenuItemEx& b, SortItemParam&)
 		{
 			return string_sort::less(std::any_cast<const menu_data&>(a.ComplexUserData).Title, std::any_cast<const menu_data&>(b.ComplexUserData).Title);
 		});
@@ -178,8 +222,8 @@ void ShowProcessList()
 	if (!FillProcList())
 		return;
 
-	ProcList->AssignHighlights(FALSE);
-	ProcList->SetBottomTitle(msg(lng::MProcessListBottom));
+	ProcList->AssignHighlights();
+	ProcList->SetBottomTitle(KeysToLocalizedText(KEY_DEL, KEY_F2, KEY_CTRLR));
 
 	ProcList->Run([&](const Manager::Key& RawKey)
 	{
@@ -188,10 +232,8 @@ void ShowProcessList()
 		switch (Key)
 		{
 			case KEY_F1:
-			{
-				Help::create(L"TaskList"sv);
+				help::show(L"TaskList"sv);
 				break;
-			}
 
 			case KEY_NUMDEL:
 			case KEY_DEL:
@@ -207,10 +249,10 @@ void ShowProcessList()
 						},
 						{ lng::MKillProcessKill, lng::MCancel }) == Message::first_button)
 					{
-						const auto Process = os::handle(OpenProcess(PROCESS_TERMINATE, FALSE, MenuData->Pid));
-						if (!Process || !TerminateProcess(Process.native_handle(), 0xFFFFFFFF))
+						const os::handle Process(OpenProcess(PROCESS_TERMINATE, FALSE, MenuData->Pid));
+						if (!Process || !TerminateProcess(Process.native_handle(), ERROR_PROCESS_ABORTED))
 						{
-							const auto ErrorState = error_state::fetch();
+							const auto ErrorState = last_error();
 
 							Message(MSG_WARNING, ErrorState,
 								msg(lng::MKillProcessTitle),

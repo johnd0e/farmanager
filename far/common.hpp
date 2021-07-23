@@ -35,17 +35,6 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-// TODO: use separately where required
-
-#include "common/compiler.hpp"
-#include "common/preprocessor.hpp"
-#include "common/utility.hpp"
-#include "common/noncopyable.hpp"
-#include "common/smart_ptr.hpp"
-#include "common/algorithm.hpp"
-#include "common/string_utils.hpp"
-#include "common/chrono.hpp"
-
 // TODO: clean up & split
 
 template <typename T>
@@ -73,74 +62,21 @@ auto EmptyToNull(const T* Str)
 	return (Str && !*Str)? nullptr : Str;
 }
 
+template<class T>
+auto EmptyToNull(const T& Str)
+{
+	return Str.empty()? nullptr : Str.c_str();
+}
+
 template <class T>
 T Round(const T &a, const T &b)
 {
 	return a / b + ((a % b * 2 > b)? 1 : 0);
 }
 
-inline void* ToPtr(intptr_t Value)
+inline void* ToPtr(intptr_t Value) noexcept
 {
 	return reinterpret_cast<void*>(Value);
-}
-
-template<typename min_type, typename value_type, typename max_type>
-constexpr bool InRange(min_type const Min, value_type const Value, max_type const Max)
-{
-	return Min <= Value && Value <= Max;
-}
-
-#ifdef _DEBUG
-#define SELF_TEST(code) \
-namespace \
-{ \
-	struct SelfTest \
-	{ \
-		SelfTest() \
-		{ \
-			code; \
-		} \
-	} _SelfTest; \
-}
-#else
-#define SELF_TEST(code)
-#endif
-
-#define SIGN_UNICODE    0xFEFF
-#define SIGN_REVERSEBOM 0xFFFE
-#define SIGN_UTF8       0xBFBBEF
-
-template<typename T>
-class base: public T
-{
-protected:
-	using T::T;
-	using base_type = base;
-};
-
-namespace detail
-{
-	inline void from_string(const string& Str, int& Value, size_t* Pos, int Base) { Value = std::stoi(Str, Pos, Base); }
-	inline void from_string(const string& Str, unsigned int& Value, size_t* Pos, int Base) { Value = std::stoul(Str, Pos, Base); }
-	inline void from_string(const string& Str, long& Value, size_t* Pos, int Base) { Value = std::stol(Str, Pos, Base); }
-	inline void from_string(const string& Str, unsigned long& Value, size_t* Pos, int Base) { Value = std::stoul(Str, Pos, Base); }
-	inline void from_string(const string& Str, long long& Value, size_t* Pos, int Base) { Value = std::stoll(Str, Pos, Base); }
-	inline void from_string(const string& Str, unsigned long long& Value, size_t* Pos, int Base) { Value = std::stoull(Str, Pos, Base); }
-	inline void from_string(const string& Str, double & Value, size_t* Pos, int) { Value = std::stod(Str, Pos); }
-}
-
-template<typename T>
-bool from_string(const string& Str, T& Value, size_t* Pos = nullptr, int Base = 10)
-{
-	try
-	{
-		detail::from_string(Str, Value, Pos, Base);
-		return true;
-	}
-	catch (const std::exception&)
-	{
-		return false;
-	}
 }
 
 #endif // COMMON_HPP_1BD5AB87_3379_4AFE_9F63_DB850DCF72B4

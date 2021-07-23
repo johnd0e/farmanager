@@ -1,12 +1,16 @@
-#include "Proclist.hpp"
+﻿#include "Proclist.hpp"
 
-wchar_t FPRINTFbuffer[FPRINTFbufferLen];
-
-int fputc(int c, HANDLE stream)
+size_t WriteToFile(HANDLE File, const std::wstring_view& Str)
 {
-	HANDLE hFile = (HANDLE)stream;
-	DWORD tmp;
-	wchar_t b = (wchar_t)c;
-	WriteFile(hFile,&b,sizeof(b),&tmp,NULL);
-	return c;
+	DWORD Written;
+	if (!WriteFile(File, Str.data(), static_cast<DWORD>(Str.size() * sizeof(wchar_t)), &Written, {}))
+		return 0;
+
+	return Written / sizeof(wchar_t);
+}
+
+size_t WriteToFile(HANDLE File, wchar_t Char)
+{
+	// BUGBUG this is mental
+	return WriteToFile(File, std::wstring_view{ &Char, 1 });
 }

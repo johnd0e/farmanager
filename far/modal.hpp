@@ -36,13 +36,22 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 
+// Internal:
 #include "window.hpp"
+
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
 
 class Modal: public window
 {
 protected:
 	Modal() = default;
-	~Modal() = default;
+	~Modal() override = default;
 };
 
 class SimpleModal: public Modal
@@ -61,6 +70,7 @@ protected:
 
 	void SetDone();
 	void Close(int Code);
+	virtual void OnClose() {}
 
 	string m_HelpTopic;
 

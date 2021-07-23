@@ -1,4 +1,4 @@
-#include <all_far.h>
+﻿#include <all_far.h>
 #pragma hdrstop
 
 #include "fstdlib.h"
@@ -66,7 +66,7 @@ FARINProc::~FARINProc()
 	FP_FILELog("%*c}<%s>", Counter*2,' ',Name);
 }
 
-void _cdecl FARINProc::Say(LPCSTR s,...)
+void __cdecl FARINProc::Say(LPCSTR s,...)
 {
 	va_list ap;
 	va_start(ap,s);

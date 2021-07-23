@@ -32,61 +32,51 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
+
+// Platform:
 #include "platform.concurrency.hpp"
 
-class tracer: noncopyable
+// Common:
+#include "common/function_ref.hpp"
+#include "common/nifty_counter.hpp"
+#include "common/range.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
+
+namespace tracer_detail
 {
-public:
-	tracer();
-	~tracer();
-
-	void store(const void* CppObject, const EXCEPTION_POINTERS* ExceptionInfo);
-
-	static std::vector<string> get(const void* CppObject);
-	static std::vector<string> get(const exception_context& Context);
-	static void get_one(const void* Ptr, string& Address, string& Name, string& Source);
-
-	static std::unique_ptr<exception_context> get_exception_context(const void* CppObject);
-
-	static auto with_symbols()
-	{
-		return make_raii_wrapper(get_instance(),
-			[](tracer* const Tracer)
-			{
-				if (Tracer)
-					Tracer->SymInitialise();
-			},
-			[](tracer* const Tracer)
-			{
-				if (Tracer)
-					Tracer->SymCleanup();
-			});
-	}
-
-private:
-	static tracer* get_instance();
-
-	std::unique_ptr<exception_context> get_context(const void* CppObject);
-
-	bool SymInitialise();
-	void SymCleanup();
-
-	static tracer* sTracer;
-	mutable os::critical_section m_CS;
-	std::unordered_map<const void*, std::unique_ptr<exception_context>> m_CppMap;
-	std::string m_SymbolSearchPath;
-
-	class veh_handler: noncopyable
+	class tracer
 	{
 	public:
-		explicit veh_handler(PVECTORED_EXCEPTION_HANDLER Handler);
-		~veh_handler();
+		NONCOPYABLE(tracer);
+
+		tracer() = default;
+
+		std::vector<uintptr_t> get(string_view Module, CONTEXT const& ContextRecord, HANDLE ThreadHandle);
+		void get_symbols(string_view Module, span<uintptr_t const> Trace, function_ref<void(string&& Line)> Consumer);
+		void get_symbol(string_view Module, const void* Ptr, string& Address, string& Name, string& Source);
+
+		class with_symbols
+		{
+		public:
+			NONCOPYABLE(with_symbols);
+
+			explicit with_symbols(string_view const Module);
+			~with_symbols();
+		};
 
 	private:
-		void* m_Handler;
-	}
-	m_Handler;
-	std::atomic_int32_t m_SymInitialised{};
-};
+		void sym_initialise(string_view Module);
+		void sym_cleanup();
+
+		os::concurrency::critical_section m_CS;
+		size_t m_SymInitialised{};
+	};
+}
+
+NIFTY_DECLARE(tracer_detail::tracer, tracer);
 
 #endif // TRACER_HPP_AD7B9307_ECFD_46FC_B001_E48C9B89DE64

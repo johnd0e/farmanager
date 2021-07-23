@@ -30,58 +30,62 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "pipe.hpp"
+
+// Internal:
+#include "exception.hpp"
+
+// Platform:
+
+// Common:
+
+// External:
+#include "format.hpp"
+
+//----------------------------------------------------------------------------
 
 namespace pipe
 {
-	static bool ReadPipe(const os::handle& Pipe, void* Data, size_t DataSize)
+	void read(const os::handle& Pipe, void* Data, size_t DataSize)
 	{
-		DWORD n;
-		return ReadFile(Pipe.native_handle(), Data, static_cast<DWORD>(DataSize), &n, nullptr) && n == DataSize;
+		DWORD BytesRead;
+		if (!ReadFile(Pipe.native_handle(), Data, static_cast<DWORD>(DataSize), &BytesRead, nullptr))
+			throw MAKE_FAR_EXCEPTION(L"Pipe read error"sv);
+
+		if (BytesRead != DataSize)
+			throw MAKE_FAR_EXCEPTION(format(FSTR(L"Pipe read error: {} bytes requested, but {} bytes read"sv), DataSize, BytesRead));
 	}
 
-	static bool WritePipe(const os::handle& Pipe, const void* Data, size_t DataSize)
+	void read(const os::handle& Pipe, string& Data)
 	{
-		DWORD n;
-		return WriteFile(Pipe.native_handle(), Data, static_cast<DWORD>(DataSize), &n, nullptr) && n == DataSize;
+		size_t StringSize;
+		read(Pipe, &StringSize, sizeof(StringSize));
+
+		Data.resize(StringSize);
+
+		if (StringSize)
+			read(Pipe, Data.data(), StringSize * sizeof(string::value_type));
 	}
 
-	bool Read(const os::handle& Pipe, void* Data, size_t DataSize)
+	void write(const os::handle& Pipe, const void* Data, size_t DataSize)
 	{
-		size_t ReadSize = 0;
-		if (!ReadPipe(Pipe, &ReadSize, sizeof(ReadSize)))
-			return false;
+		DWORD BytesWritten;
+		if (!WriteFile(Pipe.native_handle(), Data, static_cast<DWORD>(DataSize), &BytesWritten, nullptr))
+			throw MAKE_FAR_EXCEPTION(L"Pipe write error"sv);
 
-		if (ReadSize != DataSize)
-			return false;
-
-		return ReadPipe(Pipe, Data, DataSize);
+		if (BytesWritten != DataSize)
+			throw MAKE_FAR_EXCEPTION(format(FSTR(L"Pipe write error: {} bytes sent, but {} bytes written"sv), DataSize, BytesWritten));
 	}
 
-	bool Read(const os::handle& Pipe, string& Data)
+	void write(const os::handle& Pipe, string_view const Data)
 	{
-		size_t DataSize = 0;
-		if (!ReadPipe(Pipe, &DataSize, sizeof(DataSize)))
-			return false;
+		write(Pipe, Data.size());
 
-		if (!DataSize)
-			return true;
-
-		wchar_t_ptr_n<256> Buffer(DataSize / sizeof(wchar_t));
-		if (!ReadPipe(Pipe, Buffer.get(), DataSize))
-			return false;
-
-		Data.assign(Buffer.get(), Buffer.size() - 1);
-		return true;
-	}
-
-	bool Write(const os::handle& Pipe, const void* Data, size_t DataSize)
-	{
-		return WritePipe(Pipe, &DataSize, sizeof(DataSize)) && WritePipe(Pipe, Data, DataSize);
-	}
-
-	bool Write(const os::handle& Pipe, const string& Data)
-	{
-		return Write(Pipe, Data.data(), (Data.size() + 1)*sizeof(wchar_t));
+		if (Data.size())
+			write(Pipe, Data.data(), Data.size() * sizeof(string_view::value_type));
 	}
 }

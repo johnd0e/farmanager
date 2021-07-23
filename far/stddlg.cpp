@@ -31,14 +31,19 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "stddlg.hpp"
 
+// Internal:
 #include "dialog.hpp"
 #include "strmix.hpp"
 #include "imports.hpp"
 #include "message.hpp"
 #include "lang.hpp"
-#include "DlgGuid.hpp"
+#include "uuids.far.dialogs.hpp"
 #include "interf.hpp"
 #include "dlgedit.hpp"
 #include "cvtname.hpp"
@@ -48,45 +53,54 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "config.hpp"
 #include "plist.hpp"
 #include "notification.hpp"
+#include "global.hpp"
+#include "language.hpp"
+#include "log.hpp"
 
-#include "platform.fs.hpp"
+// Platform:
+#include "platform.com.hpp"
+#include "platform.process.hpp"
 
-#include "common/function_traits.hpp"
-#include "common/scope_exit.hpp"
+// Common:
+#include "common/from_string.hpp"
+#include "common/function_ref.hpp"
 
+// External:
 #include "format.hpp"
+
+//----------------------------------------------------------------------------
 
 int GetSearchReplaceString(
 	bool IsReplaceMode,
-	const wchar_t *Title,
-	const wchar_t *SubTitle,
+	string_view Title,
+	string_view SubTitle,
 	string& SearchStr,
 	string& ReplaceStr,
-	const wchar_t *TextHistoryName,
-	const wchar_t *ReplaceHistoryName,
+	string_view TextHistoryName,
+	string_view ReplaceHistoryName,
 	bool* pCase,
 	bool* pWholeWords,
 	bool* pReverse,
 	bool* pRegexp,
 	bool* pPreserveStyle,
-	const wchar_t *HelpTopic,
+	string_view const HelpTopic,
 	bool HideAll,
-	const GUID* Id,
-	const std::function<string(bool)>& Picker)
+	const UUID* Id,
+	function_ref<string(bool)> const Picker)
 {
 	int Result = 0;
 
-	if (!TextHistoryName)
-		TextHistoryName = L"SearchText";
+	if (TextHistoryName.empty())
+		TextHistoryName = L"SearchText"sv;
 
-	if (!ReplaceHistoryName)
-		ReplaceHistoryName = L"ReplaceText";
+	if (ReplaceHistoryName.empty())
+		ReplaceHistoryName = L"ReplaceText"sv;
 
-	if (!Title)
-		Title = msg(IsReplaceMode? lng::MEditReplaceTitle : lng::MEditSearchTitle).c_str();
+	if (Title.empty())
+		Title = msg(IsReplaceMode? lng::MEditReplaceTitle : lng::MEditSearchTitle);
 
-	if (!SubTitle)
-		SubTitle = msg(lng::MEditSearchFor).c_str();
+	if (SubTitle.empty())
+		SubTitle = msg(lng::MEditSearchFor);
 
 
 	bool Case=pCase?*pCase:false;
@@ -96,16 +110,16 @@ int GetSearchReplaceString(
 	bool PreserveStyle=pPreserveStyle?*pPreserveStyle:false;
 
 	const auto DlgWidth = 76;
-	const auto WordLabel = msg(lng::MEditSearchPickWord).c_str();
-	const auto SelectionLabel = msg(lng::MEditSearchPickSelection).c_str();
+	const auto& WordLabel = msg(lng::MEditSearchPickWord);
+	const auto& SelectionLabel = msg(lng::MEditSearchPickSelection);
 	const auto WordButtonSize = HiStrlen(WordLabel) + 4;
 	const auto SelectionButtonSize = HiStrlen(SelectionLabel) + 4;
-	const auto SelectionButtonX2 = static_cast<intptr_t>(DlgWidth - 4 - 1);
-	const auto SelectionButtonX1 = static_cast<intptr_t>(SelectionButtonX2 - SelectionButtonSize);
-	const auto WordButtonX2 = static_cast<intptr_t>(SelectionButtonX1 - 1);
-	const auto WordButtonX1 = static_cast<intptr_t>(WordButtonX2 - WordButtonSize);
+	const auto SelectionButtonX2 = static_cast<int>(DlgWidth - 4 - 1);
+	const auto SelectionButtonX1 = static_cast<int>(SelectionButtonX2 - SelectionButtonSize);
+	const auto WordButtonX2 = static_cast<int>(SelectionButtonX1 - 1);
+	const auto WordButtonX1 = static_cast<int>(WordButtonX2 - WordButtonSize);
 
-	const auto YCorrection = IsReplaceMode? 0 : 2;
+	const auto YFix = IsReplaceMode? 0 : 2;
 
 	enum item_id
 	{
@@ -126,29 +140,39 @@ int GetSearchReplaceString(
 		dlg_button_action,
 		dlg_button_all,
 		dlg_button_cancel,
+
+		dlg_count
 	};
 
-	FarDialogItem ReplaceDlgData[]=
+	auto ReplaceDlg = MakeDialogItems<dlg_count>(
 	{
-		{ DI_DOUBLEBOX, 3, 1, DlgWidth - 4, 12 - YCorrection, 0, nullptr, nullptr, 0, Title },
-		{ DI_BUTTON, WordButtonX1, 2, WordButtonX2, 2, 0, nullptr, nullptr, DIF_BTNNOCLOSE, WordLabel },
-		{ DI_BUTTON, SelectionButtonX1, 2, SelectionButtonX2, 2, 0, nullptr, nullptr, DIF_BTNNOCLOSE, SelectionLabel },
-		{ DI_TEXT, 5, 2, 0, 2, 0, nullptr, nullptr, 0, SubTitle },
-		{ DI_EDIT, 5, 3, 70, 3, 0, TextHistoryName, nullptr, DIF_FOCUS | DIF_USELASTHISTORY | (*TextHistoryName? DIF_HISTORY : 0), SearchStr.c_str() },
-		{ DI_TEXT, 5, 4, 0, 4, 0, nullptr, nullptr, 0, msg(lng::MEditReplaceWith).c_str() },
-		{ DI_EDIT, 5, 5, 70, 5, 0, ReplaceHistoryName, nullptr, DIF_USELASTHISTORY | (*ReplaceHistoryName? DIF_HISTORY : 0), ReplaceStr.c_str() },
-		{ DI_TEXT, -1, 6 - YCorrection, 0, 6 - YCorrection, 0, nullptr, nullptr, DIF_SEPARATOR, L"" },
-		{ DI_CHECKBOX, 5, 7 - YCorrection, 0, 7 - YCorrection, Case, nullptr, nullptr, 0, msg(lng::MEditSearchCase).c_str() },
-		{ DI_CHECKBOX, 5, 8 - YCorrection, 0, 8 - YCorrection, WholeWords, nullptr, nullptr, 0, msg(lng::MEditSearchWholeWords).c_str() },
-		{ DI_CHECKBOX, 5, 9 - YCorrection, 0, 9 - YCorrection, Reverse, nullptr, nullptr, 0, msg(lng::MEditSearchReverse).c_str() },
-		{ DI_CHECKBOX, 40, 7 - YCorrection, 0, 7 - YCorrection, Regexp, nullptr, nullptr, 0, msg(lng::MEditSearchRegexp).c_str() },
-		{ DI_CHECKBOX, 40, 8 - YCorrection, 0, 8 - YCorrection, PreserveStyle, nullptr, nullptr, 0, msg(lng::MEditSearchPreserveStyle).c_str() },
-		{ DI_TEXT, -1, 10 - YCorrection, 0, 10 - YCorrection, 0, nullptr, nullptr, DIF_SEPARATOR, L"" },
-		{ DI_BUTTON, 0, 11 - YCorrection, 0, 11 - YCorrection, 0, nullptr, nullptr, DIF_DEFAULTBUTTON | DIF_CENTERGROUP, msg(IsReplaceMode? lng::MEditReplaceReplace : lng::MEditSearchSearch).c_str() },
-		{ DI_BUTTON, 0, 11 - YCorrection, 0, 11 - YCorrection, 0, nullptr, nullptr, DIF_CENTERGROUP, msg(lng::MEditSearchAll).c_str() },
-		{ DI_BUTTON, 0, 11 - YCorrection, 0, 11 - YCorrection, 0, nullptr, nullptr, DIF_CENTERGROUP, msg(lng::MEditSearchCancel).c_str() },
-	};
-	auto ReplaceDlg = MakeDialogItemsEx(ReplaceDlgData);
+		{ DI_DOUBLEBOX, {{3,                 1      }, {DlgWidth-4,        12-YFix}}, DIF_NONE, Title },
+		{ DI_BUTTON,    {{WordButtonX1,      2      }, {WordButtonX2,      2      }}, DIF_BTNNOCLOSE, WordLabel },
+		{ DI_BUTTON,    {{SelectionButtonX1, 2      }, {SelectionButtonX2, 2      }}, DIF_BTNNOCLOSE, SelectionLabel },
+		{ DI_TEXT,      {{5,                 2      }, {0,                 2      }}, DIF_NONE, SubTitle },
+		{ DI_EDIT,      {{5,                 3      }, {70,                3      }}, DIF_FOCUS | DIF_USELASTHISTORY | DIF_HISTORY, SearchStr, },
+		{ DI_TEXT,      {{5,                 4      }, {0,                 4      }}, DIF_NONE, msg(lng::MEditReplaceWith), },
+		{ DI_EDIT,      {{5,                 5      }, {70,                5      }}, DIF_USELASTHISTORY | DIF_HISTORY, ReplaceStr, },
+		{ DI_TEXT,      {{-1,                6-YFix }, {0,                 6-YFix }}, DIF_SEPARATOR, },
+		{ DI_CHECKBOX,  {{5,                 7-YFix }, {0,                 7-YFix }}, DIF_NONE, msg(lng::MEditSearchCase), },
+		{ DI_CHECKBOX,  {{5,                 8-YFix }, {0,                 8-YFix }}, DIF_NONE, msg(lng::MEditSearchWholeWords), },
+		{ DI_CHECKBOX,  {{5,                 9-YFix }, {0,                 9-YFix }}, DIF_NONE, msg(lng::MEditSearchReverse), },
+		{ DI_CHECKBOX,  {{40,                7-YFix }, {0,                 7-YFix }}, DIF_NONE, msg(lng::MEditSearchRegexp), },
+		{ DI_CHECKBOX,  {{40,                8-YFix }, {0,                 8-YFix }}, DIF_NONE, msg(lng::MEditSearchPreserveStyle), },
+		{ DI_TEXT,      {{-1,                10-YFix}, {0,                 10-YFix}}, DIF_SEPARATOR, },
+		{ DI_BUTTON,    {{0,                 11-YFix}, {0,                 11-YFix}}, DIF_CENTERGROUP | DIF_DEFAULTBUTTON, msg(IsReplaceMode? lng::MEditReplaceReplace : lng::MEditSearchSearch), },
+		{ DI_BUTTON,    {{0,                 11-YFix}, {0,                 11-YFix}}, DIF_CENTERGROUP, msg(lng::MEditSearchAll), },
+		{ DI_BUTTON,    {{0,                 11-YFix}, {0,                 11-YFix}}, DIF_CENTERGROUP, msg(lng::MEditSearchCancel), },
+	});
+
+	ReplaceDlg[dlg_edit_search].strHistory = TextHistoryName;
+	ReplaceDlg[dlg_edit_replace].strHistory = ReplaceHistoryName;
+	ReplaceDlg[dlg_checkbox_case].Selected = Case;
+	ReplaceDlg[dlg_checkbox_words].Selected = WholeWords;
+	ReplaceDlg[dlg_checkbox_reverse].Selected = Reverse;
+	ReplaceDlg[dlg_checkbox_regex].Selected = Regexp;
+	ReplaceDlg[dlg_checkbox_style].Selected = PreserveStyle;
+
 
 	if (IsReplaceMode || HideAll)
 	{
@@ -179,7 +203,7 @@ int GetSearchReplaceString(
 	if (!pPreserveStyle)
 		ReplaceDlg[dlg_checkbox_style].Flags |= DIF_DISABLE; // DIF_HIDDEN ??
 
-	const auto& Handler = [&](Dialog* Dlg, intptr_t Msg, intptr_t Param1, void* Param2) -> intptr_t
+	const auto Handler = [&](Dialog* Dlg, intptr_t Msg, intptr_t Param1, void* Param2) -> intptr_t
 	{
 		if (Msg == DN_BTNCLICK && Picker && (Param1 == dlg_button_word || Param1 == dlg_button_selection))
 		{
@@ -192,12 +216,13 @@ int GetSearchReplaceString(
 	};
 
 	const auto Dlg = Dialog::create(ReplaceDlg, Handler);
-	Dlg->SetPosition(-1, -1, DlgWidth, 14 - YCorrection);
+	Dlg->SetPosition({ -1, -1, DlgWidth, 14 - YFix });
 
-	if (HelpTopic && *HelpTopic)
+	if (!HelpTopic.empty())
 		Dlg->SetHelp(HelpTopic);
 
-	if(Id) Dlg->SetId(*Id);
+	if(Id)
+		Dlg->SetId(*Id);
 
 	Dlg->Process();
 
@@ -239,89 +264,102 @@ bool GetString(
 	int* const CheckBoxValue,
 	const string_view CheckBoxText,
 	Plugin* const PluginNumber,
-	const GUID* const Id
+	const UUID* const Id
 )
 {
 	int Substract=5; // дополнительная величина :-)
 	int ExitCode;
 	const auto addCheckBox = Flags&FIB_CHECKBOX && CheckBoxValue && !CheckBoxText.empty();
 	const auto offset = addCheckBox? 2 : 0;
-	FarDialogItem StrDlgData[]=
+
+	enum
 	{
-		{DI_DOUBLEBOX, 3, 1, 72, 4, 0, nullptr, nullptr, 0,                                L""},
-		{DI_TEXT,      5, 2,  0, 2, 0, nullptr, nullptr, DIF_SHOWAMPERSAND,                L""},
-		{DI_EDIT,      5, 3, 70, 3, 0, nullptr, nullptr, DIF_FOCUS|DIF_DEFAULTBUTTON,      L""},
-		{DI_TEXT,     -1, 4,  0, 4, 0, nullptr, nullptr, DIF_SEPARATOR,                    L""},
-		{DI_CHECKBOX,  5, 5,  0, 5, 0, nullptr, nullptr, 0,                                L""},
-		{DI_TEXT,     -1, 6,  0, 6, 0, nullptr, nullptr, DIF_SEPARATOR,                    L""},
-		{DI_BUTTON,    0, 7,  0, 7, 0, nullptr, nullptr, DIF_CENTERGROUP,                  L""},
-		{DI_BUTTON,    0, 7,  0, 7, 0, nullptr, nullptr, DIF_CENTERGROUP,                  L""},
+		gs_doublebox,
+		gs_text,
+		gs_edit,
+		gs_separator_1,
+		gs_checkbox,
+		gs_separator_2,
+		gs_button_1,
+		gs_button_2,
+
+		gs_count
 	};
-	auto StrDlg = MakeDialogItemsEx(StrDlgData);
+
+	auto StrDlg = MakeDialogItems<gs_count>(
+	{
+		{ DI_DOUBLEBOX, {{3,  1}, {72, 4}}, DIF_NONE,                      },
+		{ DI_TEXT,      {{5,  2}, {0,  2}}, DIF_SHOWAMPERSAND,             },
+		{ DI_EDIT,      {{5,  3}, {70, 3}}, DIF_FOCUS | DIF_DEFAULTBUTTON, },
+		{ DI_TEXT,      {{-1, 4}, {0,  4}}, DIF_SEPARATOR,                 },
+		{ DI_CHECKBOX,  {{5,  5}, {0,  5}}, DIF_NONE,                      },
+		{ DI_TEXT,      {{-1, 6}, {0,  6}}, DIF_SEPARATOR,                 },
+		{ DI_BUTTON,    {{0,  7}, {0,  7}}, DIF_CENTERGROUP,               },
+		{ DI_BUTTON,    {{0,  7}, {0,  7}}, DIF_CENTERGROUP,               },
+	});
 
 	if (addCheckBox)
 	{
 		Substract-=2;
-		StrDlg[0].Y2+=2;
-		StrDlg[4].Selected = *CheckBoxValue != 0;
-		StrDlg[4].strData = string(CheckBoxText);
+		StrDlg[gs_doublebox].Y2 += 2;
+		StrDlg[gs_checkbox].Selected = *CheckBoxValue != 0;
+		StrDlg[gs_checkbox].strData = CheckBoxText;
 	}
 
 	if (Flags&FIB_BUTTONS)
 	{
 		Substract-=3;
-		StrDlg[0].Y2+=2;
-		StrDlg[2].Flags&=~DIF_DEFAULTBUTTON;
-		StrDlg[5+offset].Y1=StrDlg[4+offset].Y1=5+offset;
-		StrDlg[4+offset].Type=StrDlg[5+offset].Type=DI_BUTTON;
-		StrDlg[4+offset].Flags=StrDlg[5+offset].Flags=DIF_CENTERGROUP;
-		StrDlg[4+offset].Flags|=DIF_DEFAULTBUTTON;
-		StrDlg[4+offset].strData = msg(lng::MOk);
-		StrDlg[5+offset].strData = msg(lng::MCancel);
+		StrDlg[gs_doublebox].Y2 += 2;
+		StrDlg[gs_edit].Flags &= ~DIF_DEFAULTBUTTON;
+		StrDlg[gs_separator_2 + offset].Y1 = StrDlg[gs_checkbox + offset].Y1 = 5 + offset;
+		StrDlg[gs_checkbox + offset].Type = StrDlg[gs_separator_2 + offset].Type = DI_BUTTON;
+		StrDlg[gs_checkbox + offset].Flags = StrDlg[gs_separator_2 + offset].Flags = DIF_CENTERGROUP;
+		StrDlg[gs_checkbox + offset].Flags |= DIF_DEFAULTBUTTON;
+		StrDlg[gs_checkbox + offset].strData = msg(lng::MOk);
+		StrDlg[gs_separator_2 + offset].strData = msg(lng::MCancel);
 	}
 
 	if (Flags&FIB_EXPANDENV)
 	{
-		StrDlg[2].Flags|=DIF_EDITEXPAND;
+		StrDlg[gs_edit].Flags |= DIF_EDITEXPAND;
 	}
 
 	if (Flags&FIB_EDITPATH)
 	{
-		StrDlg[2].Flags|=DIF_EDITPATH;
+		StrDlg[gs_edit].Flags |= DIF_EDITPATH;
 	}
 
 	if (Flags&FIB_EDITPATHEXEC)
 	{
-		StrDlg[2].Flags|=DIF_EDITPATHEXEC;
+		StrDlg[gs_edit].Flags |= DIF_EDITPATHEXEC;
 	}
 
 	if (!HistoryName.empty())
 	{
-		StrDlg[2].strHistory = string(HistoryName);
-		StrDlg[2].Flags|=DIF_HISTORY|(Flags&FIB_NOUSELASTHISTORY?0:DIF_USELASTHISTORY);
+		StrDlg[gs_edit].strHistory = HistoryName;
+		StrDlg[gs_edit].Flags |= DIF_HISTORY | (Flags & FIB_NOUSELASTHISTORY ? 0 : DIF_USELASTHISTORY);
 	}
 
 	if (Flags&FIB_PASSWORD)
-		StrDlg[2].Type=DI_PSWEDIT;
+		StrDlg[gs_edit].Type = DI_PSWEDIT;
 
 	if (!Title.empty())
-		StrDlg[0].strData = string(Title);
+		StrDlg[gs_doublebox].strData = Title;
 
 	if (!Prompt.empty())
 	{
-		StrDlg[1].strData = string(Prompt);
-		TruncStrFromEnd(StrDlg[1].strData, 66);
+		StrDlg[gs_text].strData = truncate_right(Prompt, 66);
 
 		if (Flags&FIB_NOAMPERSAND)
-			StrDlg[1].Flags&=~DIF_SHOWAMPERSAND;
+			StrDlg[gs_text].Flags &= ~DIF_SHOWAMPERSAND;
 	}
 
 	if (!SrcText.empty())
-		StrDlg[2].strData = string(SrcText);
+		StrDlg[gs_edit].strData = SrcText;
 
 	{
-		const auto Dlg = Dialog::create(make_range(StrDlg.data(), StrDlg.size() - Substract));
-		Dlg->SetPosition(-1,-1,76,offset+((Flags&FIB_BUTTONS)?8:6));
+		const auto Dlg = Dialog::create(span(StrDlg.data(), StrDlg.size() - Substract));
+		Dlg->SetPosition({ -1, -1, 76, offset + (Flags & FIB_BUTTONS? 8 : 6) });
 		if(Id) Dlg->SetId(*Id);
 
 		if (!HelpTopic.empty())
@@ -334,203 +372,128 @@ bool GetString(
 		ExitCode=Dlg->GetExitCode();
 	}
 
-	if (ExitCode == 2 || ExitCode == 4 || (addCheckBox && ExitCode == 6))
+	if (ExitCode == gs_edit || ExitCode == gs_checkbox || (addCheckBox && ExitCode == gs_button_1))
 	{
-		if (!(Flags&FIB_ENABLEEMPTY) && StrDlg[2].strData.empty())
+		if (!(Flags&FIB_ENABLEEMPTY) && StrDlg[gs_edit].strData.empty())
 			return false;
 
-		strDestText = StrDlg[2].strData;
+		strDestText = StrDlg[gs_edit].strData;
 
 		if (addCheckBox)
-			*CheckBoxValue=StrDlg[4].Selected;
+			*CheckBoxValue = StrDlg[gs_checkbox].Selected;
 
 		return true;
 	}
-	
+
 	return false;
 }
 
 /*
   Стандартный диалог ввода пароля.
   Умеет сам запоминать последнего юзвера и пароль.
-
-  Name      - сюда будет помещен юзвер (max 256 символов!!!)
-  Password  - сюда будет помещен пароль (max 256 символов!!!)
-  Title     - заголовок диалога (может быть nullptr)
-  HelpTopic - тема помощи (может быть nullptr)
-  Flags     - флаги (GNP_*)
 */
-bool GetNameAndPassword(const string& Title, string &strUserName, string &strPassword,const wchar_t *HelpTopic,DWORD Flags)
+bool GetNameAndPassword(
+	string_view const Title,
+	string& strUserName,
+	string& strPassword,
+	string_view const HelpTopic,
+	DWORD const Flags)
 {
 	static string strLastName, strLastPassword;
 	int ExitCode;
 	/*
-	  0         1         2         3         4         5         6         7
-	  0123456789012345678901234567890123456789012345678901234567890123456789012345
-	|0                                                                             |
-	|1   +------------------------------- Title -------------------------------+   |
-	|2   | User name                                                           |   |
-	|3   | *******************************************************************|   |
-	|4   | User password                                                       |   |
-	|5   | ******************************************************************* |   |
-	|6   +---------------------------------------------------------------------+   |
-	|7   |                         [ Ok ]   [ Cancel ]                         |   |
-	|8   +---------------------------------------------------------------------+   |
-	|9                                                                             |
+	          1         2         3         4         5         6         7
+	   3456789012345678901234567890123456789012345678901234567890123456789012
+	 1 ╔══════════════════════════════ Title ═══════════════════════════════╗
+	 2 ║ User name                                                          ║
+	 3 ║ __________________________________________________________________↓║
+	 4 ║ User password                                                      ║
+	 5 ║ __________________________________________________________________ ║
+	 6 ╟────────────────────────────────────────────────────────────────────╢
+	 7 ║                         { OK } [ Cancel ]                          ║
+	 8 ╚════════════════════════════════════════════════════════════════════╝
 	*/
-	FarDialogItem PassDlgData[]=
+
+	enum
 	{
-		{DI_DOUBLEBOX,  3, 1,72, 8,0,nullptr,nullptr,0,NullToEmpty(Title.c_str())},
-		{DI_TEXT,       5, 2, 0, 2,0,nullptr,nullptr,0,msg(lng::MNetUserName).c_str()},
-		{DI_EDIT,       5, 3,70, 3,0,L"NetworkUser",nullptr,DIF_FOCUS|DIF_USELASTHISTORY|DIF_HISTORY,(Flags & GNP_USELAST)? strLastName.c_str() : strUserName.c_str()},
-		{DI_TEXT,       5, 4, 0, 4,0,nullptr,nullptr,0,msg(lng::MNetUserPassword).c_str()},
-		{DI_PSWEDIT,    5, 5,70, 5,0,nullptr,nullptr,0,(Flags & GNP_USELAST)? strLastPassword.c_str() : strPassword.c_str()},
-		{DI_TEXT,      -1, 6, 0, 6,0,nullptr,nullptr,DIF_SEPARATOR,L""},
-		{DI_BUTTON,     0, 7, 0, 7,0,nullptr,nullptr,DIF_DEFAULTBUTTON|DIF_CENTERGROUP,msg(lng::MOk).c_str()},
-		{DI_BUTTON,     0, 7, 0, 7,0,nullptr,nullptr,DIF_CENTERGROUP,msg(lng::MCancel).c_str()},
+		pd_doublebox,
+		pd_text_user,
+		pd_edit_user,
+		pd_text_password,
+		pd_edit_password,
+		pd_separator,
+		pd_button_ok,
+		pd_button_cancel,
+
+		pd_count
 	};
-	auto PassDlg = MakeDialogItemsEx(PassDlgData);
+
+	auto PassDlg = MakeDialogItems<pd_count>(
+	{
+		{ DI_DOUBLEBOX, {{3,  1}, {72, 8}}, DIF_NONE, Title, },
+		{ DI_TEXT,      {{5,  2}, {0,  2}}, DIF_NONE, msg(lng::MNetUserName), },
+		{ DI_EDIT,      {{5,  3}, {70, 3}}, DIF_FOCUS | DIF_USELASTHISTORY | DIF_HISTORY, (Flags & GNP_USELAST)? strLastName : strUserName, },
+		{ DI_TEXT,      {{5,  4}, {0,  4}}, DIF_NONE, msg(lng::MNetUserPassword), },
+		{ DI_PSWEDIT,   {{5,  5}, {70, 5}}, DIF_NONE, (Flags & GNP_USELAST)? strLastPassword : strPassword, },
+		{ DI_TEXT,      {{-1, 6}, {0,  6}}, DIF_SEPARATOR, },
+		{ DI_BUTTON,    {{0,  7}, {0,  7}}, DIF_CENTERGROUP | DIF_DEFAULTBUTTON, msg(lng::MOk), },
+		{ DI_BUTTON,    {{0,  7}, {0,  7}}, DIF_CENTERGROUP, msg(lng::MCancel), },
+	});
+
+	PassDlg[pd_edit_user].strHistory = L"NetworkUser"sv;
 
 	{
 		const auto Dlg = Dialog::create(PassDlg);
-		Dlg->SetPosition(-1,-1,76,10);
+		Dlg->SetPosition({ -1, -1, 76, 10 });
 		Dlg->SetId(GetNameAndPasswordId);
 
-		if (HelpTopic)
+		if (!HelpTopic.empty())
 			Dlg->SetHelp(HelpTopic);
 
 		Dlg->Process();
 		ExitCode=Dlg->GetExitCode();
 	}
 
-	if (ExitCode!=6)
+	if (ExitCode != pd_button_ok)
 		return false;
 
 	// запоминаем всегда.
-	strUserName = PassDlg[2].strData;
+	strUserName = PassDlg[pd_edit_user].strData;
 	strLastName = strUserName;
-	strPassword = PassDlg[4].strData;
+	strPassword = PassDlg[pd_edit_password].strData;
 	strLastPassword = strPassword;
 	return true;
 }
 
-static os::com::ptr<IFileIsInUse> CreateIFileIsInUse(const string& File)
-{
-	os::com::ptr<IRunningObjectTable> RunningObjectTable;
-	if (FAILED(GetRunningObjectTable(0, &ptr_setter(RunningObjectTable))))
-		return nullptr;
-
-	os::com::ptr<IMoniker> FileMoniker;
-	if (FAILED(CreateFileMoniker(File.c_str(), &ptr_setter(FileMoniker))))
-		return nullptr;
-
-	os::com::ptr<IEnumMoniker> EnumMoniker;
-	if (FAILED(RunningObjectTable->EnumRunning(&ptr_setter(EnumMoniker))))
-		return nullptr;
-
-	for(;;)
-	{
-		os::com::ptr<IMoniker> Moniker;
-		if (EnumMoniker->Next(1, &ptr_setter(Moniker), nullptr) == S_FALSE)
-			return nullptr;
-
-		DWORD Type;
-		if (FAILED(Moniker->IsSystemMoniker(&Type)) || Type != MKSYS_FILEMONIKER)
-			continue;
-
-		os::com::ptr<IMoniker> PrefixMoniker;
-		if (FAILED(FileMoniker->CommonPrefixWith(Moniker.get(), &ptr_setter(PrefixMoniker))))
-			continue;
-
-		if (FileMoniker->IsEqual(PrefixMoniker.get()) == S_FALSE)
-			continue;
-
-		os::com::ptr<IUnknown> Unknown;
-		if (RunningObjectTable->GetObject(Moniker.get(), &ptr_setter(Unknown)) == S_FALSE)
-			continue;
-
-		FN_RETURN_TYPE(CreateIFileIsInUse) FileIsInUse;
-		if (SUCCEEDED(Unknown->QueryInterface(IID_IFileIsInUse, IID_PPV_ARGS_Helper(&ptr_setter(FileIsInUse)))))
-			return FileIsInUse;
-	}
-}
-
-static size_t enumerate_rm_processes(const string& Filename, DWORD& Reasons, const std::function<bool(string&&)>& Handler)
-{
-	DWORD Session;
-	WCHAR SessionKey[CCH_RM_SESSION_KEY + 1] = {};
-	if (imports.RmStartSession(&Session, 0, SessionKey) != ERROR_SUCCESS)
-		return 0;
-
-	SCOPE_EXIT{ imports.RmEndSession(Session); };
-	auto FilenamePtr = Filename.c_str();
-	if (imports.RmRegisterResources(Session, 1, &FilenamePtr, 0, nullptr, 0, nullptr) != ERROR_SUCCESS)
-		return 0;
-
-	DWORD RmGetListResult;
-	UINT ProceccInfoSizeNeeded;
-	UINT ProcessInfoSize = 1;
-	std::vector<RM_PROCESS_INFO> ProcessInfos(ProcessInfoSize);
-	while ((RmGetListResult = imports.RmGetList(Session, &ProceccInfoSizeNeeded, &ProcessInfoSize, ProcessInfos.data(), &Reasons)) == ERROR_MORE_DATA)
-	{
-		ProcessInfoSize = ProceccInfoSizeNeeded;
-		ProcessInfos.resize(ProcessInfoSize);
-	}
-
-	if (RmGetListResult != ERROR_SUCCESS)
-		return 0;
-
-	for (const auto& Info : ProcessInfos)
-	{
-		auto Str = *Info.strAppName? Info.strAppName : L"Unknown"s;
-
-		if (*Info.strServiceShortName)
-			append(Str, L" ["sv, Info.strServiceShortName, L']');
-
-		append(Str, L" (PID: "sv, str(Info.Process.dwProcessId));
-
-		if (const auto Process = os::handle(OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, Info.Process.dwProcessId)))
-		{
-			os::chrono::time_point CreationTime;
-			if (os::chrono::get_process_creation_time(Process.native_handle(), CreationTime) &&
-				os::chrono::nt_clock::from_filetime(Info.Process.ProcessStartTime) == CreationTime)
-			{
-				string Name;
-				if (os::fs::GetModuleFileName(Process.native_handle(), nullptr, Name))
-				{
-					append(Str, L", "sv, Name);
-				}
-			}
-		}
-
-		Str += L')';
-
-		if (!Handler(std::move(Str)))
-			break;
-	}
-
-	return ProcessInfos.size();
-}
-
-operation OperationFailed(const error_state_ex& ErrorState, const string& Object, lng Title, const string& Description, bool AllowSkip)
+operation OperationFailed(const error_state_ex& ErrorState, string_view const Object, lng Title, string Description, bool AllowSkip, bool AllowSkipAll)
 {
 	std::vector<string> Msg;
+
+	std::optional<os::com::initialize> ComInitialiser;
 	os::com::ptr<IFileIsInUse> FileIsInUse;
-	lng Reason = lng::MObjectLockedReasonOpened;
+
+	auto Reason = lng::MObjectLockedReasonOpened;
 	bool SwitchBtn = false, CloseBtn = false;
-	const auto Error = ErrorState.Win32Error;
-	if(Error == ERROR_ACCESS_DENIED ||
-		Error == ERROR_SHARING_VIOLATION ||
-		Error == ERROR_LOCK_VIOLATION ||
-		Error == ERROR_DRIVE_LOCKED)
+
+	if(any_of(static_cast<long>(ErrorState.Win32Error),
+		ERROR_ACCESS_DENIED,
+		ERROR_SHARING_VIOLATION,
+		ERROR_LOCK_VIOLATION,
+		ERROR_DRIVE_LOCKED
+	))
 	{
 		const auto FullName = ConvertNameToFull(Object);
-		FileIsInUse = CreateIFileIsInUse(FullName);
+
+		ComInitialiser.emplace();
+		FileIsInUse = os::com::create_file_is_in_use(FullName);
 		if (FileIsInUse)
 		{
 			FILE_USAGE_TYPE UsageType;
-			if (FAILED(FileIsInUse->GetUsage(&UsageType)))
+			if (const auto Result = FileIsInUse->GetUsage(&UsageType); FAILED(Result))
+			{
+				LOGWARNING(L"GetUsage()"sv, os::format_error(Result));
 				UsageType = FUT_GENERIC;
+			}
 
 			switch (UsageType)
 			{
@@ -546,14 +509,22 @@ operation OperationFailed(const error_state_ex& ErrorState, const string& Object
 			}
 
 			DWORD Capabilities;
-			if (SUCCEEDED(FileIsInUse->GetCapabilities(&Capabilities)))
+			if (const auto Result = FileIsInUse->GetCapabilities(&Capabilities); FAILED(Result))
+			{
+				LOGWARNING(L"GetCapabilities(): {}"sv, os::format_error(Result));
+			}
+			else
 			{
 				SwitchBtn = (Capabilities & OF_CAP_CANSWITCHTO) != 0;
 				CloseBtn = (Capabilities & OF_CAP_CANCLOSE) != 0;
 			}
 
 			wchar_t* AppName;
-			if(SUCCEEDED(FileIsInUse->GetAppName(&AppName)))
+			if (const auto Result = FileIsInUse->GetAppName(&AppName); FAILED(Result))
+			{
+				LOGWARNING(L"GetAppName(): {}"sv, os::format_error(Result));
+			}
+			else
 			{
 				Msg.emplace_back(AppName);
 			}
@@ -562,7 +533,7 @@ operation OperationFailed(const error_state_ex& ErrorState, const string& Object
 		{
 			const size_t MaxRmProcesses = 5;
 			DWORD Reasons = RmRebootReasonNone;
-			const auto ProcessCount = enumerate_rm_processes(FullName, Reasons, [&](string&& Str)
+			const auto ProcessCount = os::process::enumerate_rm_processes(FullName, Reasons, [&](string&& Str)
 			{
 				Msg.emplace_back(std::move(Str));
 				return Msg.size() != MaxRmProcesses;
@@ -584,27 +555,28 @@ operation OperationFailed(const error_state_ex& ErrorState, const string& Object
 
 			bool SeparatorAdded = false;
 
-			for (const auto& i: Mappings)
+			for (const auto& [Flag, Lng]: Mappings)
 			{
-				if (Reasons & i.first)
-				{
-					if (!SeparatorAdded)
-					{
-						Msg.emplace_back(L"\1"sv);
-						SeparatorAdded = true;
-					}
+				if (!(Reasons & Flag))
+					continue;
 
-					Msg.emplace_back(msg(i.second));
+				if (!SeparatorAdded)
+				{
+					Msg.emplace_back(L"\1"sv);
+					SeparatorAdded = true;
 				}
+
+				Msg.emplace_back(msg(Lng));
 			}
 		}
 	}
 
-	std::vector<string> Msgs{Description, QuoteOuterSpace(string(Object))};
+	std::vector Msgs{std::move(Description), QuoteOuterSpace(Object)};
 	if(!Msg.empty())
 	{
 		Msgs.emplace_back(format(msg(lng::MObjectLockedReason), msg(Reason)));
-		Msgs.insert(Msgs.end(), ALL_CONST_RANGE(Msg));
+		std::move(ALL_RANGE(Msg), std::back_inserter(Msgs));
+		Msg.clear();
 	}
 
 	std::vector<lng> Buttons;
@@ -617,44 +589,58 @@ operation OperationFailed(const error_state_ex& ErrorState, const string& Object
 	if(AllowSkip)
 	{
 		Buttons.emplace_back(lng::MDeleteSkip);
-		Buttons.emplace_back(lng::MDeleteFileSkipAll);
+		if (AllowSkipAll)
+		{
+			Buttons.emplace_back(lng::MDeleteFileSkipAll);
+		}
 	}
-	Buttons.emplace_back(lng::MDeleteCancel);
+	Buttons.emplace_back(lng::MCancel);
 
-	listener Listener([](const std::any& Payload)
+	std::optional<listener> Listener;
+	if (SwitchBtn)
 	{
-		// Switch asynchroniously after the message is reopened,
-		// otherwise Far will lose the focus too early
-		// and reopened message will cause window flashing.
-		SwitchToWindow(std::any_cast<HWND>(Payload));
-	});
+		Listener.emplace([](const std::any& Payload)
+		{
+			// Switch asynchronously after the message is reopened,
+			// otherwise Far will lose the focus too early
+			// and reopened message will cause window flashing.
+			SwitchToWindow(std::any_cast<HWND>(Payload));
+		});
+	}
 
-	int Result;
+	int MsgResult;
 	for(;;)
 	{
-		Result = Message(MSG_WARNING, ErrorState,
+		MsgResult = Message(MSG_WARNING, ErrorState,
 			msg(Title),
 			Msgs,
 			Buttons);
 
 		if(SwitchBtn)
 		{
-			if(Result == Message::first_button)
+			if (MsgResult == Message::first_button)
 			{
 				HWND Window = nullptr;
-				if (FileIsInUse && SUCCEEDED(FileIsInUse->GetSwitchToHWND(&Window)))
+				if (FileIsInUse)
 				{
-					message_manager::instance().notify(Listener.GetEventName(), Window);
+					if (const auto Result = FileIsInUse->GetSwitchToHWND(&Window); FAILED(Result))
+					{
+						LOGWARNING(L"GetSwitchToHWND(): {}"sv, os::format_error(Result));
+					}
+					else
+					{
+						message_manager::instance().notify(Listener->GetEventName(), Window);
+					}
 				}
 				continue;
 			}
-			else if(Result > 0)
+			else if (MsgResult > 0)
 			{
-				--Result;
+				--MsgResult;
 			}
 		}
 
-		if(CloseBtn && Result == Message::first_button)
+		if(CloseBtn && MsgResult == Message::first_button)
 		{
 			// close & retry
 			if (FileIsInUse)
@@ -665,10 +651,33 @@ operation OperationFailed(const error_state_ex& ErrorState, const string& Object
 		break;
 	}
 
-	if (Result < 0 || (!AllowSkip && Result == Message::second_button))
+	if (MsgResult < 0 || static_cast<size_t>(MsgResult) == Buttons.size() - 1)
 		return operation::cancel;
 
-	return static_cast<operation>(Result);
+	return static_cast<operation>(MsgResult);
+}
+
+bool retryable_ui_operation(function_ref<bool()> const Action, string_view const Name, lng const ErrorDescription, bool& SkipErrors)
+{
+	while (!Action())
+	{
+		switch (const auto ErrorState = last_error(); SkipErrors? operation::skip_all : OperationFailed(ErrorState, Name, lng::MError, msg(ErrorDescription)))
+		{
+		case operation::retry:
+			continue;
+
+		case operation::skip_all:
+			SkipErrors = true;
+			[[fallthrough]];
+		case operation::skip:
+			return false;
+
+		case operation::cancel:
+			cancel_operation();
+		}
+	}
+
+	return true;
 }
 
 static string GetReErrorString(int code)
@@ -707,16 +716,16 @@ static string GetReErrorString(int code)
 	default:
 		return L"Unknown error"s;
 	}
-};
+}
 
-void ReCompileErrorMessage(const RegExp& re, const string& str)
+void ReCompileErrorMessage(const RegExp& re, string_view const str)
 {
 	Message(MSG_WARNING | MSG_LEFTALIGN,
 		msg(lng::MError),
 		{
 			GetReErrorString(re.LastError()),
-			str,
-			string(re.ErrorPosition(), L' ') + L'^'
+			string(str),
+			string(re.ErrorPosition(), L' ') + L'↑'
 		},
 		{ lng::MOk });
 }
@@ -736,9 +745,9 @@ void ReMatchErrorMessage(const RegExp& re)
 
 static void GetRowCol(const string& Str, bool Hex, goto_coord& Row, goto_coord& Col)
 {
-	const auto& Parse = [Hex](string Part, goto_coord& Dest)
+	const auto Parse = [Hex](string Part, goto_coord& Dest)
 	{
-		Part.resize(std::remove(ALL_RANGE(Part), L' ') - Part.begin());
+		inplace::erase_all(Part, L' ');
 
 		if (Part.empty())
 			return;
@@ -803,11 +812,11 @@ static void GetRowCol(const string& Str, bool Hex, goto_coord& Row, goto_coord& 
 		if (!Radix)
 			Radix = Hex? 16 : 10;
 
-		Dest.value = std::stoull(Part, nullptr, Radix);
+		Dest.value = from_string<unsigned long long>(Part, nullptr, Radix);
 		Dest.exist = true;
 	};
 
-	const auto SeparatorPos = Str.find_first_of(L".,;:");
+	const auto SeparatorPos = Str.find_first_of(L".,;:"sv);
 
 	if (SeparatorPos == Str.npos)
 	{
@@ -842,10 +851,28 @@ bool GoToRowCol(goto_coord& Row, goto_coord& Col, bool& Hex, string_view const H
 		GetRowCol(strData, Hex, Row, Col);
 		return true;
 	}
-	catch (const std::exception&)
+	catch (const std::exception& e)
 	{
-		// TODO: log
+		LOGWARNING(L"{}"sv, e);
 		// maybe we need to display a message in case of an incorrect input
 		return false;
 	}
+}
+
+bool RetryAbort(std::vector<string>&& Messages)
+{
+	if (Global->WindowManager && !Global->WindowManager->ManagerIsDown() && far_language::instance().is_loaded())
+	{
+		return Message(FMSG_WARNING,
+			msg(lng::MError),
+			std::move(Messages),
+			{ lng::MRetry, lng::MAbort }) == Message::first_button;
+	}
+
+	std::wcerr << L"\nError:\n\n"sv;
+
+	for (const auto& i: Messages)
+		std::wcerr << i << L'\n';
+
+	return ConsoleYesNo(L"Retry"sv, false);
 }

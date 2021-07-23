@@ -35,7 +35,18 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "plugin.hpp"
+
+// Platform:
+
+// Common:
+#include "common/noncopyable.hpp"
+#include "common/utility.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 // Macro Const
 enum
@@ -51,18 +62,18 @@ enum
 
 enum MACRODISABLEONLOAD
 {
-	MDOL_ALL            = 0x80000000, // дисаблим все макросы при загрузке
-	MDOL_AUTOSTART      = 0x00000001, // дисаблим автостартующие макросы
+	MDOL_AUTOSTART      = 0_bit, // дисаблим автостартующие макросы
+	MDOL_ALL            = 31_bit, // дисаблим все макросы при загрузке
 };
 
 class TVar;
+struct point;
 
 struct MacroPanelSelect
 {
 	string Item;
 	long long Index;
 	int     Action;
-	DWORD   ActionFlags;
 	int     Mode;
 };
 
@@ -73,29 +84,29 @@ class KeyMacro: noncopyable
 public:
 	KeyMacro();
 
-	static bool AddMacro(const GUID& PluginId,const MacroAddMacroV1* Data);
-	static bool DelMacro(const GUID& PluginId,void* Id);
+	static bool AddMacro(const UUID& PluginId, const MacroAddMacroV1* Data);
+	static bool DelMacro(const UUID& PluginId, void* Id);
 	static bool ExecuteString(MacroExecuteString *Data);
-	static bool GetMacroKeyInfo(const string& strArea,int Pos,string &strKeyName,string &strDescription);
-	static bool IsDisableOutput();
+	static bool GetMacroKeyInfo(const string& StrArea,int Pos,string &strKeyName,string &strDescription);
+	static bool IsOutputDisabled();
 	static bool IsExecuting() { return GetExecutingState() != MACROSTATE_NOMACRO; }
-	static bool IsHistoryDisable(int TypeHistory);
+	static bool IsHistoryDisabled(int TypeHistory);
 	static bool MacroExists(int Key, FARMACROAREA Area, bool UseCommon);
 	static void RunStartMacro();
 	static bool SaveMacros(bool always);
 	static void SetMacroConst(int ConstIndex, long long Value);
-	static bool PostNewMacro(const wchar_t* Sequence, FARKEYMACROFLAGS Flags, DWORD AKey = 0);
+	static bool PostNewMacro(const wchar_t* Sequence, FARKEYMACROFLAGS InputFlags, DWORD AKey = 0);
 
-	intptr_t CallFar(intptr_t OpCode, FarMacroCall* Data);
+	intptr_t CallFar(intptr_t CheckCode, FarMacroCall* Data);
 	bool CheckWaitKeyFunc() const;
 	int  GetState() const;
 	int  GetKey();
-	DWORD GetMacroParseError(COORD* ErrPos, string& ErrSrc) const;
+	static DWORD GetMacroParseError(point& ErrPos, string& ErrSrc);
 	FARMACROAREA GetArea() const { return m_Area; }
-	const wchar_t* GetStringToPrint() const { return m_StringToPrint; }
+	string_view GetStringToPrint() const { return m_StringToPrint; }
 	bool IsRecording() const { return m_Recording != MACROSTATE_NOMACRO; }
 	bool LoadMacros(bool FromFar, bool InitedRAM=true, const FarMacroLoad *Data=nullptr);
-	bool ParseMacroString(const wchar_t* Sequence,FARKEYMACROFLAGS Flags,bool skipFile);
+	bool ParseMacroString(const wchar_t* Sequence,FARKEYMACROFLAGS Flags,bool skipFile) const;
 	int  PeekKey() const;
 	bool ProcessEvent(const FAR_INPUT_RECORD *Rec);
 	void SetArea(FARMACROAREA Area) { m_Area=Area; }
@@ -105,7 +116,7 @@ private:
 	static int GetExecutingState();
 	intptr_t AssignMacroDlgProc(Dialog* Dlg,intptr_t Msg,intptr_t Param1,void* Param2);
 	int  AssignMacroKey(DWORD& MacroKey, unsigned long long& Flags);
-	bool GetMacroSettings(int Key, unsigned long long &Flags, const wchar_t *Src = nullptr, const wchar_t *Descr = nullptr);
+	bool GetMacroSettings(int Key, unsigned long long &Flags, string_view Src = {}, string_view Descr = {});
 	intptr_t ParamMacroDlgProc(Dialog* Dlg,intptr_t Msg,intptr_t Param1,void* Param2);
 	void RestoreMacroChar() const;
 
@@ -114,9 +125,9 @@ private:
 	FARMACROSTATE m_Recording;
 	string m_RecCode;
 	string m_RecDescription;
-	int m_InternalInput;
-	int m_WaitKey;
-	const wchar_t* m_StringToPrint;
+	int m_InternalInput{};
+	int m_WaitKey{};
+	string_view m_StringToPrint;
 };
 
 inline bool IsMenuArea(int Area){return Area==MACROAREA_MAINMENU || Area==MACROAREA_MENU || Area==MACROAREA_DISKS || Area==MACROAREA_USERMENU || Area==MACROAREA_SHELLAUTOCOMPLETION || Area==MACROAREA_DIALOGAUTOCOMPLETION;}

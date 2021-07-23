@@ -31,8 +31,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "ctrlobj.hpp"
 
+// Internal:
 #include "manager.hpp"
 #include "cmdline.hpp"
 #include "hilight.hpp"
@@ -41,7 +46,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "filefilterparams.hpp"
 #include "panel.hpp"
 #include "filepanels.hpp"
-#include "syslog.hpp"
 #include "interf.hpp"
 #include "config.hpp"
 #include "dirmix.hpp"
@@ -50,29 +54,32 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "plugins.hpp"
 #include "scrbuf.hpp"
 #include "global.hpp"
+#include "farversion.hpp"
+
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
 
 ControlObject::ControlObject()
 {
-	_OT(SysLog(L"[%p] ControlObject::ControlObject()", this));
-
 	SetColor(COL_COMMANDLINEUSERSCREEN);
 	GotoXY(0, ScrY - 3);
-	ShowCopyright();
+	ShowVersion(false);
 	GotoXY(0, ScrY - 2);
-	MoveCursor(0, ScrY - 1);
+	MoveCursor({ 0, ScrY - 1 });
 
 	Global->WindowManager->InitDesktop();
 
 	HiFiles = std::make_unique<highlight::configuration>();
 	Plugins = std::make_unique<PluginManager>();
 
-	CmdHistory = std::make_unique<History>(HISTORYTYPE_CMD, string{}, Global->Opt->SaveHistory);
-
-	FolderHistory = std::make_unique<History>(HISTORYTYPE_FOLDER, string{}, Global->Opt->SaveFoldersHistory);
-	FolderHistory->SetAddMode(true, 2, true);
-
-	ViewHistory = std::make_unique<History>(HISTORYTYPE_VIEW, string{}, Global->Opt->SaveViewHistory);
-	ViewHistory->SetAddMode(true,Global->Opt->FlagPosixSemantics?1:2,true);
+	CmdHistory = std::make_unique<History>(HISTORYTYPE_CMD, string_view{}, Global->Opt->SaveHistory, false);
+	FolderHistory = std::make_unique<History>(HISTORYTYPE_FOLDER, string_view{}, Global->Opt->SaveFoldersHistory, true);
+	ViewHistory = std::make_unique<History>(HISTORYTYPE_VIEW, string_view{}, Global->Opt->SaveViewHistory, true);
 
 	FileFilter::InitFilter();
 }
@@ -88,6 +95,7 @@ void ControlObject::Init(int DirCount)
 	Global->WindowManager->PluginCommit();
 	Plugins->LoadPlugins();
 	Global->ScrBuf->SetTitle(strOldTitle);
+	Macro.LoadMacros(true);
 
 	FPanels->LeftPanel()->Update(0);
 	FPanels->RightPanel()->Update(0);
@@ -96,9 +104,10 @@ void ControlObject::Init(int DirCount)
 
 	FarChDir(FPanels->ActivePanel()->GetCurDir());
 
-	Macro.LoadMacros(true);
-	FPanels->LeftPanel()->SetCustomSortMode(Global->Opt->LeftPanel.SortMode, SO_KEEPCURRENT);
-	FPanels->RightPanel()->SetCustomSortMode(Global->Opt->RightPanel.SortMode, SO_KEEPCURRENT);
+	// BUGBUG
+	FPanels->LeftPanel()->SetCustomSortMode(panel_sort(Global->Opt->LeftPanel.SortMode.Get()), sort_order::keep, false);
+	FPanels->RightPanel()->SetCustomSortMode(panel_sort(Global->Opt->RightPanel.SortMode.Get()), sort_order::keep, false);
+
 	Global->WindowManager->SwitchToPanels();  // otherwise panels are empty
 }
 
@@ -107,7 +116,9 @@ void ControlObject::CreateDummyFilePanels()
 	FPanels = FilePanels::create(false, 0);
 }
 
-ControlObject::~ControlObject()
+ControlObject::~ControlObject() = default;
+
+void ControlObject::close()
 {
 	if (Global->CriticalInternalError)
 	{
@@ -115,48 +126,44 @@ ControlObject::~ControlObject()
 		return;
 	}
 
-	_OT(SysLog(L"[%p] ControlObject::~ControlObject()", this));
-
 	// dummy_panel indicates /v or /e mode
 	if (FPanels && FPanels->ActivePanel() && !std::dynamic_pointer_cast<dummy_panel>(FPanels->ActivePanel()))
 	{
 		if (Global->Opt->AutoSaveSetup)
 			Global->Opt->Save(false);
-
-		if (FPanels->ActivePanel()->GetMode() != panel_mode::PLUGIN_PANEL)
-		{
-			FolderHistory->AddToHistory(FPanels->ActivePanel()->GetCurDir());
-		}
 	}
 
 	Global->WindowManager->CloseAll();
 	FileFilter::CloseFilter();
 	History::CompactHistory();
 	FilePositionCache::CompactHistory();
+
+	FPanels.reset();
+	Plugins->UnloadPlugins();
 }
 
 
-void ControlObject::ShowCopyright(DWORD Flags)
+void ControlObject::ShowVersion(bool const Direct)
 {
-	if (Flags&1)
+	if (Direct)
 	{
-		std::wcout << Global->Version() << L'\n' << Global->Copyright() << std::endl;
+		std::wcout << build::version_string() << L'\n' << build::copyright() << L'\n' << std::endl;
+		return;
 	}
-	else
-	{
-		COORD Size, CursorPosition;
-		console.GetSize(Size);
-		console.GetCursorPosition(CursorPosition);
-		int FreeSpace=Size.Y-CursorPosition.Y-1;
 
-		if (FreeSpace<5)
-			ScrollScreen(5-FreeSpace);
+	point Size;
+	console.GetSize(Size);
+	point CursorPosition;
+	console.GetCursorPosition(CursorPosition);
+	const auto FreeSpace = Size.y - CursorPosition.y - 1;
 
-		GotoXY(0,ScrY-4);
-		Text(Global->Version());
-		GotoXY(0,ScrY-3);
-		Text(Global->Copyright());
-	}
+	if (FreeSpace < 5 && DoWeReallyHaveToScroll(5))
+		ScrollScreen(5-FreeSpace);
+
+	GotoXY(0,ScrY-4);
+	Text(build::version_string());
+	GotoXY(0,ScrY-3);
+	Text(build::copyright());
 }
 
 FilePanels* ControlObject::Cp() const

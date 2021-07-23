@@ -1,4 +1,4 @@
-#include <all_far.h>
+﻿#include <all_far.h>
 #pragma hdrstop
 
 #include "Int.h"
@@ -71,7 +71,7 @@ FARINProc::~FARINProc()
 	SetLastError(err);
 }
 
-void _cdecl FARINProc::Say(LPCSTR s,...)
+void __cdecl FARINProc::Say(LPCSTR s,...)
 {
 	va_list ap;
 	char    str[500];

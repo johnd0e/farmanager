@@ -1,3 +1,8 @@
+﻿#ifndef PROCLNG_HPP_65EE0261_7B48_4884_9EAF_6DC567E13F68
+#define PROCLNG_HPP_65EE0261_7B48_4884_9EAF_6DC567E13F68
+
+#pragma once
+
 enum
 {
 	MOk,
@@ -65,8 +70,8 @@ enum
 	MChangePriority,
 	MConfirmChangePriority,
 
-	MGDIObjects,
-	MUSERObjects,
+	MTitleGDIObjects,
+	MTitleUSERObjects,
 
 	MCommandLine,
 	MCurDir,
@@ -76,15 +81,18 @@ enum
 	MTitleFileDesc,
 
 	MTitleModules,
-	MColBaseSize,
+	MColBase,
+	MColSize,
 	MColPathVerDesc,
 	MColPathVerDescNotShown,
-	MTitleHandleInfo,
-	MHandleInfoHdr,
+	MHandles,
+	MHandlesHandle,
+	MHandlesAccess,
+	MHandlesType,
+	MHandlesName,
 
 	MConfigTitle,
 	MConfigAddToDisksMenu,
-	MConfigDisksMenuDigit,
 	MConfigAddToPluginMenu,
 
 	MIncludeAdditionalInfo,
@@ -153,14 +161,14 @@ enum
 	MColVirtualBytes,
 	MColVirtualBytesPeak,
 
-	MperSec,
+	MPerSec,
 
 	MSortBy,
 	MSortByName,
 	MSortByExt,
-	MSortByTime,
 	MSortBySize,
 	MSortByUnsorted,
+	MSortByTime,
 	MSortByDescriptions,
 	MSortByOwner,
 	MUseSortGroups,
@@ -176,3 +184,5 @@ enum
 	MViewDDD,
 	MViewWithOptions,
 };
+
+#endif // PROCLNG_HPP_65EE0261_7B48_4884_9EAF_6DC567E13F68

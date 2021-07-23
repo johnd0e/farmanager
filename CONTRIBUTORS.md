@@ -108,6 +108,24 @@
 * Timofey Vasenin
 * Michael Z. Kadaner
 * Vladimir Fekete
+* Daniele Babolin
+* Jesko Huettenhain
+* Andrzej Rudnik
+* Dzmitry Kosko
+* Szabolcs Szász
+* HamRusTal
+* Michal Zobec
+* Gerardo Garcia
+* Bernd Giesen
+* Juri Petrashko
+* Valentіn Kolesnіkov
+* Вя Лi
+* Michal Breškovec
+* Miroslav Pták
+* Peter Valach
+* Paweł Pawlak
+* XSAk
+* Arūnas Bartišius
  
 > And special thanks to all of our community members!  
 > You are not less important than the people mentioned here.

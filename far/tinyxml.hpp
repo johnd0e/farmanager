@@ -39,24 +39,14 @@ namespace tinyxml_impl
 {
 WARNING_PUSH()
 
-WARNING_DISABLE_GCC("-Wzero-as-null-pointer-constant")
 WARNING_DISABLE_GCC("-Wsuggest-override")
+WARNING_DISABLE_GCC("-Wzero-as-null-pointer-constant")
 
 WARNING_DISABLE_CLANG("-Weverything")
 
-#ifdef MEMCHECK
-#pragma push_macro("new")
-#undef new
-#endif
-
 #include "thirdparty/tinyxml2/tinyxml2.h"
 
-#ifdef MEMCHECK
-#pragma pop_macro("new")
-#endif
-
 WARNING_POP()
-
 }
 
 namespace tinyxml = tinyxml_impl::tinyxml2;

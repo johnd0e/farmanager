@@ -31,8 +31,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "dizlist.hpp"
 
+// Internal:
 #include "lang.hpp"
 #include "TPreRedrawFunc.hpp"
 #include "interf.hpp"
@@ -40,24 +45,25 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "message.hpp"
 #include "config.hpp"
 #include "pathmix.hpp"
-#include "strmix.hpp"
 #include "filestr.hpp"
 #include "encoding.hpp"
 #include "exception.hpp"
 #include "datetime.hpp"
 #include "global.hpp"
+#include "file_io.hpp"
+#include "log.hpp"
 
+// Platform:
 #include "platform.fs.hpp"
 
+// Common:
 #include "common/enum_tokens.hpp"
+#include "common/scope_exit.hpp"
 
+// External:
 #include "format.hpp"
 
-DizList::DizList():
-	m_CodePage(CP_DEFAULT),
-	m_Modified()
-{
-}
+//----------------------------------------------------------------------------
 
 void DizList::Reset()
 {
@@ -66,7 +72,7 @@ void DizList::Reset()
 	m_OrderForWrite.clear();
 	m_DizFileName.clear();
 	m_Modified = false;
-	m_CodePage = CP_DEFAULT;
+	m_CodePage.reset();
 }
 
 static void PR_ReadingMsg()
@@ -77,9 +83,9 @@ static void PR_ReadingMsg()
 			msg(lng::MReadingDiz)
 		},
 		{});
-};
+}
 
-void DizList::Read(const string& Path, const string* DizName)
+void DizList::Read(string_view const Path, const string* DizName)
 {
 	Reset();
 
@@ -90,21 +96,26 @@ void DizList::Read(const string& Path, const string* DizName)
 
 	SCOPED_ACTION(TPreRedrawFuncGuard)(std::make_unique<DizPreRedrawItem>());
 
-	const auto& ReadDizFile = [this](const string_view Name)
+	const auto ReadDizFile = [this](const string_view Name)
 	{
 		const os::fs::file DizFile(Name, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING);
 		if (!DizFile)
 			return false;
 
-		const time_check TimeCheck(time_check::mode::delayed, GetRedrawTimeout());
+		const time_check TimeCheck;
 
 		const auto CodePage = GetFileCodepage(DizFile, Global->Opt->Diz.AnsiByDefault? encoding::codepage::ansi() : encoding::codepage::oem(), nullptr, false);
 
 		auto LastAdded = m_DizData.end();
 		string DizText;
-		for (const auto& i: enum_file_lines(DizFile, CodePage))
+
+		os::fs::filebuf StreamBuffer(DizFile, std::ios::in);
+		std::istream Stream(&StreamBuffer);
+		Stream.exceptions(Stream.badbit | Stream.failbit);
+
+		for (const auto& i: enum_lines(Stream, CodePage))
 		{
-			assign(DizText, i.Str);
+			DizText = i.Str;
 
 			if (TimeCheck)
 			{
@@ -137,11 +148,11 @@ void DizList::Read(const string& Path, const string* DizName)
 				}
 				else
 				{
-					DescBegin = NameEnd = std::find(NameBegin, DizText.cend(), L' ');
+					DescBegin = NameEnd = std::find_if(NameBegin, DizText.cend(), std::iswblank);
 				}
 
 				// Insert unconditionally
-				LastAdded = Insert(string(NameBegin, NameEnd));
+				LastAdded = Insert({ &*NameBegin, static_cast<size_t>(NameEnd - NameBegin) });
 				LastAdded->second.emplace_back(DescBegin, DizText.cend());
 			}
 			else if (LastAdded != m_DizData.end())
@@ -152,41 +163,59 @@ void DizList::Read(const string& Path, const string* DizName)
 
 		m_CodePage = CodePage;
 		m_Modified = false;
-		assign(m_DizFileName, Name);
+		m_DizFileName = Name;
 
 		return true;
 	};
 
+	const auto try_read_diz_file = [&](const string_view Name)
+	{
+		try
+		{
+			return ReadDizFile(Name);
+		}
+		catch(std::exception const& e)
+		{
+			m_DizData.clear();
+			m_DizFileName.clear();
+			m_Modified = false;
+
+			LOGWARNING(L"{}"sv, e);
+
+			return false;
+		}
+	};
+
 	if (DizName)
 	{
-		ReadDizFile(*DizName);
+		try_read_diz_file(*DizName);
 	}
 	else if (PathCanHoldRegularFile(Path))
 	{
 		for (const auto& i: enum_tokens_with_quotes(Global->Opt->Diz.strListNames.Get(), L",;"sv))
 		{
-			if (ReadDizFile(path::join(Path, i)))
+			if (try_read_diz_file(path::join(Path, i)))
 				break;
 		}
 	}
 }
 
-const wchar_t* DizList::Get(const string& Name, const string& ShortName, const long long FileSize) const
+string_view DizList::Get(const string& Name, const string& ShortName, const long long FileSize) const
 {
 	const auto Iterator = Find(Name, ShortName);
 
 	if (Iterator == m_DizData.end())
 	{
-		return nullptr;
+		return {};
 	}
 
 	const auto& Description = Iterator->second.front();
 	if (Description.empty())
 	{
-		return nullptr;
+		return {};
 	}
 
-	auto Begin = Description.begin();
+	auto Begin = std::find_if_not(ALL_CONST_RANGE(Description), std::iswblank);
 
 	if (std::iswdigit(*Begin))
 	{
@@ -203,7 +232,7 @@ const wchar_t* DizList::Get(const string& Name, const string& ShortName, const l
 			}
 		}
 
-		if (SkipSize && std::iswblank(*DescrIterator))
+		if (SkipSize && DescrIterator != Description.cend() && std::iswblank(*DescrIterator))
 		{
 			Begin = DescrIterator;
 		}
@@ -212,46 +241,40 @@ const wchar_t* DizList::Get(const string& Name, const string& ShortName, const l
 	Begin = std::find_if_not(Begin, Description.cend(), std::iswblank);
 	if (Begin == Description.cend())
 	{
-		return nullptr;
+		return {};
 	}
 
-	return &*Begin;
+	return string_view(Description).substr(Begin - Description.begin());
 }
 
-template<class T>
-static auto Find_t(T& Map, const string& Name, const string& ShortName, uintptr_t Codepage)
+DizList::desc_map::iterator DizList::Find(const string& Name, const string& ShortName)
 {
-	auto Iterator = Map.find(Name);
-	if (Iterator == Map.end())
-		Iterator = Map.find(ShortName);
+	auto Iterator = m_DizData.find(Name);
+	if (Iterator == m_DizData.end())
+		Iterator = m_DizData.find(ShortName);
 
 	//если файл описаний был в OEM/ANSI то имена файлов могут не совпадать с юникодными
-	if (Iterator == Map.end() && !IsUnicodeOrUtfCodePage(Codepage) && Codepage != CP_DEFAULT)
+	if (Iterator == m_DizData.end() && m_CodePage && !IsUnicodeOrUtfCodePage(*m_CodePage))
 	{
-		const auto strRecoded = encoding::get_chars(Codepage, encoding::get_bytes(Codepage, Name));
+		const auto strRecoded = encoding::get_chars(*m_CodePage, encoding::get_bytes(*m_CodePage, Name));
 		if (strRecoded == Name)
 		{
 			return Iterator;
 		}
-		return Map.find(strRecoded);
+		return m_DizData.find(strRecoded);
 	}
 
 	return Iterator;
 }
 
-DizList::desc_map::iterator DizList::Find(const string& Name, const string& ShortName)
-{
-	return Find_t(m_DizData, Name, ShortName, m_CodePage);
-}
-
 DizList::desc_map::const_iterator DizList::Find(const string& Name, const string& ShortName) const
 {
-	return Find_t(m_DizData, Name, ShortName, m_CodePage);
+	return const_cast<DizList&>(*this).Find(Name, ShortName);
 }
 
-DizList::desc_map::iterator DizList::Insert(const string& Name)
+DizList::desc_map::iterator DizList::Insert(string_view const Name)
 {
-	auto Iterator = m_DizData.emplace(Name, std::list<string>());
+	auto Iterator = m_DizData.emplace(Name, description_data{});
 	m_OrderForWrite.push_back(&*Iterator);
 	return Iterator;
 }
@@ -267,7 +290,7 @@ bool DizList::Erase(const string& Name,const string& ShortName)
 	m_OrderForWrite.erase(std::find(ALL_RANGE(m_OrderForWrite), &*Iterator));
 
 	// Sometimes client can keep the pointer after erasure and use it,
-	// e. g. if description has been deleted during file moving and filelist decided to redraw in the process.
+	// e. g. if a description has been deleted during file moving and filelist decided to redraw in the process.
 	// Zeroing the pointer via some callback could be quite complex, so we just keep the data alive for a while:
 	m_RemovedEntries.emplace_back(std::move(Iterator->second));
 	m_DizData.erase(Iterator);
@@ -275,12 +298,13 @@ bool DizList::Erase(const string& Name,const string& ShortName)
 	return true;
 }
 
-bool DizList::Flush(const string& Path,const string* DizName)
+bool DizList::Flush(string_view const Path, const string* DizName)
 {
 	if (!m_Modified)
-	{
 		return true;
-	}
+
+	SCOPE_SUCCESS{ m_Modified = false; };
+
 
 	if (DizName)
 	{
@@ -300,91 +324,73 @@ bool DizList::Flush(const string& Path,const string* DizName)
 			return false;
 	}
 
-	DWORD FileAttr=os::fs::get_file_attributes(m_DizFileName);
+	const auto FileAttr = os::fs::get_file_attributes(m_DizFileName);
 
-	if (FileAttr != INVALID_FILE_ATTRIBUTES)
+	if (FileAttr != INVALID_FILE_ATTRIBUTES && FileAttr & FILE_ATTRIBUTE_READONLY)
 	{
-		if (FileAttr&FILE_ATTRIBUTE_READONLY)
-		{
-			if(Global->Opt->Diz.ROUpdate)
-			{
-				if(os::fs::set_file_attributes(m_DizFileName,FileAttr))
-				{
-					FileAttr^=FILE_ATTRIBUTE_READONLY;
-				}
-			}
-		}
-
-		if(!(FileAttr&FILE_ATTRIBUTE_READONLY))
-		{
-			os::fs::set_file_attributes(m_DizFileName,FILE_ATTRIBUTE_ARCHIVE);
-		}
-		else
-		{
+		if (!Global->Opt->Diz.ROUpdate &&
 			Message(MSG_WARNING,
 				msg(lng::MError),
 				{
-					msg(lng::MCannotUpdateDiz),
-					msg(lng::MCannotUpdateRODiz)
+					m_DizFileName,
+					msg(lng::MEditRO),
+					msg(lng::MEditOvr)
 				},
-				{ lng::MOk });
+				{ lng::MYes, lng::MNo }) != Message::first_button)
 			return false;
+
+		if (!os::fs::set_file_attributes(m_DizFileName, FileAttr & ~FILE_ATTRIBUTE_READONLY)) //BUGBUG
+		{
+			LOGWARNING(L"set_file_attributes({}): {}"sv, m_DizFileName, last_error());
 		}
 	}
 
 	try
 	{
-		if (!m_OrderForWrite.empty())
-		{
-			if(const auto DizFile = os::fs::file(m_DizFileName, GENERIC_WRITE, FILE_SHARE_READ, nullptr, FileAttr == INVALID_FILE_ATTRIBUTES? CREATE_NEW : TRUNCATE_EXISTING))
-			{
-				os::fs::filebuf StreamBuffer(DizFile, std::ios::out);
-				std::ostream Stream(&StreamBuffer);
-				Stream.exceptions(Stream.badbit | Stream.failbit);
-				encoding::writer Writer(Stream, Global->Opt->Diz.SaveInUTF? CP_UTF8 : Global->Opt->Diz.AnsiByDefault? CP_ACP : CP_OEMCP);
-
-				for (const auto& i_ptr : m_OrderForWrite)
-				{
-					const auto& i = *i_ptr;
-					auto FileName = i.first;
-					QuoteSpaceOnly(FileName);
-					Writer.write(FileName);
-					for (const auto& Description : i.second)
-					{
-						Writer.write(Description);
-						Writer.write(L"\r\n"sv);
-					}
-				}
-
-				Stream.flush();
-			}
-			else
-			{
-				throw MAKE_FAR_EXCEPTION(L"Can't open file"sv);
-			}
-
-			if (FileAttr == INVALID_FILE_ATTRIBUTES)
-			{
-				FileAttr = FILE_ATTRIBUTE_ARCHIVE | (Global->Opt->Diz.SetHidden? FILE_ATTRIBUTE_HIDDEN : 0);
-			}
-			// No error checking - non-critical (TODO: log)
-			os::fs::set_file_attributes(m_DizFileName, FileAttr);
-		}
-		else
+		if (m_OrderForWrite.empty())
 		{
 			if (!os::fs::delete_file(m_DizFileName))
+				throw MAKE_FAR_EXCEPTION(L"Can't delete the file"sv);
+
+			return true;
+		}
+
+		if (!m_CodePage || Global->Opt->Diz.SaveInUTF)
+		{
+			m_CodePage =
+				Global->Opt->Diz.SaveInUTF?
+				CP_UTF8 :
+				Global->Opt->Diz.AnsiByDefault?
+					encoding::codepage::ansi() :
+					encoding::codepage::oem();
+		}
+
+		// Encoding could fail, so we need to prepare the data before touching the file
+		encoding::memory_writer Writer(*m_CodePage);
+		const auto Eol = eol::win.str();
+
+		for (const auto& i_ptr: m_OrderForWrite)
+		{
+			const auto& [Name, Lines] = *i_ptr;
+			Writer.write(quote_space(Name), Global->Opt->Diz.ValidateConversion);
+			for (const auto& Description: Lines)
 			{
-				throw MAKE_FAR_EXCEPTION(L"Can't delete file"sv);
+				Writer.write(Description, Global->Opt->Diz.ValidateConversion);
+				Writer.write(Eol);
 			}
 		}
+
+		save_file_with_replace(m_DizFileName, FileAttr, Global->Opt->Diz.SetHidden? FILE_ATTRIBUTE_HIDDEN : 0, false, [&](std::ostream& Stream)
+		{
+			Writer.flush_to(Stream);
+		});
 	}
 	catch (const far_exception& e)
 	{
-		Message(MSG_WARNING, e.get_error_state(),
+		Message(MSG_WARNING, e,
 			msg(lng::MError),
 			{
-				msg(lng::MCannotUpdateDiz),
-				e.get_message()
+				msg(lng::MCannotUpdateDiz)
 			},
 			{ lng::MOk });
 		return false;
@@ -403,6 +409,9 @@ void DizList::Set(const string& Name,const string& ShortName,const string& DizTe
 	}
 
 	auto& List = Iterator->second;
+	// Keep the record alive for a while just in case if filelist decides to redraw in the process.
+	m_RemovedEntries.emplace_back(std::move(List));
+
 	List.clear();
 
 	const auto KeySize = Iterator->first.size();

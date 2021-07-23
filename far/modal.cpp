@@ -32,10 +32,23 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "modal.hpp"
 
+// Internal:
 #include "help.hpp"
 #include "global.hpp"
+
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
 
 void SimpleModal::Process()
 {
@@ -66,6 +79,7 @@ void SimpleModal::SetExitCode(int Code)
 
 void SimpleModal::Close(int Code)
 {
+	OnClose();
 	SetExitCode(Code);
 	Hide();
 	Global->WindowManager->DeleteWindow(shared_from_this());
@@ -73,11 +87,11 @@ void SimpleModal::Close(int Code)
 
 void SimpleModal::SetHelp(string_view const Topic)
 {
-	assign(m_HelpTopic, Topic);
+	m_HelpTopic = Topic;
 }
 
 void SimpleModal::ShowHelp() const
 {
 	if (!m_HelpTopic.empty())
-		Help::create(m_HelpTopic);
+		help::show(m_HelpTopic);
 }

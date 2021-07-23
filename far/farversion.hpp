@@ -35,8 +35,25 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "plugin.hpp"
+// Internal:
 
-extern const VersionInfo FAR_VERSION;
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
+
+struct VersionInfo;
+
+namespace build
+{
+	string_view version_string();
+	string_view copyright();
+	string_view scm_revision();
+	string_view platform();
+	VersionInfo version();
+}
 
 #endif // FARVERSION_HPP_2DFC77DA_8558_4EF9_9F2E_3B8B848F7C84

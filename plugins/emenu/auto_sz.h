@@ -1,4 +1,4 @@
-#ifndef _AUTO_SZ_H_
+﻿#ifndef _AUTO_SZ_H_
 #define _AUTO_SZ_H_
 
 #include <shlobj.h>
@@ -6,7 +6,7 @@
 class auto_sz
 {
 public:
-  auto_sz();
+  auto_sz() = default;
   auto_sz(LPCWSTR sz);
   auto_sz(LPCWSTR szBuf, size_t nBufLen);
   auto_sz(auto_sz& str);
@@ -33,9 +33,9 @@ public:
   int CompareNoCase(LPCWSTR sz);
   bool IsEmpty();
 protected:
-  LPWSTR m_sz;
-  bool m_bDelete;
-  size_t m_nSize;
+  LPWSTR m_sz{};
+  bool m_bDelete{};
+  size_t m_nSize{};
 };
 
 #endif

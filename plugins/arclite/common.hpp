@@ -1,9 +1,9 @@
-#pragma once
+﻿#pragma once
 
 typedef ByteVector ArcType;
-typedef list<ArcType> ArcTypes;
+typedef std::list<ArcType> ArcTypes;
 
-typedef list<Error> ErrorLog;
+typedef std::list<Error> ErrorLog;
 
 #define RETRY_OR_IGNORE_BEGIN \
   bool error_ignored = false; \
@@ -41,13 +41,13 @@ typedef list<Error> ErrorLog;
 class ProgressMonitor: private NonCopyable {
 private:
   HANDLE h_scr;
-  wstring con_title;
+  std::wstring con_title;
   static const unsigned c_first_delay_div = 2;
   static const unsigned c_update_delay_div = 2;
-  unsigned __int64 time_cnt;
-  unsigned __int64 time_freq;
-  unsigned __int64 time_total;
-  unsigned __int64 time_update;
+  UInt64 time_cnt;
+  UInt64 time_freq;
+  UInt64 time_total;
+  UInt64 time_update;
   bool paused;
   bool low_priority;
   DWORD initial_priority;
@@ -56,8 +56,8 @@ private:
   void discard_time();
   void display();
 protected:
-  wstring progress_title;
-  wstring progress_text;
+  std::wstring progress_title;
+  std::wstring progress_text;
   bool progress_known;
   unsigned percent_done;
   virtual void do_update_ui() = 0;
@@ -65,12 +65,12 @@ protected:
   bool is_single_key(const KEY_EVENT_RECORD& key_event);
   void handle_esc();
 public:
-  ProgressMonitor(const wstring& progress_title, bool progress_known = true, bool lazy = true);
+  ProgressMonitor(const std::wstring& progress_title, bool progress_known = true, bool lazy = true);
   virtual ~ProgressMonitor();
   void update_ui(bool force = false);
   void clean();
-  unsigned __int64 time_elapsed();
-  unsigned __int64 ticks_per_sec();
+  UInt64 time_elapsed();
+  UInt64 ticks_per_sec();
   friend class ProgressSuspend;
 };
 
@@ -88,23 +88,23 @@ public:
 
 void retry_or_ignore_error(const Error& error, bool& ignore, bool& ignore_errors, ErrorLog& error_log, ProgressMonitor& progress, bool can_retry, bool can_ignore);
 
-enum OverwriteAction { oaAsk, oaOverwrite, oaSkip, oaRename, oaAppend };
+enum OverwriteAction { oaAsk, oaOverwrite, oaSkip, oaRename, oaAppend, oaOverwriteCase };
 
 struct OpenOptions {
-  wstring arc_path;
+  std::wstring arc_path;
   bool detect;
   ArcTypes arc_types;
-  wstring password;
+  std::wstring password;
   int *open_password_len;
   OpenOptions();
 };
 
 struct ExtractOptions {
-  wstring dst_dir;
+  std::wstring dst_dir;
   bool ignore_errors;
   OverwriteAction overwrite;
   TriState move_files;
-  wstring password;
+  std::wstring password;
   TriState separate_dir;
   bool delete_archive;
   bool disable_delete_archive;
@@ -113,28 +113,28 @@ struct ExtractOptions {
 };
 
 struct SfxVersionInfo {
-  wstring version;
-  wstring comments;
-  wstring company_name;
-  wstring file_description;
-  wstring legal_copyright;
-  wstring product_name;
+  std::wstring version;
+  std::wstring comments;
+  std::wstring company_name;
+  std::wstring file_description;
+  std::wstring legal_copyright;
+  std::wstring product_name;
 };
 
 struct SfxInstallConfig {
-  wstring title;
-  wstring begin_prompt;
-  wstring progress;
-  wstring run_program;
-  wstring directory;
-  wstring execute_file;
-  wstring execute_parameters;
+  std::wstring title;
+  std::wstring begin_prompt;
+  std::wstring progress;
+  std::wstring run_program;
+  std::wstring directory;
+  std::wstring execute_file;
+  std::wstring execute_parameters;
 };
 
 struct SfxOptions {
-  wstring name;
+  std::wstring name;
   bool replace_icon;
-  wstring icon_path;
+  std::wstring icon_path;
   bool replace_version;
   SfxVersionInfo ver_info;
   bool append_install_config;
@@ -145,28 +145,28 @@ struct SfxOptions {
 struct ProfileOptions {
   ArcType arc_type;
   unsigned level;
-  wstring levels; // format=level;...
-  wstring method;
+  std::wstring levels; // format=level;...
+  std::wstring method;
   bool solid;
-  wstring password;
+  std::wstring password;
   bool encrypt;
   TriState encrypt_header;
   bool create_sfx;
   SfxOptions sfx_options;
   bool enable_volumes;
-  wstring volume_size;
+  std::wstring volume_size;
   bool move_files;
   bool ignore_errors;
-  wstring advanced;
+  std::wstring advanced;
   ProfileOptions();
 };
 
 struct UpdateOptions: public ProfileOptions {
-  wstring arc_path;
+  std::wstring arc_path;
   bool show_password;
   bool open_shared;
   OverwriteAction overwrite;
-  shared_ptr<Far::FileFilter> filter;
+  std::shared_ptr<Far::FileFilter> filter;
   bool append_ext;
   UpdateOptions();
 };
@@ -175,29 +175,28 @@ bool operator==(const ProfileOptions& o1, const ProfileOptions& o2);
 bool operator==(const SfxOptions& o1, const SfxOptions& o2);
 
 struct UpdateProfile {
-  wstring name;
+  std::wstring name;
   ProfileOptions options;
 };
-struct UpdateProfiles: public vector<UpdateProfile> {
+struct UpdateProfiles: public std::vector<UpdateProfile> {
   void load();
   void save() const;
-  unsigned find_by_name(const wstring& name);
+  unsigned find_by_name(const std::wstring& name);
   unsigned find_by_options(const UpdateOptions& options);
   void sort_by_name();
-  void update(const wstring& name, const UpdateOptions& options);
+  void update(const std::wstring& name, const UpdateOptions& options);
 };
 
 struct Attr {
-  wstring name;
-  wstring value;
+  std::wstring name;
+  std::wstring value;
 };
-typedef list<Attr> AttrList;
+typedef std::list<Attr> AttrList;
 
-int al_round(double d);
-unsigned calc_percent(unsigned __int64 completed, unsigned __int64 total);
-unsigned __int64 get_module_version(const wstring& file_path);
-unsigned __int64 parse_size_string(const wstring& str);
+unsigned calc_percent(UInt64 completed, UInt64 total);
+UInt64 get_module_version(const std::wstring& file_path);
+UInt64 parse_size_string(const std::wstring& str);
 DWORD translate_seek_method(UInt32 seek_origin);
-wstring expand_macros(const wstring& text);
-wstring load_file(const wstring& file_name, unsigned* code_page = nullptr);
-wstring auto_rename(const wstring& file_path);
+std::wstring expand_macros(const std::wstring& text);
+std::wstring load_file(const std::wstring& file_name, unsigned* code_page = nullptr);
+std::wstring auto_rename(const std::wstring& file_path);

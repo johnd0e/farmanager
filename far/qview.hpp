@@ -35,9 +35,19 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "panel.hpp"
 #include "dirinfo.hpp"
 #include "plugin.hpp"
+
+// Platform:
+
+// Common:
+#include "common/smart_ptr.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 class Viewer;
 
@@ -58,7 +68,7 @@ private:
 	void Update(int Mode) override;
 	void CloseFile() override;
 	void QViewDelTempName() override;
-	bool UpdateIfChanged(bool Idle) override;
+	void UpdateIfChanged(bool Changed = false) override;
 	void RefreshTitle() override;
 	string GetTitle() const override;
 	void UpdateKeyBar() override;
@@ -66,19 +76,20 @@ private:
 	void DisplayObject() override;
 	Viewer* GetViewer() override;
 	Viewer* GetById(int ID) override;
+	void OnDestroy() override;
 
 	void PrintText(string_view Str) const;
 	void DynamicUpdateKeyBar() const;
 
 	unique_ptr_with_ondestroy<Viewer> QView;
 	string strCurFileName;
-	UserDataItem CurUserData;
+	UserDataItem CurUserData{};
 	string strCurFileType;
 	DirInfoData Data;
-	bool OldWrapMode;
-	bool OldWrapType;
-	bool m_TemporaryFile;
-	bool uncomplete_dirscan;
+	bool OldWrapMode{};
+	bool OldWrapType{};
+	bool m_TemporaryFile{};
+	bool uncomplete_dirscan{};
 
 	enum class scan_status
 	{

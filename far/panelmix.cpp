@@ -31,8 +31,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "panelmix.hpp"
 
+// Internal:
 #include "strmix.hpp"
 #include "filepanels.hpp"
 #include "config.hpp"
@@ -50,40 +55,49 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "string_utils.hpp"
 #include "cvtname.hpp"
 #include "global.hpp"
+#include "exception.hpp"
+#include "log.hpp"
 
+// Platform:
+
+// Common:
 #include "common/enum_tokens.hpp"
+#include "common/from_string.hpp"
 #include "common/function_traits.hpp"
 
+// External:
 #include "format.hpp"
+
+//----------------------------------------------------------------------------
 
 static const struct column_info
 {
-	PANEL_COLUMN_TYPE Type;
+	column_type Type;
 	int DefaultWidth;
 	const string_view String;
 }
-ColumnInfo[] =
+ColumnInfo[]
 {
-	{ NAME_COLUMN, 0, L"N"sv },
-	{ SIZE_COLUMN, 6, L"S"sv },
-	{ PACKED_COLUMN, 6, L"P"sv },
-	{ DATE_COLUMN, 8, L"D"sv },
-	{ TIME_COLUMN, 5, L"T"sv },
-	{ WDATE_COLUMN, 14, L"DM"sv },
-	{ CDATE_COLUMN, 14, L"DC"sv },
-	{ ADATE_COLUMN, 14, L"DA"sv },
-	{ CHDATE_COLUMN, 14, L"DE"sv },
-	{ ATTR_COLUMN, 6, L"A"sv },
-	{ DIZ_COLUMN, 0, L"Z"sv },
-	{ OWNER_COLUMN, 0, L"O"sv },
-	{ NUMLINK_COLUMN, 3, L"LN"sv },
-	{ NUMSTREAMS_COLUMN, 3, L"F"sv },
-	{ STREAMSSIZE_COLUMN, 6, L"G"sv },
-	{ EXTENSION_COLUMN, 0, L"X"sv, },
-	{ CUSTOM_COLUMN0, 0, L"C0"sv },
+	{ column_type::name,                   0,     L"N"sv,     },
+	{ column_type::size,                   6,     L"S"sv,     },
+	{ column_type::size_compressed,        6,     L"P"sv,     },
+	{ column_type::date,                   8,     L"D"sv,     },
+	{ column_type::time,                   5,     L"T"sv,     },
+	{ column_type::date_write,             14,    L"DM"sv,    },
+	{ column_type::date_creation,          14,    L"DC"sv,    },
+	{ column_type::date_access,            14,    L"DA"sv,    },
+	{ column_type::date_change,            14,    L"DE"sv,    },
+	{ column_type::attributes,             6,     L"A"sv,     },
+	{ column_type::description,            0,     L"Z"sv,     },
+	{ column_type::owner,                  0,     L"O"sv,     },
+	{ column_type::links_number,           3,     L"LN"sv,    },
+	{ column_type::streams_number,         3,     L"F"sv,     },
+	{ column_type::streams_size,           6,     L"G"sv,     },
+	{ column_type::extension,              0,     L"X"sv,     },
+	{ column_type::custom_0,               0,     L"C0"sv,    },
 };
 
-static_assert(std::size(ColumnInfo) == COLUMN_TYPES_COUNT);
+static_assert(std::size(ColumnInfo) == static_cast<size_t>(column_type::count));
 
 void ShellUpdatePanels(panel_ptr SrcPanel, bool NeedSetUpADir)
 {
@@ -119,13 +133,7 @@ void ShellUpdatePanels(panel_ptr SrcPanel, bool NeedSetUpADir)
 			//  AnotherPanel->Update(UPDATE_KEEP_SELECTION|UPDATE_SECONDARY);
 			//else
 			{
-				// Сбросим время обновления панели. Если там есть нотификация - обновится сама.
-				if (const auto AnotherFileList = std::dynamic_pointer_cast<FileList>(AnotherPanel))
-				{
-					AnotherFileList->ResetLastUpdateTime();
-				}
-
-				AnotherPanel->UpdateIfChanged(false);
+				AnotherPanel->UpdateIfChanged();
 			}
 		}
 	}
@@ -138,7 +146,7 @@ void ShellUpdatePanels(panel_ptr SrcPanel, bool NeedSetUpADir)
 	Global->CtrlObject->Cp()->Redraw();
 }
 
-bool CheckUpdateAnotherPanel(panel_ptr SrcPanel, const string& SelName)
+bool CheckUpdateAnotherPanel(panel_ptr SrcPanel, string_view const SelName)
 {
 	if (!SrcPanel)
 		SrcPanel = Global->CtrlObject->Cp()->ActivePanel();
@@ -289,12 +297,12 @@ bool MakePathForUI(DWORD Key, string &strPathName)
 				break;
 			}
 
-			const auto FilePath = Key == KEY_SHIFTENTER || Key == KEY_CTRLSHIFTENTER || Key == KEY_RCTRLSHIFTENTER || Key == KEY_SHIFTNUMENTER || Key == KEY_CTRLSHIFTNUMENTER || Key == KEY_RCTRLSHIFTNUMENTER;
+			const auto FilePath = any_of(Key, KEY_SHIFTENTER, KEY_CTRLSHIFTENTER, KEY_RCTRLSHIFTENTER, KEY_SHIFTNUMENTER, KEY_CTRLSHIFTNUMENTER, KEY_RCTRLSHIFTNUMENTER);
 			if (!SrcPanel || !MakePath(SrcPanel, FilePath, RealName, true, strPathName))
 				return false;
 
 			if (Global->Opt->QuotedName & QUOTEDNAME_INSERT)
-				QuoteSpace(strPathName);
+				inplace::QuoteSpace(strPathName);
 
 			return true;
 		}
@@ -304,7 +312,7 @@ bool MakePathForUI(DWORD Key, string &strPathName)
 	}
 }
 
-std::vector<column> DeserialiseViewSettings(const string& ColumnTitles,const string& ColumnWidths)
+std::vector<column> DeserialiseViewSettings(string_view const ColumnTitles, string_view const ColumnWidths)
 {
 	// BUGBUG, add error checking
 
@@ -317,60 +325,39 @@ std::vector<column> DeserialiseViewSettings(const string& ColumnTitles,const str
 
 		column NewColumn{};
 
-		const auto TypeOrig = upper(string(Type));
-
 		if (Type.front() == L'N')
 		{
-			NewColumn.type = NAME_COLUMN;
+			NewColumn.type = column_type::name;
+
 			for (const auto& i: Type.substr(1))
 			{
 				switch (i)
 				{
-				case L'M':
-					NewColumn.type |= COLUMN_MARK;
-					break;
-				case L'D':
-					NewColumn.type |= COLUMN_MARK_DYNAMIC;
-					break;
-				case L'O':
-					NewColumn.type |= COLUMN_NAMEONLY;
-					break;
-				case L'R':
-					NewColumn.type |= COLUMN_RIGHTALIGN;
-					break;
-				case L'F':
-					NewColumn.type |= COLUMN_RIGHTALIGNFORCE;
-					break;
-				case L'N':
-					NewColumn.type |= COLUMN_NOEXTENSION;
-					break;
+				case L'M': NewColumn.type_flags |= COLFLAGS_MARK;               break;
+				case L'D': NewColumn.type_flags |= COLFLAGS_MARK_DYNAMIC;       break;
+				case L'O': NewColumn.type_flags |= COLFLAGS_NAMEONLY;           break;
+				case L'R': NewColumn.type_flags |= COLFLAGS_RIGHTALIGN;         break;
+				case L'F': NewColumn.type_flags |= COLFLAGS_RIGHTALIGNFORCE;    break;
+				case L'N': NewColumn.type_flags |= COLFLAGS_NOEXTENSION;        break;
 				}
 			}
 		}
 		else if (Type.front() == L'S' || Type.front() == L'P' || Type.front() == L'G')
 		{
 			NewColumn.type = Type.front() == L'S'?
-				SIZE_COLUMN :
+				column_type::size :
 				Type.front() == L'P'?
-					PACKED_COLUMN :
-					STREAMSSIZE_COLUMN;
+					column_type::size_compressed :
+					column_type::streams_size;
 
 			for (const auto& i: Type.substr(1))
 			{
 				switch (i)
 				{
-				case L'C':
-					NewColumn.type |= COLUMN_GROUPDIGITS;
-					break;
-				case L'E':
-					NewColumn.type |= COLUMN_ECONOMIC;
-					break;
-				case L'F':
-					NewColumn.type |= COLUMN_FLOATSIZE;
-					break;
-				case L'T':
-					NewColumn.type |= COLUMN_THOUSAND;
-					break;
+				case L'C': NewColumn.type_flags |= COLFLAGS_GROUPDIGITS;    break;
+				case L'E': NewColumn.type_flags |= COLFLAGS_ECONOMIC;       break;
+				case L'F': NewColumn.type_flags |= COLFLAGS_FLOATSIZE;      break;
+				case L'T': NewColumn.type_flags |= COLFLAGS_THOUSAND;       break;
 				}
 			}
 		}
@@ -382,51 +369,39 @@ std::vector<column> DeserialiseViewSettings(const string& ColumnTitles,const str
 		{
 			switch (Type[1])
 			{
-			case L'M':
-				NewColumn.type = WDATE_COLUMN;
-				break;
-			case L'C':
-				NewColumn.type = CDATE_COLUMN;
-				break;
-			case L'A':
-				NewColumn.type = ADATE_COLUMN;
-				break;
-			case L'E':
-				NewColumn.type = CHDATE_COLUMN;
-				break;
+			case L'M': NewColumn.type = column_type::date_write;      break;
+			case L'C': NewColumn.type = column_type::date_creation;   break;
+			case L'A': NewColumn.type = column_type::date_access;     break;
+			case L'E': NewColumn.type = column_type::date_change;     break;
 			}
 
 			for (const auto& i: Type.substr(2))
 			{
 				switch (i)
 				{
-				case L'B':
-					NewColumn.type |= COLUMN_BRIEF;
-					break;
-				case L'M':
-					NewColumn.type |= COLUMN_MONTH;
-					break;
+				case L'B': NewColumn.type_flags |= COLFLAGS_BRIEF;    break;
+				case L'M': NewColumn.type_flags |= COLFLAGS_MONTH;    break;
 				}
 			}
 		}
 		else if (Type.front() == L'O')
 		{
-			NewColumn.type = OWNER_COLUMN;
+			NewColumn.type = column_type::owner;
 
 			if (Type.size() > 1 && Type[1] == L'L')
-				NewColumn.type |= COLUMN_FULLOWNER;
+				NewColumn.type_flags |= COLFLAGS_FULLOWNER;
 		}
 		else if (Type.front() == L'X')
 		{
-			NewColumn.type = EXTENSION_COLUMN;
+			NewColumn.type = column_type::extension;
 
 			if (Type.size() > 1 && Type[1] == L'R')
-				NewColumn.type |= COLUMN_RIGHTALIGN;
+				NewColumn.type_flags |= COLFLAGS_RIGHTALIGN;
 		}
 		else if (Type.size() > 2 && Type.front() == L'<' && Type.back() == L'>')
 		{
-			NewColumn.title = string(Type.substr(1, Type.size() - 2));
-			NewColumn.type = CUSTOM_COLUMN0;
+			NewColumn.title = Type.substr(1, Type.size() - 2);
+			NewColumn.type = column_type::custom_0;
 		}
 		else
 		{
@@ -435,18 +410,19 @@ std::vector<column> DeserialiseViewSettings(const string& ColumnTitles,const str
 				NewColumn.type = ItemIterator->Type;
 			else if (Type.size() >= 2 && Type.size() <= 3 && Type.front() == L'C')
 			{
-				int Index;
-				if (from_string(TypeOrig.substr(1), Index))
-					NewColumn.type = CUSTOM_COLUMN0 + Index;
+				size_t Index;
+				if (from_string(Type.substr(1), Index))
+					NewColumn.type = static_cast<column_type>(static_cast<size_t>(column_type::custom_0) + Index);
 				else
 				{
-					// TODO: diagnostics
+					LOGWARNING(L"Incorrect custom column {}"sv, Type);
+					// TODO: error message?
 				}
 			}
 			else
 			{
-				// Unknown column type
-				// TODO: error message
+				LOGWARNING(L"Unknown column type {}"sv, Type);
+				// TODO: error message?
 				continue;
 			}
 		}
@@ -455,23 +431,23 @@ std::vector<column> DeserialiseViewSettings(const string& ColumnTitles,const str
 	}
 
 	const auto EnumWidths = enum_tokens(ColumnWidths, L","sv);
-	auto EnumWidthsRange = make_range(EnumWidths);
+	auto EnumWidthsRange = range(EnumWidths);
 
 	for (auto& i: Columns)
 	{
-		auto Width = EnumWidthsRange.empty()? L""sv : *EnumWidthsRange.pop_front();
+		auto Width = L""sv;
+
+		if (!EnumWidthsRange.empty())
+		{
+			Width = EnumWidthsRange.front();
+			EnumWidthsRange.pop_front();
+		}
 
 		// "column types" is a determinant here (see the loop header) so we can't break or continue here -
 		// if "column sizes" ends earlier or if user entered two commas we just use default size.
-		if (Width.empty())
+		if (!Width.empty() && !from_string(Width, i.width))
 		{
-			Width = L"0"sv;
-		}
-
-		if (!from_string(string(Width), i.width))
-		{
-			// TODO: diagnostics
-			i.width = 0;
+			LOGWARNING(L"Incorrect column width {}"sv, Width);
 		}
 
 		i.width_type = col_width::fixed;
@@ -489,9 +465,7 @@ std::vector<column> DeserialiseViewSettings(const string& ColumnTitles,const str
 
 	if (Columns.empty())
 	{
-		column NewColumn;
-		NewColumn.type = NAME_COLUMN;
-		Columns.emplace_back(NewColumn);
+		Columns.emplace_back();
 	}
 
 	return Columns;
@@ -501,89 +475,92 @@ std::vector<column> DeserialiseViewSettings(const string& ColumnTitles,const str
 std::pair<string, string> SerialiseViewSettings(const std::vector<column>& Columns)
 {
 	FN_RETURN_TYPE(SerialiseViewSettings) Result;
-	auto& strColumnTitles = Result.first;
-	auto& strColumnWidths = Result.second;
+	auto& [strColumnTitles, strColumnWidths] = Result;
 
-	const auto& GetModeSymbol = [](FILEPANEL_COLUMN_MODES Mode)
+	const auto GetModeSymbol = [](FILEPANEL_COLUMN_FLAGS Mode)
 	{
 		switch (Mode)
 		{
-		case COLUMN_MARK:            return L'M';
-		case COLUMN_NAMEONLY:        return L'O';
-		case COLUMN_RIGHTALIGN:      return L'R';
-		case COLUMN_GROUPDIGITS:     return L'C';
-		case COLUMN_THOUSAND:        return L'T';
-		case COLUMN_BRIEF:           return L'B';
-		case COLUMN_MONTH:           return L'M';
-		case COLUMN_FLOATSIZE:       return L'F';
-		case COLUMN_ECONOMIC:        return L'E';
-		case COLUMN_FULLOWNER:       return L'L';
-		case COLUMN_NOEXTENSION:     return L'N';
-		case COLUMN_RIGHTALIGNFORCE: return L'F';
-		case COLUMN_MARK_DYNAMIC:    return L'D';
-		default:                     throw MAKE_FAR_EXCEPTION(L"Unexpected mode"sv);
+		case COLFLAGS_MARK:            return L'M';
+		case COLFLAGS_NAMEONLY:        return L'O';
+		case COLFLAGS_RIGHTALIGN:      return L'R';
+		case COLFLAGS_GROUPDIGITS:     return L'C';
+		case COLFLAGS_THOUSAND:        return L'T';
+		case COLFLAGS_BRIEF:           return L'B';
+		case COLFLAGS_MONTH:           return L'M';
+		case COLFLAGS_FLOATSIZE:       return L'F';
+		case COLFLAGS_ECONOMIC:        return L'E';
+		case COLFLAGS_FULLOWNER:       return L'L';
+		case COLFLAGS_NOEXTENSION:     return L'N';
+		case COLFLAGS_RIGHTALIGNFORCE: return L'F';
+		case COLFLAGS_MARK_DYNAMIC:    return L'D';
+		default:
+			throw MAKE_FAR_FATAL_EXCEPTION(format(FSTR(L"Unexpected mode {}"sv), as_underlying_type(Mode)));
 		}
 	};
 
-	std::for_each(CONST_RANGE(Columns, i)
+	for (const auto& i: Columns)
 	{
 		string strType;
-		const auto ColumnType=static_cast<int>(i.type & 0xff);
 
-		if (ColumnType <= CUSTOM_COLUMN0)
+		if (i.type <= column_type::custom_0)
 		{
-			strType = string(ColumnInfo[ColumnType].String);
+			strType = ColumnInfo[static_cast<size_t>(i.type)].String;
 		}
 		else
 		{
-			strType = L'C' + str(ColumnType - CUSTOM_COLUMN0);
+			strType = L'C' + str(static_cast<size_t>(i.type) - static_cast<size_t>(column_type::custom_0));
 		}
 
-		const auto& AddFlag = [&](auto Flag)
+		const auto AddFlag = [&](auto Flag)
 		{
-			if (!(i.type & Flag))
+			if (!(i.type_flags & Flag))
 				return false;
 			strType += GetModeSymbol(Flag);
 			return true;
 		};
 
-		switch (ColumnType)
+		switch (i.type)
 		{
-		case NAME_COLUMN:
-			AddFlag(COLUMN_MARK) && AddFlag(COLUMN_MARK_DYNAMIC);
-			AddFlag(COLUMN_NAMEONLY);
-			AddFlag(COLUMN_RIGHTALIGN) && AddFlag(COLUMN_RIGHTALIGNFORCE);
-			AddFlag(COLUMN_NOEXTENSION);
+		case column_type::name:
+			AddFlag(COLFLAGS_MARK) && AddFlag(COLFLAGS_MARK_DYNAMIC);
+			AddFlag(COLFLAGS_NAMEONLY);
+			AddFlag(COLFLAGS_RIGHTALIGN) && AddFlag(COLFLAGS_RIGHTALIGNFORCE);
+			AddFlag(COLFLAGS_NOEXTENSION);
 			break;
 
-		case SIZE_COLUMN:
-		case PACKED_COLUMN:
-		case STREAMSSIZE_COLUMN:
-			AddFlag(COLUMN_GROUPDIGITS);
-			AddFlag(COLUMN_ECONOMIC);
-			AddFlag(COLUMN_FLOATSIZE);
-			AddFlag(COLUMN_THOUSAND);
+		case column_type::size:
+		case column_type::size_compressed:
+		case column_type::streams_size:
+			AddFlag(COLFLAGS_GROUPDIGITS);
+			AddFlag(COLFLAGS_ECONOMIC);
+			AddFlag(COLFLAGS_FLOATSIZE);
+			AddFlag(COLFLAGS_THOUSAND);
 			break;
 
-		case WDATE_COLUMN:
-		case ADATE_COLUMN:
-		case CDATE_COLUMN:
-		case CHDATE_COLUMN:
-			AddFlag(COLUMN_BRIEF);
-			AddFlag(COLUMN_MONTH);
+		case column_type::date_write:
+		case column_type::date_access:
+		case column_type::date_creation:
+		case column_type::date_change:
+			AddFlag(COLFLAGS_BRIEF);
+			AddFlag(COLFLAGS_MONTH);
 			break;
 
-		case OWNER_COLUMN:
-			AddFlag(COLUMN_FULLOWNER);
+		case column_type::owner:
+			AddFlag(COLFLAGS_FULLOWNER);
 			break;
 
-		case EXTENSION_COLUMN:
-			AddFlag(COLUMN_RIGHTALIGN);
+		case column_type::extension:
+			AddFlag(COLFLAGS_RIGHTALIGN);
 			break;
 
-		case CUSTOM_COLUMN0:
+		case column_type::custom_0:
 			if(!i.title.empty())
 				strType = concat(L'<', i.title, L'>');
+			break;
+
+		default:
+			break;
 		}
 
 		strColumnTitles += strType;
@@ -595,11 +572,14 @@ std::pair<string, string> SerialiseViewSettings(const std::vector<column>& Colum
 			case col_width::percent:
 				strColumnWidths += L'%';
 				break;
+
+			case col_width::fixed:
+				break;
 		}
 
 		strColumnTitles += L',';
 		strColumnWidths += L',';
-	});
+	}
 
 	if (!strColumnTitles.empty())
 		strColumnTitles.pop_back();
@@ -609,11 +589,14 @@ std::pair<string, string> SerialiseViewSettings(const std::vector<column>& Colum
 	return Result;
 }
 
-string FormatStr_Attribute(DWORD FileAttributes, size_t Width)
+string FormatStr_Attribute(os::fs::attributes FileAttributes, size_t const Width)
 {
 	string OutStr;
 
-	enum_attributes([&](DWORD Attribute, wchar_t Character)
+	if (!FileAttributes)
+		FileAttributes = FILE_ATTRIBUTE_NORMAL;
+
+	enum_attributes([&](os::fs::attributes const Attribute, wchar_t const Character)
 	{
 		if (FileAttributes & Attribute)
 		{
@@ -622,43 +605,44 @@ string FormatStr_Attribute(DWORD FileAttributes, size_t Width)
 		return OutStr.size() < Width;
 	});
 
-	return inplace::fit_to_left(OutStr, Width);
+	inplace::fit_to_left(OutStr, Width);
+	return OutStr;
 }
 
-string FormatStr_DateTime(os::chrono::time_point FileTime, int ColumnType, unsigned long long Flags, int Width)
+string FormatStr_DateTime(os::chrono::time_point FileTime, column_type const ColumnType, unsigned long long Flags, int Width)
 {
 	if (Width < 0)
 	{
-		if (ColumnType == DATE_COLUMN)
+		if (ColumnType == column_type::date)
 			Width=0;
 		else
 			return {};
 	}
 
 	int ColumnWidth=Width;
-	bool Brief = (Flags & COLUMN_BRIEF) != 0;
-	bool TextMonth = (Flags & COLUMN_MONTH) != 0;
+	bool Brief = (Flags & COLFLAGS_BRIEF) != 0;
+	bool TextMonth = (Flags & COLFLAGS_MONTH) != 0;
 	bool FullYear = false;
 
 	switch(ColumnType)
 	{
-		case DATE_COLUMN:
-		case TIME_COLUMN:
+		case column_type::date:
+		case column_type::time:
 		{
 			Brief = false;
 			TextMonth = false;
-			if (ColumnType == DATE_COLUMN)
+			if (ColumnType == column_type::date)
 				FullYear=ColumnWidth>9;
 			break;
 		}
-		case WDATE_COLUMN:
-		case CDATE_COLUMN:
-		case ADATE_COLUMN:
-		case CHDATE_COLUMN:
+		case column_type::date_write:
+		case column_type::date_creation:
+		case column_type::date_access:
+		case column_type::date_change:
 		{
 			if (!Brief)
 			{
-				int CmpWidth=ColumnWidth-(TextMonth? 1: 0);
+				const auto CmpWidth = ColumnWidth - (TextMonth? 1 : 0);
 
 				if (CmpWidth==15 || CmpWidth==16 || CmpWidth==18 || CmpWidth==19 || CmpWidth>21)
 					FullYear = true;
@@ -666,19 +650,22 @@ string FormatStr_DateTime(os::chrono::time_point FileTime, int ColumnType, unsig
 			ColumnWidth-=9;
 			break;
 		}
+
+		default:
+			break;
 	}
 
 	string strDateStr,strTimeStr;
 
-	ConvertDate(FileTime,strDateStr,strTimeStr,ColumnWidth,Brief,TextMonth,FullYear);
+	ConvertDate(FileTime, strDateStr, strTimeStr, ColumnWidth, FullYear, Brief, TextMonth);
 
 	string strOutStr;
 	switch(ColumnType)
 	{
-		case DATE_COLUMN:
+		case column_type::date:
 			strOutStr=strDateStr;
 			break;
-		case TIME_COLUMN:
+		case column_type::time:
 			strOutStr=strTimeStr;
 			break;
 		default:
@@ -689,14 +676,20 @@ string FormatStr_DateTime(os::chrono::time_point FileTime, int ColumnType, unsig
 	return fit_to_right(strOutStr, Width);
 }
 
-string FormatStr_Size(long long Size, const string& strName,
-							DWORD FileAttributes,DWORD ShowFolderSize,DWORD ReparseTag,int ColumnType,
-							unsigned long long Flags,int Width,const wchar_t *CurDir)
+string FormatStr_Size(
+	long long const Size,
+	string_view const strName,
+	os::fs::attributes const FileAttributes,
+	DWORD const ShowFolderSize,
+	DWORD const ReparseTag,
+	column_type const ColumnType,
+	unsigned long long const Flags,
+	int Width,
+	string_view const CurDir)
 {
 	string strResult;
 
-	bool Packed=(ColumnType==PACKED_COLUMN);
-	bool Streams=(ColumnType==STREAMSSIZE_COLUMN);
+	const auto Streams = ColumnType == column_type::streams_size;
 
 	if (ShowFolderSize==2)
 	{
@@ -704,11 +697,11 @@ string FormatStr_Size(long long Size, const string& strName,
 		strResult += L'~';
 	}
 
-	bool dir = (0 != (FileAttributes & FILE_ATTRIBUTE_DIRECTORY));
-	bool rpt = (0 != (FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT));
-	bool have_size = !dir && (!rpt || ReparseTag==IO_REPARSE_TAG_DEDUP || Size > 0);
+	const auto dir = (0 != (FileAttributes & FILE_ATTRIBUTE_DIRECTORY));
+	const auto rpt = (0 != (FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT));
+	const auto have_size = !dir && (!rpt || ReparseTag==IO_REPARSE_TAG_DEDUP || Size > 0);
 
-	if (!Streams && !Packed && !have_size && !ShowFolderSize)
+	if (!Streams && !have_size && !ShowFolderSize)
 	{
 		static const lng FolderLabels[] =
 		{
@@ -730,11 +723,11 @@ string FormatStr_Size(long long Size, const string& strName,
 			{
 				switch(ReparseTag)
 				{
-				// 0xA0000003L = Directory Junction or Volume Mount Point
+				// Directory Junction or Volume Mount Point
 				case IO_REPARSE_TAG_MOUNT_POINT:
 					{
 						lng ID_Msg = lng::MListJunction;
-						if (Global->Opt->PanelDetailedJunction && CurDir)
+						if (Global->Opt->PanelDetailedJunction && !CurDir.empty())
 						{
 							string strLinkName;
 							if (GetReparsePointInfo(path::join(CurDir, PointToName(strName)), strLinkName))
@@ -750,57 +743,11 @@ string FormatStr_Size(long long Size, const string& strName,
 						TypeName=msg(ID_Msg);
 					}
 					break;
-				// 0xA000000CL = Directory or File Symbolic Link
-				case IO_REPARSE_TAG_SYMLINK:
-					TypeName = msg(lng::MListSymlink);
-					break;
-				// 0x8000000AL = Distributed File System
-				case IO_REPARSE_TAG_DFS:
-					TypeName = msg(lng::MListDFS);
-					break;
-				// 0x80000012L = Distributed File System Replication
-				case IO_REPARSE_TAG_DFSR:
-					TypeName = msg(lng::MListDFSR);
-					break;
-				// 0xC0000004L = Hierarchical Storage Management
-				case IO_REPARSE_TAG_HSM:
-					TypeName = msg(lng::MListHSM);
-					break;
-				// 0x80000006L = Hierarchical Storage Management2
-				case IO_REPARSE_TAG_HSM2:
-					TypeName = msg(lng::MListHSM2);
-					break;
-				// 0x80000007L = Single Instance Storage
-				case IO_REPARSE_TAG_SIS:
-					TypeName = msg(lng::MListSIS);
-					break;
-				// 0x80000008L = Windows Imaging Format
-				case IO_REPARSE_TAG_WIM:
-					TypeName = msg(lng::MListWIM);
-					break;
-				// 0x80000009L = Cluster Shared Volumes
-				case IO_REPARSE_TAG_CSV:
-					TypeName = msg(lng::MListCSV);
-					break;
-				case IO_REPARSE_TAG_DEDUP:
-					TypeName = msg(lng::MListDEDUP);
-					break;
-				case IO_REPARSE_TAG_NFS:
-					TypeName = msg(lng::MListNFS);
-					break;
-				case IO_REPARSE_TAG_FILE_PLACEHOLDER:
-					TypeName = msg(lng::MListPlaceholder);
-					break;
-					// 0x????????L = anything else
+
 				default:
-					if (Global->Opt->ShowUnknownReparsePoint)
-					{
-						TypeName = format(L":{0:0>8X}", ReparseTag);
-					}
-					else
-					{
+					if (!reparse_tag_to_string(ReparseTag, TypeName) && !Global->Opt->ShowUnknownReparsePoint)
 						TypeName = msg(lng::MListUnknownReparsePoint);
-					}
+					break;
 				}
 			}
 			else if (dir)
@@ -823,17 +770,21 @@ string FormatStr_Size(long long Size, const string& strName,
 	return strResult;
 }
 
-int GetDefaultWidth(unsigned long long Type)
+int GetDefaultWidth(const column& Column)
 {
-	int ColumnType = Type & 0xff;
-	int Width = (ColumnType > CUSTOM_COLUMN0) ? 0 : ColumnInfo[ColumnType].DefaultWidth;
+	int Width = (Column.type > column_type::custom_0)? 0 : ColumnInfo[static_cast<size_t>(Column.type)].DefaultWidth;
 
-	if (ColumnType == WDATE_COLUMN || ColumnType == CDATE_COLUMN || ColumnType == ADATE_COLUMN || ColumnType == CHDATE_COLUMN)
+	if (
+		Column.type == column_type::date_write ||
+		Column.type == column_type::date_creation ||
+		Column.type == column_type::date_access ||
+		Column.type == column_type::date_change
+	)
 	{
-		if (Type & COLUMN_BRIEF)
+		if (Column.type_flags & COLFLAGS_BRIEF)
 			Width -= 3;
 
-		if (Type & COLUMN_MONTH)
+		if (Column.type_flags & COLFLAGS_MONTH)
 			++Width;
 	}
 	return Width;

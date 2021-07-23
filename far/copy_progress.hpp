@@ -32,10 +32,20 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "taskbar.hpp"
 #include "wakeful.hpp"
 #include "datetime.hpp"
 #include "plugin.hpp"
+
+// Platform:
+
+// Common:
+#include "common/2d/rectangle.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 enum class lng;
 
@@ -50,9 +60,18 @@ public:
 	// These functions shall not draw anything directly,
 	// only update internal variables and call Flush().
 	void SetNames(const string& Src, const string& Dst);
-	void SetProgressValue(unsigned long long CompletedSize, unsigned long long TotalSize);
-	void UpdateCurrentBytesInfo(unsigned long long NewValue);
-	void UpdateAllBytesInfo(unsigned long long FileSize);
+	void reset_current();
+	void set_current_total(unsigned long long Value);
+	void set_current_copied(unsigned long long Value);
+	void set_total_files(unsigned long long Value);
+	void set_total_bytes(unsigned long long Value);
+	void add_total_bytes(unsigned long long Value);
+
+	void skip();
+	void next();
+	void undo();
+
+	unsigned long long get_total_bytes() const;
 
 	// BUGBUG
 	static string FormatCounter(lng CounterId, lng AnotherId, unsigned long long CurrentValue, unsigned long long TotalValue, bool ShowTotal, size_t MaxWidth);
@@ -65,25 +84,22 @@ private:
 	void SetCurrentProgress(unsigned long long CompletedSize, unsigned long long TotalSize);
 	void SetTotalProgress(unsigned long long CompletedSize, unsigned long long TotalSize);
 	void UpdateTime(unsigned long long SizeDone, unsigned long long SizeToGo);
-	unsigned long long GetBytesDone() const { return m_Bytes.Copied + m_Bytes.Skipped; }
 
 	std::chrono::steady_clock::time_point m_CopyStartTime;
-	IndeterminateTaskbar m_TB;
+	taskbar::indeterminate m_TB;
 	wakeful m_Wakeful;
-	SMALL_RECT m_Rect;
+	small_rectangle m_Rect{};
 
-	string m_CurrentBar;
 	size_t m_CurrentBarSize;
-	int m_CurrentPercent;
+	int m_CurrentPercent{};
 
-	string m_TotalBar;
 	size_t m_TotalBarSize;
-	int m_TotalPercent;
+	int m_TotalPercent{};
 
 	bool m_Move;
 	bool m_Total;
 	bool m_ShowTime;
-	bool m_IsCancelled;
+	bool m_IsCancelled{};
 	FarColor m_Color;
 	time_check m_TimeCheck;
 	time_check m_SpeedUpdateCheck;
@@ -93,27 +109,22 @@ private:
 	string m_TimeLeft;
 	string m_Speed;
 	string m_FilesCopied;
-	std::chrono::steady_clock::duration m_CalcTime;
+	std::chrono::steady_clock::duration m_CalcTime{};
 
-	// BUGBUG
-public:
-	time_check m_SecurityTimeCheck;
-
+private:
 	struct
 	{
-		size_t Copied;
-		size_t Total;
+		size_t Copied{};
+		size_t Total{};
 	}
 	m_Files;
 
 	struct
 	{
-		unsigned long long Total;
-		unsigned long long Copied;
-		unsigned long long Skipped;
-		unsigned long long CurrCopied;
+		unsigned long long Copied{};
+		unsigned long long Total{};
 	}
-	m_Bytes;
+	m_BytesCurrent, m_BytesTotal;
 };
 
 #endif // COPY_PROGRESS_HPP_3D1EAAD8_8353_459C_8826_33AAAE06D01F

@@ -39,27 +39,34 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define EXTENDED_KEY_BASE     0x00010000
-#define INTERNAL_KEY_BASE     0x00020000
-#define INTERNAL_KEY_BASE_2   0x00030000
-#define INTERNAL_MACRO_BASE   0x00080000
+// Internal:
 
-enum far_key_code
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
+
+constexpr unsigned int
+	KEY_CTRLMASK        = 0xFF000000,
+	EXTENDED_KEY_BASE   = 0x00010000,
+	INTERNAL_KEY_BASE   = 0x00020000,
+	INTERNAL_KEY_BASE_2 = 0x00030000,
+	INTERNAL_MACRO_BASE = 0x00080000;
+
+enum far_key_code: unsigned int
 {
 	NO_KEY = 0,
 
-	KEY_CTRLMASK             =0xFFF00000,
-	KEY_M_OEM                =0x00100000,
-	KEY_M_SPEC               =0x00200000,
-	//
-	//
 	KEY_CTRL                 =0x01000000,
 	KEY_ALT                  =0x02000000,
 	KEY_SHIFT                =0x04000000,
 	//
 	KEY_RCTRL                =0x10000000,
 	KEY_RALT                 =0x20000000,
-	KEY_RSHIFT               =0x80000000,
+	KEY_RSHIFT               =0x40000000,
 
 	KEY_BRACKET              ='[',
 	KEY_BACKBRACKET          =']',
@@ -79,6 +86,7 @@ enum far_key_code
 
 	KEY_MASKF                =0x0001FFFF,
 
+	                       // 0x00010000
 	KEY_FKEY_BEGIN           =EXTENDED_KEY_BASE,
 
 	KEY_BREAK                =EXTENDED_KEY_BASE+VK_CANCEL,
@@ -191,6 +199,7 @@ enum far_key_code
 
 	KEY_END_FKEY             =0x0001FFFF,
 
+	                       // 0x00020000
 	KEY_MSWHEEL_UP           =INTERNAL_KEY_BASE+3,
 	KEY_MSWHEEL_DOWN         =INTERNAL_KEY_BASE+4,
 
@@ -217,7 +226,6 @@ enum far_key_code
 #endif
 
 	KEY_NONE                 =INTERNAL_KEY_BASE_2+1,
-	KEY_IDLE                 =INTERNAL_KEY_BASE_2+2,
 
 	KEY_DRAGCOPY             =INTERNAL_KEY_BASE_2+3,
 	KEY_DRAGMOVE             =INTERNAL_KEY_BASE_2+4,
@@ -236,6 +244,7 @@ enum far_key_code
 	KEY_LAST_BASE            =KEY_END_SKEY,
 
 	// см macroopcode.hpp
+	                       // 0x00080000
 	KEY_MACRO_BASE           =INTERNAL_MACRO_BASE,
 	KEY_MACRO_C_BASE         =INTERNAL_MACRO_BASE+0x0400,     // булевые условия    0x00080400 - 0x000807FF
 	KEY_MACRO_V_BASE         =INTERNAL_MACRO_BASE+0x0800,     // разные переменные  0x00080800 - 0x00080BFF
@@ -1283,19 +1292,5 @@ enum far_key_code
 	KEY_ALTSHIFT_BASE        =KEY_ALTSHIFT,
 	KEY_RALTSHIFT_BASE       =KEY_RALT|KEY_SHIFT,
 };
-
-inline bool IsInternalKeyReal(unsigned int Key)
-{
-	return Key==KEY_NUMDEL|| Key==KEY_NUMENTER||
-		Key==KEY_MSWHEEL_UP || Key==KEY_MSWHEEL_DOWN||
-		Key==KEY_MSWHEEL_LEFT || Key==KEY_MSWHEEL_RIGHT||
-		Key==KEY_MSLCLICK || Key==KEY_MSRCLICK ||
-		Key==KEY_MSM1CLICK || Key==KEY_MSM2CLICK || Key==KEY_MSM3CLICK;
-}
-
-inline bool IsCharKey(unsigned int Key)
-{
-	return Key < 0x1000 || (Key >= KEY_MULTIPLY && Key <= KEY_DIVIDE);
-}
 
 #endif // KEYS_HPP_C9983354_D8EA_4A70_9E16_722A332B503D

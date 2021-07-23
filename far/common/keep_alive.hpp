@@ -32,39 +32,40 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-namespace detail
-{
-	template<typename type>
-	class keep_alive_t
-	{
-	public:
-		explicit keep_alive_t(type const& Value):
-			m_Value(Value)
-		{}
+//----------------------------------------------------------------------------
 
-		explicit keep_alive_t(std::remove_reference_t<type>&& Value):
-			m_Value(FWD(Value))
-		{}
-
-		operator const type&() const { return m_Value; }
-		auto operator&() const { return &m_Value; }
-		auto& get() const { return m_Value; }
-
-	private:
-		type m_Value;
-	};
-}
+template<typename arg_type>
+using keep_alive_type =
+	std::enable_if_t<std::is_reference_v<arg_type>,
+		std::conditional_t<
+			std::is_rvalue_reference_v<arg_type>,
+			std::remove_reference_t<arg_type>,
+			arg_type
+		>
+	>;
 
 template<typename type>
-auto keep_alive(type& Value)
+class [[nodiscard]] keep_alive
 {
-	return detail::keep_alive_t<type&>(Value);
-}
+public:
+	explicit keep_alive(type&& Value):
+		m_Value(FWD(Value))
+	{}
+
+	[[nodiscard]]
+	operator const type&() const noexcept { return m_Value; }
+
+	[[nodiscard]]
+	auto operator&() const noexcept { return &m_Value; }
+
+	[[nodiscard]]
+	auto& get() const noexcept { return m_Value; }
+
+private:
+	type m_Value;
+};
 
 template<typename type>
-auto keep_alive(type&& Value)
-{
-	return detail::keep_alive_t<type>(FWD(Value));
-}
+keep_alive(type&& Value) -> keep_alive<keep_alive_type<decltype(Value)>>;
 
 #endif // KEEP_ALIVE_HPP_9C3E665F_56D5_4A21_9950_F1F8F6BFC7A3

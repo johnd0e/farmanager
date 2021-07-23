@@ -1,14 +1,14 @@
-#include <stddef.h>
-#include <stdlib.h>
+﻿#include <algorithm>
+#include <mutex>
+#include <cstddef>
+#include <cassert>
+
 #include "Proclist.hpp"
 #include "Proclng.hpp"
 #include "perfthread.hpp"
+#include "guid.hpp"
 
-#define INITIAL_SIZE        51200
-#define INITIAL_SIZE        51200
-#define EXTEND_SIZE         25600
-
-_Counters Counters[] =
+const counters Counters[]
 {
 	{L"% Processor Time",        MProcessorTime     , MColProcessorTime     },
 	{L"% Privileged Time",       MPrivilegedTime    , MColPrivilegedTime    },
@@ -37,30 +37,29 @@ _Counters Counters[] =
 // A wrapper class to provide auto-closing of registry key
 class RegKey
 {
-		HKEY hKey;
-	public:
-		RegKey(HKEY hParent, LPCTSTR pKey, DWORD flags=KEY_QUERY_VALUE|KEY_ENUMERATE_SUB_KEYS)
+	HKEY hKey;
+public:
+	RegKey(HKEY hParent, const wchar_t* pKey, DWORD flags = KEY_QUERY_VALUE | KEY_ENUMERATE_SUB_KEYS)
+	{
+		if (const auto rc = RegOpenKeyEx(hParent, pKey, 0, flags, &hKey); rc != ERROR_SUCCESS)
 		{
-			DWORD rc;
-
-			if ((rc=RegOpenKeyEx(hParent, pKey, 0, flags, &hKey))!=ERROR_SUCCESS)
-			{
-				SetLastError(rc);
-				hKey = 0;
-			}
+			SetLastError(rc);
+			hKey = {};
 		}
-		~RegKey() { if (hKey) RegCloseKey(hKey); }
-		operator HKEY() { return hKey; }
+	}
+	~RegKey() { if (hKey) RegCloseKey(hKey); }
+	operator HKEY() const { return hKey; }
 };
 
 // look backwards for the counter number
-static int getcounter(wchar_t*p)
+static int getcounter(wchar_t* p)
 {
 	wchar_t* p2;
 
-	for (p2=p-2; iswdigit(*p2); p2--) ;
+	for (p2 = p - 2; iswdigit(*p2); p2--)
+		;
 
-	return FSF.atoi(p2+1);
+	return FSF.atoi(p2 + 1);
 }
 
 static bool Is64BitWindows()
@@ -70,37 +69,31 @@ static bool Is64BitWindows()
 #else
 	// 32-bit programs run on both 32-bit and 64-bit Windows
 	// so must sniff
-	BOOL f64 = FALSE;
-	return pIsWow64Process(GetCurrentProcess(), &f64) && f64;
+	static const auto IsWow64 = is_wow64_process(GetCurrentProcess());
+	return IsWow64;
 #endif
 }
 
-PerfThread::PerfThread(Plist& plist, LPCTSTR hostname, LPCTSTR pUser, LPCTSTR pPasw) : PlistPlugin(plist)
+PerfThread::PerfThread(Plist* const Owner, const wchar_t* hostname, const wchar_t* pUser, const wchar_t* pPasw) :
+	m_Owner(Owner),
+	DefaultBitness(Is64BitWindows()? 64 : 32)
 {
-	memset(this, 0, sizeof(*this)); // BUGBUG!
-
-	DefaultBitness = Is64BitWindows()? 64 : 32;
-
-	dwRefreshMsec = 500;
-
 	if (pUser && *pUser)
 	{
-		lstrcpyn(UserName, pUser, ARRAYSIZE(UserName));
+		m_UserName = pUser;
 
 		if (pPasw)
-			lstrcpyn(Password, pPasw, ARRAYSIZE(Password));
+			m_Password = pPasw;
 	}
 
-	hMutex = CreateMutex(0, FALSE, 0);
-	Lock l(this);
-	DWORD rc;
+	hMutex.reset(CreateMutex({}, false, {}));
+	const std::scoped_lock l(*this);
 
 	if (hostname)
 	{
-		lstrcpyn(HostName, hostname, ARRAYSIZE(HostName));
+		m_HostName = hostname;
 
-		if ((rc=RegConnectRegistry(hostname, HKEY_LOCAL_MACHINE, &hHKLM))!=ERROR_SUCCESS ||
-		        (rc=RegConnectRegistry(hostname, HKEY_PERFORMANCE_DATA, &hPerf))!=ERROR_SUCCESS)
+		if (const auto rc = RegConnectRegistry(hostname, HKEY_PERFORMANCE_TEXT, &hPerf); rc != ERROR_SUCCESS)
 		{
 			SetLastError(rc);
 			return;
@@ -108,36 +101,25 @@ PerfThread::PerfThread(Plist& plist, LPCTSTR hostname, LPCTSTR pUser, LPCTSTR pP
 	}
 	else
 	{
-		hHKLM = HKEY_LOCAL_MACHINE;
-		hPerf = HKEY_PERFORMANCE_DATA;
+		hPerf = HKEY_PERFORMANCE_TEXT;
 	}
-
-	LANGID lid = MAKELANGID(LANG_ENGLISH, SUBLANG_NEUTRAL);
-	FSF.sprintf(pf.szSubKey, L"Software\\Microsoft\\Windows NT\\CurrentVersion\\Perflib\\%03X", lid);
-	RegKey hKeyNames(hHKLM, pf.szSubKey, KEY_READ);
-
-	if (!hKeyNames)
-		return;
 
 	// Get the buffer size for the counter names
 	DWORD dwType, dwSize;
 
-	if ((rc=RegQueryValueEx(hKeyNames, L"Counters", 0, &dwType, NULL, &dwSize))
-	        != ERROR_SUCCESS)
+	if (const auto rc = RegQueryValueEx(hPerf, L"Counter", {}, &dwType, {}, &dwSize); rc != ERROR_SUCCESS)
 	{
 		SetLastError(rc);
 		return;
 	}
 
 	// Allocate the counter names buffer
-	wchar_t* buf = new wchar_t [dwSize];
+	std::vector<wchar_t> buf(dwSize);
 
 	// read the counter names from the registry
-	if ((rc=RegQueryValueEx(hKeyNames, L"Counters", 0, &dwType,
-	                        (BYTE*)buf, &dwSize)))
+	if (const auto rc = RegQueryValueEx(hPerf, L"Counter", {}, &dwType, reinterpret_cast<BYTE*>(buf.data()), &dwSize); rc != ERROR_SUCCESS)
 	{
 		SetLastError(rc);
-		delete [] buf;
 		return;
 	}
 
@@ -148,13 +130,13 @@ PerfThread::PerfThread(Plist& plist, LPCTSTR hostname, LPCTSTR pUser, LPCTSTR pP
 	// finally null terminated at the end.  the strings are in pairs of
 	// counter number and counter name.
 
-	for (wchar_t* p = buf; *p; p += lstrlen(p)+1)
+	for (auto p = buf.data(); *p; p += std::wcslen(p) + 1)
 	{
-		if (FSF.LStricmp(p, L"Process")==0)
-			FSF.itoa(getcounter(p), pf.szSubKey, 10);
-		else if (!pf.dwProcessIdTitle && FSF.LStricmp(p, L"ID Process")==0)
+		if (FSF.LStricmp(p, L"Process") == 0)
+			pf.SubKey = str(getcounter(p));
+		else if (!pf.dwProcessIdTitle && FSF.LStricmp(p, L"ID Process") == 0)
 			pf.dwProcessIdTitle = getcounter(p);
-		else if (!pf.dwPriorityTitle && FSF.LStricmp(p, L"Priority Base")== 0)
+		else if (!pf.dwPriorityTitle && FSF.LStricmp(p, L"Priority Base") == 0)
 			pf.dwPriorityTitle = getcounter(p);
 		else if (!pf.dwThreadTitle && FSF.LStricmp(p, L"Thread Count") == 0)
 			pf.dwThreadTitle = getcounter(p);
@@ -163,327 +145,361 @@ PerfThread::PerfThread(Plist& plist, LPCTSTR hostname, LPCTSTR pUser, LPCTSTR pP
 		else if (!pf.dwElapsedTitle && FSF.LStricmp(p, L"Elapsed Time") == 0)
 			pf.dwElapsedTitle = getcounter(p);
 		else
-			for (int i=0; i<NCOUNTERS; i++)
-				if (!pf.dwCounterTitles[i] && FSF.LStricmp(p,Counters[i].Name)==0)
+			for (int i = 0; i < NCOUNTERS; i++)
+				if (!pf.dwCounterTitles[i] && FSF.LStricmp(p, Counters[i].Name) == 0)
 					pf.dwCounterTitles[i] = getcounter(p);
 	}
 
-	delete[] buf;
-	hEvtBreak = CreateEvent(nullptr, TRUE, FALSE, nullptr);
-	hEvtRefresh = CreateEvent(0, 0, 0, 0);
-	hEvtRefreshDone = CreateEvent(0, 0, 0, 0);
+	hEvtBreak.reset(CreateEvent({}, TRUE, FALSE, {}));
+	hEvtRefresh.reset(CreateEvent({}, 0, 0, {}));
+	hEvtRefreshDone.reset(CreateEvent({}, 0, 0, {}));
 	Refresh();
-	hThread = CreateThread(0, 0, ThreadProc, this, 0, &dwThreadId);
+	hThread.reset(CreateThread({}, 0, ThreadProc, this, 0, &dwThreadId));
 	bOK = true;
 }
 PerfThread::~PerfThread()
 {
-	SetEvent(hEvtBreak);
-	WaitForSingleObject(hThread, INFINITE);
-	delete pData;
-	CloseHandle(hEvtRefreshDone);
-	CloseHandle(hEvtRefresh);
-	CloseHandle(hEvtBreak);
-	CloseHandle(hMutex);
-	CloseHandle(hThread);
+	SetEvent(hEvtBreak.get());
+	WaitForSingleObject(hThread.get(), INFINITE);
 
-	if (hHKLM) RegCloseKey(hHKLM);
+	if (hHKLM)
+		RegCloseKey(hHKLM);
 
-	if (hPerf) RegCloseKey(hPerf);
+	if (hPerf)
+		RegCloseKey(hPerf);
 }
 
-ProcessPerfData* PerfThread::GetProcessData(DWORD dwPid, DWORD dwThreads) const
+void PerfThread::lock()
 {
-	for (DWORD i=0; i< pData->length(); i++)
-		if ((*pData)[i].dwProcessId==dwPid &&
-		        (dwPid ||((dwThreads >5 && (*pData)[i].dwThreads >5) ||
-		                  (dwThreads<=5 && (*pData)[i].dwThreads<=5)))
-		   )
-			return &(*pData)[i];
+	WaitForSingleObject(hMutex.get(), INFINITE);
+}
 
-	return 0;
+void PerfThread::unlock()
+{
+	ReleaseMutex(hMutex.get());
+}
+
+ProcessPerfData* PerfThread::GetProcessData(DWORD dwPid, DWORD dwThreads)
+{
+	std::pair<ProcessPerfData*, size_t> ZeroPid[10];
+	auto ZeroPidIterator = std::begin(ZeroPid);
+
+	for (auto& i: pData)
+	{
+		if (i.dwProcessId == dwPid)
+		{
+			if (dwPid)
+				return &i;
+
+			if (ZeroPidIterator == std::end(ZeroPid))
+			{
+				assert(false);
+				continue;
+			}
+
+			ZeroPidIterator->first = &i;
+			++ZeroPidIterator;
+		}
+	}
+
+	if (dwPid)
+		return {};
+
+	if (ZeroPidIterator == ZeroPid + 1)
+		return ZeroPidIterator->first;
+
+	const auto threads_delta = [dwThreads](ProcessPerfData* Data)
+	{
+		return dwThreads > Data->dwThreads?
+			dwThreads - Data->dwThreads :
+			Data->dwThreads - dwThreads;
+	};
+
+	return std::min_element(std::begin(ZeroPid), ZeroPidIterator, [&](const auto& a, const auto& b)
+	{
+		return threads_delta(a.first) < threads_delta(b.first);
+	})->first;
+}
+
+template<typename T>
+static const T* view_as(const void* const Address, size_t const Offset)
+{
+	return static_cast<const T*>(static_cast<const void*>(static_cast<const char*>(Address) + Offset));
 }
 
 void PerfThread::Refresh()
 {
 	DebugToken token;
-	DWORD dwTicksBeforeRefresh = GetTickCount();
+	const auto dwTicksBeforeRefresh = GetTickCount();
 	// allocate the initial buffer for the performance data
-	Array<BYTE> buf(INITIAL_SIZE);
-	PPERF_DATA_BLOCK pPerf;
+	std::vector<BYTE> buf(100 * 1024);
+	const PERF_DATA_BLOCK* pPerf;
 	DWORD dwDeltaTickCount;
 
-	while (1)
+	for (;;)
 	{
-		DWORD dwSize = buf.length(), dwType;
+		auto dwSize = static_cast<DWORD>(buf.size());
+		DWORD dwType;
 		dwDeltaTickCount = GetTickCount() - dwLastTickCount;
 		DWORD rc;
 
-		while ((rc = RegQueryValueEx(hPerf, pf.szSubKey, 0, &dwType, buf, &dwSize))
-		        ==ERROR_LOCK_FAILED)  ; //Just retry
+		while ((rc = RegQueryValueEx(hPerf, pf.SubKey.c_str(), {}, &dwType, buf.data(), &dwSize)) == ERROR_LOCK_FAILED)
+			; //Just retry
 
-		pPerf = (PPERF_DATA_BLOCK)(BYTE*) buf;
+		pPerf = view_as<PERF_DATA_BLOCK>(buf.data(), 0);
 
 		// check for success and valid perf data block signature
-		if (rc==ERROR_SUCCESS &&
-		        !memcmp(pPerf->Signature, L"PERF", 4*sizeof(wchar_t)))
+		if (rc == ERROR_SUCCESS && !std::wmemcmp(pPerf->Signature, L"PERF", 4))
 		{
 			break;
 		}
 
-		if (rc==ERROR_MORE_DATA)
-			buf.reserve(buf.length()+EXTEND_SIZE);
-		else if (rc<0x100000)  // ??? sometimes we receive garbage in rc
+		if (rc == ERROR_MORE_DATA)
+			buf.resize(static_cast<size_t>(buf.size() * 1.5));
+		else if (rc < 0x100000)  // ??? sometimes we receive garbage in rc
 		{
 			bOK = false;
 			return;
 		}
 	}
 
-	bool bDeltaValid = dwLastTickCount && dwDeltaTickCount;
+	const auto bDeltaValid = dwLastTickCount && dwDeltaTickCount;
 	// set the perf_object_type pointer
-	PPERF_OBJECT_TYPE pObj =
-	    (PPERF_OBJECT_TYPE)((DWORD_PTR)pPerf + pPerf->HeaderLength);
+	const auto pObj = view_as<PERF_OBJECT_TYPE>(pPerf, pPerf->HeaderLength);
 	// loop thru the performance counter definition records looking
 	// for the process id counter and then save its offset
-	PPERF_COUNTER_DEFINITION pCounterDef =
-	    (PPERF_COUNTER_DEFINITION)((DWORD_PTR)pObj + pObj->HeaderLength);
+	const auto pCounterDef = view_as<PERF_COUNTER_DEFINITION>(pObj, pObj->HeaderLength);
 
 	if (!pf.CounterTypes[0] && !pf.CounterTypes[1])
 	{
-		for (DWORD i=0; i<(DWORD)pObj->NumCounters; i++)
-			for (DWORD ii=0; ii<NCOUNTERS; ii++)
-				if (pf.dwCounterTitles[ii] && pCounterDef[i].CounterNameTitleIndex==pf.dwCounterTitles[ii])
+		for (DWORD i = 0; i < (DWORD)pObj->NumCounters; i++)
+			for (DWORD ii = 0; ii < NCOUNTERS; ii++)
+				if (pf.dwCounterTitles[ii] && pCounterDef[i].CounterNameTitleIndex == pf.dwCounterTitles[ii])
 					pf.CounterTypes[ii] = pCounterDef[i].CounterType;
 	}
 
-	DWORD dwProcessIdCounter=0, dwPriorityCounter=0, dwThreadCounter=0, dwElapsedCounter=0,
-	                         dwCreatingPIDCounter=0, dwCounterOffsets[NCOUNTERS];
-	memset(dwCounterOffsets,0,sizeof(dwCounterOffsets));
-	DWORD i;
+	DWORD dwProcessIdCounter = 0, dwPriorityCounter = 0, dwThreadCounter = 0, dwElapsedCounter = 0,
+		dwCreatingPIDCounter = 0, dwCounterOffsets[NCOUNTERS]{};
 
-	for (i=0; i<(DWORD)pObj->NumCounters; i++)
+	for (size_t i = 0; i != pObj->NumCounters; ++i)
 	{
-		if (pCounterDef[i].CounterNameTitleIndex == pf.dwProcessIdTitle)
-			dwProcessIdCounter = pCounterDef[i].CounterOffset;
-		else if (pCounterDef[i].CounterNameTitleIndex == pf.dwPriorityTitle)
-			dwPriorityCounter = pCounterDef[i].CounterOffset;
-		else if (pCounterDef[i].CounterNameTitleIndex == pf.dwThreadTitle)
-			dwThreadCounter = pCounterDef[i].CounterOffset;
-		else if (pCounterDef[i].CounterNameTitleIndex == pf.dwCreatingPIDTitle)
-			dwCreatingPIDCounter = pCounterDef[i].CounterOffset;
-		else if (pCounterDef[i].CounterNameTitleIndex == pf.dwElapsedTitle)
-			dwElapsedCounter = pCounterDef[i].CounterOffset;
+		const auto& Def = pCounterDef[i];
+
+		if (Def.CounterNameTitleIndex == pf.dwProcessIdTitle)
+			dwProcessIdCounter = Def.CounterOffset;
+		else if (Def.CounterNameTitleIndex == pf.dwPriorityTitle)
+			dwPriorityCounter = Def.CounterOffset;
+		else if (Def.CounterNameTitleIndex == pf.dwThreadTitle)
+			dwThreadCounter = Def.CounterOffset;
+		else if (Def.CounterNameTitleIndex == pf.dwCreatingPIDTitle)
+			dwCreatingPIDCounter = Def.CounterOffset;
+		else if (Def.CounterNameTitleIndex == pf.dwElapsedTitle)
+			dwElapsedCounter = Def.CounterOffset;
 		else
-			for (int ii=0; ii<NCOUNTERS; ii++)
-				if (pf.dwCounterTitles[ii] && pCounterDef[i].CounterNameTitleIndex==pf.dwCounterTitles[ii])
-					dwCounterOffsets[ii] = pCounterDef[i].CounterOffset;
+			for (int ii = 0; ii < NCOUNTERS; ii++)
+				if (pf.dwCounterTitles[ii] && Def.CounterNameTitleIndex == pf.dwCounterTitles[ii])
+					dwCounterOffsets[ii] = Def.CounterOffset;
 	}
 
-	Array<ProcessPerfData> *pNewPData = new Array<ProcessPerfData>((DWORD)pObj->NumInstances);
-	PPERF_INSTANCE_DEFINITION pInst =
-	    (PPERF_INSTANCE_DEFINITION)((DWORD_PTR)pObj + pObj->DefinitionLength);
+	std::vector<ProcessPerfData> NewPData(pObj->NumInstances);
+	auto pInst = view_as<PERF_INSTANCE_DEFINITION>(pObj, pObj->DefinitionLength);
 
 	// loop thru the performance instance data extracting each process name
 	// and process id
 	//
-	for (i=0; i<(DWORD)pObj->NumInstances; i++)
+	for (size_t i = 0; i != static_cast<size_t>(pObj->NumInstances); ++i)
 	{
-		ProcessPerfData& Task = (*pNewPData)[i];
+		auto& Task = NewPData[i];
 		// get the process id
-		PPERF_COUNTER_BLOCK pCounter = (PPERF_COUNTER_BLOCK)((DWORD_PTR)pInst + pInst->ByteLength);
+		const auto pCounter = view_as<PERF_COUNTER_BLOCK>(pInst, pInst->ByteLength);
 
 		Task.Bitness = DefaultBitness;
 
-		Task.dwProcessId = *((LPDWORD)((DWORD_PTR)pCounter + dwProcessIdCounter));
-		Task.dwProcessPriority = *((LPDWORD)((DWORD_PTR)pCounter + dwPriorityCounter));
-		Task.dwThreads = dwThreadCounter ? *((LPDWORD)((DWORD_PTR)pCounter + dwThreadCounter)) : 0;
-		Task.dwCreatingPID = dwCreatingPIDCounter ? *((LPDWORD)((DWORD_PTR)pCounter + dwCreatingPIDCounter)) : 0;
+		Task.dwProcessId = *view_as<DWORD>(pCounter, dwProcessIdCounter);
+		if (dwThreadCounter)
+			Task.dwThreads = *view_as<DWORD>(pCounter, dwThreadCounter);
 
-		if (pObj->PerfFreq.QuadPart && *((LONGLONG*)((DWORD_PTR)pCounter + dwElapsedCounter)))
-			Task.dwElapsedTime = (DWORD)((pObj->PerfTime.QuadPart - *((LONGLONG*)((DWORD_PTR)pCounter + dwElapsedCounter))
-			                             ) / pObj->PerfFreq.QuadPart);
-		else
-			Task.dwElapsedTime = 0;
-
-// Store new qwCounters
-		for (int ii=0; ii<NCOUNTERS; ii++)
-			if (dwCounterOffsets[ii])
-			{
-				if ((pf.CounterTypes[ii]&0x300)==PERF_SIZE_LARGE)
-					Task.qwCounters[ii] = *((LONGLONG*)((DWORD_PTR)pCounter + dwCounterOffsets[ii]));
-				else // PERF_SIZE_DWORD
-					Task.qwCounters[ii] = *((DWORD*)((DWORD_PTR)pCounter + dwCounterOffsets[ii]));
-			}
-
-		//memcpy(Task.qwResults, Task.qwCounters, sizeof(Task.qwResults));
-		memset(Task.qwResults, 0, sizeof(Task.qwResults));
-		ProcessPerfData* pOldTask = 0;
-
-		if (pData)  // Use prev data if any
+		ProcessPerfData* pOldTask = {};
+		if (!pData.empty())  // Use prev data if any
 		{
 			//Get the pointer to the previous instance of this process
 			pOldTask = GetProcessData(Task.dwProcessId, Task.dwThreads);
-			//get the rest of the counters
-
-			for (int ii=0; ii<NCOUNTERS; ii++)
+			if (pOldTask)  // copy process' data from pOldTask to Task
 			{
-				if (!pf.dwCounterTitles[ii])
-					continue;
-
-// Fill qwResults
-				if (bDeltaValid)
-					switch (pf.CounterTypes[ii])
-					{
-						case PERF_COUNTER_RAWCOUNT:
-						case PERF_COUNTER_LARGE_RAWCOUNT:
-							Task.qwResults[ii] = Task.qwCounters[ii];
-							break;
-						case PERF_100NSEC_TIMER:
-							// 64-bit Timer in 100 nsec units. Display suffix: "%"
-							Task.qwResults[ii] = !pOldTask ? 0 :
-							                     (*(LONGLONG*)((DWORD_PTR)pCounter + dwCounterOffsets[ii]) - pOldTask->qwCounters[ii])
-							                     / (dwDeltaTickCount*100);
-							break;
-						case PERF_COUNTER_COUNTER:
-						case PERF_COUNTER_BULK_COUNT:
-							Task.qwResults[ii] = !pOldTask ? 0 :
-							                     (Task.qwCounters[ii] - pOldTask->qwCounters[ii])
-							                     * 1000 / dwDeltaTickCount;
-							break;
-					}
+				Task = *pOldTask;
 			}
-		}//if pData
-
-		if (pOldTask)  // copy process' data from pOldTask to Task
-		{
-			/*
-			    lstrcpy(Task.ProcessName, pOldTask->ProcessName);
-			    lstrcpy(Task.FullPath, pOldTask->FullPath);
-			    lstrcpy(Task.CommandLine, pOldTask->CommandLine);
-			    Task.ftCreation = pOldTask->ftCreation;
-			    */
-			memcpy(Task.ProcessName, pOldTask->ProcessName, sizeof(Task) - offsetof(ProcessPerfData, ProcessName));
 		}
-		else
+
+		Task.dwProcessPriority = *view_as<DWORD>(pCounter, dwPriorityCounter);
+		if (dwCreatingPIDCounter)
+			Task.dwCreatingPID = *view_as<DWORD>(pCounter, dwCreatingPIDCounter);
+
+		if (const auto Value = *view_as<LONGLONG>(pCounter, dwElapsedCounter); Value && pObj->PerfFreq.QuadPart)
+			Task.dwElapsedTime = ((pObj->PerfTime.QuadPart - Value) / pObj->PerfFreq.QuadPart);
+
+		// Store new qwCounters
+		for (int ii = 0; ii < NCOUNTERS; ii++)
 		{
-			HANDLE hProcess = *HostName || Task.dwProcessId<=8 ? 0 :
-			                  OpenProcessForced(&token, PROCESS_QUERY_INFORMATION|PROCESS_VM_READ|READ_CONTROL, Task.dwProcessId);
+			if (!dwCounterOffsets[ii])
+				continue;
 
-			if (hProcess)
+			Task.qwCounters[ii] = (pf.CounterTypes[ii] & 0x300) == PERF_SIZE_LARGE?
+				*view_as<LONGLONG>(pCounter, dwCounterOffsets[ii]) :
+				*view_as<DWORD>(pCounter, dwCounterOffsets[ii]); // PERF_SIZE_DWORD
+		}
+
+		//get the rest of the counters
+		for (int ii = 0; ii < NCOUNTERS; ii++)
+		{
+			if (!pf.dwCounterTitles[ii])
+				continue;
+
+			// Fill qwResults
+			if (!bDeltaValid)
+				continue;
+
+			switch (pf.CounterTypes[ii])
 			{
-				GetOpenProcessData(hProcess, Task.ProcessName, ARRAYSIZE(Task.ProcessName),
-				                     Task.FullPath, ARRAYSIZE(Task.FullPath), Task.CommandLine, ARRAYSIZE(Task.CommandLine));
-				FILETIME ftExit,ftKernel,ftUser;
-				GetProcessTimes(hProcess,&Task.ftCreation,&ftExit,&ftKernel,&ftUser);
-				SetLastError(0);
-				Task.dwGDIObjects = pGetGuiResources(hProcess, 0/*GR_GDIOBJECTS*/);
-				Task.dwUSERObjects = pGetGuiResources(hProcess, 1/*GR_USEROBJECTS*/);
-				BOOL wow64;
+			case PERF_COUNTER_RAWCOUNT:
+			case PERF_COUNTER_LARGE_RAWCOUNT:
+				Task.qwResults[ii] = Task.qwCounters[ii];
+				break;
 
-				if (pIsWow64Process(hProcess, &wow64) && wow64)
+			case PERF_100NSEC_TIMER:
+				// 64-bit Timer in 100 nsec units. Display suffix: "%"
+				if (pOldTask)
+					Task.qwResults[ii] = (*view_as<LONGLONG>(pCounter, dwCounterOffsets[ii]) - pOldTask->qwCounters[ii]) / (dwDeltaTickCount * 100);
+				break;
+
+			case PERF_COUNTER_COUNTER:
+			case PERF_COUNTER_BULK_COUNT:
+				if (pOldTask)
+					Task.qwResults[ii] = (Task.qwCounters[ii] - pOldTask->qwCounters[ii]) * 1000 / dwDeltaTickCount;
+				break;
+			}
+		}
+
+		if (!pOldTask)
+		{
+			if (const auto hProcess = !m_HostName.empty() || Task.dwProcessId <= 8? nullptr :
+				handle(OpenProcessForced(&token, PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | READ_CONTROL, Task.dwProcessId)))
+			{
+				GetOpenProcessData(hProcess.get(), &Task.ProcessName, &Task.FullPath, &Task.CommandLine);
+				FILETIME ftExit, ftKernel, ftUser;
+				GetProcessTimes(hProcess.get(), &Task.ftCreation, &ftExit, &ftKernel, &ftUser);
+				SetLastError(ERROR_SUCCESS);
+				Task.dwGDIObjects = pGetGuiResources(hProcess.get(), 0/*GR_GDIOBJECTS*/);
+				Task.dwUSERObjects = pGetGuiResources(hProcess.get(), 1/*GR_USEROBJECTS*/);
+
+				if (is_wow64_process(hProcess.get()))
 					Task.Bitness = 32;
-
-				CloseHandle(hProcess);
 			}
 		}
 
-		if (!*Task.ProcessName)  // if after all this it's still unfilled...
+		if (Task.ProcessName.empty())  // if after all this it's still unfilled...
 		{
 			// pointer to the process name
 			// convert it to ascii
-			lstrcpyn(Task.ProcessName, (LPCWSTR)((DWORD_PTR)pInst + pInst->NameOffset),
-			         ARRAYSIZE(Task.ProcessName) - 5);
-			if (Task.dwProcessId>8)
-				lstrcat(Task.ProcessName, L".exe");
+			Task.ProcessName.assign(reinterpret_cast<const wchar_t*>(reinterpret_cast<DWORD_PTR>(pInst) + pInst->NameOffset), pInst->NameLength / sizeof(wchar_t) - 1);
+
+			if (Task.dwProcessId > 8)
+				Task.ProcessName += L".exe";
 		}
 
-		pInst = (PPERF_INSTANCE_DEFINITION)((DWORD_PTR)pCounter + pCounter->ByteLength);
+		pInst = view_as<PERF_INSTANCE_DEFINITION>(pCounter, pCounter->ByteLength);
 	}
 
 	dwLastTickCount += dwDeltaTickCount;
 	{
-		Lock l(this);
-		delete pData;
-		pData = pNewPData;
+		const std::scoped_lock l(*this);
+		pData = std::move(NewPData);
 	}
-//    if(!PlistPlugin.PostUpdate())
-	bUpdated = true;
-	dwLastRefreshTicks = GetTickCount() - dwTicksBeforeRefresh;
-	SetEvent(hEvtRefreshDone);
-}
 
-template<size_t N>
-static auto& LastChar(wchar_t(&Arr)[N])
-{
-	return Arr[N - 1];
+	dwLastRefreshTicks = GetTickCount() - dwTicksBeforeRefresh;
+	SetEvent(hEvtRefreshDone.get());
 }
 
 void PerfThread::RefreshWMIData()
 {
-	for (unsigned i=0; i<pData->length(); i++)
+	for (auto& i: pData)
 	{
-		if (WaitForSingleObject(hEvtBreak, 0) == WAIT_OBJECT_0)
+		if (WaitForSingleObject(hEvtBreak.get(), 0) == WAIT_OBJECT_0)
 			break;
 
-		if (*HostName && LastChar((*pData)[i].FullPath)!='*')
+		if (!m_HostName.empty() && !i.FullPathRead)
 		{
-			WMI.GetProcessExecutablePath((*pData)[i].dwProcessId, (*pData)[i].FullPath);
-			LastChar((*pData)[i].FullPath) = '*';
+			i.FullPath = WMI.GetProcessExecutablePath(i.dwProcessId);
+			i.FullPathRead = true;
 		}
 
-		if (LastChar((*pData)[i].Owner)!='*')
+		if (!i.OwnerRead)
 		{
-			WMI.GetProcessOwner((*pData)[i].dwProcessId, (*pData)[i].Owner);
-			int iSessionId = WMI.GetProcessSessionId((*pData)[i].dwProcessId);
+			i.Owner = WMI.GetProcessOwner(i.dwProcessId);
 
-			if (iSessionId > 0)
+			if (const auto SessionId = WMI.GetProcessSessionId(i.dwProcessId); SessionId)
 			{
-				wchar_t* p = (*pData)[i].Owner + lstrlen((*pData)[i].Owner);
-				*p++ = L':';
-				FSF.itoa(iSessionId, p, 10);
+				i.Owner += L':';
+				i.Owner += str(SessionId);
 			}
 
-			LastChar((*pData)[i].Owner) = '*';
+			i.OwnerRead = true;
+		}
+
+		if (!i.CommandLineRead)
+		{
+			i.CommandLine = WMI.GetProcessCommandLine(i.dwProcessId);
+			i.CommandLineRead = true;
 		}
 	}
 }
 
-DWORD WINAPI PerfThread::ThreadProc()
+void PerfThread::ThreadProc()
 {
-	HANDLE handles[2] = {hEvtBreak, hEvtRefresh};
+	const HANDLE handles[]
+	{
+		hEvtBreak.get(), hEvtRefresh.get()
+	};
 
-	CoInitialize(NULL);
-	while (1)
+	const auto CoInited = SUCCEEDED(CoInitialize({}));
+
+	for (;;)
 	{
 		Refresh();
 
 		if (!bConnectAttempted && Opt.EnableWMI)
 		{
-			WMI.Connect(HostName, *UserName?UserName:0, *UserName?Password:0);
+			WMI.Connect(
+				m_HostName.c_str(),
+				m_UserName.empty()? nullptr : m_UserName.c_str(),
+				m_UserName.empty()? nullptr : m_Password.c_str()
+			);
 			bConnectAttempted = true;
 		}
 
 		if (WMI)
 			RefreshWMIData();
 
-		if (WaitForMultipleObjects(ARRAYSIZE(handles), handles, 0, dwRefreshMsec)==WAIT_OBJECT_0)
+		if (WaitForMultipleObjects(static_cast<DWORD>(std::size(handles)), handles, 0, dwRefreshMsec) == WAIT_OBJECT_0)
 			break;
+
+		PsInfo.AdvControl(&MainGuid, ACTL_SYNCHRO, 0, m_Owner);
 	}
 
 	WMI.Disconnect();
-	CoUninitialize();
-	return 1;
+
+	if (CoInited)
+		CoUninitialize();
 }
 
-DWORD WINAPI PerfThread::ThreadProc(LPVOID lpParm)
+DWORD WINAPI PerfThread::ThreadProc(void* Parm)
 {
-	return ((PerfThread*)lpParm)->ThreadProc();
+	static_cast<PerfThread*>(Parm)->ThreadProc();
+	return 0;
 }
 
 void PerfThread::SyncReread()
 {
-	ResetEvent(hEvtRefreshDone);
+	ResetEvent(hEvtRefreshDone.get());
 	AsyncReread();
-	WaitForSingleObject(hEvtRefreshDone, INFINITE);
+	WaitForSingleObject(hEvtRefreshDone.get(), INFINITE);
 }

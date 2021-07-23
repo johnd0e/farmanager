@@ -35,21 +35,28 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "scrobj.hpp"
 #include "editcontrol.hpp"
 
+// Platform:
+
+// Common:
+#include "common/function_ref.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
+
 struct execute_info
 {
-	enum class wait_mode { no_wait, wait_idle, wait_finish };
-	enum class exec_mode { detect, direct, external };
+	enum class wait_mode { no_wait, if_needed, wait_finish };
 	enum class source_mode { unknown, known };
 	enum class echo { disabled, enabled, ignored };
 
 	string Command;
 	string DisplayCommand;
-	wait_mode WaitMode{ wait_mode::no_wait };
-	bool NewWindow{};
-	exec_mode ExecMode{ exec_mode::detect };
+	wait_mode WaitMode{ wait_mode::if_needed };
 	source_mode SourceMode{ source_mode::unknown };
 	bool RunAs{};
 	bool Echo{ true };
@@ -65,13 +72,14 @@ public:
 	bool ProcessKey(const Manager::Key& Key) override;
 	bool ProcessMouse(const MOUSE_EVENT_RECORD *MouseEvent) override;
 	long long VMProcess(int OpCode, void* vParam = nullptr, long long iParam=0) override;
+	void ResizeConsole() override;
 
 	const string& GetCurDir() const { return m_CurDir; }
-	void SetCurDir(const string& CurDir);
+	void SetCurDir(string_view CurDir);
 
 	const string& GetString() const { return CmdStr.GetString(); }
-	void SetString(const string& Str, bool Redraw);
-	void InsertString(const string& Str);
+	void SetString(string_view Str, bool Redraw);
+	void InsertString(string_view Str);
 	void ExecString(execute_info& Info);
 	void ShowViewEditHistory();
 	void SetCurPos(int Pos, int LeftPos=0, bool Redraw=true);
@@ -85,12 +93,12 @@ public:
 	void LockUpdatePanel(bool Mode);
 	int GetPromptSize() const {return PromptSize;}
 	void SetPromptSize(int NewSize);
-	void DrawFakeCommand(const string& FakeCommand);
+	void DrawFakeCommand(string_view FakeCommand);
 
 private:
 	void DisplayObject() override;
 	size_t DrawPrompt();
-	bool ProcessOSCommands(string_view CmdLine, const std::function<void(bool)>& ConsoleActivatior);
+	bool ProcessOSCommands(string_view CmdLine, function_ref<void(bool)> ConsoleActivatior);
 	struct segment
 	{
 		string Text;

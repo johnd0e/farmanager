@@ -35,14 +35,16 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "keys.hpp"
 
-/*
-  ВНИМАНИЕ!
-  При добавлении сюда...
-  ... так же то же необходимо добавлять и в syslog.cpp (функция __MCODE_ToName)
+// Platform:
 
-*/
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
 
 enum MACRO_OP_CODE
 {
@@ -91,7 +93,7 @@ enum MACRO_OP_CODE
 	MCODE_F_PANELITEM,                // V=PanelItem(Panel,Index,TypeInfo)
 	MCODE_F_EVAL,                     // N=eval(S[,N])
 	MCODE_F_RINDEX,                   // S=rindex(S1,S2[,Mode])
-	MCODE_F_SLEEP,                    // Sleep(N)
+	MCODE_F_SLEEP,                    // os::chrono::sleep_for(Nms)
 	MCODE_F_STRING,                   // S=string(V)
 	MCODE_F_SUBSTR,                   // S=substr(S,start[,length])
 	MCODE_F_UCASE,                    // S=ucase(S1)
@@ -126,13 +128,13 @@ enum MACRO_OP_CODE
 	MCODE_F_KEYBAR_SHOW,              // N=KeyBar.Show([N])
 	MCODE_F_HISTORY_DISABLE,          // N=History.Disable([State])
 	MCODE_F_FMATCH,                   // N=FMatch(S,Mask)
-	MCODE_F_PLUGIN_MENU,              // N=Plugin.Menu(Guid[,MenuGuid])
-	MCODE_F_PLUGIN_CALL,              // N=Plugin.Call(Guid[,Item])
-	MCODE_F_PLUGIN_SYNCCALL,          // N=Plugin.SyncCall(Guid[,Item])
+	MCODE_F_PLUGIN_MENU,              // N=Plugin.Menu(Uuid[,MenuUuid])
+	MCODE_F_PLUGIN_CALL,              // N=Plugin.Call(Uuid[,Item])
+	MCODE_F_PLUGIN_SYNCCALL,          // N=Plugin.SyncCall(Uuid[,Item])
 	MCODE_F_PLUGIN_LOAD,              // N=Plugin.Load(DllPath[,ForceLoad])
-	MCODE_F_PLUGIN_COMMAND,           // N=Plugin.Command(Guid[,Command])
+	MCODE_F_PLUGIN_COMMAND,           // N=Plugin.Command(Uuid[,Command])
 	MCODE_F_PLUGIN_UNLOAD,            // N=Plugin.UnLoad(DllPath)
-	MCODE_F_PLUGIN_EXIST,             // N=Plugin.Exist(Guid)
+	MCODE_F_PLUGIN_EXIST,             // N=Plugin.Exist(Uuid)
 	MCODE_F_MENU_FILTER,              // N=Menu.Filter(Action[,Mode])
 	MCODE_F_MENU_FILTERSTR,           // S=Menu.FilterStr([Action[,S]])
 	MCODE_F_DLG_SETFOCUS,             // N=Dlg->SetFocus([ID])

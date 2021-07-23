@@ -31,13 +31,17 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "keybar.hpp"
 
+// Internal:
 #include "farcolor.hpp"
 #include "keyboard.hpp"
 #include "keys.hpp"
 #include "manager.hpp"
-#include "syslog.hpp"
 #include "lang.hpp"
 #include "interf.hpp"
 #include "config.hpp"
@@ -46,10 +50,17 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "global.hpp"
 #include "plugin.hpp"
 
+// Platform:
+
+// Common:
+#include "common.hpp"
 #include "common/enum_tokens.hpp"
 #include "common/range.hpp"
 
+// External:
 #include "format.hpp"
+
+//----------------------------------------------------------------------------
 
 enum
 {
@@ -65,50 +76,48 @@ KeyBar::KeyBar(window_ptr Owner):
 	ShiftState(),
 	CustomLabelsReaded(false)
 {
-	std::for_each(RANGE(Items, i)
+	for (auto& i: Items)
 	{
 		i.resize(KEY_COUNT);
-	});
-
-	_OT(SysLog(L"[%p] KeyBar::KeyBar()", this));
+	}
 }
 
 void KeyBar::DisplayObject()
 {
-	GotoXY(m_X1,m_Y1);
+	GotoXY(m_Where.left, m_Where.top);
 	AltState = IntKeyState.AltPressed();
 	CtrlState = IntKeyState.CtrlPressed();
 	ShiftState = IntKeyState.ShiftPressed();
 
-	int KeyWidth=(m_X2-m_X1-1)/12;
+	int KeyWidth = (m_Where.width() - 2) / 12;
 
 	if (KeyWidth<8)
 		KeyWidth=8;
 
-	int LabelWidth=KeyWidth-2;
+	const auto LabelWidth = KeyWidth - 2;
+
+	static const std::array Mapping
+	{
+		std::pair{ &FarKeyboardState::NonePressed,             KBL_MAIN         },
+		std::pair{ &FarKeyboardState::OnlyAltPressed,          KBL_ALT          },
+		std::pair{ &FarKeyboardState::OnlyCtrlPressed,         KBL_CTRL         },
+		std::pair{ &FarKeyboardState::OnlyShiftPressed,        KBL_SHIFT        },
+		std::pair{ &FarKeyboardState::OnlyCtrlAltPressed,      KBL_CTRLALT      },
+		std::pair{ &FarKeyboardState::OnlyAltShiftPressed,     KBL_ALTSHIFT     },
+		std::pair{ &FarKeyboardState::OnlyCtrlShiftPressed,    KBL_CTRLSHIFT    },
+		std::pair{ &FarKeyboardState::OnlyCtrlAltShiftPressed, KBL_CTRLALTSHIFT },
+	};
+
+	static_assert(std::size(Mapping) == KBL_GROUP_COUNT);
 
 	for (size_t i=0; i<KEY_COUNT; i++)
 	{
-		if (WhereX()+LabelWidth>=m_X2)
+		if (WhereX() + LabelWidth >= m_Where.right)
 			break;
 
 		SetColor(COL_KEYBARNUM);
 		Text(str(i + 1));
 		SetColor(COL_KEYBARTEXT);
-
-		static const std::pair<bool(FarKeyboardState::*)() const, keybar_group> Mapping[] =
-		{
-			{ &FarKeyboardState::NonePressed, KBL_MAIN },
-			{ &FarKeyboardState::OnlyAltPressed, KBL_ALT },
-			{ &FarKeyboardState::OnlyCtrlPressed, KBL_CTRL },
-			{ &FarKeyboardState::OnlyShiftPressed, KBL_SHIFT },
-			{ &FarKeyboardState::OnlyCtrlAltPressed, KBL_CTRLALT },
-			{ &FarKeyboardState::OnlyAltShiftPressed, KBL_ALTSHIFT },
-			{ &FarKeyboardState::OnlyCtrlShiftPressed, KBL_CTRLSHIFT },
-			{ &FarKeyboardState::OnlyCtrlAltShiftPressed, KBL_CTRLALTSHIFT },
-		};
-
-		static_assert(std::size(Mapping) == KBL_GROUP_COUNT);
 
 		const auto State = std::find_if(ALL_CONST_RANGE(Mapping), [&](const auto& Item) { return std::invoke(Item.first, IntKeyState); });
 		// State should always be valid so check is excessive, but style is style
@@ -148,7 +157,7 @@ void KeyBar::DisplayObject()
 		}
 	}
 
-	int Width=m_X2-WhereX()+1;
+	const auto Width = m_Where.right - WhereX() + 1;
 
 	if (Width>0)
 	{
@@ -159,50 +168,46 @@ void KeyBar::DisplayObject()
 
 void KeyBar::ClearKeyTitles(bool Custom)
 {
-	const auto ItemPtr = Custom? &keybar_item::second : &keybar_item::first;
-	std::for_each(RANGE(Items, i)
+	const auto ItemGetter = Custom? &keybar_item::second : &keybar_item::first;
+
+	for (auto& i: Items)
 	{
-		std::for_each(RANGE(i, j)
+		for (auto& j: i)
 		{
-			std::invoke(ItemPtr, j).clear();
-		});
-	});
+			std::invoke(ItemGetter, j).clear();
+		}
+	}
 }
 
 void KeyBar::SetLabels(lng StartIndex)
 {
-	bool no_tree = Global->Opt->Tree.TurnOffCompletely;
-
-	std::for_each(RANGE(Items, Group)
+	for (auto& Group: Items)
 	{
-		std::for_each(RANGE(Group, i)
+		for (auto& i: Group)
 		{
-			if (no_tree && (StartIndex == lng::MAltF10 || StartIndex == lng::MInfoAltF10 || StartIndex == lng::MQViewAltF10))
-				i.first.clear();
-			else
-				i.first = msg(StartIndex);
+			i.first = msg(StartIndex);
 			StartIndex++;
-		});
-	});
+		}
+	}
 }
 
-static int FnGroup(DWORD ControlState)
+static int FnGroup(unsigned ControlState)
 {
 	static const struct
 	{
-		DWORD Group;
-		DWORD ControlState;
+		unsigned Group;
+		unsigned ControlState;
 	}
-	Area[] =
+	Area[]
 	{
-		{KBL_MAIN, 0},
-		{KBL_SHIFT, KEY_SHIFT},
-		{KBL_ALT, KEY_ALT},
-		{KBL_CTRL, KEY_CTRL},
-		{KBL_ALTSHIFT, KEY_ALTSHIFT},
-		{KBL_CTRLSHIFT, KEY_CTRLSHIFT},
-		{KBL_CTRLALT, KEY_CTRLALT},
-		{KBL_CTRLALTSHIFT, KEY_CTRLALT|KEY_SHIFT}
+		{ KBL_MAIN,           0                       },
+		{ KBL_SHIFT,          KEY_SHIFT               },
+		{ KBL_ALT,            KEY_ALT                 },
+		{ KBL_CTRL,           KEY_CTRL                },
+		{ KBL_ALTSHIFT,       KEY_ALTSHIFT            },
+		{ KBL_CTRLSHIFT,      KEY_CTRLSHIFT           },
+		{ KBL_CTRLALT,        KEY_CTRLALT             },
+		{ KBL_CTRLALTSHIFT,   KEY_CTRLALT | KEY_SHIFT },
 	};
 	static_assert(std::size(Area) == KBL_GROUP_COUNT);
 
@@ -236,30 +241,33 @@ void KeyBar::SetCustomLabels(KEYBARAREA Area)
 		CustomArea = Area;
 		ClearKeyTitles(true);
 
-		for (auto& i: ConfigProvider().GeneralCfg()->ValuesEnumerator<string>(concat(L"KeyBarLabels."sv, strLanguage, L'.', Names[Area])))
+		for (const auto& [Name, Value]: ConfigProvider().GeneralCfg()->ValuesEnumerator<string>(concat(L"KeyBarLabels."sv, strLanguage, L'.', Names[Area])))
 		{
-			DWORD Key = KeyNameToKey(i.first);
-			DWORD fnum = (Key & ~KEY_CTRLMASK) - KEY_F1;
+			const auto Key = KeyNameToKey(Name);
+			if (!Key)
+				continue;
+
+			const auto fnum = (Key & ~KEY_CTRLMASK) - KEY_F1;
 			if (fnum < KEY_COUNT)
 			{
-				int fgroup = FnGroup(Key & KEY_CTRLMASK);
+				const auto fgroup = FnGroup(Key & KEY_CTRLMASK);
 				if (fgroup >= 0)
-					Items[fgroup][fnum].second = i.second;
+					Items[fgroup][fnum].second = Value;
 			}
 		}
 		CustomLabelsReaded = true;
 	}
 
-	std::for_each(RANGE(Items, Group)
+	for (auto& Group: Items)
 	{
-		std::for_each(RANGE(Group, i)
+		for (auto& [Title, CustomTitle]: Group)
 		{
-			if (!i.second.empty())
+			if (!CustomTitle.empty())
 			{
-				i.first = i.second;
+				Title = CustomTitle;
 			}
-		});
-	});
+		}
+	}
 }
 
 bool KeyBar::ProcessKey(const Manager::Key& Key)
@@ -287,16 +295,12 @@ bool KeyBar::ProcessMouse(const MOUSE_EVENT_RECORD *MouseEvent)
 	if (!(MouseEvent->dwButtonState & 3) || MouseEvent->dwEventFlags)
 		return false;
 
-	if (MouseEvent->dwMousePosition.X<m_X1 || MouseEvent->dwMousePosition.X>m_X2 ||
-	        MouseEvent->dwMousePosition.Y!=m_Y1)
+	if (!m_Where.contains(MouseEvent->dwMousePosition))
 		return false;
 
-	int KeyWidth=(m_X2-m_X1-1)/12;
+	int const KeyWidth = std::max(8, (m_Where.width() - 2) / 12);
 
-	if (KeyWidth<8)
-		KeyWidth=8;
-
-	int X=MouseEvent->dwMousePosition.X-m_X1;
+	const auto X = MouseEvent->dwMousePosition.X - m_Where.left;
 
 	if (X<KeyWidth*9)
 		Key=X/KeyWidth;
@@ -311,12 +315,10 @@ bool KeyBar::ProcessMouse(const MOUSE_EVENT_RECORD *MouseEvent)
 			break;
 	}
 
-	if (rec.Event.MouseEvent.dwMousePosition.X<m_X1 ||
-	        rec.Event.MouseEvent.dwMousePosition.X>m_X2 ||
-	        rec.Event.MouseEvent.dwMousePosition.Y!=m_Y1)
+	if (!m_Where.contains(MouseEvent->dwMousePosition))
 		return false;
 
-	const int NewX = MouseEvent->dwMousePosition.X - m_X1;
+	const int NewX = MouseEvent->dwMousePosition.X - m_Where.left;
 	const size_t NewKey = NewX < KeyWidth * 9? NewX / KeyWidth : 9 + (NewX - KeyWidth * 9) / (KeyWidth + 1);
 
 	if (Key!=NewKey)
@@ -366,27 +368,37 @@ void KeyBar::RedrawIfChanged()
 
 size_t KeyBar::Change(const KeyBarTitles *Kbt)
 {
-	size_t Result = 0;
-	if (Kbt)
-	{
-		for (const auto& i: make_range(Kbt->Labels, Kbt->CountLabels))
-		{
-			DWORD Pos = i.Key.VirtualKeyCode - VK_F1;
-			if (Pos < KEY_COUNT)
-			{
-				DWORD Shift = 0, Flags = i.Key.ControlKeyState;
-				if (Flags & (LEFT_CTRL_PRESSED|RIGHT_CTRL_PRESSED)) Shift |= KEY_CTRL;
-				if (Flags & (LEFT_ALT_PRESSED|RIGHT_ALT_PRESSED)) Shift |= KEY_ALT;
-				if (Flags & SHIFT_PRESSED) Shift |= KEY_SHIFT;
+	if (!Kbt)
+		return 0;
 
-				int group = FnGroup(Shift);
-				if (group >= 0)
-				{
-					Items[group][Pos].first = NullToEmpty(i.Text);
-					++Result;
-				}
-			}
-		}
+	size_t Result = 0;
+
+	for (const auto& i: span(Kbt->Labels, Kbt->CountLabels))
+	{
+		if (i.Key.VirtualKeyCode < VK_F1 || i.Key.VirtualKeyCode >= VK_F1 + KEY_COUNT)
+			continue;
+
+		const auto Pos = i.Key.VirtualKeyCode - VK_F1;
+
+		unsigned Shift = 0;
+		const auto Flags = i.Key.ControlKeyState;
+
+		if (Flags & (LEFT_CTRL_PRESSED|RIGHT_CTRL_PRESSED))
+			Shift |= KEY_CTRL;
+
+		if (Flags & (LEFT_ALT_PRESSED|RIGHT_ALT_PRESSED))
+			Shift |= KEY_ALT;
+
+		if (Flags & SHIFT_PRESSED)
+			Shift |= KEY_SHIFT;
+
+		const auto Group = FnGroup(Shift);
+		if (Group < 0)
+			continue;
+
+		Items[Group][Pos].first = NullToEmpty(i.Text);
+		++Result;
 	}
+
 	return Result;
 }

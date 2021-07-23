@@ -31,13 +31,25 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "window.hpp"
 
+// Internal:
 #include "keybar.hpp"
 #include "manager.hpp"
-#include "syslog.hpp"
 #include "savescr.hpp"
 #include "global.hpp"
+
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
 
 static int windowID=0;
 
@@ -45,12 +57,10 @@ window::window():
 	ScreenObjectWithShadow(nullptr),
 	m_ID(windowID++)
 {
-	_OT(SysLog(L"[%p] window::window()", this));
 }
 
 window::~window()
 {
-	_OT(SysLog(L"[%p] window::~window()", this));
 }
 
 void window::UpdateKeyBar() const

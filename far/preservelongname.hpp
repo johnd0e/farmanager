@@ -35,16 +35,29 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-class PreserveLongName: noncopyable
+// Internal:
+
+// Platform:
+
+// Common:
+#include "common/preprocessor.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
+
+class PreserveLongName
 {
 public:
-	PreserveLongName(string_view ShortName, bool Preserve);
+	NONCOPYABLE(PreserveLongName);
+
+	PreserveLongName(string_view Name, bool Preserve);
 	~PreserveLongName();
 
 private:
 	string m_SaveLongName;
 	string m_SaveShortName;
-	int m_Preserve;
+	bool m_Preserve;
 };
 
 #endif // PRESERVELONGNAME_HPP_6F71AC08_0FE5_40EF_B4F4_61B50EA512EA

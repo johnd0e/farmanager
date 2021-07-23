@@ -1,12 +1,5 @@
-#include "Pidl.h"
+﻿#include "Pidl.h"
 #include <cassert>
-
-CPidl::CPidl()
-  : m_ppidl(NULL)
-  , m_nSize(0)
-  , m_nCount(0)
-{
-}
 
 CPidl::~CPidl()
 {
@@ -25,7 +18,7 @@ CPidl::operator LPITEMIDLIST()
   }
   else
   {
-    return NULL;
+    return {};
   }
 }
 
@@ -88,7 +81,7 @@ LPITEMIDLIST CPidl::GetAt(unsigned nIndex)
 {
   if (nIndex>=m_nCount)
   {
-    return NULL;
+    return {};
   }
   return m_ppidl[nIndex];
 }

@@ -1,9 +1,8 @@
 !include ../makefile_vc_base
 
 NAME = EditCase
-LINK_OBJS = $(OBJDIR)\EditCase.obj
 
-DOCS = ECaseEng.hlf ECaseRus.hlf ECaseEng.lng ECaseRus.lng ECaseSky.lng ECaseSpa.lng
+LINK_OBJS = $(OBJDIR)\EditCase.obj
 
 !include ..\makefile_vc_def_inc
 

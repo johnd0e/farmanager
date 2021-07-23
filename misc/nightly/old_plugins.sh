@@ -15,14 +15,14 @@ pushd $PLUGIN || return 1
 
 unix2dos changelog
 
-FILES="FarFtp.dll FtpEng.hlf FtpRus.hlf FtpEng.lng FtpRus.lng FarFtp.map TechInfo.reg TechInfo_rus.reg FtpCmds.txt FtpCmds_rus.txt Notes.txt Notes_rus.txt"
+FILES="FarFtp.dll FtpEng.hlf FtpRus.hlf FtpPol.hlf FtpGer.hlf FtpEng.lng FtpRus.lng FtpIta.lng FtpPol.lng FtpGer.lng FarFtp.map TechInfo.reg TechInfo_rus.reg FtpCmds.txt FtpCmds_rus.txt Notes.txt Notes_rus.txt"
 ADDFILES="ftpDirList.fll ftpProgress.fll ftpDirList.map ftpProgress.map Progress_FarCopy.reg Progress_JM.reg Progress_Wesha.reg Progress_ZeMA.reg"
 ADDBUILDDIRS="{lib,obj/DirList,obj/LibObj,obj/Notify,obj/Progress}"
 ADDOUTDIR="lib"
 
 ( \
-	bplugin2 "$PLDIR" 32 0 "$FILES" "$ADDFILES" $ADDBUILDDIRS $ADDOUTDIR && \
-	bplugin2 "$PLDIR" 64 0 "$FILES" "$ADDFILES" $ADDBUILDDIRS $ADDOUTDIR \
+	bplugin2 "$PLDIR" 32 0 0 "$FILES" "$ADDFILES" $ADDBUILDDIRS $ADDOUTDIR && \
+	bplugin2 "$PLDIR" 64 0 0 "$FILES" "$ADDFILES" $ADDBUILDDIRS $ADDOUTDIR \
 ) || return 1
 
 popd
@@ -36,14 +36,14 @@ pushd $PLUGIN || return 1
 
 unix2dos changelog
 
-FILES="MultiArc.dll arceng.hlf arcrus.hlf arceng.lng arcrus.lng arcspa.lng MultiArc.map"
-ADDFILES="Ace.fmt Arc.fmt Arj.fmt Cab.fmt Custom.fmt Ha.fmt Lzh.fmt Rar.fmt TarGz.fmt Zip.fmt custom.ini Ace.map Arc.map Arj.map Cab.map Custom.map Ha.map Lzh.map Rar.map TarGz.map Zip.map"
+FILES="MultiArc.dll arceng.hlf arcrus.hlf arcger.hlf arceng.lng arcrus.lng arcspa.lng arcita.lng arcbel.lng arcger.lng MultiArc.map"
+ADDFILES="ace.fmt arc.fmt arj.fmt cab.fmt custom.fmt ha.fmt lzh.fmt rar.fmt targz.fmt zip.fmt custom.ini ace.map arc.map arj.map cab.map custom.map ha.map lzh.map rar.map targz.map zip.map"
 ADDBUILDDIRS="Formats"
 ADDOUTDIR="Formats"
 
 ( \
-	bplugin2 "$PLDIR" 32 0 "$FILES" "$ADDFILES" $ADDBUILDDIRS $ADDOUTDIR && \
-	bplugin2 "$PLDIR" 64 0 "$FILES" "$ADDFILES" $ADDBUILDDIRS $ADDOUTDIR \
+	bplugin2 "$PLDIR" 32 0 0 "$FILES" "$ADDFILES" $ADDBUILDDIRS $ADDOUTDIR && \
+	bplugin2 "$PLDIR" 64 0 0 "$FILES" "$ADDFILES" $ADDBUILDDIRS $ADDOUTDIR \
 ) || return 1
 
 popd

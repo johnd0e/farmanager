@@ -35,8 +35,19 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
+
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
+
 // обработать имя файла: сравнить с маской, масками, сгенерировать по маске
-bool ConvertWildcards(const string& SrcName, string& strDest, int SelectedFolderNameLength);
-bool CmpName(string_view pattern, string_view str, bool skippath = true, bool CmpNameSearchMode = false);
+string ConvertWildcards(string_view SrcName, string_view Mask);
+bool CmpName(string_view pattern, string_view str, bool skippath = true, bool CmpNameLegacyMode = true);
+string exclude_sets(string_view Str);
 
 #endif // PROCESSNAME_HPP_8DEB440D_A0C0_40CB_9960_AF2BCD568A88

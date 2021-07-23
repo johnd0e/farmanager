@@ -41,7 +41,7 @@ local function DeleteTmpFile()
 end
 
 local function TestArea (area, msg)
-  assert(Area[area]==true and Area.Current==area, msg)
+  assert(Area[area]==true and Area.Current==area, msg or "assertion failed!")
 end
 
 function MT.test_areas()
@@ -140,6 +140,21 @@ end
 local function test_mf_eval()
   assert(eval==mf.eval)
 
+  -- test arguments validity checking
+  assert(eval("") == 0)
+  assert(eval("", 0) == 0)
+  assert(eval() == -1)
+  assert(eval(0) == -1)
+  assert(eval(true) == -1)
+  assert(eval("", -1) == -1)
+  assert(eval("", 5) == -1)
+  assert(eval("", true) == -1)
+  assert(eval("", 1, true) == -1)
+  assert(eval("",1,"javascript")==-1)
+
+  -- test macro-not-found error
+  assert(eval("", 2) == -2)
+
   temp=3
   assert(eval("temp=5+7")==0)
   assert(temp==12)
@@ -157,7 +172,7 @@ local function test_mf_eval()
   assert(eval("5",0,"moonscript")==0)
   assert(eval("5+7",1,"lua")==11)
   assert(eval("5+7",1,"moonscript")==0)
-  assert(eval("5+7",1,"unknown")==-1)
+  assert(eval("5 7",1,"moonscript")==11)
 
   -- test with Mode==2
   local Id = assert(far.MacroAdd(nil,nil,"CtrlA",[[
@@ -385,7 +400,7 @@ local function test_mf_msave()
   local Key = "macrotest"
 
   -- test supported types, except tables
-  local v1, v2, v3, v4, v5, v6 = nil, false, true, -5.67, "foo", bit64.new("-123")
+  local v1, v2, v3, v4, v5, v6 = nil, false, true, -5.67, "foo", bit64.new("0x1234567843218765")
   mf.msave(Key, "name1", v1)
   mf.msave(Key, "name2", v2)
   mf.msave(Key, "name3", v3)
@@ -489,22 +504,7 @@ local function test_mf_strpad()
 end
 
 local function test_mf_strwrap()
-  assert(mf.strwrap("Пример строки, которая будет разбита на несколько строк по ширине в 7 символов.", 7)==
-[[
-Пример
-строки,
-которая
-будет
-разбита
-на
-несколько
-строк
-по
-ширине
-в 7
-символов.]])
-
-  assert(mf.strwrap("Пример строки, которая будет разбита на несколько строк по ширине в 7 символов.", 7,"\n",1)==
+  assert(mf.strwrap("Пример строки, которая будет разбита на несколько строк по ширине в 7 символов.", 7,"\n")==
 [[
 Пример
 строки,
@@ -934,7 +934,6 @@ local function test_Far_GetConfig()
     "System.CopyTimeRule", "integer",
     "System.CopySecurityOptions", "integer",
     "System.DeleteToRecycleBin", "boolean",
-    "System.DelThreadPriority", "integer",
     "System.DriveDisconnectMode", "boolean",
     "System.DriveMenuMode", "integer",
     "System.ElevationMode", "integer",
@@ -1052,7 +1051,7 @@ function MT.test_Far()
   local temp = Far.UpTime
   mf.sleep(50)
   temp = Far.UpTime - temp
-  assert(temp > 40 and temp < 70)
+  assert(temp > 40 and temp < 80)
 
   assert(type(Far.Cfg_Get)=="function")
   assert(type(Far.DisableHistory)=="function")
@@ -1179,7 +1178,7 @@ local function test_Panel_Item()
     assert(IsNumOrInt(Panel.Item(pt,0,7)))
     assert(type(Panel.Item(pt,0,8))  =="boolean")
     assert(type(Panel.Item(pt,0,9))  =="number")
-    assert(type(Panel.Item(pt,0,10)) =="boolean")
+    assert(type(Panel.Item(pt,0,10)) =="number")
     assert(type(Panel.Item(pt,0,11)) =="string")
     assert(type(Panel.Item(pt,0,12)) =="string")
     assert(type(Panel.Item(pt,0,13)) =="number")
@@ -1191,7 +1190,7 @@ local function test_Panel_Item()
     assert(IsNumOrInt(Panel.Item(pt,0,19)))
     assert(type(Panel.Item(pt,0,20)) =="string")
     assert(IsNumOrInt(Panel.Item(pt,0,21)))
-    assert(type(Panel.Item(pt,0,22)) =="string")
+    assert(not pcall(Panel.Item,pt,0,22))
     assert(type(Panel.Item(pt,0,23)) =="number")
   end
 end
@@ -1372,8 +1371,10 @@ end
 local function test_RegexControl()
   local L = win.Utf8ToUtf16
   local pat = "([bc]+)"
+  local pat2 = "([bc]+)|(zz)"
   local rep = "%1%1"
   local R = regex.new(pat)
+  local R2 = regex.new(pat2)
 
   local fr,to,cap
   local str, nfound, nrep
@@ -1389,6 +1390,16 @@ local function test_RegexControl()
   assert(fr==2 and to==3 and cap=="bc")
   fr,to,cap = R:findW(L"abc")
   assert(fr==2 and to==3 and cap==L"bc")
+
+  fr,to,cap = regex.exec("abc", pat2)
+  assert(fr==2 and to==3 and #cap==4 and cap[1]==2 and cap[2]==3 and cap[3]==false and cap[4]==false)
+  fr,to,cap = regex.execW(L"abc", pat2)
+  assert(fr==2 and to==3 and #cap==4 and cap[1]==2 and cap[2]==3 and cap[3]==false and cap[4]==false)
+
+  fr,to,cap = R2:exec("abc")
+  assert(fr==2 and to==3 and #cap==4 and cap[1]==2 and cap[2]==3 and cap[3]==false and cap[4]==false)
+  fr,to,cap = R2:execW(L"abc")
+  assert(fr==2 and to==3 and #cap==4 and cap[1]==2 and cap[2]==3 and cap[3]==false and cap[4]==false)
 
   assert(regex.match("abc", pat)=="bc")
   assert(regex.matchW(L"abc", pat)==L"bc")
@@ -1496,6 +1507,27 @@ local function test_utf8_sub()
   assert(not pcall(text.sub, text))
   assert(not pcall(text.sub, text, {}))
   assert(not pcall(text.sub, text, nil))
+end
+
+local function test_utf8_lower_upper()
+  assert((""):lower() == "")
+  assert(("abc"):lower() == "abc")
+  assert(("ABC"):lower() == "abc")
+
+  assert((""):upper() == "")
+  assert(("abc"):upper() == "ABC")
+  assert(("ABC"):upper() == "ABC")
+
+  local russian_abc = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя"
+  local part1, part2 = russian_abc:sub(1,33), russian_abc:sub(34)
+  assert(part1:lower() == part2)
+  assert(part2:lower() == part2)
+  assert(part1:upper() == part1)
+  assert(part2:upper() == part1)
+
+  local noletters = "1234567890~@#$%^&*()_+-=[]{}|/\\';.,"
+  assert(noletters:lower() == noletters)
+  assert(noletters:upper() == noletters)
 end
 
 ---------------------------------------------------------------------------------------------------
@@ -1632,10 +1664,19 @@ local function test_clipboard()
 end
 
 local function test_far_FarClock()
+  -- check time difference
   local temp = far.FarClock()
-  mf.sleep(50)
-  temp = far.FarClock() - temp
-  assert(temp > 40000 and temp < 70000)
+  win.Sleep(500)
+  temp = (far.FarClock() - temp) / 1000
+  assert(temp > 480 and temp < 550, temp)
+  -- check granularity
+  local OK = false
+  temp = far.FarClock() % 10
+  for k=1,10 do
+    win.Sleep(20)
+    if temp ~= far.FarClock() % 10 then OK=true; break; end
+  end
+  assert(OK)
 end
 
 local function test_FarStandardFunctions()
@@ -1736,6 +1777,7 @@ function MT.test_luafar()
   test_gmatch_coro()
   test_utf8_len()
   test_utf8_sub()
+  test_utf8_lower_upper()
 
   test_AdvControl()
   test_far_GetMsg()
@@ -1762,17 +1804,8 @@ local function test_coroutine()
   end
 end
 
-local function test_cfind()
-  assert(type(("").cfind) == "function")
-  assert(("").cfind == unicode.utf8.cfind)
-  local from, to, c1, c2 = ("абвгд"):cfind("(г)(д)", 4)
-  assert(from==4 and to==5 and c1=="г" and c2=="д")
-  assert(nil == ("абвгд"):cfind("(г)(д)", 5))
-end
-
 function MT.test_misc()
   test_coroutine()
-  test_cfind()
 end
 
 function MT.test_all()

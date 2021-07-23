@@ -53,7 +53,7 @@
 #
 #(we try to autodetect if not set)
 #
-#VC - set Visual C++ version (VC=8 - 2005, VC=9 - 2008, VC=10 - 2010) (we try to autodetect if not set)
+#VC - set Visual C++ version (VC=15 - 2017, VC=16 - 2019) (we try to autodetect if not set)
 #
 #NO_RELEASE_PDB - set to disable pdb generation for release
 #
@@ -80,7 +80,11 @@ DIRSUFF = W
 
 WORKDIR = $(DIRNAME).$(DIRBIT)$(DIRSUFF).vc
 !ifdef INSTALL
+!ifndef FARDIR
+OUTDIR=$(INSTALL)\$(NAME)
+!else
 OUTDIR=$(INSTALL)
+!endif
 !else
 OUTDIR=$(WORKDIR)
 !endif
@@ -114,8 +118,10 @@ RES = $(OBJDIR)\$(NAME).res
 
 
 AFLAGS = /nologo /c /Fo"$(OBJDIR)\\"
-CPPFLAGS = /nologo /MP /c /W3 /Gy /GF /J /GS- /GR- /EHs-c- /LD /I"$(COMMON)" /I"$(COMINC)" $(ENV_INC_OPT) $(CPP_WIDE) /DNOMINMAX /D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS /D_CRT_NON_CONFORMING_SWPRINTFS /D_WIN32_WINNT=0x0502 $(USERCPP) /Fo"$(OBJDIR)\\" /Fd"$(OBJDIR)\\"
-
+CPPFLAGS = /nologo /MP /c /W3 /Gy /GF /J /GS- /GR- /LD /I"$(COMMON)" /I"$(COMINC)" $(ENV_INC_OPT) $(CPP_WIDE) /DNOMINMAX /D_CRT_NON_CONFORMING_WCSTOK /D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS /D_CRT_NON_CONFORMING_SWPRINTFS /D_WIN32_WINNT=0x0502 $(USERCPP) /Fo"$(OBJDIR)\\" /Fd"$(OBJDIR)\\"
+!if $(VC) >= 15
+CPPFLAGS = $(CPPFLAGS) /std:c++17 /permissive-
+!endif
 
 !ifndef DEBUG
 CPPFLAGS=$(CPPFLAGS) /DNDEBUG /O2
@@ -157,7 +163,7 @@ COMMONLIB = $(COMMON)\libCRT.lib
 !endif
 !endif
 
-LIBS = $(COMMONLIB) chkstk.obj kernel32.lib user32.lib gdi32.lib advapi32.lib shell32.lib ole32.lib uuid.lib mpr.lib Netapi32.lib version.lib oleaut32.lib wbemuuid.lib $(USERLIBS)
+LIBS = $(COMMONLIB) chkstk.obj kernel32.lib user32.lib gdi32.lib advapi32.lib shell32.lib ole32.lib uuid.lib mpr.lib Netapi32.lib version.lib oleaut32.lib wbemuuid.lib psapi.lib $(USERLIBS)
 
 !ifdef _BIN_PATH_
 !ifndef _ML_PATH_
@@ -208,7 +214,12 @@ LINK_DEF_OPT=/ZD:"$(DEFFILE)"
 !ifdef GEN_IMPLIB
 LINK_GEN_IMPLIB=-Gic
 !endif
-LINK_FLAGS=-q -V5.0 -W5.0 -b* $(ULOUT) $(ULN_DELAY) -Gz -m- -v -Gh -Gh- $(NOENTRY_FLAG) $(NODEFLIB_FLAG) $(LINK_DEF_OPT) /ZM:"$(MAP)" /ZO:"$(DLLFULLNAME)" $(LINK_GEN_IMPLIB) $(ENV_LIB_OPT)
+LINK_FLAGS=-q -V5.0 -W5.0 -b* $(ULOUT) $(ULN_DELAY) -Gz -m- -Gh -Gh- $(NOENTRY_FLAG) $(NODEFLIB_FLAG) $(LINK_DEF_OPT) /ZM:"$(MAP)" /ZO:"$(DLLFULLNAME)" $(LINK_GEN_IMPLIB) $(ENV_LIB_OPT)
+!ifdef DEBUG
+LINK_FLAGS=$(LINK_FLAGS) -v
+!elseif !defined(NO_RELEASE_PDB)
+LINK_FLAGS=$(LINK_FLAGS) -vv -ZT.
+!endif
 !endif
 
 !ifndef AS
@@ -236,3 +247,5 @@ RC=$(_RC_PATH)rc.exe
 .path.rc=.
 .path.def=.
 !endif
+
+DOCS = nul *.hlf *.lng *.lua *.farconfig changelog $(DOCS)

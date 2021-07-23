@@ -34,71 +34,82 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-WARNING_PUSH(3)
+// Internal:
 
-WARNING_DISABLE_MSC(4396) // https://msdn.microsoft.com/en-us/library/bb384968.aspx 'name': the inline specifier cannot be used when a friend declaration refers to a specialization of a function template
-WARNING_DISABLE_MSC(4702) // https://msdn.microsoft.com/en-us/library/c26da40e.aspx unreachable code
+// Platform:
+
+// Common:
+#include "common/preprocessor.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
+
+WARNING_PUSH(3)
 
 WARNING_DISABLE_GCC("-Wctor-dtor-privacy")
 
 WARNING_DISABLE_CLANG("-Weverything")
 
-#pragma push_macro("static_assert")
-#undef static_assert
+#define FMT_CONSTEVAL // Not yet
 
+#define FMT_STATIC_THOUSANDS_SEPARATOR
 #include "thirdparty/fmt/fmt/format.h"
+#include "thirdparty/fmt/fmt/xchar.h"
 #include "thirdparty/fmt/fmt/ostream.h"
-
-#pragma pop_macro("static_assert")
+#undef FMT_STATIC_THOUSANDS_SEPARATOR
 
 WARNING_POP()
 
 namespace detail
 {
-	char get_incompatible_char(wchar_t);
-	char get_incompatible_char(const wchar_t*);
-	char get_incompatible_char(const string&);
-	wchar_t get_incompatible_char(char);
-	wchar_t get_incompatible_char(const char*);
-	wchar_t get_incompatible_char(const std::string&);
-
-	template<typename char_type>
-	void check_char_compatibility(char_type) {}
-
-	template<typename char_type, typename arg, typename... args>
-	void check_char_compatibility(char_type, const arg&, const args&... Args)
+	template<typename F>
+	void validate_format()
 	{
-		static_assert((!std::is_convertible_v<arg, const char_type*>));
-		static_assert((!std::is_convertible_v<arg, std::basic_string<char_type>>));
-		static_assert((!std::is_convertible_v<arg, std::basic_string_view<char_type>>));
-
-		check_char_compatibility(char_type{}, Args...);
+		static_assert(!std::is_array_v<F>, "Use FSTR or string_view instead of string literals");
 	}
 }
 
 template<typename F, typename... args>
 auto format(F&& Format, args&&... Args)
 {
-	detail::check_char_compatibility(decltype(detail::get_incompatible_char(Format)){}, Args...);
+	detail::validate_format<F>();
+
 	return fmt::format(FWD(Format), FWD(Args)...);
 }
 
-template<typename T>
-auto str(T&& Value)
+template<typename I, typename F, typename... args>
+auto format_to(I&& Iterator, F&& Format, args&&... Args)
 {
-	return fmt::to_wstring(FWD(Value));
+	detail::validate_format<F>();
+
+	return fmt::format_to(FWD(Iterator), FWD(Format), FWD(Args)...);
 }
 
-template<typename T>
-auto str(const T* Value)
+template<typename F, typename... args>
+auto format_to(string& Str, F&& Format, args&&... Args)
 {
-	return format(L"0x{0:0{1}X}", reinterpret_cast<uintptr_t>(Value), sizeof(Value) * 2);
+	detail::validate_format<F>();
+
+	return fmt::format_to(std::back_inserter(Str), FWD(Format), FWD(Args)...);
 }
 
+#define FSTR(str) FMT_STRING(str)
+
 template<typename T>
-auto str(T* Value)
+auto str(const T& Value)
 {
-	return str(static_cast<const T*>(Value));
+	return fmt::to_wstring(Value);
+}
+
+inline auto str(const void* Value)
+{
+	return format(FSTR(L"0x{:0{}X}"sv), reinterpret_cast<uintptr_t>(Value), sizeof(Value) * 2);
+}
+
+inline auto str(void* Value)
+{
+	return str(static_cast<void const*>(Value));
 }
 
 string str(const char*) = delete;
@@ -107,5 +118,38 @@ string str(std::string) = delete;
 string str(string) = delete;
 string str(std::string_view) = delete;
 string str(string_view) = delete;
+
+namespace format_helpers
+{
+	struct parse_no_spec
+	{
+		template<typename ParseContext>
+		constexpr auto parse(ParseContext& ctx)
+		{
+			return ctx.begin();
+		}
+	};
+
+	template<typename object_type>
+	struct format_no_spec
+	{
+		template <typename FormatContext>
+		auto format(object_type const& Value, FormatContext& ctx)
+		{
+			return fmt::format_to(ctx.out(), FSTR(L"{}"sv), fmt::formatter<object_type, wchar_t>::to_string(Value));
+		}
+	};
+
+	template<typename object_type>
+	struct no_spec: parse_no_spec, format_no_spec<object_type>
+	{
+	};
+}
+
+template<>
+struct fmt::formatter<std::exception, wchar_t>: format_helpers::no_spec<std::exception>
+{
+	static string to_string(std::exception const& Value);
+};
 
 #endif // FORMAT_HPP_27C3F464_170B_432E_9D44_3884DDBB95AC

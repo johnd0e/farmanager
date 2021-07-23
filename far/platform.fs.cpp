@@ -29,23 +29,37 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "platform.fs.hpp"
 
-#include "ctrlobj.hpp"
+// Internal:
 #include "cvtname.hpp"
 #include "drivemix.hpp"
 #include "elevation.hpp"
 #include "flink.hpp"
 #include "imports.hpp"
 #include "pathmix.hpp"
-#include "plugins.hpp"
 #include "string_utils.hpp"
 #include "strmix.hpp"
-#include "global.hpp"
+#include "exception.hpp"
+#include "exception_handler.hpp"
 
+// Platform:
 #include "platform.hpp"
+#include "platform.reg.hpp"
+#include "platform.version.hpp"
 
+// Common:
+#include "common.hpp"
+#include "common/algorithm.hpp"
 #include "common/scope_exit.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 namespace
 {
@@ -72,35 +86,79 @@ namespace
 	{
 		using os::fs::find_handle::find_handle;
 	};
+
+	static DWORD SHErrorToWinError(DWORD const SHError)
+	{
+		switch (SHError)
+		{
+		// https://docs.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-shfileoperationw
+		// To examine the nonzero values for troubleshooting purposes, they largely map to those defined in Winerror.h.
+		// However, several of its possible return values are based on pre-Win32 error codes, which in some cases
+		// overlap the later Winerror.h values without matching their meaning. Those particular values are detailed here,
+		// and for these specific values only these meanings should be accepted over the Winerror.h codes.
+
+		case 0x71:    return ERROR_ALREADY_EXISTS;    // DE_SAMEFILE            The source and destination files are the same file.
+		case 0x72:    return ERROR_INVALID_PARAMETER; // DE_MANYSRC1DEST        Multiple file paths were specified in the source buffer, but only one destination file path.
+		case 0x73:    return ERROR_NOT_SAME_DEVICE;   // DE_DIFFDIR             Rename operation was specified but the destination path is a different directory. Use the move operation instead.
+		case 0x74:    return ERROR_INVALID_PARAMETER; // DE_ROOTDIR             The source is a root directory, which cannot be moved or renamed.
+		case 0x75:    return ERROR_CANCELLED;         // DE_OPCANCELLED         The operation was canceled by the user, or silently canceled if the appropriate flags were supplied to SHFileOperation.
+		case 0x76:    return ERROR_BAD_PATHNAME;      // DE_DESTSUBTREE         The destination is a subtree of the source.
+		case 0x78:    return ERROR_ACCESS_DENIED;     // DE_ACCESSDENIEDSRC     Security settings denied access to the source.
+		case 0x79:    return ERROR_BUFFER_OVERFLOW;   // DE_PATHTOODEEP         The source or destination path exceeded or would exceed MAX_PATH.
+		case 0x7A:    return ERROR_INVALID_PARAMETER; // DE_MANYDEST            The operation involved multiple destination paths, which can fail in the case of a move operation.
+		case 0x7C:    return ERROR_BAD_PATHNAME;      // DE_INVALIDFILES        The path in the source or destination or both was invalid.
+		case 0x7D:    return ERROR_INVALID_PARAMETER; // DE_DESTSAMETREE        The source and destination have the same parent folder.
+		case 0x7E:    return ERROR_ALREADY_EXISTS;    // DE_FLDDESTISFILE       The destination path is an existing file.
+		case 0x80:    return ERROR_ALREADY_EXISTS;    // DE_FILEDESTISFLD       The destination path is an existing folder.
+		case 0x81:    return ERROR_BUFFER_OVERFLOW;   // DE_FILENAMETOOLONG     The name of the file exceeds MAX_PATH.
+		case 0x82:    return ERROR_WRITE_FAULT;       // DE_DEST_IS_CDROM       The destination is a read-only CD-ROM, possibly unformatted.
+		case 0x83:    return ERROR_WRITE_FAULT;       // DE_DEST_IS_DVD         The destination is a read-only DVD, possibly unformatted.
+		case 0x84:    return ERROR_WRITE_FAULT;       // DE_DEST_IS_CDRECORD    The destination is a writable CD-ROM, possibly unformatted.
+		case 0x85:    return ERROR_DISK_FULL;         // DE_FILE_TOO_LARGE      The file involved in the operation is too large for the destination media or file system.
+		case 0x86:    return ERROR_READ_FAULT;        // DE_SRC_IS_CDROM        The source is a read-only CD-ROM, possibly unformatted.
+		case 0x87:    return ERROR_READ_FAULT;        // DE_SRC_IS_DVD          The source is a read-only DVD, possibly unformatted.
+		case 0x88:    return ERROR_READ_FAULT;        // DE_SRC_IS_CDRECORD     The source is a writable CD-ROM, possibly unformatted.
+		case 0xB7:    return ERROR_BUFFER_OVERFLOW;   // DE_ERROR_MAX           MAX_PATH was exceeded during the operation.
+		case 0x402:   return ERROR_PATH_NOT_FOUND;    //                        An unknown error occurred. This is typically due to an invalid path in the source or destination. This error does not occur on Windows Vista and later.
+		case 0x10000: return ERROR_GEN_FAILURE;       // ERRORONDEST            An unspecified error occurred on the destination.
+		case 0x10074: return ERROR_INVALID_PARAMETER; // DE_ROOTDIR|ERRORONDEST Destination is a root directory and cannot be renamed.
+		default:      return SHError;
+		}
+	}
 }
 
 namespace os::fs
 {
 	namespace detail
 	{
-		void find_handle_closer::operator()(HANDLE Handle) const
+		void find_handle_closer::operator()(HANDLE Handle) const noexcept
 		{
 			FindClose(Handle);
 		}
 
-		void find_file_handle_closer::operator()(HANDLE Handle) const
+		void find_file_handle_closer::operator()(HANDLE Handle) const noexcept
 		{
 			delete static_cast<i_find_file_handle_impl*>(Handle);
 		}
 
-		void find_volume_handle_closer::operator()(HANDLE Handle) const
+		void find_volume_handle_closer::operator()(HANDLE Handle) const noexcept
 		{
 			FindVolumeClose(Handle);
 		}
 
-		void find_notification_handle_closer::operator()(HANDLE Handle) const
+		void find_notification_handle_closer::operator()(HANDLE Handle) const noexcept
 		{
 			FindCloseChangeNotification(Handle);
 		}
+	}
 
-		void file_unmapper::operator()(const void* Data) const
+	namespace state
+	{
+		static std::atomic_bool current_directory_syncronisation = false;
+
+		void set_current_directory_syncronisation(bool const Value)
 		{
-			UnmapViewOfFile(Data);
+			current_directory_syncronisation = Value;
 		}
 	}
 
@@ -111,7 +169,7 @@ namespace os::fs
 
 	void find_data::SetAlternateFileName(string_view Name)
 	{
-		assign(AlternateFileNameData, Name);
+		AlternateFileNameData = Name;
 	}
 
 	bool find_data::HasAlternateFileName() const
@@ -119,24 +177,67 @@ namespace os::fs
 		return !AlternateFileNameData.empty();
 	}
 
-	bool is_standard_drive_letter(wchar_t Letter)
+	namespace drive
 	{
-		return InRange(L'A', upper(Letter), L'Z');
-	}
+		bool is_standard_letter(wchar_t Letter)
+		{
+			return in_closed_range(L'A', upper(Letter), L'Z');
+		}
 
-	int get_drive_number(wchar_t Letter)
-	{
-		return upper(Letter) - L'A';
-	}
+		size_t get_number(wchar_t Letter)
+		{
+			assert(is_standard_letter(Letter));
 
-	string get_drive(wchar_t Letter)
-	{
-		return { Letter, L':' };
-	}
+			return upper(Letter) - L'A';
+		}
 
-	string get_root_directory(wchar_t Letter)
-	{
-		return { Letter, L':', L'\\' };
+		wchar_t get_letter(size_t Number)
+		{
+			assert(Number < 26);
+
+			return static_cast<wchar_t>(L'A' + Number);
+		}
+
+		string get_device_path(wchar_t Letter)
+		{
+			return { Letter, L':' };
+		}
+
+		string get_device_path(size_t const Number)
+		{
+			return { get_letter(Number), L':' };
+		}
+
+		string get_win32nt_device_path(wchar_t Letter)
+		{
+			return { L'\\', L'\\', L'?', L'\\', Letter, L':' };
+		}
+
+		string get_root_directory(wchar_t Letter)
+		{
+			return { Letter, L':', L'\\' };
+		}
+
+		string get_win32nt_root_directory(wchar_t Letter)
+		{
+			return { L'\\', L'\\', L'?', L'\\', Letter, L':', L'\\' };
+		}
+
+		unsigned get_type(string_view const Path)
+		{
+			bool IsRoot = false;
+			if (const auto PathType = ParsePath(Path, {}, &IsRoot); IsRoot && (PathType == root_type::drive_letter || PathType == root_type::win32nt_drive_letter))
+			{
+				// It seems that Windows caches this information for drive letters, but not for other paths.
+				// We want to utilise it, if possible, to avoid delays with network drives.
+				return GetDriveType(get_root_directory(PathType == root_type::drive_letter? Path[0] : Path[4]).c_str());
+			}
+
+			NTPath NtPath(Path.empty()? os::fs::GetCurrentDirectory() : Path);
+			AddEndSlash(NtPath);
+
+			return GetDriveType(NtPath.c_str());
+		}
 	}
 
 	//-------------------------------------------------------------------------
@@ -157,7 +258,7 @@ namespace os::fs
 		if (m_CurrentIndex == m_Drives.size())
 			return false;
 
-		Value = static_cast<wchar_t>(L'A' + m_CurrentIndex);
+		Value = drive::get_letter(m_CurrentIndex);
 		++m_CurrentIndex;
 		return true;
 	}
@@ -166,10 +267,10 @@ namespace os::fs
 
 	static string enum_files_prepare(const string_view Object)
 	{
-		auto PreparedObject = NTPath(Object);
+		string PreparedObject = NTPath(Object);
 		auto Root = false;
-		const auto Type = ParsePath(PreparedObject, nullptr, &Root);
-		if (Root && (Type == root_type::drive_letter || Type == root_type::unc_drive_letter || Type == root_type::volume))
+		ParsePath(PreparedObject, nullptr, &Root);
+		if (Root)
 		{
 			AddEndSlash(PreparedObject);
 		}
@@ -213,17 +314,17 @@ namespace os::fs
 	static void DirectoryInfoToFindData(const FILE_ID_BOTH_DIR_INFORMATION& DirectoryInfo, find_data& FindData, bool IsExtended)
 	{
 		FindData.Attributes = DirectoryInfo.FileAttributes;
-		FindData.CreationTime = os::chrono::time_point(os::chrono::duration(DirectoryInfo.CreationTime.QuadPart));
-		FindData.LastAccessTime = os::chrono::time_point(os::chrono::duration(DirectoryInfo.LastAccessTime.QuadPart));
-		FindData.LastWriteTime = os::chrono::time_point(os::chrono::duration(DirectoryInfo.LastWriteTime.QuadPart));
-		FindData.ChangeTime = os::chrono::time_point(os::chrono::duration(DirectoryInfo.ChangeTime.QuadPart));
+		FindData.CreationTime = os::chrono::nt_clock::from_hectonanoseconds(DirectoryInfo.CreationTime.QuadPart);
+		FindData.LastAccessTime = os::chrono::nt_clock::from_hectonanoseconds(DirectoryInfo.LastAccessTime.QuadPart);
+		FindData.LastWriteTime = os::chrono::nt_clock::from_hectonanoseconds(DirectoryInfo.LastWriteTime.QuadPart);
+		FindData.ChangeTime = os::chrono::nt_clock::from_hectonanoseconds(DirectoryInfo.ChangeTime.QuadPart);
 		FindData.FileSize = DirectoryInfo.EndOfFile.QuadPart;
 		FindData.AllocationSize = DirectoryInfo.AllocationSize.QuadPart;
 		FindData.ReparseTag = FindData.Attributes&FILE_ATTRIBUTE_REPARSE_POINT? DirectoryInfo.EaSize : 0;
 
-		const auto& CopyNames = [&FindData](const auto& DirInfo)
+		const auto CopyNames = [&FindData](const auto& DirInfo)
 		{
-			assign(FindData.FileName, trim_trailing_zeros({ DirInfo.FileName, DirInfo.FileNameLength / sizeof(wchar_t) }));
+			FindData.FileName = trim_trailing_zeros({ DirInfo.FileName, DirInfo.FileNameLength / sizeof(wchar_t) });
 			FindData.SetAlternateFileName(trim_trailing_zeros(empty_if_zero({ DirInfo.ShortName, DirInfo.ShortNameLength / sizeof(wchar_t) })));
 		};
 
@@ -239,25 +340,49 @@ namespace os::fs
 		}
 	}
 
-	static find_file_handle FindFirstFileInternal(const string& Name, find_data& FindData)
+	// gh-425 Incorrect file sizes shown/calculated for files compressed with LZX
+	// WOF-based compression doesn't set FILE_ATTRIBUTE_COMPRESSED and doesn't fill AllocationSize
+	static void fill_allocation_size_alternative(find_data& FindData, string_view Directory)
 	{
-		if (Name.empty() || IsSlash(Name.back()))
+		if (FindData.AllocationSize)
+			return;
+
+		static const auto IsWeirdCompressionAvailable = IsWindows10OrGreater();
+		if (!IsWeirdCompressionAvailable && !flags::check_any(FindData.Attributes, FILE_ATTRIBUTE_COMPRESSED | FILE_ATTRIBUTE_SPARSE_FILE))
+			return;
+
+		// TODO: It's a separate call so we might need an elevation for it
+		ULARGE_INTEGER Size;
+		Size.LowPart = GetCompressedFileSize(NTPath(path::join(Directory, FindData.FileName)).c_str(), &Size.HighPart);
+		if (Size.LowPart == INVALID_FILE_SIZE && GetLastError() != NO_ERROR)
+			return;
+
+		FindData.AllocationSize = Size.QuadPart;
+	}
+
+	static find_file_handle FindFirstFileInternal(string_view const Name, find_data& FindData)
+	{
+		if (Name.empty() || path::is_separator(Name.back()))
 			return nullptr;
 
 		auto Handle = std::make_unique<far_find_file_handle_impl>();
 
-		auto strDirectory(Name);
-		CutToSlash(strDirectory);
-
-		const auto& OpenDirectory = [&]
+		string_view NamePart;
+		auto Directory = Name;
+		if (CutToSlash(Directory))
 		{
-			return Handle->Object.Open(strDirectory, FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING);
+			NamePart = Name.substr(Directory.size());
+		}
+
+		const auto OpenDirectory = [&]
+		{
+			return Handle->Object.Open(Directory, FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING);
 		};
 
 		if (!OpenDirectory())
 		{
 			// fix error code if we are looking for FILE(S) in a non-existent directory, not for a directory itself
-			if (GetLastError() == ERROR_FILE_NOT_FOUND && !PointToName(Name).empty())
+			if (GetLastError() == ERROR_FILE_NOT_FOUND && !NamePart.empty())
 			{
 				SetLastError(ERROR_PATH_NOT_FOUND);
 			}
@@ -266,15 +391,13 @@ namespace os::fs
 
 		// for network paths buffer size must be <= 64k
 		Handle->BufferBase.reset(65536);
-
-		const auto NamePart = PointToName(Name);
 		Handle->Extended = true;
 
-		bool QueryResult = Handle->Object.NtQueryDirectoryFile(Handle->BufferBase.get(), Handle->BufferBase.size(), FileIdBothDirectoryInformation, false, null_terminated(NamePart).c_str(), true);
+		bool QueryResult = Handle->Object.NtQueryDirectoryFile(Handle->BufferBase.data(), Handle->BufferBase.size(), FileIdBothDirectoryInformation, false, NamePart, true);
 		if (QueryResult) // try next read immediately to avoid M#2128 bug
 		{
 			block_ptr<BYTE> Buffer2(Handle->BufferBase.size());
-			if (Handle->Object.NtQueryDirectoryFile(Buffer2.get(), Buffer2.size(), FileIdBothDirectoryInformation, false, null_terminated(NamePart).c_str(), false))
+			if (Handle->Object.NtQueryDirectoryFile(Buffer2.data(), Buffer2.size(), FileIdBothDirectoryInformation, false, NamePart, false))
 			{
 				Handle->Buffer2 = std::move(Buffer2);
 			}
@@ -295,15 +418,16 @@ namespace os::fs
 			Handle->Object.Close();
 			if (OpenDirectory())
 			{
-				QueryResult = Handle->Object.NtQueryDirectoryFile(Handle->BufferBase.get(), Handle->BufferBase.size(), FileBothDirectoryInformation, false, null_terminated(NamePart).c_str(), true);
+				QueryResult = Handle->Object.NtQueryDirectoryFile(Handle->BufferBase.data(), Handle->BufferBase.size(), FileBothDirectoryInformation, false, NamePart, true);
 			}
 		}
 
 		if (!QueryResult)
 			return nullptr;
 
-		const auto DirectoryInfo = reinterpret_cast<const FILE_ID_BOTH_DIR_INFORMATION*>(Handle->BufferBase.get());
+		const auto DirectoryInfo = reinterpret_cast<const FILE_ID_BOTH_DIR_INFORMATION*>(Handle->BufferBase.data());
 		DirectoryInfoToFindData(*DirectoryInfo, FindData, Handle->Extended);
+		fill_allocation_size_alternative(FindData, Directory);
 		Handle->NextOffset = DirectoryInfo->NextEntryOffset;
 		return find_file_handle(Handle.release());
 	}
@@ -311,31 +435,29 @@ namespace os::fs
 	static bool FindNextFileInternal(const find_file_handle& Find, find_data& FindData)
 	{
 		bool Result = false;
-		const auto Handle = static_cast<far_find_file_handle_impl*>(Find.native_handle());
+		auto& Handle = *static_cast<far_find_file_handle_impl*>(Find.native_handle());
 		bool Status = true, set_errcode = true;
-		auto DirectoryInfo = reinterpret_cast<const FILE_ID_BOTH_DIR_INFORMATION*>(Handle->BufferBase.get());
-		if (Handle->NextOffset)
+		auto DirectoryInfo = reinterpret_cast<const FILE_ID_BOTH_DIR_INFORMATION*>(Handle.BufferBase.data());
+		if (Handle.NextOffset)
 		{
-			DirectoryInfo = reinterpret_cast<const FILE_ID_BOTH_DIR_INFORMATION*>(reinterpret_cast<const char*>(DirectoryInfo) + Handle->NextOffset);
+			DirectoryInfo = reinterpret_cast<const FILE_ID_BOTH_DIR_INFORMATION*>(reinterpret_cast<const char*>(DirectoryInfo) + Handle.NextOffset);
 		}
 		else
 		{
-			if (Handle->ReadDone)
+			if (Handle.ReadDone)
 			{
 				Status = false;
 			}
 			else
 			{
-				if (Handle->Buffer2)
+				if (Handle.Buffer2)
 				{
-					Handle->BufferBase.reset();
-					using std::swap;
-					swap(Handle->BufferBase, Handle->Buffer2);
-					DirectoryInfo = reinterpret_cast<const FILE_ID_BOTH_DIR_INFORMATION*>(Handle->BufferBase.get());
+					Handle.BufferBase = std::move(Handle.Buffer2);
+					DirectoryInfo = reinterpret_cast<const FILE_ID_BOTH_DIR_INFORMATION*>(Handle.BufferBase.data());
 				}
 				else
 				{
-					Status = Handle->Object.NtQueryDirectoryFile(Handle->BufferBase.get(), Handle->BufferBase.size(), Handle->Extended? FileIdBothDirectoryInformation : FileBothDirectoryInformation, false, nullptr, false);
+					Status = Handle.Object.NtQueryDirectoryFile(Handle.BufferBase.data(), Handle.BufferBase.size(), Handle.Extended? FileIdBothDirectoryInformation : FileBothDirectoryInformation, false, {}, false);
 					set_errcode = false;
 				}
 			}
@@ -343,8 +465,9 @@ namespace os::fs
 
 		if (Status)
 		{
-			DirectoryInfoToFindData(*DirectoryInfo, FindData, Handle->Extended);
-			Handle->NextOffset = DirectoryInfo->NextEntryOffset? Handle->NextOffset + DirectoryInfo->NextEntryOffset : 0;
+			DirectoryInfoToFindData(*DirectoryInfo, FindData, Handle.Extended);
+			fill_allocation_size_alternative(FindData, Handle.Object.GetName());
+			Handle.NextOffset = DirectoryInfo->NextEntryOffset? Handle.NextOffset + DirectoryInfo->NextEntryOffset : 0;
 			Result = true;
 		}
 
@@ -368,11 +491,10 @@ namespace os::fs
 			{
 				if (m_ScanSymlink)
 				{
-					auto strReal = m_Object;
+					string_view Str = m_Object;
 					// only links in the path should be processed, not the object name itself
-					CutToSlash(strReal);
-					strReal = NTPath(path::join(ConvertNameToReal(strReal), PointToName(m_Object)));
-					m_Handle = FindFirstFileInternal(strReal, Value);
+					CutToSlash(Str);
+					m_Handle = FindFirstFileInternal(NTPath(path::join(ConvertNameToReal(Str), PointToName(m_Object))), Value);
 				}
 
 				if (!m_Handle && ElevationRequired(ELEVATION_READ_REQUEST))
@@ -406,9 +528,13 @@ namespace os::fs
 
 	static find_handle FindFirstFileName(const string_view FileName, const DWORD Flags, string& LinkName)
 	{
+		if (!imports.FindFirstFileNameW)
+			return {};
+
 		NTPath NtFileName(FileName);
 		find_handle Handle;
-		os::detail::ApiDynamicStringReceiver(LinkName, [&](range<wchar_t*> Buffer)
+		// BUGBUG check result
+		(void)os::detail::ApiDynamicStringReceiver(LinkName, [&](span<wchar_t> Buffer)
 		{
 			auto BufferSize = static_cast<DWORD>(Buffer.size());
 			Handle.reset(imports.FindFirstFileNameW(NtFileName.c_str(), Flags, &BufferSize, Buffer.data()));
@@ -422,7 +548,10 @@ namespace os::fs
 
 	static bool FindNextFileName(const find_handle& hFindStream, string& LinkName)
 	{
-		return os::detail::ApiDynamicStringReceiver(LinkName, [&](range<wchar_t*> Buffer)
+		if (!imports.FindNextFileNameW)
+			return false;
+
+		return os::detail::ApiDynamicStringReceiver(LinkName, [&](span<wchar_t> Buffer)
 		{
 			auto BufferSize = static_cast<DWORD>(Buffer.size());
 			if (imports.FindNextFileNameW(hFindStream.native_handle(), &BufferSize, Buffer.data()))
@@ -456,7 +585,7 @@ namespace os::fs
 		if (!Length || Length >= std::size(StreamData.cStreamName))
 			return false;
 
-		*std::copy_n(std::cbegin(StreamInfo.StreamName), Length, StreamData.cStreamName) = L'\0';
+		*std::copy_n(std::cbegin(StreamInfo.StreamName), Length, StreamData.cStreamName) = {};
 		StreamData.StreamSize = StreamInfo.StreamSize;
 		return true;
 	}
@@ -486,16 +615,17 @@ namespace os::fs
 			BufferSize *= 2;
 			Handle->BufferBase.reset(BufferSize);
 			// sometimes for directories NtQueryInformationFile returns STATUS_SUCCESS but doesn't fill the buffer
-			const auto StreamInfo = reinterpret_cast<FILE_STREAM_INFORMATION*>(Handle->BufferBase.get());
+			const auto StreamInfo = reinterpret_cast<FILE_STREAM_INFORMATION*>(Handle->BufferBase.data());
 			StreamInfo->StreamNameLength = 0;
-			Handle->Object.NtQueryInformationFile(Handle->BufferBase.get(), Handle->BufferBase.size(), FileStreamInformation, &Result);
+			// BUGBUG check result
+			(void)Handle->Object.NtQueryInformationFile(Handle->BufferBase.data(), Handle->BufferBase.size(), FileStreamInformation, &Result);
 		}
 		while (Result == STATUS_BUFFER_OVERFLOW || Result == STATUS_BUFFER_TOO_SMALL);
 
 		if (Result != STATUS_SUCCESS)
 			return nullptr;
 
-		const auto StreamInfo = reinterpret_cast<const FILE_STREAM_INFORMATION*>(Handle->BufferBase.get());
+		const auto StreamInfo = reinterpret_cast<const FILE_STREAM_INFORMATION*>(Handle->BufferBase.data());
 		Handle->NextOffset = StreamInfo->NextEntryOffset;
 		const auto StreamData = static_cast<WIN32_FIND_STREAM_DATA*>(FindStreamData);
 
@@ -517,7 +647,7 @@ namespace os::fs
 		if (!Handle->NextOffset)
 			return false;
 
-		const auto StreamInfo = reinterpret_cast<const FILE_STREAM_INFORMATION*>(Handle->BufferBase.get() + Handle->NextOffset);
+		const auto StreamInfo = reinterpret_cast<const FILE_STREAM_INFORMATION*>(Handle->BufferBase.data() + Handle->NextOffset);
 		Handle->NextOffset = StreamInfo->NextEntryOffset? Handle->NextOffset + StreamInfo->NextEntryOffset : 0;
 		const auto StreamData = static_cast<WIN32_FIND_STREAM_DATA*>(FindStreamData);
 
@@ -546,6 +676,7 @@ namespace os::fs
 
 	bool enum_volumes::get(bool Reset, string& Value) const
 	{
+		// A reasonable size for the buffer to accommodate the largest possible volume UUID path is 50 characters.
 		wchar_t VolumeName[50];
 
 		if (Reset)
@@ -593,7 +724,7 @@ namespace os::fs
 			return false;
 		}
 
-		assign(m_Name, Object);
+		m_Name = Object;
 		m_ShareMode = ShareMode;
 		return true;
 	}
@@ -651,7 +782,8 @@ namespace os::fs
 		case FILE_END:
 			{
 				unsigned long long Size = 0;
-				GetSize(Size);
+				// BUGBUG check result
+				(void)GetSize(Size);
 				m_Pointer = Size + DistanceToMove;
 			}
 			break;
@@ -673,8 +805,10 @@ namespace os::fs
 	bool file::SetEnd()
 	{
 		SyncPointer();
-		bool ok = SetEndOfFile(m_Handle.native_handle()) != FALSE;
-		if (!ok && !m_Name.empty() && GetLastError() == ERROR_INVALID_PARAMETER) // OSX buggy SMB workaround
+		if (SetEndOfFile(m_Handle.native_handle()))
+			return true;
+
+		if (!m_Name.empty() && GetLastError() == ERROR_INVALID_PARAMETER) // OSX buggy SMB workaround
 		{
 			const auto fsize = GetPointer();
 			Close();
@@ -682,10 +816,11 @@ namespace os::fs
 			{
 				SetPointer(fsize, nullptr, FILE_BEGIN);
 				SyncPointer();
-				ok = SetEndOfFile(m_Handle.native_handle()) != FALSE;
+				return SetEndOfFile(m_Handle.native_handle()) != FALSE;
 			}
 		}
-		return ok;
+
+		return false;
 	}
 
 	bool file::GetTime(os::chrono::time_point* CreationTime, os::chrono::time_point* LastAccessTime, os::chrono::time_point* LastWriteTime, os::chrono::time_point* ChangeTime) const
@@ -696,16 +831,16 @@ namespace os::fs
 			return false;
 
 		if (CreationTime)
-			*CreationTime = os::chrono::time_point(os::chrono::duration(fbi.CreationTime.QuadPart));
+			*CreationTime = os::chrono::nt_clock::from_hectonanoseconds(fbi.CreationTime.QuadPart);
 
 		if (LastAccessTime)
-			*LastAccessTime = os::chrono::time_point(os::chrono::duration(fbi.LastAccessTime.QuadPart));
+			*LastAccessTime = os::chrono::nt_clock::from_hectonanoseconds(fbi.LastAccessTime.QuadPart);
 
 		if (LastWriteTime)
-			*LastWriteTime = os::chrono::time_point(os::chrono::duration(fbi.LastWriteTime.QuadPart));
+			*LastWriteTime = os::chrono::nt_clock::from_hectonanoseconds(fbi.LastWriteTime.QuadPart);
 
 		if (ChangeTime)
-			*ChangeTime = os::chrono::time_point(os::chrono::duration(fbi.ChangeTime.QuadPart));
+			*ChangeTime = os::chrono::nt_clock::from_hectonanoseconds(fbi.ChangeTime.QuadPart);
 
 		return true;
 	}
@@ -715,33 +850,29 @@ namespace os::fs
 		FILE_BASIC_INFORMATION fbi{};
 
 		if (CreationTime)
-			fbi.CreationTime.QuadPart = CreationTime->time_since_epoch().count();
+			fbi.CreationTime.QuadPart = os::chrono::nt_clock::to_hectonanoseconds(*CreationTime);
 
 		if (LastAccessTime)
-			fbi.LastAccessTime.QuadPart = LastAccessTime->time_since_epoch().count();
+			fbi.LastAccessTime.QuadPart = os::chrono::nt_clock::to_hectonanoseconds(*LastAccessTime);
 
 		if (LastWriteTime)
-			fbi.LastWriteTime.QuadPart = LastWriteTime->time_since_epoch().count();
+			fbi.LastWriteTime.QuadPart = os::chrono::nt_clock::to_hectonanoseconds(*LastWriteTime);
 
 		if (ChangeTime)
-			fbi.ChangeTime.QuadPart = ChangeTime->time_since_epoch().count();
+			fbi.ChangeTime.QuadPart = os::chrono::nt_clock::to_hectonanoseconds(*ChangeTime);
 
 		IO_STATUS_BLOCK IoStatusBlock;
 		const auto Status = imports.NtSetInformationFile(m_Handle.native_handle(), &IoStatusBlock, &fbi, sizeof fbi, FileBasicInformation);
-		::SetLastError(imports.RtlNtStatusToDosError(Status));
+		set_last_error_from_ntstatus(Status);
 
 		return Status == STATUS_SUCCESS;
 	}
 
 	bool file::GetSize(unsigned long long& Size) const
 	{
-		if (::GetFileSizeEx(m_Handle.native_handle(), reinterpret_cast<PLARGE_INTEGER>(&Size)))
-			return true;
-
 		GET_LENGTH_INFORMATION gli;
-		DWORD BytesReturned;
 
-		if (!IoControl(IOCTL_DISK_GET_LENGTH_INFO, nullptr, 0, &gli, sizeof(gli), &BytesReturned))
+		if (!GetFileSizeEx(m_Handle.native_handle(), &gli.Length) && !IoControl(IOCTL_DISK_GET_LENGTH_INFO, nullptr, 0, &gli, sizeof(gli)))
 			return false;
 
 		Size = gli.Length.QuadPart;
@@ -760,33 +891,40 @@ namespace os::fs
 
 	bool file::IoControl(DWORD IoControlCode, void* InBuffer, DWORD InBufferSize, void* OutBuffer, DWORD OutBufferSize, DWORD* BytesReturned, OVERLAPPED* Overlapped) const
 	{
-		return ::DeviceIoControl(m_Handle.native_handle(), IoControlCode, InBuffer, InBufferSize, OutBuffer, OutBufferSize, BytesReturned, Overlapped) != FALSE;
+		DWORD BytesReturnedFallback = 0;
+		if (!BytesReturned)
+			BytesReturned = &BytesReturnedFallback;
+		return DeviceIoControl(m_Handle.native_handle(), IoControlCode, InBuffer, InBufferSize, OutBuffer, OutBufferSize, BytesReturned, Overlapped) != FALSE;
 	}
 
 	bool file::GetStorageDependencyInformation(GET_STORAGE_DEPENDENCY_FLAG Flags, ULONG StorageDependencyInfoSize, PSTORAGE_DEPENDENCY_INFO StorageDependencyInfo, PULONG SizeUsed) const
 	{
-		DWORD Result = imports.GetStorageDependencyInformation(m_Handle.native_handle(), Flags, StorageDependencyInfoSize, StorageDependencyInfo, SizeUsed);
+		if (!imports.GetStorageDependencyInformation)
+			return false;
+
+		const auto Result = imports.GetStorageDependencyInformation(m_Handle.native_handle(), Flags, StorageDependencyInfoSize, StorageDependencyInfo, SizeUsed);
 		SetLastError(Result);
 		return Result == ERROR_SUCCESS;
 	}
 
-	bool file::NtQueryDirectoryFile(void* FileInformation, size_t Length, FILE_INFORMATION_CLASS FileInformationClass, bool ReturnSingleEntry, const wchar_t* FileName, bool RestartScan, NTSTATUS* Status) const
+	bool file::NtQueryDirectoryFile(void* FileInformation, size_t Length, FILE_INFORMATION_CLASS FileInformationClass, bool ReturnSingleEntry, string_view const FileName, bool RestartScan, NTSTATUS* Status) const
 	{
 		IO_STATUS_BLOCK IoStatusBlock;
 		PUNICODE_STRING pNameString = nullptr;
 		UNICODE_STRING NameString;
-		if (FileName && *FileName)
+		if (!FileName.empty())
 		{
-			NameString.Buffer = const_cast<LPWSTR>(FileName);
-			NameString.Length = static_cast<USHORT>(wcslen(FileName) * sizeof(WCHAR));
+			NameString.Buffer = const_cast<wchar_t*>(FileName.data());
+			NameString.Length = static_cast<USHORT>(FileName.size() * sizeof(wchar_t));
 			NameString.MaximumLength = NameString.Length;
 			pNameString = &NameString;
 		}
-		const auto di = reinterpret_cast<FILE_ID_BOTH_DIR_INFORMATION*>(FileInformation);
+		const auto di = static_cast<FILE_ID_BOTH_DIR_INFORMATION*>(FileInformation);
 		di->NextEntryOffset = 0xffffffffUL;
 
-		NTSTATUS Result = imports.NtQueryDirectoryFile(m_Handle.native_handle(), nullptr, nullptr, nullptr, &IoStatusBlock, FileInformation, static_cast<ULONG>(Length), FileInformationClass, ReturnSingleEntry, pNameString, RestartScan);
-		SetLastError(imports.RtlNtStatusToDosError(Result));
+		const auto Result = imports.NtQueryDirectoryFile(m_Handle.native_handle(), nullptr, nullptr, nullptr, &IoStatusBlock, FileInformation, static_cast<ULONG>(Length), FileInformationClass, ReturnSingleEntry, pNameString, RestartScan);
+		set_last_error_from_ntstatus(Result);
+
 		if (Status)
 		{
 			*Status = Result;
@@ -798,8 +936,9 @@ namespace os::fs
 	bool file::NtQueryInformationFile(void* FileInformation, size_t Length, FILE_INFORMATION_CLASS FileInformationClass, NTSTATUS* Status) const
 	{
 		IO_STATUS_BLOCK IoStatusBlock;
-		NTSTATUS Result = imports.NtQueryInformationFile(m_Handle.native_handle(), &IoStatusBlock, FileInformation, static_cast<ULONG>(Length), FileInformationClass);
-		SetLastError(imports.RtlNtStatusToDosError(Result));
+		const auto Result = imports.NtQueryInformationFile(m_Handle.native_handle(), &IoStatusBlock, FileInformation, static_cast<ULONG>(Length), FileInformationClass);
+		set_last_error_from_ntstatus(Result);
+
 		if (Status)
 		{
 			*Status = Result;
@@ -809,12 +948,15 @@ namespace os::fs
 
 	static bool GetObjectName(HANDLE hFile, string& ObjectName)
 	{
-		block_ptr<OBJECT_NAME_INFORMATION> oni(NT_MAX_PATH);
+		// https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/content/ntifs/nf-ntifs-obquerynamestring
+		// A reasonable size for the buffer to accommodate most object names is 1024 bytes.
+		const auto ReasonableSize = 1024;
+		block_ptr<OBJECT_NAME_INFORMATION, ReasonableSize> oni(ReasonableSize);
 		ULONG ReturnLength;
 
-		const auto& QueryObject = [&]
+		const auto QueryObject = [&]
 		{
-			return imports.NtQueryObject(hFile, ObjectNameInformation, oni.get(), static_cast<unsigned long>(oni.size()), &ReturnLength);
+			return imports.NtQueryObject(hFile, ObjectNameInformation, oni.data(), static_cast<unsigned long>(oni.size()), &ReturnLength);
 		};
 
 		auto Result = QueryObject();
@@ -827,11 +969,11 @@ namespace os::fs
 		if (Result != STATUS_SUCCESS)
 			return false;
 
-		ObjectName.assign(oni->Name.Buffer, oni->Name.Length / sizeof(WCHAR));
+		ObjectName.assign(oni->Name.Buffer, oni->Name.Length / sizeof(wchar_t));
 		return true;
 	}
 
-	static int MatchNtPathRoot(const string& NtPath, const string& DeviceName)
+	static int MatchNtPathRoot(string_view const NtPath, const string& DeviceName)
 	{
 		string TargetPath;
 		if (!os::fs::QueryDosDevice(DeviceName, TargetPath))
@@ -845,7 +987,8 @@ namespace os::fs
 		ObjName.Length = ObjName.MaximumLength = static_cast<USHORT>(TargetPath.size() * sizeof(wchar_t));
 		ObjName.Buffer = UNSAFE_CSTR(TargetPath);
 		OBJECT_ATTRIBUTES ObjAttrs;
-		InitializeObjectAttributes(&ObjAttrs, &ObjName, 0, nullptr, nullptr);
+
+		InitializeObjectAttributes(&ObjAttrs, &ObjName, 0, nullptr, nullptr)
 
 		HANDLE hSymLink;
 		if (imports.NtOpenSymbolicLinkObject(&hSymLink, GENERIC_READ, &ObjAttrs) != STATUS_SUCCESS)
@@ -853,11 +996,9 @@ namespace os::fs
 
 		SCOPE_EXIT{ imports.NtClose(hSymLink); };
 
-		ULONG BufSize = 32767;
-		wchar_t_ptr Buffer(BufSize);
-		UNICODE_STRING LinkTarget;
-		LinkTarget.MaximumLength = static_cast<USHORT>(BufSize * sizeof(wchar_t));
-		LinkTarget.Buffer = Buffer.get();
+		const auto BufSize = 32767;
+		const wchar_t_ptr Buffer(BufSize);
+		UNICODE_STRING LinkTarget{ 0, static_cast<USHORT>(BufSize * sizeof(wchar_t)), Buffer.data() };
 
 		if (imports.NtQuerySymbolicLinkObject(hSymLink, &LinkTarget, nullptr) != STATUS_SUCCESS)
 			return 0;
@@ -876,12 +1017,12 @@ namespace os::fs
 		if (!GetObjectName(hFile, NtPath))
 			return false;
 
-		const auto& ReplaceRoot = [&](const auto& OldRoot, const auto& NewRoot)
+		const auto ReplaceRoot = [&](const auto& OldRoot, const auto& NewRoot)
 		{
 			if (!starts_with(NtPath, OldRoot))
 				return false;
 
-			FinalFilePath = NtPath.replace(0, OldRoot.size(), NewRoot.data(), NewRoot.size());
+			FinalFilePath = NtPath.replace(0, OldRoot.size(), NewRoot);
 			return true;
 		};
 
@@ -890,9 +1031,9 @@ namespace os::fs
 			return true;
 
 		// try to convert NT path (\Device\HarddiskVolume1) to drive letter
-		for (const auto& i : enum_drives(get_logical_drives()))
+		for (const auto& i: enum_drives(get_logical_drives()))
 		{
-			const auto Device = fs::get_drive(i);
+			const auto Device = drive::get_device_path(i);
 			if (const auto Len = MatchNtPathRoot(NtPath, Device))
 			{
 				FinalFilePath = starts_with(NtPath, L"\\Device\\WinDfs"sv)? NtPath.replace(0, Len, 1, L'\\') : NtPath.replace(0, Len, Device);
@@ -915,26 +1056,26 @@ namespace os::fs
 
 	bool file::GetFinalPathName(string& FinalFilePath) const
 	{
-		const auto& GetFinalPathNameByHandleGuarded = [](HANDLE File, wchar_t* Buffer, DWORD Size, DWORD Flags)
+		const auto GetFinalPathNameByHandleGuarded = [](HANDLE File, wchar_t* Buffer, DWORD Size, DWORD Flags)
 		{
 			// It seems that Microsoft has forgotten to put an exception handler around this function.
 			// It causes EXCEPTION_ACCESS_VIOLATION (read from 0) in kernel32 under certain conditions,
 			// e.g. badly written file system drivers or weirdly formatted volumes.
-			return seh_invoke_no_ui(
+			return seh_try_no_ui(
 			[&]
 			{
 				return imports.GetFinalPathNameByHandle(File, Buffer, Size, Flags);
 			},
-			[]
+			[](DWORD)
 			{
 				SetLastError(ERROR_UNHANDLED_EXCEPTION);
 				return 0ul;
 			});
 		};
 
-		const auto& GetFinalPathNameByHandleImpl = [&]
+		const auto GetFinalPathNameByHandleImpl = [&]
 		{
-			return os::detail::ApiDynamicStringReceiver(FinalFilePath, [&](range<wchar_t*> Buffer)
+			return os::detail::ApiDynamicStringReceiver(FinalFilePath, [&](span<wchar_t> Buffer)
 			{
 				return GetFinalPathNameByHandleGuarded(m_Handle.native_handle(), Buffer.data(), static_cast<DWORD>(Buffer.size()), VOLUME_NAME_GUID);
 			});
@@ -952,7 +1093,8 @@ namespace os::fs
 	{
 		const auto Ptr = GetPointer();
 		unsigned long long Size = 0;
-		GetSize(Size);
+		// BUGBUG check result
+		(void)GetSize(Size);
 		return Ptr >= Size;
 	}
 
@@ -1027,7 +1169,7 @@ namespace os::fs
 			if ((!QueryResult && GetLastError() != ERROR_MORE_DATA) || !BytesReturned)
 				break;
 
-			for (const auto& i : make_range(Ranges, BytesReturned / sizeof(*Ranges)))
+			for (const auto& i: span(Ranges, BytesReturned / sizeof(*Ranges)))
 			{
 				m_AllocSize += i.Length.QuadPart;
 				for (unsigned long long j = i.FileOffset.QuadPart, RangeEndOffset = i.FileOffset.QuadPart + i.Length.QuadPart; j < RangeEndOffset; j += m_ChunkSize)
@@ -1090,7 +1232,7 @@ namespace os::fs
 		m_Buffer(BufferSize)
 	{
 		if (!(m_Mode & std::ios::in) == !(m_Mode & std::ios::out))
-			throw MAKE_FAR_EXCEPTION(L"Unsupported mode"sv);
+			throw MAKE_FAR_FATAL_EXCEPTION(L"Unsupported mode"sv);
 
 		reset_get_area();
 		reset_put_area();
@@ -1099,10 +1241,10 @@ namespace os::fs
 	filebuf::int_type filebuf::underflow()
 	{
 		if (!m_File)
-			throw MAKE_FAR_EXCEPTION(L"File not opened"sv);
+			throw MAKE_FAR_FATAL_EXCEPTION(L"File not opened"sv);
 
-		if (!(m_Mode && std::ios::in))
-			throw MAKE_FAR_EXCEPTION(L"Buffer not opened for reading"sv);
+		if (!(m_Mode & std::ios::in))
+			throw MAKE_FAR_FATAL_EXCEPTION(L"Buffer not opened for reading"sv);
 
 		size_t Read;
 		if (!m_File.Read(m_Buffer.data(), m_Buffer.size() * sizeof(char), Read))
@@ -1118,10 +1260,10 @@ namespace os::fs
 	filebuf::int_type filebuf::overflow(int_type Ch)
 	{
 		if (!m_File)
-			throw MAKE_FAR_EXCEPTION(L"File not opened"sv);
+			throw MAKE_FAR_FATAL_EXCEPTION(L"File not opened"sv);
 
-		if (!(m_Mode && std::ios::out))
-			throw MAKE_FAR_EXCEPTION(L"Buffer not opened for writing"sv);
+		if (!(m_Mode & std::ios::out))
+			throw MAKE_FAR_FATAL_EXCEPTION(L"Buffer not opened for writing"sv);
 
 		if (pptr() != pbase())
 		{
@@ -1172,7 +1314,7 @@ namespace os::fs
 	filebuf::pos_type filebuf::seekoff(off_type Offset, std::ios::seekdir Way, std::ios::openmode Which)
 	{
 		if (!m_File)
-			throw MAKE_FAR_EXCEPTION(L"File not opened"sv);
+			throw MAKE_FAR_FATAL_EXCEPTION(L"File not opened"sv);
 
 		switch (Way)
 		{
@@ -1201,7 +1343,7 @@ namespace os::fs
 			return set_pointer(Offset, FILE_CURRENT);
 
 		default:
-			throw MAKE_FAR_EXCEPTION(L"Unknown seekdir"sv);
+			throw MAKE_FAR_FATAL_EXCEPTION(L"Unknown seekdir"sv);
 		}
 	}
 
@@ -1212,7 +1354,7 @@ namespace os::fs
 
 	filebuf::int_type filebuf::pbackfail(int_type Ch)
 	{
-		throw MAKE_FAR_EXCEPTION(L"Not implemented"sv);
+		throw MAKE_FAR_FATAL_EXCEPTION(L"Not implemented"sv);
 	}
 
 	void filebuf::reset_get_area()
@@ -1244,7 +1386,7 @@ namespace os::fs
 	}
 
 	file_status::file_status(const string_view Object):
-		m_Data(fs::get_file_attributes(Object))
+		m_Data(get_file_attributes(Object))
 	{
 	}
 
@@ -1275,6 +1417,11 @@ namespace os::fs
 		return is_file(file_status(Object));
 	}
 
+	bool is_file(attributes const Attributes)
+	{
+		return Attributes != INVALID_FILE_ATTRIBUTES && !flags::check_any(Attributes, FILE_ATTRIBUTE_DIRECTORY);
+	}
+
 	bool is_directory(file_status Status)
 	{
 		return Status.check(FILE_ATTRIBUTE_DIRECTORY);
@@ -1285,10 +1432,15 @@ namespace os::fs
 		return is_directory(file_status(Object));
 	}
 
-	bool is_not_empty_directory(const string& Object)
+	bool is_directory(attributes const Attributes)
+	{
+		return Attributes != INVALID_FILE_ATTRIBUTES && flags::check_any(Attributes, FILE_ATTRIBUTE_DIRECTORY);
+	}
+
+	bool is_not_empty_directory(string_view const Object)
 	{
 		const auto Find = enum_files(path::join(Object, L'*'));
-		return Find.begin() != Find.end();
+		return !Find.empty();
 	}
 
 	//-------------------------------------------------------------------------
@@ -1341,12 +1493,12 @@ namespace os::fs
 			return ::DeleteFile(FileName) != FALSE;
 		}
 
-		DWORD get_file_attributes(const wchar_t* FileName)
+		attributes get_file_attributes(const wchar_t* const FileName)
 		{
 			return ::GetFileAttributes(FileName);
 		}
 
-		bool set_file_attributes(const wchar_t* FileName, DWORD Attributes)
+		bool set_file_attributes(const wchar_t* const FileName, attributes const Attributes)
 		{
 			return ::SetFileAttributes(FileName, Attributes) != FALSE;
 		}
@@ -1364,6 +1516,15 @@ namespace os::fs
 		bool move_file(const wchar_t* ExistingFileName, const wchar_t* NewFileName, DWORD Flags)
 		{
 			return (Flags? ::MoveFileEx(ExistingFileName, NewFileName, Flags) : ::MoveFile(ExistingFileName, NewFileName)) != FALSE;
+		}
+
+		bool replace_file(const wchar_t* ReplacedFileName, const wchar_t* ReplacementFileName, const wchar_t* BackupFileName, DWORD ReplaceFlags)
+		{
+			static bool IgnoreAclErrorsSupported = IsWindowsVistaOrGreater();
+			if (!IgnoreAclErrorsSupported)
+				ReplaceFlags &= ~REPLACEFILE_IGNORE_ACL_ERRORS;
+
+			return ::ReplaceFile(ReplacedFileName, ReplacementFileName, EmptyToNull(BackupFileName), ReplaceFlags, nullptr, nullptr) != FALSE;
 		}
 
 		bool detach_virtual_disk(const wchar_t* Object, VIRTUAL_STORAGE_TYPE& VirtualStorageType)
@@ -1393,7 +1554,7 @@ namespace os::fs
 			if (!::GetDiskFreeSpaceEx(DirectoryName, &uFreeBytesAvailableToCaller, &uTotalNumberOfBytes, &uTotalNumberOfFreeBytes))
 				return false;
 
-			const auto& SetOpt = [](const ULARGE_INTEGER& From, unsigned long long* To)
+			const auto SetOpt = [](const ULARGE_INTEGER& From, unsigned long long* To)
 			{
 				if (To)
 					*To = From.QuadPart;
@@ -1410,13 +1571,68 @@ namespace os::fs
 		{
 			return (Encrypt? ::EncryptFile(FileName) : ::DecryptFile(FileName, 0)) != FALSE;
 		}
+
+		security::descriptor get_file_security(const wchar_t* Object, SECURITY_INFORMATION RequestedInformation)
+		{
+			security::descriptor Result(default_buffer_size);
+
+			if (!os::detail::ApiDynamicReceiver(Result,
+				[&](span<SECURITY_DESCRIPTOR> Buffer)
+				{
+					DWORD LengthNeeded = 0;
+					if (!::GetFileSecurity(Object, RequestedInformation, Buffer.data(), static_cast<DWORD>(Buffer.size()), &LengthNeeded))
+						return static_cast<size_t>(LengthNeeded);
+					return Buffer.size();
+				},
+				[](size_t ReturnedSize, size_t AllocatedSize)
+				{
+					return ReturnedSize > AllocatedSize;
+				},
+				[](span<const SECURITY_DESCRIPTOR>)
+				{}
+			))
+			{
+				Result.reset();
+			}
+
+			return Result;
+		}
+
+		bool set_file_security(const wchar_t* Object, SECURITY_INFORMATION RequestedInformation, SECURITY_DESCRIPTOR* SecurityDescriptor)
+		{
+			return ::SetFileSecurity(Object, RequestedInformation, SecurityDescriptor) != FALSE;
+		}
+
+		bool reset_file_security(const wchar_t* Object)
+		{
+			ACL EmptyAcl{};
+			if (!InitializeAcl(&EmptyAcl, sizeof(EmptyAcl), ACL_REVISION))
+				return false;
+
+			const auto Result = SetNamedSecurityInfo(const_cast<wchar_t*>(Object), SE_FILE_OBJECT, DACL_SECURITY_INFORMATION | UNPROTECTED_DACL_SECURITY_INFORMATION, nullptr, nullptr, &EmptyAcl, nullptr);
+			SetLastError(Result);
+			return Result == ERROR_SUCCESS;
+		}
+
+		bool move_to_recycle_bin(string_view const Object)
+		{
+			const auto ObjectsArray = Object + L"\0"sv;
+			SHFILEOPSTRUCT fop{};
+			fop.wFunc = FO_DELETE;
+			fop.pFrom = ObjectsArray.c_str();
+			fop.fFlags = FOF_NO_UI | FOF_ALLOWUNDO;
+
+			const auto Result = SHErrorToWinError(SHFileOperation(&fop));
+			SetLastError(Result);
+			return Result == ERROR_SUCCESS && !fop.fAnyOperationsAborted;
+		}
 	}
 
 	//-------------------------------------------------------------------------
 
 	bool GetProcessRealCurrentDirectory(string& Directory)
 	{
-		return os::detail::ApiDynamicStringReceiver(Directory, [](range<wchar_t*> Buffer)
+		return os::detail::ApiDynamicStringReceiver(Directory, [](span<wchar_t> Buffer)
 		{
 			return ::GetCurrentDirectory(static_cast<DWORD>(Buffer.size()), Buffer.data());
 		});
@@ -1424,7 +1640,21 @@ namespace os::fs
 
 	bool SetProcessRealCurrentDirectory(const string& Directory)
 	{
-		return ::SetCurrentDirectory(Directory.c_str()) != FALSE;
+		if constexpr (features::win10_curdir)
+		{
+			/*
+			The final character before the null character must be a backslash (''). If you do not specify the backslash, it will be added for you
+			https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-setcurrentdirectory
+			It seems that "it will be added for you" doesn't work for funny names with trailing dots or spaces, so we add it ourselves.
+			 */
+			auto DirectoryWithSlash = Directory;
+			AddEndSlash(DirectoryWithSlash);
+			return ::SetCurrentDirectory(DirectoryWithSlash.c_str()) != FALSE;
+		}
+		else
+		{
+			return ::SetCurrentDirectory(Directory.c_str()) != FALSE;
+		}
 	}
 
 	void InitCurrentDirectory()
@@ -1455,8 +1685,8 @@ namespace os::fs
 		string strDir = PathName;
 		ReplaceSlashToBackslash(strDir);
 		bool Root = false;
-		const auto Type = ParsePath(strDir, nullptr, &Root);
-		if (Root && (Type == root_type::drive_letter || Type == root_type::unc_drive_letter || Type == root_type::volume))
+		ParsePath(strDir, nullptr, &Root);
+		if (Root)
 		{
 			AddEndSlash(strDir);
 		}
@@ -1473,7 +1703,7 @@ namespace os::fs
 			find_data fd;
 			if (!get_find_data(path::join(PathName, L'*'), fd))
 			{
-				const auto LastError = ::GetLastError();
+				const auto LastError = GetLastError();
 				if (!(LastError == ERROR_FILE_NOT_FOUND || LastError == ERROR_NO_MORE_FILES))
 					return false;
 			}
@@ -1481,13 +1711,23 @@ namespace os::fs
 
 		CurrentDirectory() = strDir;
 
-#ifndef NO_WRAPPER
 		// try to synchronize far current directory with process current directory
-		if (Global->CtrlObject && Global->CtrlObject->Plugins->OemPluginsPresent())
+		if (
+			// https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-setcurrentdirectory
+			// Starting with Windows 10, version 1607, for the unicode version of this function (SetCurrentDirectoryW), you can opt-in to remove the MAX_PATH limitation
+			// I'm not yet sure we should though
+			(features::win10_curdir && version::is_win10_1607_or_later()) ||
+#ifndef NO_WRAPPER
+
+			// Legacy plugins expect that the current directory is set
+			state::current_directory_syncronisation
+#else
+			false
+#endif // NO_WRAPPER
+		)
 		{
 			SetProcessRealCurrentDirectory(strDir);
 		}
-#endif // NO_WRAPPER
 		return true;
 	}
 
@@ -1500,7 +1740,7 @@ namespace os::fs
 	{
 		NTPath NtNewDirectory(NewDirectory);
 
-		const auto& Create = [&](const string& Template)
+		const auto Create = [&](const string& Template)
 		{
 			if (low::create_directory(Template.c_str(), NtNewDirectory.c_str(), SecurityAttributes))
 				return true;
@@ -1511,17 +1751,26 @@ namespace os::fs
 			return false;
 		};
 
+		const auto Existed = exists(NtNewDirectory);
+
 		if (TemplateDirectory.empty())
 			return Create({});
 
-		return Create(NTPath(TemplateDirectory)) ||
-			// CreateDirectoryEx may fail on some FS, try to create anyway.
-			Create({});
+		if (Create(NTPath(TemplateDirectory)))
+			return true;
+
+		// CreateDirectoryEx not only can fail on some buggy FS (e.g. Samba),
+		// but can also leave rubbish (see gh-368). Shame on them.
+		// Try to restore the status quo and fall back to the simple method:
+		if (!Existed && exists(NtNewDirectory))
+			(void)remove_directory(NtNewDirectory);
+
+		return Create({});
 	}
 
 	bool remove_directory(const string_view DirName)
 	{
-		NTPath strNtName(DirName);
+		const NTPath strNtName(DirName);
 		if (low::remove_directory(strNtName.c_str()))
 			return true;
 
@@ -1549,7 +1798,7 @@ namespace os::fs
 			FlagsAndAttributes |= FILE_FLAG_POSIX_SEMANTICS;
 		}
 
-		const auto& create_elevated = [&]
+		const auto create_elevated = [&]
 		{
 			return handle(elevation::instance().create_file(strObject, DesiredAccess, ShareMode, SecurityAttributes, CreationDistribution, FlagsAndAttributes, TemplateFile));
 		};
@@ -1562,7 +1811,7 @@ namespace os::fs
 
 		const auto LastError = GetLastError();
 
-		if (STATUS_STOPPED_ON_SYMLINK == GetLastNtStatus() && ERROR_STOPPED_ON_SYMLINK != LastError)
+		if (STATUS_STOPPED_ON_SYMLINK == get_last_nt_status() && ERROR_STOPPED_ON_SYMLINK != LastError)
 		{
 			SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
 			return nullptr;
@@ -1583,7 +1832,7 @@ namespace os::fs
 
 	bool delete_file(const string_view FileName)
 	{
-		NTPath strNtName(FileName);
+		const NTPath strNtName(FileName);
 
 		if (low::delete_file(strNtName.c_str()))
 			return true;
@@ -1605,8 +1854,10 @@ namespace os::fs
 
 	bool copy_file(const string_view ExistingFileName, const string_view NewFileName, const LPPROGRESS_ROUTINE ProgressRoutine, void* const Data, BOOL* const Cancel, const DWORD CopyFlags)
 	{
-		NTPath strFrom(ExistingFileName), strTo(NewFileName);
-		if (IsSlash(strTo.back()))
+		const NTPath strFrom(ExistingFileName);
+		NTPath strTo(NewFileName);
+
+		if (path::is_separator(strTo.back()))
 		{
 			append(strTo, PointToName(strFrom));
 		}
@@ -1614,15 +1865,15 @@ namespace os::fs
 		if (low::copy_file(strFrom.c_str(), strTo.c_str(), ProgressRoutine, Data, Cancel, CopyFlags))
 			return true;
 
-		if (STATUS_STOPPED_ON_SYMLINK == GetLastNtStatus() && ERROR_STOPPED_ON_SYMLINK != GetLastError())
+		if (STATUS_STOPPED_ON_SYMLINK == get_last_nt_status() && ERROR_STOPPED_ON_SYMLINK != GetLastError())
 		{
-			::SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+			SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
 			return false;
 		}
 
-		if (STATUS_FILE_IS_A_DIRECTORY == GetLastNtStatus())
+		if (STATUS_FILE_IS_A_DIRECTORY == get_last_nt_status())
 		{
-			::SetLastError(ERROR_FILE_EXISTS);
+			SetLastError(ERROR_FILE_EXISTS);
 			return false;
 		}
 
@@ -1632,41 +1883,59 @@ namespace os::fs
 		return false;
 	}
 
-	bool move_file(const string_view ExistingFileName, const string_view NewFileName, const DWORD dwFlags)
+	bool move_file(const string_view ExistingFileName, const string_view NewFileName, const DWORD Flags)
 	{
-		NTPath strFrom(ExistingFileName), strTo(NewFileName);
-		if (IsSlash(strTo.back()))
+		const NTPath strFrom(ExistingFileName);
+		NTPath strTo(NewFileName);
+
+		if (path::is_separator(strTo.back()))
 		{
 			append(strTo, PointToName(strFrom));
 		}
 
-		if (low::move_file(strFrom.c_str(), strTo.c_str(), dwFlags))
+		if (low::move_file(strFrom.c_str(), strTo.c_str(), Flags))
 			return true;
 
-		if (STATUS_STOPPED_ON_SYMLINK == GetLastNtStatus() && ERROR_STOPPED_ON_SYMLINK != GetLastError())
+		if (STATUS_STOPPED_ON_SYMLINK == get_last_nt_status() && ERROR_STOPPED_ON_SYMLINK != GetLastError())
 		{
-			::SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+			SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
 			return false;
 		}
 
 		if (ElevationRequired(ELEVATION_MODIFY_REQUEST)) //BUGBUG, really unknown
 		{
+			last_error_guard gle;
 			// exclude fake elevation request for: move file over existing directory with same name
 			const file_status SrcStatus(strFrom), DstStatus(strTo);
 			if (is_directory(DstStatus) && is_file(SrcStatus))
 			{
-				::SetLastError(ERROR_FILE_EXISTS); // existing directory name == moved file name
+				SetLastError(ERROR_FILE_EXISTS); // existing directory name == moved file name
+				gle.dismiss();
 				return false;
 			}
-			return elevation::instance().move_file(strFrom, strTo, dwFlags);
+			return elevation::instance().move_file(strFrom, strTo, Flags);
 		}
 
 		return false;
 	}
 
-	DWORD get_file_attributes(const string_view FileName)
+	bool replace_file(string_view ReplacedFileName, string_view ReplacementFileName, string_view BackupFileName, DWORD Flags)
 	{
-		NTPath NtName(FileName);
+		const NTPath To(ReplacedFileName), From(ReplacementFileName), Backup(BackupFileName);
+
+		if (low::replace_file(To.c_str(), From.c_str(), Backup.c_str(), Flags))
+			return true;
+
+		if (ElevationRequired(ELEVATION_MODIFY_REQUEST)) //BUGBUG, really unknown
+			return elevation::instance().replace_file(To, From, Backup, Flags);
+
+		return false;
+	}
+
+
+	attributes get_file_attributes(const string_view FileName)
+	{
+		const NTPath NtName(FileName);
 
 		const auto Result = low::get_file_attributes(NtName.c_str());
 		if (Result != INVALID_FILE_ATTRIBUTES)
@@ -1678,9 +1947,9 @@ namespace os::fs
 		return INVALID_FILE_ATTRIBUTES;
 	}
 
-	bool set_file_attributes(const string_view FileName, const DWORD Attributes)
+	bool set_file_attributes(string_view const FileName, attributes const Attributes)
 	{
-		NTPath NtName(FileName);
+		const NTPath NtName(FileName);
 
 		if (low::set_file_attributes(NtName.c_str(), Attributes))
 			return true;
@@ -1691,35 +1960,35 @@ namespace os::fs
 		return false;
 	}
 
-	bool GetLongPathName(const string& ShortPath, string& LongPath)
+	bool GetLongPathName(string_view const ShortPath, string& LongPath)
 	{
-		return os::detail::ApiDynamicStringReceiver(LongPath, [&](range<wchar_t*> Buffer)
+		return os::detail::ApiDynamicStringReceiver(LongPath, [&](span<wchar_t> Buffer)
 		{
-			return ::GetLongPathName(ShortPath.c_str(), Buffer.data(), static_cast<DWORD>(Buffer.size()));
+			return ::GetLongPathName(null_terminated(ShortPath).c_str(), Buffer.data(), static_cast<DWORD>(Buffer.size()));
 		});
 	}
 
-	bool GetShortPathName(const string& LongPath, string& ShortPath)
+	bool GetShortPathName(string_view const LongPath, string& ShortPath)
 	{
-		return os::detail::ApiDynamicStringReceiver(ShortPath, [&](range<wchar_t*> Buffer)
+		return os::detail::ApiDynamicStringReceiver(ShortPath, [&](span<wchar_t> Buffer)
 		{
-			return ::GetShortPathName(LongPath.c_str(), Buffer.data(), static_cast<DWORD>(Buffer.size()));
+			return ::GetShortPathName(null_terminated(LongPath).c_str(), Buffer.data(), static_cast<DWORD>(Buffer.size()));
 		});
 	}
 
-	bool GetVolumeInformation(const string& RootPathName, string* VolumeName, DWORD* VolumeSerialNumber, DWORD* MaximumComponentLength, DWORD* FileSystemFlags, string* FileSystemName)
+	bool GetVolumeInformation(string_view const RootPathName, string* VolumeName, DWORD* VolumeSerialNumber, DWORD* MaximumComponentLength, DWORD* FileSystemFlags, string* FileSystemName)
 	{
 		wchar_t VolumeNameBuffer[MAX_PATH + 1], FileSystemNameBuffer[MAX_PATH + 1];
 		if (VolumeName)
 		{
-			VolumeNameBuffer[0] = L'\0';
+			VolumeNameBuffer[0] = {};
 		}
 		if (FileSystemName)
 		{
-			FileSystemNameBuffer[0] = L'\0';
+			FileSystemNameBuffer[0] = {};
 		}
 
-		if (!::GetVolumeInformation(RootPathName.c_str(), VolumeNameBuffer, static_cast<DWORD>(std::size(VolumeNameBuffer)), VolumeSerialNumber,
+		if (!::GetVolumeInformation(null_terminated(RootPathName).c_str(), VolumeNameBuffer, static_cast<DWORD>(std::size(VolumeNameBuffer)), VolumeSerialNumber,
 			MaximumComponentLength, FileSystemFlags, FileSystemNameBuffer, static_cast<DWORD>(std::size(FileSystemNameBuffer))))
 			return false;
 
@@ -1732,9 +2001,9 @@ namespace os::fs
 		return true;
 	}
 
-	bool GetVolumeNameForVolumeMountPoint(const string& VolumeMountPoint, string& VolumeName)
+	bool GetVolumeNameForVolumeMountPoint(string_view const VolumeMountPoint, string& VolumeName)
 	{
-		WCHAR VolumeNameBuffer[50];
+		wchar_t VolumeNameBuffer[50];
 		NTPath strVolumeMountPoint(VolumeMountPoint);
 		AddEndSlash(strVolumeMountPoint);
 		if (!::GetVolumeNameForVolumeMountPoint(strVolumeMountPoint.c_str(), VolumeNameBuffer, static_cast<DWORD>(std::size(VolumeNameBuffer))))
@@ -1746,7 +2015,10 @@ namespace os::fs
 
 	bool GetVolumePathNamesForVolumeName(const string& VolumeName, string& VolumePathNames)
 	{
-		return os::detail::ApiDynamicStringReceiver(VolumePathNames, [&](range<wchar_t*> Buffer)
+		if (!imports.GetVolumePathNamesForVolumeNameW)
+			return false;
+
+		return os::detail::ApiDynamicStringReceiver(VolumePathNames, [&](span<wchar_t> Buffer)
 		{
 			DWORD ReturnLength = 0;
 			return (imports.GetVolumePathNamesForVolumeNameW(VolumeName.c_str(), Buffer.data(), static_cast<DWORD>(Buffer.size()), &ReturnLength) || !ReturnLength)?
@@ -1755,10 +2027,11 @@ namespace os::fs
 		});
 	}
 
-	bool QueryDosDevice(const string& DeviceName, string &Path)
+	bool QueryDosDevice(string_view const DeviceName, string &Path)
 	{
-		const auto DeviceNamePtr = EmptyToNull(DeviceName.c_str());
-		return os::detail::ApiDynamicErrorBasedStringReceiver(ERROR_INSUFFICIENT_BUFFER, Path, [&](range<wchar_t*> Buffer)
+		null_terminated const C_DeviceName(DeviceName);
+		const auto DeviceNamePtr = EmptyToNull(C_DeviceName);
+		return os::detail::ApiDynamicErrorBasedStringReceiver(ERROR_INSUFFICIENT_BUFFER, Path, [&](span<wchar_t> Buffer)
 		{
 			const auto ReturnedSize = ::QueryDosDevice(DeviceNamePtr, Buffer.data(), static_cast<DWORD>(Buffer.size()));
 			// Upon success it includes two trailing '\0', we don't need them
@@ -1768,7 +2041,7 @@ namespace os::fs
 
 	bool SearchPath(const wchar_t* Path, string_view const FileName, const wchar_t* Extension, string& strDest)
 	{
-		return os::detail::ApiDynamicStringReceiver(strDest, [&](range<wchar_t*> Buffer)
+		return os::detail::ApiDynamicStringReceiver(strDest, [&](span<wchar_t> Buffer)
 		{
 			return ::SearchPath(Path, null_terminated(FileName).c_str(), Extension, static_cast<DWORD>(Buffer.size()), Buffer.data(), nullptr);
 		});
@@ -1776,15 +2049,15 @@ namespace os::fs
 
 	bool GetTempPath(string& strBuffer)
 	{
-		return os::detail::ApiDynamicStringReceiver(strBuffer, [&](range<wchar_t*> Buffer)
+		return os::detail::ApiDynamicStringReceiver(strBuffer, [&](span<wchar_t> Buffer)
 		{
 			return ::GetTempPath(static_cast<DWORD>(Buffer.size()), Buffer.data());
 		});
 	}
 
-	bool GetModuleFileName(HANDLE hProcess, HMODULE hModule, string &strFileName)
+	bool get_module_file_name(HANDLE hProcess, HMODULE hModule, string &strFileName)
 	{
-		return os::detail::ApiDynamicErrorBasedStringReceiver(ERROR_INSUFFICIENT_BUFFER, strFileName, [&](range<wchar_t*> Buffer)
+		return os::detail::ApiDynamicErrorBasedStringReceiver(ERROR_INSUFFICIENT_BUFFER, strFileName, [&](span<wchar_t> Buffer)
 		{
 			if (!hProcess)
 			{
@@ -1800,8 +2073,8 @@ namespace os::fs
 
 			if (imports.QueryFullProcessImageNameW && !hModule)
 			{
-				auto dwSize = static_cast<DWORD>(Buffer.size());
-				return imports.QueryFullProcessImageNameW(hProcess, 0, Buffer.data(), &dwSize)? dwSize : 0;
+				auto Size = static_cast<DWORD>(Buffer.size());
+				return imports.QueryFullProcessImageNameW(hProcess, 0, Buffer.data(), &Size)? Size : 0;
 			}
 			else
 			{
@@ -1810,30 +2083,66 @@ namespace os::fs
 		});
 	}
 
-	security_descriptor get_file_security(const string_view Object, const SECURITY_INFORMATION RequestedInformation)
+	string get_current_process_file_name()
 	{
-		security_descriptor Result(default_buffer_size);
-		NTPath NtObject(Object);
-		os::detail::ApiDynamicReceiver(Result, [&](range<SECURITY_DESCRIPTOR*> Buffer)
-		{
-			DWORD LengthNeeded = 0;
-			if (!::GetFileSecurity(NtObject.c_str(), RequestedInformation, Buffer.data(), static_cast<DWORD>(Buffer.size()), &LengthNeeded))
-				return static_cast<size_t>(LengthNeeded);
-			return Buffer.size();
-		},
-		[](size_t ReturnedSize, size_t AllocatedSize)
-		{
-			return ReturnedSize > AllocatedSize;
-		},
-		[](range<const SECURITY_DESCRIPTOR*>)
-		{});
+		string FileName;
 
-		return Result;
+		// - This shouldn't fail
+		// - It's tiresome to check every time
+		// - There's not much we can do without it anyways
+		if (!get_module_file_name({}, {}, FileName))
+			throw MAKE_FAR_FATAL_EXCEPTION(L"get_current_process_file_name");
+
+		return FileName;
 	}
 
-	bool set_file_security(const string_view Object, const SECURITY_INFORMATION RequestedInformation, const security_descriptor& SecurityDescriptor)
+	security::descriptor get_file_security(const string_view Object, const SECURITY_INFORMATION RequestedInformation)
 	{
-		return ::SetFileSecurity(NTPath(Object).c_str(), RequestedInformation, SecurityDescriptor.get()) != FALSE;
+		NTPath const NtObject(Object);
+
+		if (auto Result = low::get_file_security(NtObject.c_str(), RequestedInformation))
+			return Result;
+
+		if (ElevationRequired(ELEVATION_READ_REQUEST))
+			return elevation::instance().get_file_security(NtObject, RequestedInformation);
+
+		return {};
+	}
+
+	bool set_file_security(const string_view Object, const SECURITY_INFORMATION RequestedInformation, const security::descriptor& SecurityDescriptor)
+	{
+		NTPath const NtObject(Object);
+
+		if (low::set_file_security(NtObject.c_str(), RequestedInformation, SecurityDescriptor.data()))
+			return true;
+
+		if (ElevationRequired(ELEVATION_MODIFY_REQUEST))
+			return elevation::instance().set_file_security(NtObject, RequestedInformation, SecurityDescriptor);
+
+		return false;
+	}
+
+	bool reset_file_security(string_view const Object)
+	{
+		NTPath const NtObject(Object);
+		if (low::reset_file_security(NtObject.c_str()))
+			return true;
+
+		if (ElevationRequired(ELEVATION_MODIFY_REQUEST))
+			return elevation::instance().reset_file_security(NtObject);
+
+		return false;
+	}
+
+	bool move_to_recycle_bin(string_view const Object)
+	{
+		if (low::move_to_recycle_bin(Object))
+			return true;
+
+		if (ElevationRequired(ELEVATION_MODIFY_REQUEST, false)) // ShellAPI doesn't set LastNtStatus
+			return elevation::instance().fMoveToRecycleBin(Object);
+
+		return false;
 	}
 
 	bool get_disk_size(const string_view Path, unsigned long long* const TotalSize, unsigned long long* const TotalFree, unsigned long long* const UserFree)
@@ -1856,7 +2165,7 @@ namespace os::fs
 		return File.Open(FileName, FILE_READ_ATTRIBUTES, FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING) && File.GetTime(CreationTime, LastAccessTime, LastWriteTime, ChangeTime);
 	}
 
-	bool get_find_data(const string& FileName, find_data& FindData, bool ScanSymLink)
+	bool get_find_data(string_view const FileName, find_data& FindData, bool ScanSymLink)
 	{
 		const auto Find = enum_files(FileName, ScanSymLink);
 		auto ItemIterator = Find.begin();
@@ -1871,7 +2180,7 @@ namespace os::fs
 
 		size_t DirOffset = 0;
 		ParsePath(FileName, &DirOffset);
-		if (FileName.find_first_of(L"*?", DirOffset) != string::npos)
+		if (FileName.find_first_of(L"*?"sv, DirOffset) != string::npos)
 			return false;
 
 		if ((FindData.Attributes = get_file_attributes(FileName)) == INVALID_FILE_ATTRIBUTES)
@@ -1880,40 +2189,46 @@ namespace os::fs
 		// Ага, значит файл таки есть. Заполним структуру ручками.
 		if (const auto File = file(FileName, FILE_READ_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING))
 		{
-			File.GetTime(&FindData.CreationTime, &FindData.LastAccessTime, &FindData.LastWriteTime, &FindData.ChangeTime);
-			File.GetSize(FindData.FileSize);
+			if (!File.GetTime(&FindData.CreationTime, &FindData.LastAccessTime, &FindData.LastWriteTime, &FindData.ChangeTime))
+				return false;
+
+			if (!File.GetSize(FindData.FileSize))
+				return false;
 		}
 
 		if (FindData.Attributes & FILE_ATTRIBUTE_REPARSE_POINT)
 		{
 			string strTmp;
-			GetReparsePointInfo(FileName, strTmp, &FindData.ReparseTag);
+			const DWORD ReparseTag{};
+			if (GetReparsePointInfo(FileName, strTmp, &FindData.ReparseTag))
+				FindData.ReparseTag = ReparseTag;
 		}
 
-		assign(FindData.FileName, PointToName(FileName));
+		FindData.FileName = PointToName(FileName);
 		FindData.SetAlternateFileName(ConvertNameToShort(FileName));
 		return true;
 	}
 
-	find_notification_handle FindFirstChangeNotification(const string& PathName, bool WatchSubtree, DWORD NotifyFilter)
+	find_notification_handle find_first_change_notification(const string& PathName, bool WatchSubtree, DWORD NotifyFilter)
 	{
 		return find_notification_handle(::FindFirstChangeNotification(NTPath(PathName).c_str(), WatchSubtree, NotifyFilter));
 	}
 
-	bool IsDiskInDrive(const string& Root)
+	bool find_next_change_notification(find_notification_handle const& Handle)
 	{
-		string strVolName;
-		DWORD MaxComSize;
-		DWORD Flags;
-		string strFS;
-		auto strDrive = Root;
-		AddEndSlash(strDrive);
-		return os::fs::GetVolumeInformation(strDrive, &strVolName, nullptr, &MaxComSize, &Flags, &strFS);
+		return FindNextChangeNotification(Handle.native_handle()) != FALSE;
 	}
 
-	bool create_hard_link(const string& FileName, const string& ExistingFileName, SECURITY_ATTRIBUTES* SecurityAttributes)
+	bool IsDiskInDrive(string_view const Root)
 	{
-		const auto& Create = [SecurityAttributes](const string& Object, const string& Target)
+		string strDrive(Root);
+		AddEndSlash(strDrive);
+		return os::fs::GetVolumeInformation(strDrive, {}, {}, {}, {}, {});
+	}
+
+	bool create_hard_link(string_view const FileName, string_view const ExistingFileName, SECURITY_ATTRIBUTES* SecurityAttributes)
+	{
+		const auto Create = [SecurityAttributes](const string& Object, const string& Target)
 		{
 			if (low::create_hard_link(Object.c_str(), Target.c_str(), SecurityAttributes))
 				return true;
@@ -1929,27 +2244,27 @@ namespace os::fs
 
 		// win2k bug: \\?\ fails
 		if (!IsWindowsXPOrGreater())
-			return Create(FileName, ExistingFileName);
+			return Create(string(FileName), string(ExistingFileName));
 
 		return false;
 	}
 
-	bool CreateSymbolicLink(const string& SymlinkFileName, const string& TargetFileName, DWORD dwFlags)
+	bool CreateSymbolicLink(string_view const SymlinkFileName, string_view const TargetFileName, DWORD Flags)
 	{
-		NTPath NtSymlinkFileName(SymlinkFileName);
+		const NTPath NtSymlinkFileName(SymlinkFileName);
 
-		if (CreateSymbolicLinkInternal(NtSymlinkFileName, TargetFileName, dwFlags))
+		if (CreateSymbolicLinkInternal(NtSymlinkFileName, TargetFileName, Flags))
 			return true;
 
 		if (ElevationRequired(ELEVATION_MODIFY_REQUEST))
-			return elevation::instance().fCreateSymbolicLink(NtSymlinkFileName, TargetFileName, dwFlags);
+			return elevation::instance().fCreateSymbolicLink(NtSymlinkFileName, TargetFileName, Flags);
 
 		return false;
 	}
 
 	bool set_file_encryption(const string_view FileName, const bool Encrypt)
 	{
-		NTPath NtName(FileName);
+		const NTPath NtName(FileName);
 
 		if (low::set_file_encryption(NtName.c_str(), Encrypt))
 			return true;
@@ -1962,7 +2277,7 @@ namespace os::fs
 
 	bool detach_virtual_disk(const string_view Object, VIRTUAL_STORAGE_TYPE& VirtualStorageType)
 	{
-		NTPath NtObject(Object);
+		const NTPath NtObject(Object);
 
 		if (low::detach_virtual_disk(NtObject.c_str(), VirtualStorageType))
 			return true;
@@ -1973,36 +2288,91 @@ namespace os::fs
 		return false;
 	}
 
+	bool is_directory_reparse_point(attributes const Attributes)
+	{
+		return Attributes != INVALID_FILE_ATTRIBUTES && flags::check_all(Attributes, FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT);
+	}
+
 	bool is_directory_symbolic_link(const find_data& Data)
 	{
-		const auto Attributes = FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT;
-		return (Data.Attributes & Attributes) == Attributes && (Data.ReparseTag == IO_REPARSE_TAG_MOUNT_POINT || Data.ReparseTag == IO_REPARSE_TAG_SYMLINK);
+		return is_directory_reparse_point(Data.Attributes) && (Data.ReparseTag == IO_REPARSE_TAG_MOUNT_POINT || Data.ReparseTag == IO_REPARSE_TAG_SYMLINK);
 	}
 
-	bool CreateSymbolicLinkInternal(const string& Object, const string& Target, DWORD dwFlags)
+	bool can_create_file(string_view const Name)
+	{
+		return file(Name, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, CREATE_ALWAYS, FILE_FLAG_DELETE_ON_CLOSE)? true : false;
+	}
+
+	bool CreateSymbolicLinkInternal(string_view const Object, string_view const Target, DWORD Flags)
 	{
 		if (!imports.CreateSymbolicLinkW)
-			return CreateReparsePoint(Target, Object, dwFlags&SYMBOLIC_LINK_FLAG_DIRECTORY ? RP_SYMLINKDIR : RP_SYMLINKFILE);
+			return CreateReparsePoint(Target, Object, Flags & SYMBOLIC_LINK_FLAG_DIRECTORY? RP_SYMLINKDIR : RP_SYMLINKFILE);
 
-		static const DWORD unpriv_flag = []
+		static const DWORD unpriv_flag = version::is_win10_1703_or_later()? SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE : 0;
+
+		return imports.CreateSymbolicLinkW(null_terminated(Object).c_str(), null_terminated(Target).c_str(), Flags | unpriv_flag) != FALSE;
+	}
+
+	drives_set allowed_drives_mask()
+	{
+		// It's good enough to read it once.
+		static const auto AllowedDrivesMask = []
 		{
-			DWORD const Win10_1703_build = 15063;
-			OSVERSIONINFOEXW osvi = {sizeof(osvi), HIBYTE(_WIN32_WINNT_WIN10), LOBYTE(_WIN32_WINNT_WIN10), Win10_1703_build};
+			// Declared separately due to a VS19 bug
+			const auto Where = { &reg::key::local_machine, &reg::key::current_user };
+			for (const auto& i: Where)
+			{
+				unsigned NoDrives;
+				if (i->get(L"Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer"sv, L"NoDrives"sv, NoDrives))
+					return ~NoDrives;
+			}
 
-			DWORDLONG const dwlConditionMask = VerSetConditionMask(
-				VerSetConditionMask(
-					VerSetConditionMask(
-						0, VER_MAJORVERSION, VER_GREATER_EQUAL),
-					VER_MINORVERSION, VER_GREATER_EQUAL),
-				VER_BUILDNUMBER, VER_GREATER_EQUAL
-			);
-
-			if (VerifyVersionInfoW(&osvi, VER_MAJORVERSION | VER_MINORVERSION | VER_BUILDNUMBER, dwlConditionMask))
-				return SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE;
-
-			return 0;
+			return ~0u;
 		}();
 
-		return imports.CreateSymbolicLinkW(Object.c_str(), Target.c_str(), dwFlags | unpriv_flag) != FALSE;
+		return AllowedDrivesMask;
 	}
 }
+
+#ifdef ENABLE_TESTS
+
+#include "testing.hpp"
+
+TEST_CASE("drives")
+{
+	static const struct
+	{
+		wchar_t DriveLetter;
+		string_view DriveDevicePath, Win32NtDriveDevicePath, DriveRootDirectory, Win32NtDriveRootDirectory;
+		bool Standard;
+		size_t Number;
+	}
+	Tests[]
+	{
+		{ L'A', L"A:"sv, L"\\\\?\\A:"sv, L"A:\\"sv, L"\\\\?\\A:\\"sv, true,  0,  },
+		{ L'B', L"B:"sv, L"\\\\?\\B:"sv, L"B:\\"sv, L"\\\\?\\B:\\"sv, true,  1,  },
+		{ L'C', L"C:"sv, L"\\\\?\\C:"sv, L"C:\\"sv, L"\\\\?\\C:\\"sv, true,  2,  },
+		{ L'Z', L"Z:"sv, L"\\\\?\\Z:"sv, L"Z:\\"sv, L"\\\\?\\Z:\\"sv, true,  25, },
+		{ L'1', L"1:"sv, L"\\\\?\\1:"sv, L"1:\\"sv, L"\\\\?\\1:\\"sv, false, 42, },
+		{ L'λ', L"λ:"sv, L"\\\\?\\λ:"sv, L"λ:\\"sv, L"\\\\?\\λ:\\"sv, false, 42, },
+	};
+
+	for (const auto& i: Tests)
+	{
+		namespace osd = os::fs::drive;
+
+		REQUIRE(osd::get_device_path(i.DriveLetter) == i.DriveDevicePath);
+		REQUIRE(osd::get_win32nt_device_path(i.DriveLetter) == i.Win32NtDriveDevicePath);
+		REQUIRE(osd::get_root_directory(i.DriveLetter) == i.DriveRootDirectory);
+		REQUIRE(osd::get_win32nt_root_directory(i.DriveLetter) == i.Win32NtDriveRootDirectory);
+		REQUIRE(osd::is_standard_letter(i.DriveLetter) == i.Standard);
+
+		if (i.Standard)
+		{
+			REQUIRE(osd::get_number(i.DriveLetter) == i.Number);
+			REQUIRE(osd::get_letter(i.Number) == i.DriveLetter);
+			REQUIRE(osd::get_device_path(i.Number) == i.DriveDevicePath);
+		}
+	}
+}
+#endif

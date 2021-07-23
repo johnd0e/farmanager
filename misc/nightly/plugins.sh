@@ -18,12 +18,11 @@ unix2dos changelog
 mkdir -p execdump/final.32.vc/obj/LibObj
 #mkdir -p execdump/final.64.vc/obj/LibObj
 
-FILES32="demangle32.dll ExcDump.dll FExcept.dll SetFarExceptionHandler.farconfig"
-#FILES64="demangle64.dll ExcDump.dll FExcept.dll SetFarExceptionHandler.farconfig"
+MASKS_FEXCEPT="*.dll *.farconfig"
 
 ( \
-	bplugin2 "$PLDIR" 32 1 "$FILES32" \
-#	bplugin2 "$PLDIR" 64 1 "$FILES64" \
+	bplugin2 "$PLDIR" 32 1 1 "$MASKS_FEXCEPT" \
+#	bplugin2 "$PLDIR" 64 1 1 "$MASKS_FEXCEPT" \
 ) || return 1
 
 popd
@@ -51,23 +50,26 @@ wine cmd /c ../../../common.64.bat &> ../../../logs/CRT64
 
 cd ../..
 
+MASKS="*.dll *.hlf *.lng *.farconfig *.lua *.map"
+
 ( \
-bplugin "align" "Align" "Align.dll AlignEng.lng AlignRus.lng AlignSky.lng AlignSpa.lng Align.map" && \
-bplugin "autowrap" "AutoWrap" "AutoWrap.dll WrapEng.lng WrapRus.lng WrapSky.lng WrapSpa.lng AutoWrap.map" && \
-bplugin "brackets" "Brackets" "Brackets.dll BrackEng.hlf BrackRus.hlf BrackEng.lng BrackRus.lng BrackSky.lng BrackSpa.lng Brackets.lua Brackets.map" && \
-bplugin "compare" "Compare" "Compare.dll CmpEng.hlf CmpRus.hlf CompEng.lng CompRus.lng CompSky.lng CompSpa.lng Compare.map" && \
-bplugin "drawline" "DrawLine" "DrawLine.dll DrawEng.hlf DrawRus.hlf DrawEng.lng DrawRus.lng DrawSky.lng DrawSpa.lng DrawLine.map" && \
-bplugin "editcase" "EditCase" "EditCase.dll ECaseEng.hlf ECaseRus.hlf ECaseEng.lng ECaseRus.lng ECaseSky.lng ECaseSpa.lng EditCase.map" && \
-bplugin "emenu" "EMenu" "EMenu.dll EMenuEng.hlf EMenuRus.hlf EMenuEng.lng EMenuRus.lng EMenuSky.lng EMenuSpa.lng EMenu.map HotkeyClipboard.lua HotkeyProperties.lua Hotkey.lua Hotkey.farconfig" && \
-bplugin "farcmds" "FarCmds" "FARCmds.dll FARCmdsEng.hlf FARCmdsRus.hlf FARCmdsEng.lng FARCmdsRus.lng FARCmdsSky.lng FARCmdsSpa.lng FARCmds.map" && \
-bplugin "samefolder" "SameFolder" "SameFolder.dll SameFolderEng.hlf SameFolderRus.hlf SameFolderEng.lng SameFolderRus.lng SameFolderSky.lng SameFolderSpa.lng SameFolder.map" && \
-bplugin "filecase" "FileCase" "FileCase.dll CaseEng.hlf CaseRus.hlf CaseEng.lng CaseRus.lng CaseSky.lng CaseSpa.lng FileCase.map" && \
-bplugin "hlfviewer" "HlfViewer" "HlfViewer.dll HlfViewerEng.hlf HlfViewerRus.hlf HlfViewerEng.lng HlfViewerRus.lng HlfViewerSky.lng HlfViewerSpa.lng HlfViewer.map" && \
-bplugin "network" "Network" "Network.dll NetEng.hlf NetRus.hlf NetEng.lng NetRus.lng NetSky.lng NetSpa.lng Network.map" && \
-bplugin "proclist" "ProcList" "Proclist.dll ProcEng.hlf ProcRus.hlf ProcEng.lng ProcRus.lng Proclist.map" && \
-bplugin "tmppanel" "TmpPanel" "TmpPanel.dll TmpEng.hlf TmpRus.hlf TmpEng.lng TmpRus.lng TmpSky.lng TmpSpa.lng TmpPanel.map shortcuts.eng.lua shortcuts.rus.lua disks.eng.temp disks.rus.temp shortcuts.eng.temp shortcuts.rus.temp TmpPanel.ListUTF8.farconfig" && \
-bplugin "arclite" "ArcLite" "7z.dll 7z.sfx 7zCon.sfx 7zS2.sfx 7zS2con.sfx 7zSD.sfx arclite.dll arclite.map arclite_eng.hlf arclite_eng.lng arclite_rus.hlf arclite_rus.lng arclite_spa.lng arclite.xml" && \
-bplugin "luamacro" "LuaMacro" "LuaMacro.dll _globalinfo.lua api.lua luamacro.lua macrotest.lua utils.lua mbrowser.lua lang.lua panelsort.lua winapi.lua farapi.lua moonscript.lua keymacro.lua lm_eng.lng lm_rus.lng lm_sky.lng lm_spa.lng LuaMacro.map luamacro.example.ini" \
+bplugin "align"      "Align"      "$MASKS" && \
+bplugin "autowrap"   "AutoWrap"   "$MASKS" && \
+bplugin "brackets"   "Brackets"   "$MASKS" && \
+bplugin "compare"    "Compare"    "$MASKS" && \
+bplugin "drawline"   "DrawLine"   "$MASKS" && \
+bplugin "editcase"   "EditCase"   "$MASKS" && \
+bplugin "emenu"      "EMenu"      "$MASKS" && \
+bplugin "farcmds"    "FarCmds"    "$MASKS" && \
+bplugin "samefolder" "SameFolder" "$MASKS" && \
+bplugin "filecase"   "FileCase"   "$MASKS" && \
+bplugin "hlfviewer"  "HlfViewer"  "$MASKS" && \
+bplugin "network"    "Network"    "$MASKS" && \
+bplugin "proclist"   "ProcList"   "$MASKS" && \
+bplugin "tmppanel"   "TmpPanel"   "$MASKS *.temp" && \
+bplugin "arclite"    "ArcLite"    "$MASKS *.sfx *.xml" && \
+bplugin "luamacro"   "LuaMacro"   "$MASKS *.ini" \
+
 ) || exit 1
 
 ( \

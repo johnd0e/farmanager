@@ -36,46 +36,51 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
+
+// Platform:
 #include "platform.hpp"
+
+// Common:
+#include "common/preprocessor.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 enum class lng;
 
-class global: noncopyable
+class global
 {
 public:
+	NONCOPYABLE(global);
+
 	global();
 	~global();
 
 	HANDLE MainThreadHandle() const {return m_MainThreadHandle.native_handle();}
 	bool IsMainThread() const {return GetCurrentThreadId() == m_MainThreadId;}
-	static string_view Version();
-	static string_view Copyright();
+	std::chrono::steady_clock::duration FarUpTime() const;
 
 	const string& GetSearchString() const { return m_SearchString; }
 	bool GetSearchHex() const { return m_SearchHex; }
-	void StoreSearchString(const string& Str, bool Hex);
-	bool IsPanelsActive() const;
-
-	const wchar_t* GetLangMsg(lng Id) const;
+	void StoreSearchString(string_view Str, bool Hex);
 
 	// BUGBUG
 
-	std::chrono::steady_clock::time_point StartIdleTime;
 	string g_strFarModuleName;
 	string g_strFarINI;
 	string g_strFarPath;
 	string strInitTitle;
-	bool GlobalSearchCase;
-	bool GlobalSearchWholeWords; // значение "Whole words" для поиска
-	bool GlobalSearchReverse;
-	bool ScreenSaverActive;
-	std::atomic_ulong SuppressClock{};
-	std::atomic_ulong SuppressIndicators{};
-	bool CloseFAR, CloseFARMenu, AllowCancelExit;
-	bool DisablePluginsOutput;
-	int IsProcessAssignMacroKey;
-	size_t PluginPanelsCount;
-	bool ProcessException;
+	bool GlobalSearchCase{};
+	bool GlobalSearchWholeWords{}; // значение "Whole words" для поиска
+	bool GlobalSearchReverse{};
+	std::atomic_size_t SuppressClock{};
+	std::atomic_size_t SuppressIndicators{};
+	bool CloseFAR{}, CloseFARMenu{}, AllowCancelExit{true};
+	bool DisablePluginsOutput{};
+	int IsProcessAssignMacroKey{};
+	size_t PluginPanelsCount{};
 
 	class far_clock
 	{
@@ -84,28 +89,24 @@ public:
 		far_clock();
 		const string& get() const;
 		size_t size() const;
-		void update();
+		void update(bool Force = false);
 
 	private:
 		string m_CurrentTime;
-
+		unsigned long long m_LastValue{};
 	};
 
 	far_clock CurrentTime;
 
 	size_t LastShownTimeSize{};
-	string_view HelpFileMask;
-	bool OnlyEditorViewerUsed; // -e or -v
-#if defined(SYSLOG)
-	bool StartSysLog;
-#endif
+	string_view HelpFileMask{L"*.hlf"sv};
+	bool OnlyEditorViewerUsed{}; // -e or -v
 #ifdef DIRECT_RT
-	bool DirectRT;
+	bool DirectRT{};
 #endif
-	class SaveScreen *GlobalSaveScrPtr;
-	bool CriticalInternalError;
-	int KeepUserScreen;
-	int Macro_DskShowPosType; // для какой панели вызывали меню выбора дисков (0 - ничерта не вызывали, 1 - левая (AltF1), 2 - правая (AltF2))
+	class SaveScreen *GlobalSaveScrPtr{};
+	bool CriticalInternalError{};
+	int Macro_DskShowPosType{}; // для какой панели вызывали меню выбора дисков (0 - ничерта не вызывали, 1 - левая (AltF1), 2 - правая (AltF2))
 	DWORD ErrorMode;
 #ifndef NO_WRAPPER
 	string strRegUser;
@@ -116,17 +117,20 @@ public:
 private:
 	DWORD m_MainThreadId;
 	os::handle m_MainThreadHandle;
+	std::chrono::steady_clock::time_point m_FarStartTime;
 
 	string m_SearchString;
-	bool m_SearchHex;
+	bool m_SearchHex{};
 
 public:
 	// TODO: review the order and make private
-	class config_provider* m_ConfigProvider;
+	std::unique_ptr<class config_provider> m_ConfigProvider;
 	std::unique_ptr<class Options> Opt;
 	std::unique_ptr<class ScreenBuf> ScrBuf;
 	std::unique_ptr<class Manager> WindowManager;
-	class ControlObject* CtrlObject;
+
+	// Non-owning
+	class ControlObject* CtrlObject{};
 };
 
 extern global* Global;

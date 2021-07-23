@@ -35,7 +35,19 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-bool EjectVolume(wchar_t Letter, unsigned long long Flags);
-bool IsEjectableMedia(wchar_t Letter);
+// Internal:
+
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
+
+void EjectVolume(string_view Path);
+void LoadVolume(string_view Path);
+[[nodiscard]]
+bool IsEjectableMedia(string_view Path);
 
 #endif // EJECT_HPP_AD63D84D_40CB_40BF_A4A1_E61FE3CE6E6D

@@ -34,37 +34,67 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
+
+// Platform:
 #include "platform.hpp"
+
+// Common:
+#include "common/preprocessor.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 namespace pipe
 {
-	// reads size first, then data
-	bool Read(const os::handle& Pipe, void* Data, size_t DataSize);
-
-	template<typename T>
-	bool Read(const os::handle& Pipe, T& Data)
+	namespace detail
 	{
-		static_assert(!std::is_pointer_v<T>);
-		static_assert(std::is_trivially_copyable_v<T>);
+		template<typename T>
+		inline constexpr bool is_supported_type = std::conjunction_v<
+			std::negation<std::is_pointer<T>>,
+			std::is_trivially_copyable<T>
+		>;
 
-		return Read(Pipe, &Data, sizeof(Data));
+		template<typename... args>
+		inline constexpr bool are_supported_types = sizeof...(args) > 1 && std::conjunction_v<
+			std::negation<std::is_pointer<args>>...
+		>;
+
 	}
 
-	bool Read(const os::handle& Pipe, string& Data);
+	void read(const os::handle& Pipe, void* Data, size_t DataSize);
 
-	// writes size first, then data
-	bool Write(const os::handle& Pipe, const void* Data, size_t DataSize);
-
-	template<typename T>
-	bool Write(const os::handle& Pipe, const T& Data)
+	template<typename T, REQUIRES(detail::is_supported_type<T>)>
+	void read(const os::handle& Pipe, T& Data)
 	{
-		static_assert(!std::is_pointer_v<T>);
-		static_assert(std::is_trivially_copyable_v<T>);
-
-		return Write(Pipe, &Data, sizeof(Data));
+		read(Pipe, &Data, sizeof(Data));
 	}
 
-	bool Write(const os::handle& Pipe, const string& Data);
+	void read(const os::handle& Pipe, string& Data);
+
+	template<typename... args, REQUIRES(detail::are_supported_types<args...>)>
+	void read(const os::handle& Pipe, args&... Args)
+	{
+		(..., read(Pipe, Args));
+	}
+
+	void write(const os::handle& Pipe, const void* Data, size_t DataSize);
+
+	template<typename T, REQUIRES(detail::is_supported_type<T>)>
+	void write(const os::handle& Pipe, const T& Data)
+	{
+		write(Pipe, &Data, sizeof(Data));
+	}
+
+	void write(const os::handle& Pipe, string_view Data);
+
+	template<typename... args, REQUIRES(detail::are_supported_types<args...>)>
+	void write(const os::handle& Pipe, args const&... Args)
+	{
+		(..., write(Pipe, Args));
+	}
+
 }
 
 #endif // PIPE_HPP_C460EC90_9861_4D55_B47D_D1E8F6EEBC78

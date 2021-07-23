@@ -31,165 +31,128 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "eject.hpp"
 
-#include "lang.hpp"
-#include "cddrv.hpp"
-#include "stddlg.hpp"
+// Internal:
 #include "exception.hpp"
-#include "plugin.hpp"
+#include "pathmix.hpp"
+#include "flink.hpp"
+#include "log.hpp"
 
+// Platform:
 #include "platform.fs.hpp"
 
-#include "format.hpp"
+// Common:
+#include "common/scope_exit.hpp"
 
-#if 0
-static bool DismountVolume(HANDLE hVolume)
-{
-	DWORD dwBytesReturned;
-	return DeviceIoControl(hVolume,FSCTL_DISMOUNT_VOLUME,nullptr, 0,nullptr, 0,&dwBytesReturned,nullptr) != FALSE;
-}
-#endif
+// External:
+
+//----------------------------------------------------------------------------
 
 /* Функция by Vadim Yegorov <zg@matrica.apollo.lv>
-   Доработанная! Умеет "вставлять" диск :-)
 */
-bool EjectVolume(wchar_t Letter, unsigned long long Flags)
+void EjectVolume(string_view const Path)
 {
-	auto fAutoEject = false;
-	auto fRemoveSafely = false;
+	// Ejecting VHD ISO is a bad idea.
+	// Currently OS ejects the medium but doesn't remove the device, which might be confusing
+	if (auto IsVhd = false; detach_vhd(Path, IsVhd) || IsVhd)
+		return;
 
-	auto RootName = L"\\\\.\\ :\\"s;
-	RootName[4] = Letter;
-	// OpenVolume
-	const auto DriveType = FAR_GetDriveType(string_view(RootName).substr(4));
-	RootName.pop_back();
+	const auto DeviceName = extract_root_device(Path);
 
 	bool ReadOnly;
-	DWORD dwAccessFlags;
+	DWORD WriteFlag;
 
-	switch (DriveType)
+	const auto DriveType = os::fs::drive::get_type(DeviceName);
+	if (DriveType == DRIVE_REMOVABLE)
 	{
-	case DRIVE_REMOVABLE:
-		dwAccessFlags = GENERIC_READ | GENERIC_WRITE;
+		WriteFlag = GENERIC_WRITE;
 		ReadOnly = false;
-		break;
-
-	default:
-		if (IsDriveTypeCDROM(DriveType))
-		{
-			dwAccessFlags = GENERIC_READ;
-			ReadOnly = true;
-			break;
-		}
-
-		return false;
 	}
-
-	os::fs::file Disk;
-	auto Opened = Disk.Open(RootName, dwAccessFlags, FILE_SHARE_READ|FILE_SHARE_WRITE, nullptr, OPEN_EXISTING);
-	if(!Opened && GetLastError()==ERROR_ACCESS_DENIED)
+	else if (DriveType == DRIVE_CDROM)
 	{
-		Opened = Disk.Open(RootName,GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, nullptr, OPEN_EXISTING);
+		WriteFlag = 0;
 		ReadOnly = true;
 	}
-
-	if (Opened)
+	else
 	{
-		DWORD temp;
-		auto Retry = true;
-		auto foundError = false;
-
-		while (Retry)
-		{
-			if (Disk.IoControl(FSCTL_LOCK_VOLUME, nullptr, 0, nullptr, 0, &temp))
-			{
-				foundError = false;
-				if (!ReadOnly)
-				{
-					Disk.FlushBuffers();
-				}
-#if 0
-// TODO: ЭТОТ КУСОК НУЖНО РАСКОММЕНТИТЬ ВМЕСТЕ С ПОДЪЕМОМ ПРОЕКТА ПО USB
-				/*
-				  ЭТО чудо нужно для того, чтобы, скажем, имея картридер на 3 карточки,
-				  дисмоунтить только 1 карточку, а не отключать все устройство!
-				*/
-				if (!(Flags&EJECT_LOAD_MEDIA))
-				{
-					if (DismountVolume(DiskHandle))
-						fRemoveSafely = true;
-					else
-						foundError = true;
-				}
-
-#endif
-
-				if (!foundError)
-				{
-					PREVENT_MEDIA_REMOVAL PreventMediaRemoval{};
-					if (Disk.IoControl(IOCTL_STORAGE_MEDIA_REMOVAL, &PreventMediaRemoval, sizeof(PreventMediaRemoval), nullptr, 0, &temp))
-					{
-#if 1
-						// чистой воды шаманство...
-						if (Flags & EJECT_READY)
-						{
-							fAutoEject = Disk.IoControl(IOCTL_STORAGE_CHECK_VERIFY, nullptr, 0, nullptr, 0, &temp);
-
-							// ...если ошибка = "нет доступа", то это похоже на то,
-							// что диск вставлен
-							// Способ экспериментальный, потому афишировать не имеет смысла.
-							if (!fAutoEject && GetLastError() == ERROR_ACCESS_DENIED)
-								fAutoEject = true;
-
-							Retry = false;
-						}
-						else
-#endif
-							fAutoEject = Disk.IoControl((Flags&EJECT_LOAD_MEDIA)? IOCTL_STORAGE_LOAD_MEDIA : IOCTL_STORAGE_EJECT_MEDIA, nullptr, 0, nullptr, 0, &temp);
-					}
-
-					Retry = false;
-				}
-			}
-			else
-				foundError = true;
-
-			if (foundError)
-			{
-				if (!(Flags & EJECT_NO_MESSAGE))
-				{
-					const auto ErrorState = error_state::fetch();
-
-					if(OperationFailed(ErrorState, RootName, lng::MError, format(msg(lng::MChangeCouldNotEjectMedia), Letter), false) != operation::retry)
-						Retry = false;
-				}
-				else
-					Retry = false;
-			}
-			else if (!(Flags&EJECT_LOAD_MEDIA) && fRemoveSafely)
-			{
-				//printf("Media in Drive %c can be safely removed.\n",cDriveLetter);
-				//if(Flags&EJECT_NOTIFY_AFTERREMOVE)
-				;
-			}
-		} // END: while(Retry)
-
-		Disk.IoControl(FSCTL_UNLOCK_VOLUME, nullptr, 0, nullptr, 0, &temp);
+		throw MAKE_FAR_EXCEPTION(L"Unknown drive type"sv);
 	}
 
-	return fAutoEject || fRemoveSafely; //???
+	os::fs::file File;
+
+	const auto OpenForWrite = [&](string_view const Name, const auto&... Args)
+	{
+		if (File.Open(Name, WriteFlag | GENERIC_READ, Args...))
+			return true;
+
+		if (WriteFlag && GetLastError() == ERROR_ACCESS_DENIED && File.Open(Name, GENERIC_READ, Args...))
+			return false;
+
+		throw MAKE_FAR_EXCEPTION(L"Cannot open the disk"sv);
+	};
+
+	if (!OpenForWrite(DeviceName, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING))
+		ReadOnly = true;
+
+	if (!File.IoControl(FSCTL_LOCK_VOLUME, nullptr, 0, nullptr, 0))
+		throw MAKE_FAR_EXCEPTION(L"FSCTL_LOCK_VOLUME"sv);
+
+	SCOPE_EXIT
+	{
+		if (!File.IoControl(FSCTL_UNLOCK_VOLUME, nullptr, 0, nullptr, 0))
+		{
+			LOGWARNING(L"IoControl(FSCTL_UNLOCK_VOLUME, {}): {}"sv, File.GetName(), last_error());
+		}
+	};
+
+	if (!ReadOnly)
+	{
+		if (!File.FlushBuffers())
+		{
+			LOGWARNING(L"FlushBuffers({}): {}"sv, File.GetName(), last_error());
+		}
+	}
+
+	if constexpr ((false))
+	{
+		// TODO: ЭТОТ КУСОК НУЖНО РАСКОММЕНТИТЬ ВМЕСТЕ С ПОДЪЕМОМ ПРОЕКТА ПО USB
+		/*
+		  Это чудо нужно для того, чтобы, скажем, имея картридер на 3 карточки,
+		  дисмоунтить только 1 карточку, а не отключать все устройство!
+		*/
+		if (File.IoControl(FSCTL_DISMOUNT_VOLUME, nullptr, 0, nullptr, 0))
+			throw MAKE_FAR_EXCEPTION(L"DismountVolume"sv);
+	}
+
+	PREVENT_MEDIA_REMOVAL PreventMediaRemoval{};
+	if (!File.IoControl(IOCTL_STORAGE_MEDIA_REMOVAL, &PreventMediaRemoval, sizeof(PreventMediaRemoval), nullptr, 0))
+		throw MAKE_FAR_EXCEPTION(L"IOCTL_STORAGE_MEDIA_REMOVAL"sv);
+
+	if (!File.IoControl(IOCTL_STORAGE_EJECT_MEDIA, nullptr, 0, nullptr, 0))
+		throw MAKE_FAR_EXCEPTION(L"IOCTL_STORAGE_EJECT_MEDIA"sv);
 }
 
-bool IsEjectableMedia(wchar_t Letter)
+void LoadVolume(string_view const Path)
 {
-	const string Disk = { L'\\', L'\\', L'.', L'\\', Letter, L':' };
-	const os::fs::file File(Disk, 0, FILE_SHARE_WRITE, nullptr, OPEN_EXISTING);
+	const os::fs::file File(extract_root_device(Path), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING);
+	if (!File)
+		throw MAKE_FAR_EXCEPTION(L"Cannot open the disk"sv);
+
+	if (!File.IoControl(IOCTL_STORAGE_LOAD_MEDIA, nullptr, 0, nullptr, 0))
+		throw MAKE_FAR_EXCEPTION(L"IOCTL_STORAGE_LOAD_MEDIA"sv);
+}
+
+bool IsEjectableMedia(string_view const Path)
+{
+	const os::fs::file File(extract_root_device(Path), 0, FILE_SHARE_WRITE, nullptr, OPEN_EXISTING);
 	if (!File)
 		return false;
 
-	DISK_GEOMETRY dg;
-	DWORD Bytes;
-	return File.IoControl(IOCTL_DISK_GET_DRIVE_GEOMETRY, nullptr, 0, &dg, sizeof(dg), &Bytes) && dg.MediaType == RemovableMedia;
+	DISK_GEOMETRY DiskGeometry{};
+	return File.IoControl(IOCTL_DISK_GET_DRIVE_GEOMETRY, nullptr, 0, &DiskGeometry, sizeof(DiskGeometry)) && DiskGeometry.MediaType == RemovableMedia;
 }
-

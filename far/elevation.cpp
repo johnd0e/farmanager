@@ -30,14 +30,18 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "elevation.hpp"
 
+// Internal:
 #include "config.hpp"
 #include "lang.hpp"
 #include "dialog.hpp"
 #include "farcolor.hpp"
 #include "colormix.hpp"
-#include "lasterror.hpp"
 #include "fileowner.hpp"
 #include "imports.hpp"
 #include "taskbar.hpp"
@@ -45,23 +49,30 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "scrbuf.hpp"
 #include "manager.hpp"
 #include "pipe.hpp"
-#include "console.hpp"
-#include "constitle.hpp"
+#include "interf.hpp"
 #include "string_utils.hpp"
 #include "global.hpp"
+#include "exception.hpp"
+#include "exception_handler.hpp"
+#include "log.hpp"
 
+// Platform:
 #include "platform.concurrency.hpp"
 #include "platform.fs.hpp"
 #include "platform.memory.hpp"
 #include "platform.security.hpp"
 
-#include "common/bytes_view.hpp"
+// Common:
+#include "common.hpp"
+#include "common/string_utils.hpp"
+#include "common/uuid.hpp"
 
+// External:
 #include "format.hpp"
 
-using namespace os::security;
+//----------------------------------------------------------------------------
 
-static const int CallbackMagic= 0xCA11BAC6;
+static const int CallbackMagic = 0xCA11BAC6;
 
 enum ELEVATION_COMMAND: int
 {
@@ -71,6 +82,7 @@ enum ELEVATION_COMMAND: int
 	C_FUNCTION_DELETEFILE,
 	C_FUNCTION_COPYFILE,
 	C_FUNCTION_MOVEFILE,
+	C_FUNCTION_REPLACEFILE,
 	C_FUNCTION_GETFILEATTRIBUTES,
 	C_FUNCTION_SETFILEATTRIBUTES,
 	C_FUNCTION_CREATEHARDLINK,
@@ -81,21 +93,133 @@ enum ELEVATION_COMMAND: int
 	C_FUNCTION_SETENCRYPTION,
 	C_FUNCTION_DETACHVIRTUALDISK,
 	C_FUNCTION_GETDISKFREESPACE,
+	C_FUNCTION_GETFILESECURITY,
+	C_FUNCTION_SETFILESECURITY,
+	C_FUNCTION_RESETFILESECURITY,
 
 	C_COMMANDS_COUNT
 };
 
 static const auto ElevationArgument = L"/service:elevation"sv;
 
-static auto CreateBackupRestorePrivilege() { return privilege{SE_BACKUP_NAME, SE_RESTORE_NAME}; }
-
-elevation::elevation():
-	m_IsApproved(false),
-	m_AskApprove(true),
-	m_Elevation(false),
-	m_DontAskAgain(false),
-	m_Recurse(0)
+static os::security::privilege CreateBackupRestorePrivilege()
 {
+	return { SE_BACKUP_NAME, SE_RESTORE_NAME };
+}
+
+template<typename T>
+static void WritePipe(const os::handle& Pipe, const T& Data)
+{
+	return pipe::write(Pipe, Data);
+}
+
+template<typename T>
+static void ReadPipe(const os::handle& Pipe, T& Data)
+{
+	pipe::read(Pipe, Data);
+}
+
+class security_attributes_wrapper
+{
+public:
+	security_attributes_wrapper() = default;
+
+	void set_attributes(const SECURITY_ATTRIBUTES& Attributes)
+	{
+		m_Attributes = Attributes;
+	}
+
+	void set_descriptor(os::security::descriptor&& Descriptor)
+	{
+		m_Descriptor = std::move(Descriptor);
+	}
+
+	SECURITY_ATTRIBUTES* operator()() const
+	{
+		if (!m_Attributes)
+			return nullptr;
+
+		auto& Attributes = *m_Attributes;
+		Attributes.lpSecurityDescriptor = m_Descriptor ? m_Descriptor.data() : nullptr;
+		return &Attributes;
+	}
+
+private:
+	os::security::descriptor m_Descriptor;
+	mutable std::optional<SECURITY_ATTRIBUTES> m_Attributes;
+};
+
+static void WritePipe(const os::handle& Pipe, os::security::descriptor const& Data)
+{
+	const auto Size = Data.size();
+	pipe::write(Pipe, Size);
+
+	if (!Size)
+		return;
+
+	pipe::write(Pipe, Data.data(), Size);
+}
+
+static void WritePipe(const os::handle& Pipe, SECURITY_DESCRIPTOR* Data)
+{
+	size_t const Size = GetSecurityDescriptorLength(Data);
+	pipe::write(Pipe, Size);
+
+	if (!Size)
+		return;
+
+	pipe::write(Pipe, Data, Size);
+}
+
+static void WritePipe(const os::handle& Pipe, SECURITY_ATTRIBUTES* Data)
+{
+	if (!Data)
+	{
+		pipe::write(Pipe, size_t{});
+		return;
+	}
+	else
+	{
+		pipe::write(Pipe, sizeof(*Data));
+	}
+
+	pipe::write(Pipe, Data, sizeof(*Data));
+
+	if (Data->lpSecurityDescriptor)
+		WritePipe(Pipe, static_cast<SECURITY_DESCRIPTOR*>(Data->lpSecurityDescriptor));
+}
+
+static void ReadPipe(const os::handle& Pipe, os::security::descriptor& Data)
+{
+	size_t Size;
+	pipe::read(Pipe, Size);
+
+	if (!Size)
+		return;
+
+	Data.reset(Size);
+	pipe::read(Pipe, Data.data(), Size);
+}
+
+static void ReadPipe(const os::handle& Pipe, security_attributes_wrapper& Data)
+{
+	size_t DataSize;
+	pipe::read(Pipe, DataSize);
+
+	if (!DataSize)
+		return;
+
+	SECURITY_ATTRIBUTES Attributes;
+	pipe::read(Pipe, &Attributes, DataSize);
+	Data.set_attributes(Attributes);
+
+	if (!Attributes.lpSecurityDescriptor)
+		return;
+
+	os::security::descriptor Descriptor;
+	ReadPipe(Pipe, Descriptor);
+
+	Data.set_descriptor(std::move(Descriptor));
 }
 
 elevation::~elevation()
@@ -109,9 +233,9 @@ elevation::~elevation()
 		{
 			Write(C_SERVICE_EXIT);
 		}
-		catch (const far_exception&)
+		catch (const far_exception& e)
 		{
-			// TODO: log
+			LOGERROR(L"{}"sv, e);
 		}
 	}
 
@@ -136,36 +260,21 @@ template<typename T>
 T elevation::Read() const
 {
 	T Data;
-	if (!pipe::Read(m_Pipe, Data))
-		throw MAKE_FAR_EXCEPTION(L"Pipe read error"sv);
+	ReadPipe(m_Pipe, Data);
 	return Data;
 }
 
-template<typename T, typename... args>
-void elevation::Write(const T& Data, args&&... Args) const
+template<typename... args>
+void elevation::Write(const args&... Args) const
 {
-	WriteArg(Data);
-	Write(FWD(Args)...);
-}
-
-template<typename T>
-void elevation::WriteArg(const T& Data) const
-{
-	if (!pipe::Write(m_Pipe, Data))
-		throw MAKE_FAR_EXCEPTION(L"Pipe write error"sv);
-}
-
-void elevation::WriteArg(const bytes_view& Data) const
-{
-	if (!pipe::Write(m_Pipe, Data.data(), Data.size()))
-		throw MAKE_FAR_EXCEPTION(L"Pipe write error"sv);
+	(..., WritePipe(m_Pipe, Args));
 }
 
 void elevation::RetrieveLastError() const
 {
 	const auto ErrorState = Read<error_state>();
 	SetLastError(ErrorState.Win32Error);
-	imports.RtlNtStatusToDosError(ErrorState.NtError);
+	os::set_last_error_from_ntstatus(ErrorState.NtError);
 }
 
 template<typename T>
@@ -176,13 +285,13 @@ T elevation::RetrieveLastErrorAndResult() const
 }
 
 template<typename T, typename F1, typename F2>
-auto elevation::execute(lng Why, const string& Object, T Fallback, const F1& PrivilegedHander, const F2& ElevatedHandler)
+auto elevation::execute(lng Why, string_view const Object, T Fallback, const F1& PrivilegedHander, const F2& ElevatedHandler)
 {
-	SCOPED_ACTION(os::critical_section_lock)(m_CS);
+	SCOPED_ACTION(std::lock_guard)(m_CS);
 	if (!ElevationApproveDlg(Why, Object))
 		return Fallback;
 
-	if (is_admin())
+	if (os::security::is_admin())
 	{
 		SCOPED_ACTION(auto)(CreateBackupRestorePrivilege());
 		return PrivilegedHander();
@@ -199,76 +308,117 @@ auto elevation::execute(lng Why, const string& Object, T Fallback, const F1& Pri
 	{
 		return ElevatedHandler();
 	}
-	catch (const far_exception&)
+	catch (const far_exception& e)
 	{
 		// Something went really bad, it's better to stop any further attempts
 		TerminateChildProcess();
 		m_Process.close();
 		m_Pipe.close();
 
-		// TODO: log
+		LOGERROR(L"{}"sv, e);
 		return Fallback;
 	}
 }
 
-static os::handle create_named_pipe(const string& Name)
+static auto make_admin_sid()
 {
 	SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
-	const auto pSD = os::memory::local::alloc<SECURITY_DESCRIPTOR>(LPTR, SECURITY_DESCRIPTOR_MIN_LENGTH);
-	if (!pSD)
+	return os::security::make_sid(&NtAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS);
+}
+
+static auto make_explicit_admin_access(os::security::sid_ptr const& AdminSid)
+{
+	EXPLICIT_ACCESS Access{};
+	Access.grfInheritance = NO_INHERITANCE;
+	Access.Trustee.TrusteeForm = TRUSTEE_IS_SID;
+	Access.Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
+	Access.Trustee.ptstrName = static_cast<wchar_t*>(AdminSid.get());
+	return Access;
+}
+
+static auto make_acl(PACL const OldAcl, EXPLICIT_ACCESS& Access)
+{
+	os::memory::local::ptr<ACL> Acl;
+	if (const auto Result = SetEntriesInAcl(1, &Access, OldAcl, &ptr_setter(Acl)); Result != ERROR_SUCCESS)
+	{
+		LOGWARNING(L"SetEntriesInAcl: {}"sv, os::format_error(Result));
+	}
+
+	return Acl;
+}
+
+static os::handle create_named_pipe(string_view const Name)
+{
+	SECURITY_DESCRIPTOR SD;
+	if (!InitializeSecurityDescriptor(&SD, SECURITY_DESCRIPTOR_REVISION))
 		return nullptr;
 
-	if (!InitializeSecurityDescriptor(pSD.get(), SECURITY_DESCRIPTOR_REVISION))
+	const auto AdminSid = make_admin_sid();
+	if (!AdminSid)
 		return nullptr;
 
-	const auto AdminSID = os::security::make_sid(&NtAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS);
+	auto Access = make_explicit_admin_access(AdminSid);
+	Access.grfAccessPermissions = GENERIC_READ | GENERIC_WRITE;
+	Access.grfAccessMode = SET_ACCESS;
 
-	if (!AdminSID)
+	const auto Acl = make_acl({}, Access);
+	if (!Acl)
 		return nullptr;
 
-	EXPLICIT_ACCESS ea{};
-	ea.grfAccessPermissions = GENERIC_READ | GENERIC_WRITE;
-	ea.grfAccessMode = SET_ACCESS;
-	ea.grfInheritance = NO_INHERITANCE;
-	ea.Trustee.TrusteeForm = TRUSTEE_IS_SID;
-	ea.Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
-	ea.Trustee.ptstrName = static_cast<LPWSTR>(AdminSID.get());
-
-	os::memory::local::ptr<ACL> pACL;
-	if (SetEntriesInAcl(1, &ea, nullptr, &ptr_setter(pACL)) != ERROR_SUCCESS)
+	if (!SetSecurityDescriptorDacl(&SD, TRUE, Acl.get(), FALSE))
 		return nullptr;
 
-	if (!SetSecurityDescriptorDacl(pSD.get(), TRUE, pACL.get(), FALSE))
-		return nullptr;
-
-	SECURITY_ATTRIBUTES sa{ sizeof(SECURITY_ATTRIBUTES), pSD.get(), FALSE };
+	SECURITY_ATTRIBUTES sa{ sizeof(sa), &SD };
 	return os::handle(CreateNamedPipe(concat(L"\\\\.\\pipe\\"sv, Name).c_str(), PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 0, 0, 0, &sa));
 }
 
-static os::handle create_job_for_current_process()
+static bool grant_duplicate_handle()
 {
-	// IsProcessInJob not exist in win2k. use QueryInformationJobObject(nullptr, ...) instead.
-	// IsProcessInJob(GetCurrentProcess(), nullptr, &InJob);
-
-	JOBOBJECT_EXTENDED_LIMIT_INFORMATION jeli = {};
-	const auto InJob = QueryInformationJobObject(nullptr, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli), nullptr) != FALSE;
-	if (InJob)
+	PACL Acl;
+	os::memory::local::ptr<std::remove_pointer_t<PSECURITY_DESCRIPTOR>> Descriptor;
+	if (const auto Result = GetSecurityInfo(GetCurrentProcess(), SE_KERNEL_OBJECT, DACL_SECURITY_INFORMATION, {}, {}, &Acl, {}, &ptr_setter(Descriptor)); Result != ERROR_SUCCESS)
 	{
-		// TODO: Windows 8+ supports nested jobs
+		LOGWARNING(L"GetSecurityInfo: {}"sv, os::format_error(Result));
+		return false;
+	}
+
+	const auto AdminSid = make_admin_sid();
+	if (!AdminSid)
+		return false;
+
+	auto Access = make_explicit_admin_access(AdminSid);
+	Access.grfAccessPermissions = PROCESS_DUP_HANDLE;
+	Access.grfAccessMode = GRANT_ACCESS;
+
+	const auto NewAcl = make_acl(Acl, Access);
+	if (!NewAcl)
+		return false;
+
+	if (const auto Result = SetSecurityInfo(GetCurrentProcess(), SE_KERNEL_OBJECT, DACL_SECURITY_INFORMATION, {}, {}, NewAcl.get(), {}); Result != ERROR_SUCCESS)
+	{
+		LOGWARNING(L"SetSecurityInfo: {}"sv, os::format_error(Result));
+		return false;
+	}
+
+	return true;
+}
+
+static os::handle create_job()
+{
+	os::handle Job(CreateJobObject(nullptr, nullptr));
+	if (!Job)
+	{
+		LOGERROR(L"CreateJobObject: {}"sv, last_error());
 		return nullptr;
 	}
 
-	os::handle Job(CreateJobObject(nullptr, nullptr));
-	if (!Job)
-		return nullptr;
-
-	// Child processes shall not inherit this job by default
-	jeli.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK | JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+	JOBOBJECT_EXTENDED_LIMIT_INFORMATION jeli{};
+	jeli.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
 	if (!SetInformationJobObject(Job.native_handle(), JobObjectExtendedLimitInformation, &jeli, sizeof(jeli)))
+	{
+		LOGERROR(L"SetInformationJobObject: {}"sv, last_error());
 		return nullptr;
-	
-	if (!AssignProcessToJobObject(Job.native_handle(), GetCurrentProcess()))
-		return nullptr;
+	}
 
 	return Job;
 }
@@ -294,7 +444,7 @@ static os::handle create_elevated_process(const string& Parameters)
 
 static bool connect_pipe_to_process(const os::handle& Process, const os::handle& Pipe)
 {
-	os::event AEvent(os::event::type::automatic, os::event::state::nonsignaled);
+	os::event const AEvent(os::event::type::automatic, os::event::state::nonsignaled);
 	OVERLAPPED Overlapped;
 	AEvent.associate(Overlapped);
 	if (!ConnectNamedPipe(Pipe.native_handle(), &Overlapped))
@@ -304,10 +454,7 @@ static bool connect_pipe_to_process(const os::handle& Process, const os::handle&
 			return false;
 	}
 
-	os::multi_waiter Waiter;
-	Waiter.add(AEvent);
-	Waiter.add(Process.native_handle());
-	if (Waiter.wait(os::multi_waiter::mode::any, 15s) != WAIT_OBJECT_0)
+	if (const auto Result = os::handle::wait_any({ AEvent.native_handle(), Process.native_handle() }, 15s); !Result || *Result == 1)
 		return false;
 
 	DWORD NumberOfBytesTransferred;
@@ -325,36 +472,36 @@ void elevation::TerminateChildProcess() const
 
 bool elevation::Initialize()
 {
+	if (!m_DuplicateHandleGranted)
+	{
+		m_DuplicateHandleGranted = grant_duplicate_handle();
+	}
+
 	if (m_Process && !m_Process.is_signaled())
 		return true;
 
 	if (!m_Pipe)
 	{
-		m_PipeName = GuidToStr(CreateUuid());
+		m_PipeName = uuid::str(os::uuid::generate());
 		m_Pipe = create_named_pipe(m_PipeName);
 		if (!m_Pipe)
 			return false;
 	}
 
-	SCOPED_ACTION(IndeterminateTaskbar);
+	SCOPED_ACTION(taskbar::indeterminate);
 	DisconnectNamedPipe(m_Pipe.native_handle());
 
 	const auto Param = concat(ElevationArgument, L' ', m_PipeName, L' ', str(GetCurrentProcessId()), L' ', (Global->Opt->ElevationMode & ELEVATION_USE_PRIVILEGES)? L'1' : L'0');
 
 	m_Process = create_elevated_process(Param);
-
 	if (!m_Process)
 		return false;
 
 	if (!m_Job)
-	{
-		m_Job = create_job_for_current_process();
-	}
+		m_Job = create_job();
 
 	if (m_Job)
-	{
 		AssignProcessToJobObject(m_Job.native_handle(), m_Process.native_handle());
-	}
 
 	if (!connect_pipe_to_process(m_Process, m_Pipe))
 	{
@@ -386,6 +533,8 @@ enum ELEVATIONAPPROVEDLGITEM
 	AAD_SEPARATOR,
 	AAD_BUTTON_OK,
 	AAD_BUTTON_SKIP,
+
+	AAD_COUNT,
 };
 
 static intptr_t ElevationApproveDlgProc(Dialog* Dlg, intptr_t Msg, intptr_t Param1, void* Param2)
@@ -403,6 +552,7 @@ static intptr_t ElevationApproveDlgProc(Dialog* Dlg, intptr_t Msg, intptr_t Para
 			}
 		}
 		break;
+
 	default:
 		break;
 	}
@@ -411,50 +561,46 @@ static intptr_t ElevationApproveDlgProc(Dialog* Dlg, intptr_t Msg, intptr_t Para
 
 struct EAData: noncopyable
 {
-	const string& Object;
+	string_view Object;
 	lng Why;
 	bool& AskApprove;
 	bool& IsApproved;
 	bool& DontAskAgain;
-	EAData(const string& Object, lng Why, bool& AskApprove, bool& IsApproved, bool& DontAskAgain):
+	EAData(string_view const Object, lng Why, bool& AskApprove, bool& IsApproved, bool& DontAskAgain):
 		Object(Object), Why(Why), AskApprove(AskApprove), IsApproved(IsApproved), DontAskAgain(DontAskAgain){}
 };
 
 static void ElevationApproveDlgSync(const EAData& Data)
 {
-	SCOPED_ACTION(auto)(message_manager::instance().suppress());
-
 	enum {DlgX=64,DlgY=12};
-	FarDialogItem ElevationApproveDlgData[]=
+
+	auto ElevationApproveDlg = MakeDialogItems<AAD_COUNT>(
 	{
-		{DI_DOUBLEBOX,3,1,DlgX-4,DlgY-2,0,nullptr,nullptr,0,msg(lng::MAccessDenied).c_str()},
-		{DI_TEXT,5,2,0,2,0,nullptr,nullptr,0,msg(is_admin()? lng::MElevationRequiredPrivileges : lng::MElevationRequired).c_str()},
-		{DI_TEXT,5,3,0,3,0,nullptr,nullptr,0,msg(Data.Why).c_str()},
-		{DI_EDIT,5,4,DlgX-6,4,0,nullptr,nullptr,DIF_READONLY,Data.Object.c_str()},
-		{DI_CHECKBOX,5,6,0,6,1,nullptr,nullptr,0,msg(lng::MElevationDoForAll).c_str()},
-		{DI_CHECKBOX,5,7,0,7,0,nullptr,nullptr,0,msg(lng::MElevationDoNotAskAgainInTheCurrentSession).c_str()},
-		{DI_TEXT,-1,DlgY-4,0,DlgY-4,0,nullptr,nullptr,DIF_SEPARATOR,L""},
-		{DI_BUTTON,0,DlgY-3,0,DlgY-3,0,nullptr,nullptr,DIF_DEFAULTBUTTON|DIF_FOCUS|DIF_SETSHIELD|DIF_CENTERGROUP,msg(lng::MOk).c_str()},
-		{DI_BUTTON,0,DlgY-3,0,DlgY-3,0,nullptr,nullptr,DIF_CENTERGROUP,msg(lng::MSkip).c_str()},
-	};
-	auto ElevationApproveDlg = MakeDialogItemsEx(ElevationApproveDlgData);
+		{ DI_DOUBLEBOX, {{3,  1     }, {DlgX-4, DlgY-2}}, DIF_NONE, msg(lng::MAccessDenied), },
+		{ DI_TEXT,      {{5,  2     }, {0,      2     }}, DIF_NONE, msg(os::security::is_admin()? lng::MElevationRequiredPrivileges : lng::MElevationRequired), },
+		{ DI_TEXT,      {{5,  3     }, {0,      3     }}, DIF_NONE, msg(Data.Why), },
+		{ DI_EDIT,      {{5,  4     }, {DlgX-6, 4     }}, DIF_READONLY, Data.Object, },
+		{ DI_CHECKBOX,  {{5,  6     }, {0,      6     }}, DIF_NONE, msg(lng::MElevationDoForAll), },
+		{ DI_CHECKBOX,  {{5,  7     }, {0,      7     }}, DIF_FOCUS, msg(lng::MElevationDoNotAskAgainInTheCurrentSession), },
+		{ DI_TEXT,      {{-1, DlgY-4}, {0,      DlgY-4}}, DIF_SEPARATOR, },
+		{ DI_BUTTON,    {{0,  DlgY-3}, {0,      DlgY-3}}, DIF_CENTERGROUP | DIF_DEFAULTBUTTON | DIF_SETSHIELD, msg(lng::MOk), },
+		{ DI_BUTTON,    {{0,  DlgY-3}, {0,      DlgY-3}}, DIF_CENTERGROUP, msg(lng::MSkip), },
+	});
+
+	ElevationApproveDlg[AAD_CHECKBOX_DOFORALL].Selected = 1;
+
 	const auto Dlg = Dialog::create(ElevationApproveDlg, ElevationApproveDlgProc);
 	Dlg->SetHelp(L"ElevationDlg"sv);
-	Dlg->SetPosition(-1, -1, DlgX, DlgY);
+	Dlg->SetPosition({ -1, -1, DlgX, DlgY });
 	Dlg->SetDialogMode(DMODE_FULLSHADOW | DMODE_NOPLUGINS);
-	const auto Current = Global->WindowManager->GetCurrentWindow();
+
 	const auto Lock = Global->ScrBuf->GetLockCount();
 	Global->ScrBuf->SetLockCount(0);
 
-	// We're locking current window as it might not expect refresh at this time at all
-	// However, that also mean that title won't be restored after closing the dialog.
-	// So we do it manually.
-	const auto OldTitle = ConsoleTitle::GetTitle();
-
-	console.FlushInputBuffer();
+	FlushInputBuffer();
 
 	Dlg->Process();
-	ConsoleTitle::SetFarTitle(OldTitle);
+
 	Global->ScrBuf->SetLockCount(Lock);
 
 	Data.AskApprove = ElevationApproveDlg[AAD_CHECKBOX_DOFORALL].Selected == BSTATE_UNCHECKED;
@@ -462,34 +608,37 @@ static void ElevationApproveDlgSync(const EAData& Data)
 	Data.DontAskAgain = ElevationApproveDlg[AAD_CHECKBOX_DONTASKAGAIN].Selected == BSTATE_CHECKED;
 }
 
-bool elevation::ElevationApproveDlg(lng Why, const string& Object)
+bool elevation::ElevationApproveDlg(lng const Why, string_view const Object)
 {
 	if (m_Suppressions)
 		return false;
 
 	// request for backup&restore privilege is useless if the user already has them
 	{
-		SCOPED_ACTION(GuardLastError);
-		if (m_AskApprove && is_admin() && privilege::check(SE_BACKUP_NAME, SE_RESTORE_NAME))
+		SCOPED_ACTION(os::last_error_guard);
+
+		if (m_AskApprove && os::security::is_admin() && os::security::privilege::check(SE_BACKUP_NAME, SE_RESTORE_NAME))
 		{
 			m_AskApprove = false;
 			return true;
 		}
 	}
 
-	if(!(is_admin() && !(Global->Opt->ElevationMode&ELEVATION_USE_PRIVILEGES)) &&
+	if(!(os::security::is_admin() && !(Global->Opt->ElevationMode&ELEVATION_USE_PRIVILEGES)) &&
 		m_AskApprove && !m_DontAskAgain && !m_Recurse &&
- 		Global->WindowManager && !Global->WindowManager->ManagerIsDown())
+		Global->WindowManager && !Global->WindowManager->ManagerIsDown())
 	{
 		++m_Recurse;
-		SCOPED_ACTION(GuardLastError);
-		SCOPED_ACTION(TaskbarPause);
+
+		SCOPED_ACTION(os::last_error_guard);
+		SCOPED_ACTION(taskbar::state)(TBPF_PAUSED);
+
 		EAData Data(Object, Why, m_AskApprove, m_IsApproved, m_DontAskAgain);
 
 		if(!Global->IsMainThread())
 		{
 			os::event SyncEvent(os::event::type::automatic, os::event::state::nonsignaled);
-			listener Listener([&SyncEvent](const std::any& Payload)
+			listener const Listener([&SyncEvent](const std::any& Payload)
 			{
 				ElevationApproveDlgSync(*std::any_cast<EAData*>(Payload));
 				SyncEvent.set();
@@ -508,7 +657,7 @@ bool elevation::ElevationApproveDlg(lng Why, const string& Object)
 
 bool elevation::create_directory(const string& TemplateObject, const string& Object, SECURITY_ATTRIBUTES* Attributes)
 {
-	return execute(lng::MElevationRequiredCreate, Object,
+	return execute(lng::MElevationRequiredOpen, Object,
 		false,
 		[&]
 		{
@@ -516,8 +665,7 @@ bool elevation::create_directory(const string& TemplateObject, const string& Obj
 		},
 		[&]
 		{
-			Write(C_FUNCTION_CREATEDIRECTORY, TemplateObject, Object);
-			// BUGBUG: SecurityAttributes ignored
+			Write(C_FUNCTION_CREATEDIRECTORY, TemplateObject, Object, Attributes);
 			return RetrieveLastErrorAndResult<bool>();
 		});
 }
@@ -608,7 +756,23 @@ bool elevation::move_file(const string& From, const string& To, DWORD Flags)
 		});
 }
 
-DWORD elevation::get_file_attributes(const string& Object)
+bool elevation::replace_file(const string& To, const string& From, const string& Backup, DWORD Flags)
+{
+	return execute(lng::MElevationRequiredReplace, To,
+		false,
+		[&]
+		{
+			return os::fs::low::replace_file(To.c_str(), From.c_str(), Backup.c_str(), Flags);
+		},
+		[&]
+		{
+			Write(C_FUNCTION_REPLACEFILE, To, From, Backup, Flags);
+			return RetrieveLastErrorAndResult<bool>();
+		});
+}
+
+
+os::fs::attributes elevation::get_file_attributes(const string& Object)
 {
 	return execute(lng::MElevationRequiredGetAttributes, Object,
 		INVALID_FILE_ATTRIBUTES,
@@ -619,11 +783,11 @@ DWORD elevation::get_file_attributes(const string& Object)
 		[&]
 		{
 			Write(C_FUNCTION_GETFILEATTRIBUTES, Object);
-			return RetrieveLastErrorAndResult<DWORD>();
+			return RetrieveLastErrorAndResult<os::fs::attributes>();
 		});
 }
 
-bool elevation::set_file_attributes(const string& Object, DWORD FileAttributes)
+bool elevation::set_file_attributes(const string& Object, os::fs::attributes FileAttributes)
 {
 	return execute(lng::MElevationRequiredSetAttributes, Object,
 		false,
@@ -648,13 +812,12 @@ bool elevation::create_hard_link(const string& Object, const string& Target, SEC
 		},
 		[&]
 		{
-			Write(C_FUNCTION_CREATEHARDLINK, Object, Target);
-			// BUGBUG: SecurityAttributes ignored.
+			Write(C_FUNCTION_CREATEHARDLINK, Object, Target, SecurityAttributes);
 			return RetrieveLastErrorAndResult<bool>();
 		});
 }
 
-bool elevation::fCreateSymbolicLink(const string& Object, const string& Target, DWORD Flags)
+bool elevation::fCreateSymbolicLink(string_view const Object, string_view const Target, DWORD Flags)
 {
 	return execute(lng::MElevationRequiredSymLink, Object,
 		false,
@@ -669,24 +832,18 @@ bool elevation::fCreateSymbolicLink(const string& Object, const string& Target, 
 		});
 }
 
-int elevation::fMoveToRecycleBin(SHFILEOPSTRUCT& FileOpStruct)
+bool elevation::fMoveToRecycleBin(string_view const Object)
 {
-	static const auto DE_ACCESSDENIEDSRC = 0x78;
-	return execute(lng::MElevationRequiredRecycle, FileOpStruct.pFrom,
-		DE_ACCESSDENIEDSRC,
+	return execute(lng::MElevationRequiredRecycle, Object,
+		false,
 		[&]
 		{
-			return SHFileOperation(&FileOpStruct);
+			return os::fs::low::move_to_recycle_bin(Object);
 		},
 		[&]
 		{
-			Write(C_FUNCTION_MOVETORECYCLEBIN, FileOpStruct,
-				bytes_view(FileOpStruct.pFrom, (wcslen(FileOpStruct.pFrom) + 1 + 1) * sizeof(wchar_t)), // achtung! +1
-				bytes_view(FileOpStruct.pTo, FileOpStruct.pTo ? (wcslen(FileOpStruct.pTo) + 1 + 1) * sizeof(wchar_t) : 0)); // achtung! +1
-
-			Read(FileOpStruct.fAnyOperationsAborted);
-			// achtung! no "last error" here
-			return Read<int>();
+			Write(C_FUNCTION_MOVETORECYCLEBIN, Object);
+			return RetrieveLastErrorAndResult<bool>();
 		});
 }
 
@@ -715,8 +872,8 @@ HANDLE elevation::create_file(const string& Object, DWORD DesiredAccess, DWORD S
 		},
 		[&]
 		{
-			Write(C_FUNCTION_CREATEFILE, Object, DesiredAccess, ShareMode, CreationDistribution, FlagsAndAttributes);
-			// BUGBUG: SecurityAttributes & TemplateFile ignored
+			Write(C_FUNCTION_CREATEFILE, Object, DesiredAccess, ShareMode, SecurityAttributes, CreationDistribution, FlagsAndAttributes);
+			// BUGBUG: TemplateFile ignored
 			return ToPtr(RetrieveLastErrorAndResult<intptr_t>());
 		});
 }
@@ -738,7 +895,7 @@ bool elevation::set_file_encryption(const string& Object, bool Encrypt)
 
 bool elevation::detach_virtual_disk(const string& Object, VIRTUAL_STORAGE_TYPE& VirtualStorageType)
 {
-	return execute(lng::MElevationRequiredCreate, Object,
+	return execute(lng::MElevationRequiredOpen, Object,
 		false,
 		[&]
 		{
@@ -765,7 +922,7 @@ bool elevation::get_disk_free_space(const string& Object, unsigned long long* Fr
 			const auto Result = RetrieveLastErrorAndResult<bool>();
 			if (Result)
 			{
-				const auto& ReadAndAssign = [this](auto* Destination)
+				const auto ReadAndAssign = [this](auto* Destination)
 				{
 					unsigned long long Value;
 					Read(Value);
@@ -778,6 +935,53 @@ bool elevation::get_disk_free_space(const string& Object, unsigned long long* Fr
 				ReadAndAssign(TotalNumberOfFreeBytes);
 			}
 			return Result;
+		});
+}
+
+os::security::descriptor elevation::get_file_security(string const& Object, SECURITY_INFORMATION const RequestedInformation)
+{
+	return execute(lng::MElevationRequiredOpen, Object,
+		os::security::descriptor{},
+		[&]
+		{
+			return os::fs::low::get_file_security(Object.c_str(), RequestedInformation);
+		},
+		[&]
+		{
+			Write(C_FUNCTION_GETFILESECURITY, Object, RequestedInformation);
+			return RetrieveLastErrorAndResult<os::security::descriptor>();
+		});
+}
+
+bool elevation::set_file_security(string const& Object, SECURITY_INFORMATION const RequestedInformation, os::security::descriptor const& Descriptor)
+{
+	return execute(lng::MElevationRequiredProcess, Object,
+		false,
+		[&]
+		{
+			return os::fs::low::set_file_security(Object.c_str(), RequestedInformation, Descriptor.data());
+		},
+		[&]
+		{
+
+			Write(C_FUNCTION_SETFILESECURITY, Object, RequestedInformation);
+			pipe::write(m_Pipe, Descriptor.data(), Descriptor.size());
+			return RetrieveLastErrorAndResult<bool>();
+		});
+}
+
+bool elevation::reset_file_security(string const& Object)
+{
+	return execute(lng::MElevationRequiredProcess, Object,
+		false,
+		[&]
+		{
+			return os::fs::low::reset_file_security(Object.c_str());
+		},
+		[&]
+		{
+			Write(C_FUNCTION_RESETFILESECURITY, Object);
+			return RetrieveLastErrorAndResult<bool>();
 		});
 }
 
@@ -802,13 +1006,13 @@ bool ElevationRequired(ELEVATION_MODE Mode, bool UseNtStatus)
 
 	if(UseNtStatus && imports.RtlGetLastNtStatus)
 	{
-		const auto LastNtStatus = os::GetLastNtStatus();
-		return LastNtStatus == STATUS_ACCESS_DENIED || LastNtStatus == STATUS_PRIVILEGE_NOT_HELD;
+		const auto LastNtStatus = os::get_last_nt_status();
+		return LastNtStatus == STATUS_ACCESS_DENIED || LastNtStatus == STATUS_PRIVILEGE_NOT_HELD || LastNtStatus == STATUS_INVALID_OWNER;
 	}
 
 	// RtlGetLastNtStatus not implemented in w2k.
 	const auto LastWin32Error = GetLastError();
-	return LastWin32Error == ERROR_ACCESS_DENIED || LastWin32Error == ERROR_PRIVILEGE_NOT_HELD;
+	return LastWin32Error == ERROR_ACCESS_DENIED || LastWin32Error == ERROR_PRIVILEGE_NOT_HELD || LastWin32Error == ERROR_INVALID_OWNER;
 }
 
 class elevated:noncopyable
@@ -818,14 +1022,18 @@ public:
 	{
 		os::set_error_mode(SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX);
 
-		std::vector<const wchar_t*> Privileges{ SE_TAKE_OWNERSHIP_NAME, SE_DEBUG_NAME, SE_CREATE_SYMBOLIC_LINK_NAME };
-		if (UsePrivileges)
+		std::array const Privileges
 		{
-			Privileges.emplace_back(SE_BACKUP_NAME);
-			Privileges.emplace_back(SE_RESTORE_NAME);
-		}
+			SE_BACKUP_NAME,
+			SE_RESTORE_NAME,
 
-		SCOPED_ACTION(privilege)(Privileges);
+			SE_TAKE_OWNERSHIP_NAME,
+			SE_CREATE_SYMBOLIC_LINK_NAME
+		};
+
+		const auto OptinalPrivilegesCount = 2; // Backup, restore
+
+		SCOPED_ACTION(os::security::privilege)((span(Privileges)).subspan(UsePrivileges? 0 : OptinalPrivilegesCount));
 
 		const auto PipeName = concat(L"\\\\.\\pipe\\"sv, Uuid);
 		WaitNamedPipe(PipeName.c_str(), NMPWAIT_WAIT_FOREVER);
@@ -835,24 +1043,27 @@ public:
 
 		{
 			// basic security checks
-			ULONG ServerProcessId;
+			ULONG ServerProcessId = 0;
 			if (imports.GetNamedPipeServerProcessId && (!imports.GetNamedPipeServerProcessId(m_Pipe.native_handle(), &ServerProcessId) || ServerProcessId != PID))
 				return GetLastError();
 
-			const auto ParentProcess = os::handle(OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, PID));
+			const os::handle ParentProcess(OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, PID));
 			if (!ParentProcess)
 				return GetLastError();
 
 			string ParentProcessFileName;
-			if (!os::fs::GetModuleFileName(ParentProcess.native_handle(), nullptr, ParentProcessFileName))
+			if (!os::fs::get_module_file_name(ParentProcess.native_handle(), {}, ParentProcessFileName))
 				return GetLastError();
 
+			// Do not use get_current_process_file_name here: even though it's implemented in terms of get_module_file_name,
+			// get_module_file_name uses a different path for the current process case and the results can be different
+			// if the path contains symlinks. See gh-371 for example.
 			string CurrentProcessFileName;
-			if (!os::fs::GetModuleFileName(GetCurrentProcess(), nullptr, CurrentProcessFileName))
+			if (!os::fs::get_module_file_name(GetCurrentProcess(), {}, CurrentProcessFileName))
 				return GetLastError();
 
 			if (!equal_icase(CurrentProcessFileName, ParentProcessFileName))
-				return DNS_ERROR_INVALID_NAME;
+				return ERROR_INVALID_NAME;
 		}
 
 		m_ParentPid = PID;
@@ -863,7 +1074,7 @@ public:
 				break;
 		}
 
-		return 0;
+		return EXIT_SUCCESS;
 	}
 
 private:
@@ -880,27 +1091,21 @@ private:
 
 	void Write(const void* Data, size_t DataSize) const
 	{
-		if (!pipe::Write(m_Pipe, Data, DataSize))
-			throw MAKE_FAR_EXCEPTION(L"Pipe write error"sv);
+		pipe::write(m_Pipe, Data, DataSize);
 	}
 
 	template<typename T>
 	T Read() const
 	{
 		T Data;
-		if (!pipe::Read(m_Pipe, Data))
-			throw MAKE_FAR_EXCEPTION(L"Pipe read error"sv);
+		ReadPipe(m_Pipe, Data);
 		return Data;
 	}
 
-	static void Write() {}
-
-	template<typename T, typename... args>
-	void Write(const T& Data, args&&... Args) const
+	template<typename... args>
+	void Write(const args&... Args) const
 	{
-		if (!pipe::Write(m_Pipe, Data))
-			throw MAKE_FAR_EXCEPTION(L"Pipe write error"sv);
-		Write(FWD(Args)...);
+		(..., WritePipe(m_Pipe, Args));
 	}
 
 	void ExitHandler() const
@@ -912,11 +1117,10 @@ private:
 	{
 		const auto TemplateObject = Read<string>();
 		const auto Object = Read<string>();
-		// BUGBUG, SecurityAttributes ignored
+		const auto SecurityAttributes = Read<security_attributes_wrapper>();
+		const auto Result = os::fs::low::create_directory(TemplateObject.c_str(), Object.c_str(), SecurityAttributes());
 
-		const auto Result = os::fs::low::create_directory(TemplateObject.c_str(), Object.c_str(), nullptr);
-
-		Write(error_state::fetch(), Result);
+		Write(last_error(), Result);
 	}
 
 	void RemoveDirectoryHandler() const
@@ -925,7 +1129,7 @@ private:
 
 		const auto Result = os::fs::low::remove_directory(Object.c_str());
 
-		Write(error_state::fetch(), Result);
+		Write(last_error(), Result);
 	}
 
 	void DeleteFileHandler() const
@@ -934,7 +1138,7 @@ private:
 
 		const auto Result = os::fs::low::delete_file(Object.c_str());
 
-		Write(error_state::fetch(), Result);
+		Write(last_error(), Result);
 	}
 
 	void CopyFileHandler() const
@@ -949,9 +1153,9 @@ private:
 		callback_param Param{ this, reinterpret_cast<void*>(Data) };
 		const auto Result = os::fs::low::copy_file(From.c_str(), To.c_str(), UserCopyProgressRoutine? CopyProgressRoutineWrapper : nullptr, &Param, nullptr, Flags);
 
-		Write(0 /* not CallbackMagic */, error_state::fetch(), Result);
+		Write(0 /* not CallbackMagic */, last_error(), Result);
 
-		RethrowIfNeeded(Param.ExceptionPtr);
+		rethrow_if(Param.ExceptionPtr);
 	}
 
 	void MoveFileHandler() const
@@ -962,7 +1166,19 @@ private:
 
 		const auto Result = os::fs::low::move_file(From.c_str(), To.c_str(), Flags);
 
-		Write(error_state::fetch(), Result);
+		Write(last_error(), Result);
+	}
+
+	void ReplaceFileHandler() const
+	{
+		const auto To = Read<string>();
+		const auto From = Read<string>();
+		const auto Backup = Read<string>();
+		const auto Flags = Read<DWORD>();
+
+		const auto Result = os::fs::low::replace_file(To.c_str(), From.c_str(), Backup.c_str(), Flags);
+
+		Write(last_error(), Result);
 	}
 
 	void GetFileAttributesHandler() const
@@ -971,7 +1187,7 @@ private:
 
 		const auto Result = os::fs::low::get_file_attributes(Object.c_str());
 
-		Write(error_state::fetch(), Result);
+		Write(last_error(), Result);
 	}
 
 	void SetFileAttributesHandler() const
@@ -981,18 +1197,18 @@ private:
 
 		const auto Result = os::fs::low::set_file_attributes(Object.c_str(), Attributes);
 
-		Write(error_state::fetch(), Result);
+		Write(last_error(), Result);
 	}
 
 	void CreateHardLinkHandler() const
 	{
 		const auto Object = Read<string>();
 		const auto Target = Read<string>();
-		// BUGBUG: SecurityAttributes ignored.
+		const auto SecurityAttributes = Read<security_attributes_wrapper>();
 
-		const auto Result = os::fs::low::create_hard_link(Object.c_str(), Target.c_str(), nullptr);
+		const auto Result = os::fs::low::create_hard_link(Object.c_str(), Target.c_str(), SecurityAttributes());
 
-		Write(error_state::fetch(), Result);
+		Write(last_error(), Result);
 	}
 
 	void CreateSymbolicLinkHandler() const
@@ -1003,21 +1219,16 @@ private:
 
 		const auto Result = os::fs::CreateSymbolicLinkInternal(Object, Target, Flags);
 
-		Write(error_state::fetch(), Result);
+		Write(last_error(), Result);
 	}
 
 	void MoveToRecycleBinHandler() const
 	{
-		auto Struct = Read<SHFILEOPSTRUCT>();
-		const auto From = Read<string>();
-		const auto To = Read<string>();
+		const auto Object = Read<string>();
 
-		Struct.pFrom = From.c_str();
-		Struct.pTo = To.c_str();
+		const auto Result = os::fs::low::move_to_recycle_bin(Object);
 
-		const auto Result = SHFileOperation(&Struct);
-
-		Write(Struct.fAnyOperationsAborted, Result);
+		Write(last_error(), Result);
 	}
 
 	void SetOwnerHandler() const
@@ -1027,7 +1238,7 @@ private:
 
 		const auto Result = SetOwnerInternal(Object, Owner);
 
-		Write(error_state::fetch(), Result);
+		Write(last_error(), Result);
 	}
 
 	void CreateFileHandler() const
@@ -1035,12 +1246,13 @@ private:
 		const auto Object = Read<string>();
 		const auto DesiredAccess = Read<DWORD>();
 		const auto ShareMode = Read<DWORD>();
+		const auto SecurityAttributes = Read<security_attributes_wrapper>();
 		const auto CreationDistribution = Read<DWORD>();
 		const auto FlagsAndAttributes = Read<DWORD>();
-		// BUGBUG: SecurityAttributes, TemplateFile ignored
+		// BUGBUG: TemplateFile ignored
 
 		auto Duplicate = INVALID_HANDLE_VALUE;
-		if (const auto Handle = os::fs::create_file(Object, DesiredAccess, ShareMode, nullptr, CreationDistribution, FlagsAndAttributes, nullptr))
+		if (const auto Handle = os::fs::create_file(Object, DesiredAccess, ShareMode, SecurityAttributes(), CreationDistribution, FlagsAndAttributes, nullptr))
 		{
 			if (const auto ParentProcess = os::handle(OpenProcess(PROCESS_DUP_HANDLE, FALSE, m_ParentPid)))
 			{
@@ -1048,7 +1260,7 @@ private:
 			}
 		}
 
-		Write(error_state::fetch(), reinterpret_cast<intptr_t>(Duplicate));
+		Write(last_error(), reinterpret_cast<intptr_t>(Duplicate));
 	}
 
 	void SetEncryptionHandler() const
@@ -1058,7 +1270,7 @@ private:
 
 		const auto Result = os::fs::low::set_file_encryption(Object.c_str(), Encrypt);
 
-		Write(error_state::fetch(), Result);
+		Write(last_error(), Result);
 	}
 
 	void DetachVirtualDiskHandler() const
@@ -1068,7 +1280,7 @@ private:
 
 		const auto Result = os::fs::low::detach_virtual_disk(Object.c_str(), VirtualStorageType);
 
-		Write(error_state::fetch(), Result);
+		Write(last_error(), Result);
 	}
 
 	void GetDiskFreeSpaceHandler() const
@@ -1078,7 +1290,7 @@ private:
 		unsigned long long FreeBytesAvailableToCaller, TotalNumberOfBytes, TotalNumberOfFreeBytes;
 		const auto Result = os::fs::low::get_disk_free_space(Object.c_str(), &FreeBytesAvailableToCaller, &TotalNumberOfBytes, &TotalNumberOfFreeBytes);
 
-		Write(error_state::fetch(), Result);
+		Write(last_error(), Result);
 
 		if(Result)
 		{
@@ -1086,10 +1298,44 @@ private:
 		}
 	}
 
+	void GetFileSecurityHandler() const
+	{
+		const auto Object = Read<string>();
+		const auto SecurityInformation = Read<SECURITY_INFORMATION>();
+
+		const auto Result = os::fs::low::get_file_security(Object.c_str(), SecurityInformation);
+
+		Write(last_error(), Result);
+	}
+
+	void SetFileSecurityHandler() const
+	{
+		const auto Object = Read<string>();
+		const auto SecurityInformation = Read<SECURITY_INFORMATION>();
+		const auto Size = Read<size_t>();
+		const os::security::descriptor SecurityDescriptor(Size);
+		pipe::read(m_Pipe, SecurityDescriptor.data(), Size);
+
+		const auto Result = os::fs::low::set_file_security(Object.c_str(), SecurityInformation, SecurityDescriptor.data());
+
+		Write(last_error(), Result);
+	}
+
+	void ResetFileSecurityHandler() const
+	{
+		const auto Object = Read<string>();
+
+		const auto Result = os::fs::low::reset_file_security(Object.c_str());
+
+		Write(last_error(), Result);
+	}
+
 	static DWORD CALLBACK CopyProgressRoutineWrapper(LARGE_INTEGER TotalFileSize, LARGE_INTEGER TotalBytesTransferred, LARGE_INTEGER StreamSize, LARGE_INTEGER StreamBytesTransferred, DWORD StreamNumber, DWORD CallbackReason, HANDLE SourceFile,HANDLE DestinationFile, LPVOID Data)
 	{
-		const auto Param = reinterpret_cast<callback_param*>(Data);
-		try
+		const auto Param = static_cast<callback_param*>(Data);
+
+		return cpp_try(
+		[&]
 		{
 			const auto Context = Param->Owner;
 
@@ -1114,17 +1360,19 @@ private:
 				// nested call from ProgressRoutine()
 				Context->Process(Result);
 			}
-		}
-		CATCH_AND_SAVE_EXCEPTION_TO(Param->ExceptionPtr)
-
-		return PROGRESS_CANCEL;
+		},
+		[&]
+		{
+			SAVE_EXCEPTION_TO(Param->ExceptionPtr);
+			return PROGRESS_CANCEL;
+		});
 	}
 
 	bool Process(int Command) const
 	{
 		assert(Command < C_COMMANDS_COUNT);
 
-		static const decltype(&elevated::ExitHandler) Handlers[] =
+		static const std::array Handlers
 		{
 			&elevated::ExitHandler,
 			&elevated::CreateDirectoryHandler,
@@ -1132,6 +1380,7 @@ private:
 			&elevated::DeleteFileHandler,
 			&elevated::CopyFileHandler,
 			&elevated::MoveFileHandler,
+			&elevated::ReplaceFileHandler,
 			&elevated::GetFileAttributesHandler,
 			&elevated::SetFileAttributesHandler,
 			&elevated::CreateHardLinkHandler,
@@ -1142,9 +1391,12 @@ private:
 			&elevated::SetEncryptionHandler,
 			&elevated::DetachVirtualDiskHandler,
 			&elevated::GetDiskFreeSpaceHandler,
+			&elevated::GetFileSecurityHandler,
+			&elevated::SetFileSecurityHandler,
+			&elevated::ResetFileSecurityHandler,
 		};
 
-		static_assert(std::size(Handlers) == C_COMMANDS_COUNT);
+		static_assert(Handlers.size() == C_COMMANDS_COUNT);
 
 		try
 		{
@@ -1153,7 +1405,7 @@ private:
 		}
 		catch (...)
 		{
-			// TODO: log
+			LOGERROR(L"Unknown exception"sv);
 			return false;
 		}
 	}
@@ -1166,5 +1418,5 @@ int ElevationMain(string_view const Uuid, DWORD PID, bool UsePrivileges)
 
 bool IsElevationArgument(const wchar_t* Argument)
 {
-	return equal(Argument, ElevationArgument);
+	return ElevationArgument == Argument;
 }

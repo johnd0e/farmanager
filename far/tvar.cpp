@@ -32,11 +32,25 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "tvar.hpp"
 
+// Internal:
 #include "string_sort.hpp"
 
+// Platform:
+
+// Common:
+#include "common.hpp"
+#include "common/from_string.hpp"
+
+// External:
 #include "format.hpp"
+
+//----------------------------------------------------------------------------
 
 //---------------------------------------------------------------
 // If this code works, it was written by Alexander Nazarenko.
@@ -59,13 +73,13 @@ static TypeString checkTypeString(const string& TestStr)
 		auto ptrTestStr = TestStr.c_str();
 		wchar_t ch, ch2;
 		bool isNum     = true;
-//		bool isDec     = false;
+		//bool isDec     = false;
 		bool isBegDec  = false;
-//		bool isHex     = false;
+		//bool isHex     = false;
 		bool isBegHex  = false;
-//		bool isOct     = false;
+		//bool isOct     = false;
 		bool isBegOct  = false;
-//		bool isE       = false;
+		//bool isE       = false;
 		bool isExp     = false;
 		bool isPoint   = false;
 		bool isSign    = false;
@@ -162,7 +176,7 @@ static TypeString checkTypeString(const string& TestStr)
 						}
 
 						isExpSign=true;
-						wchar_t ch3=*ptrTestStr++;
+						const auto ch3 = *ptrTestStr++;
 
 						if (!std::iswdigit(ch3))   // за знаком идет число?
 						{
@@ -234,188 +248,128 @@ static TypeString checkTypeString(const string& TestStr)
 	return typeTestStr;
 }
 
-static string toString(long long num)
-{
-	return str(num);
-};
-
-static string toString(double num)
-{
-	return str(num);
-}
-
-static TVar addStr(const string& a, const string& b)
-{
-	return TVar(a + b);
-}
-
-TVar& TVar::AppendStr(const TVar& appStr)
-{
-	vType = vtString;
-	return operator=(addStr(str,appStr.str));
-}
-
-TVar& TVar::AppendStr(wchar_t addChr)
-{
-	wchar_t tmp[2]={};
-	tmp[0]=addChr;
-	vType = vtString;
-	return operator=(addStr(str,tmp));
-}
-
 TVar::TVar():
-	inum(),
-	dnum(),
-	vType(vtUnknown)
+	vType(Type::Unknown)
 {
 }
 
-TVar::TVar(long long v) :
+TVar::TVar(long long v):
 	inum(v),
-	dnum(),
-	vType(vtInteger)
+	vType(Type::Integer)
 {
 }
 
-TVar::TVar(int v) :
-	inum(v),
-	dnum(),
-	vType(vtInteger)
+TVar::TVar(int v):
+	TVar(static_cast<long long>(v))
 {
 }
 
-TVar::TVar(double v) :
-	inum(),
+TVar::TVar(double v):
 	dnum(v),
-	vType(vtDouble)
+	vType(Type::Double)
 {
 }
 
 TVar::TVar(string_view const v):
-	inum(),
-	dnum(),
-	str(ALL_CONST_RANGE(v)),
-	vType(vtString)
+	str(v),
+	vType(Type::String)
 {
 }
 
 TVar::TVar(const wchar_t* v):
-	inum(),
-	dnum(),
-	str(NullToEmpty(v)),
-	vType(vtString)
+	TVar(string_view(NullToEmpty(v)))
 {
 }
 
 const string& TVar::toString()
 {
-	switch (vType)
-	{
-	case vtDouble:
-		str = ::toString(dnum);
-		break;
-	case vtUnknown:
-	case vtInteger:
-		str = ::toString(inum);
-		break;
-	case vtString:
-		// TODO: log
-		break;
-	default:
-		// TODO: log
-		break;
-	}
-
-	vType = vtString;
+	// this already writes to str
+	(void)asString();
+	vType = Type::String;
 	return str;
 }
 
 long long TVar::toInteger()
 {
 	inum = asInteger();
-	vType = vtInteger;
+	vType = Type::Integer;
 	return inum;
 }
 
 double TVar::toDouble()
 {
 	dnum = asDouble();
-	vType = vtDouble;
+	vType = Type::Double;
 	return dnum;
-};
+}
 
 const string& TVar::asString() const
 {
 	if (!isString())
 	{
-		str = isInteger() ? ::toString(inum) : ::toString(dnum);
+		// str() is implemented in terms of fmt::to_wstring().
+		// For doubles fmt::to_wstring adds ".0" even if there's no fractional part
+		// (e.g. 1234.0 to "1234.0"), and it's a feature (see issue #1153).
+		// For historical reasons we prefer the shortest possible representation, hence "g".
+		str = isInteger()? ::str(inum) : format(FSTR(L"{:.6g}"sv), dnum);
 	}
 	return str;
 }
 
 long long TVar::asInteger() const
 {
-	long long ret = 0;
+	switch (vType)
+	{
+	case Type::Integer:
+	case Type::Unknown:
+		return inum;
 
-	if (isInteger())
-	{
-		ret = inum;
-	}
-	else if (isDouble())
-	{
-		ret = static_cast<long long>(dnum);
-	}
-	else if (isString())
-	{
-		if (!from_string(str, ret))
+	case Type::Double:
+		return dnum;
+
+	case Type::String:
 		{
-			// TODO: log
+			long long Value;
+			return from_string(str, Value)? Value : 0;
 		}
+
+	default:
+		return 0;
 	}
-	else
-	{
-		// TODO: log
-	}
-	return ret;
-};
+}
 
 double TVar::asDouble() const
 {
-	double ret = 0;
+	switch (vType)
+	{
+	case Type::Integer:
+	case Type::Unknown:
+		return inum;
 
-	if (isDouble())
-	{
-		ret = dnum;
-	}
-	else if (isInteger())
-	{
-		ret = static_cast<double>(inum);
-	}
-	else if (isString())
-	{
-		if (!from_string(str, ret))
+	case Type::Double:
+		return dnum;
+
+	case Type::String:
 		{
-			// TODO: log
+			double Value;
+			return from_string(str, Value)? Value : 0;
 		}
-	}
-	else
-	{
-		// TODO: log
-	}
 
-	return ret;
-};
+	default:
+		return 0;
+	}
+}
 
 bool TVar::isNumber() const
 {
 	switch (type())
 	{
-		case vtUnknown:
-		case vtInteger:
-		case vtDouble:
+		case Type::Unknown:
+		case Type::Integer:
+		case Type::Double:
 			return true;
 
-		case vtString:
+		case Type::String:
 			switch (checkTypeString(str))
 			{
 				case tsInt:
@@ -429,307 +383,80 @@ bool TVar::isNumber() const
 	return false;
 }
 
-static bool _cmp_Eq(TVarType vt,const void *a, const void *b)
+TVar::Type TVar::ParseType() const
 {
-	bool r = false;
+	if (vType != Type::String)
+		return vType;
 
-	switch (vt)
+	switch(checkTypeString(str))
 	{
-		case vtUnknown:
-		case vtInteger: r = *(const long long*)a == *(const long long*)b; break;
-		case vtDouble:  r = fabs(*(const double*)a - *(const double*)b) < DBL_EPSILON; break;
-		case vtString:  r = equal((const wchar_t*)a, (const wchar_t*)b); break;
+	case tsInt:
+		return Type::Integer;
+
+	case tsFloat:
+		return Type::Double;
+
+	default:
+		return Type::String;
 	}
-
-	return r;
-}
-
-static bool _cmp_Lt(TVarType vt,const void *a, const void *b)
-{
-	bool r = false;
-
-	switch (vt)
-	{
-		case vtUnknown:
-		case vtInteger: r = *(const long long*)a < *(const long long*)b; break;
-		case vtDouble:  r = *(const double*)a < *(const double*)b; break;
-		case vtString:  r = string_sort::less((const wchar_t*)a, (const wchar_t*)b); break;
-	}
-
-	return r;
-}
-
-static bool _cmp_Gt(TVarType vt, const void *a, const void *b)
-{
-	bool r = false;
-
-	switch (vt)
-	{
-		case vtUnknown:
-		case vtInteger: r = *(const long long*)a > *(const long long*)b; break;
-		case vtDouble:  r = *(const double*)a > *(const double*)b; break;
-		case vtString:  r = string_sort::less((const wchar_t*)b, (const wchar_t*)a); break;
-	}
-
-	return r;
-}
-
-bool CompAB(const TVar& a, const TVar& b, TVarFuncCmp fcmp)
-{
-	bool r = true;
-	long long bi;
-	double bd;
-
-	switch (a.vType)
-	{
-		case vtUnknown:
-		case vtInteger:
-
-			switch (b.vType)
-			{
-				case vtUnknown:
-				case vtInteger: r = fcmp(vtInteger,&a.inum,&b.inum); break;
-				case vtDouble:  r = fcmp(vtDouble,&a.inum,&b.dnum);  break;
-				case vtString:
-				{
-					switch (checkTypeString(b.asString()))
-					{
-						case tsStr:   r = fcmp(vtString,a.asString().c_str(),b.str.data()); break;
-						case tsInt:   bi=b.asInteger(); r = fcmp(vtInteger,&a.inum,&bi);  break;
-						case tsFloat: bd=b.asDouble(); r = fcmp(vtDouble,&a.inum,&bd);   break;
-					}
-
-					break;
-				}
-			}
-
-			break;
-		case vtDouble:
-
-			switch (b.vType)
-			{
-				case vtUnknown:
-				case vtInteger: r = fcmp(vtInteger,&a.dnum,&b.inum); break;
-				case vtDouble:  r = fcmp(vtDouble,&a.dnum,&b.dnum);  break;
-				case vtString:
-				{
-					switch (checkTypeString(b.str))
-					{
-						case tsStr:   r = fcmp(vtString,a.asString().c_str(),b.str.data()); break;
-						case tsInt:
-						case tsFloat: bd=b.asDouble(); r = fcmp(vtDouble,&a.inum,&bd);   break;
-					}
-
-					break;
-				}
-			}
-
-			break;
-		case vtString:
-		{
-			r = fcmp(vtString,a.asString().c_str(),b.asString().data());
-			break;
-		}
-	}
-
-	return r;
-};
-
-bool TVar::operator==(const TVar& b) const
-{
-	return CompAB(*this, b, _cmp_Eq);
 }
 
 bool TVar::operator<(const TVar& rhs) const
 {
-	return CompAB(*this, rhs, _cmp_Lt);
-}
-
-bool TVar::operator>(const TVar& rhs) const
-{
-	return CompAB(*this, rhs, _cmp_Gt);
-}
-
-TVar TVar::operator+(const TVar& rhs) const
-{
-	TVar r;
-
-	switch (vType)
+	switch (type())
 	{
-		case vtUnknown:
-		case vtInteger:
+	case Type::Unknown:
+	case Type::Integer:
+		switch (rhs.type())
 		{
-			switch (rhs.vType)
+		case Type::Unknown:
+		case Type::Integer:
+			return asInteger() < rhs.asInteger();
+
+		case Type::Double:
+			return asDouble() < rhs.asDouble();
+
+		case Type::String:
+			switch (checkTypeString(rhs.asString()))
 			{
-				case vtUnknown:
-				case vtInteger: r = inum + rhs.inum;                   break;
-				case vtDouble:  r = (double)inum + rhs.dnum;           break;
-				case vtString:
-				{
-					switch (checkTypeString(rhs.str))
-					{
-						case tsStr:   r = addStr(::toString(inum), rhs.asString());   break;
-						case tsInt:   r = inum + rhs.asInteger();                  break;
-						case tsFloat: r = (double)inum + rhs.asDouble();          break;
-					}
+			case tsStr:
+				return string_sort::less(asString(), rhs.asString());
 
-					break;
-				}
+			case tsInt:
+				return asInteger() < rhs.asInteger();
+
+			case tsFloat:
+				return asDouble() < rhs.asDouble();
 			}
-
 			break;
 		}
-		case vtDouble:
+		break;
+
+	case Type::Double:
+		switch (rhs.type())
 		{
-			switch (rhs.vType)
+		case Type::Unknown:
+		case Type::Integer:
+		case Type::Double:
+			return asDouble() < rhs.asDouble();
+
+		case Type::String:
+			switch (checkTypeString(rhs.asString()))
 			{
-				case vtUnknown:
-				case vtInteger: r = (double)inum + rhs.dnum;                break;
-				case vtDouble:  r = dnum + rhs.dnum;                        break;
-				case vtString:
-				{
-					switch (checkTypeString(rhs.str))
-					{
-						case tsStr:   r = addStr(::toString(dnum), rhs.asString());  break;
-						case tsInt:
-						case tsFloat: r = dnum + rhs.asDouble(); break;
-					}
+			case tsStr:
+				return string_sort::less(asString(), rhs.asString());
 
-					break;
-				}
+			case tsInt:
+			case tsFloat:
+				return asDouble() < rhs.asDouble();
 			}
-
 			break;
 		}
-		case vtString:
-		{
-			TypeString tsA=checkTypeString(str),tsB;
+		break;
 
-			if (rhs.vType == vtInteger || rhs.vType == vtUnknown)
-				tsB=tsInt;
-			else if (rhs.vType == vtDouble)
-				tsB=tsFloat;
-			else
-				tsA=tsB=tsStr;
-
-			if ((tsA == tsStr && tsB == tsStr) || (tsA != tsStr && tsB == tsStr) || (tsA == tsStr && tsB != tsStr))
-				r = addStr(asString(), rhs.asString());
-			else if (tsA == tsInt && tsB == tsInt)
-				r = asInteger() + rhs.asInteger();
-			else
-				r = asDouble() + rhs.asDouble();
-
-			break;
-		}
+	case Type::String:
+		return string_sort::less(asString(), rhs.asString());
 	}
 
-	return r;
-};
-
-TVar TVar::operator%(const TVar& rhs) const
-{
-	TVar r;
-
-	switch (vType)
-	{
-		case vtUnknown:
-		case vtInteger:
-		{
-			switch (rhs.vType)
-			{
-				case vtUnknown:
-				case vtInteger: r = rhs.inum ? (inum % rhs.inum) : 0; break;
-				case vtDouble:  r = fabs(rhs.dnum) > DBL_EPSILON? fmod((double)inum, rhs.dnum) : 0.0; break;
-				case vtString:
-				{
-					switch (checkTypeString(rhs.str))
-					{
-						case tsStr:   r = *this;     break;
-						case tsInt:
-						{
-							long long bi = rhs.asInteger();
-							r = bi ? inum % bi : 0; break;
-						}
-						case tsFloat:
-						{
-							double bd = rhs.asDouble();
-							r = fabs(bd) > DBL_EPSILON? fmod((double)inum, bd) : 0.0; break;
-						}
-					}
-
-					break;
-				}
-			}
-
-			break;
-		}
-		case vtDouble:
-		{
-			switch (rhs.vType)
-			{
-				case vtUnknown:
-				case vtInteger: r = rhs.inum ? fmod(dnum,(double)rhs.inum) : 0.0; break;
-				case vtDouble:  r = fabs(rhs.dnum) > DBL_EPSILON? fmod(dnum, rhs.dnum) : 0.0; break;
-				case vtString:
-				{
-					switch (checkTypeString(rhs.str))
-					{
-						case tsStr:   r = *this;     break;
-						case tsInt:
-						case tsFloat:
-						{
-							double bd = rhs.asDouble();
-							r = fabs(bd) > DBL_EPSILON? fmod(dnum, bd) : 0.0; break;
-						}
-					}
-
-					break;
-				}
-			}
-
-			break;
-		}
-		case vtString:
-		{
-			TypeString tsA=checkTypeString(str),tsB;
-
-			if (rhs.vType == vtInteger || rhs.vType == vtUnknown)
-				tsB=tsInt;
-			else if (rhs.vType == vtDouble)
-				tsB=tsFloat;
-			else
-				tsA=tsB=tsStr;
-
-			if ((tsA == tsStr && tsB == tsStr) || (tsA != tsStr && tsB == tsStr) || (tsA == tsStr && tsB != tsStr))
-				r = *this;
-			else if (tsA == tsInt && tsB == tsInt)
-			{
-				long long bi = rhs.asInteger();
-				r = bi ? (asInteger() % bi) : 0;
-			}
-			else
-			{
-				double bd = rhs.asDouble();
-				r = fabs(bd) > DBL_EPSILON? fmod(asDouble() , bd) : 0.0;
-			}
-
-			break;
-		}
-	}
-
-	return r;
-};
-
-TVar TVar::operator-() const
-{
-	switch (vType)
-	{
-		case vtUnknown:
-		case vtInteger:
-			return TVar(-inum);
-		case vtDouble:
-			return TVar(-dnum);
-		default:
-			return *this;
-	}
+	return false;
 }

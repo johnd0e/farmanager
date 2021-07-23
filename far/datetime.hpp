@@ -35,30 +35,55 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
+
+// Platform:
 #include "platform.chrono.hpp"
 
-#include "common/range.hpp"
+// Common:
+#include "common/noncopyable.hpp"
 
-inline auto get_local_time() { SYSTEMTIME Time; GetLocalTime(&Time); return Time; }
-inline auto get_utc_time() { SYSTEMTIME Time; GetSystemTime(&Time); return Time; }
+// External:
 
-DWORD ConvertYearToFull(DWORD ShortYear);
+//----------------------------------------------------------------------------
 
-enum { date_none = std::numeric_limits<WORD>::max() };
-using date_ranges = std::array<std::pair<size_t, size_t>, 3>;
-using time_ranges = std::array<std::pair<size_t, size_t>, 4>;
+using time_component = unsigned int;
+constexpr auto time_none = std::numeric_limits<time_component>::max();
 
-void ParseDateComponents(string_view Src, range<const std::pair<size_t, size_t>*> Ranges, range<WORD*> Dst, WORD Default = date_none);
-os::chrono::time_point ParseDate(const string& Date, const string& Time, int DateFormat, const date_ranges& DateRanges, const time_ranges& TimeRanges);
-os::chrono::duration ParseDuration(const string& Date, const string& Time, int DateFormat, const time_ranges& TimeRanges);
-void ConvertDate(os::chrono::time_point Point, string& strDateText, string& StrTimeText, int TimeLength, int Brief = FALSE, int TextMonth = FALSE, int FullYear = 0);
-void ConvertDuration(os::chrono::duration Duration, string& strDaysText, string& strTimeText);
+struct detailed_time_point
+{
+	unsigned
+		Year,
+		Month,
+		Day,
+		Hour,
+		Minute,
+		Second,
+		Hectonanosecond;
+};
 
-string StrFTime(const wchar_t* Format, const tm* t);
-string MkStrFTime(const wchar_t* Format = nullptr);
+detailed_time_point parse_detailed_time_point(string_view Date, string_view Time, int DateFormat);
 
-bool Utc2Local(os::chrono::time_point UtcTime, SYSTEMTIME& LocalTime);
-bool Local2Utc(const SYSTEMTIME& LocalTime, os::chrono::time_point& UtcTime);
+os::chrono::time_point ParseTimePoint(string_view Date, string_view Time, int DateFormat);
+os::chrono::duration ParseDuration(string_view Date, string_view Time);
+
+/*
+FullYear:
+0: Century only, 2 figures with leading zeros
+1: Full, 4 or 5 figures
+2: A special case: 4 or 5 figures with a leading or trailing space (depending on the locale).
+   For various fixed-with edit fields (attributes, filters etc.).
+
+   Windows supports years 1601 through 30827.
+*/
+void ConvertDate(os::chrono::time_point Point, string& strDateText, string& strTimeText, int TimeLength, int FullYear, bool Brief = false, bool TextMonth = false);
+
+// (days, time)
+std::tuple<string, string> ConvertDuration(os::chrono::duration Duration);
+
+string ConvertDurationToHMS(os::chrono::duration Duration);
+
+string MkStrFTime(string_view Format = {});
 
 class time_check: noncopyable
 {
@@ -66,32 +91,21 @@ class time_check: noncopyable
 
 public:
 	enum class mode { delayed, immediate };
-	time_check(mode Mode, clock_type::duration Interval):
-		m_Begin(Mode == mode::delayed? clock_type::now() : clock_type::now() - Interval),
-		m_Interval(Interval)
-	{
-	}
 
-	void reset(clock_type::time_point Value = clock_type::now()) const
-	{
-		m_Begin = Value;
-	}
-
-	explicit operator bool() const noexcept
-	{
-		const auto Current = clock_type::now();
-		if (m_Interval != 0s && Current - m_Begin > m_Interval)
-		{
-			reset(Current);
-			return true;
-		}
-		return false;
-	}
+	explicit time_check(mode Mode = mode::delayed) noexcept;
+	time_check(mode Mode, clock_type::duration Interval) noexcept;
+	void reset(clock_type::time_point Value = clock_type::now()) const noexcept;
+	bool is_time() const noexcept;
+	explicit operator bool() const noexcept;
 
 private:
 	mutable clock_type::time_point m_Begin;
 	const clock_type::duration m_Interval;
 };
 
+std::pair<string, string> get_time();
+
+std::chrono::milliseconds till_next_second();
+std::chrono::milliseconds till_next_minute();
 
 #endif // DATETIME_HPP_58256A07_E483_4DB7_9DAC_DFA9D90D8A32

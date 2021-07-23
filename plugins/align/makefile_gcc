@@ -1,9 +1,6 @@
 NAME = Align
-SRCS = Align.cpp
-DOCS = AlignEng.lng AlignRus.lng AlignSky.lng AlignSpa.lng
 
-include ../../far/makefile_gcc_common
+SRCS = Align.cpp
 
 include ../makefile_gcc_def_inc
-
 include ../makefile_gcc_target_inc

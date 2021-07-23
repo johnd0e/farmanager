@@ -29,17 +29,32 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "string_sort.hpp"
 
+// Internal:
 #include "string_utils.hpp"
 #include "config.hpp"
 #include "global.hpp"
+#include "imports.hpp"
+
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
 
 template<typename comparer>
 static int per_char_compare(const string_view Str1, const string_view Str2, const comparer Comparer)
 {
-	auto Iterator = std::make_pair(Str1.cbegin(), Str2.cbegin());
-	const auto End = std::make_pair(Str1.cend(), Str2.cend());
+	// VS2019 bug - 'classic' CTAD breaks the compilation here
+	auto Iterator = std::pair(Str1.cbegin(), Str2.cbegin());
+	const auto End = std::pair(Str1.cend(), Str2.cend());
 
 	while (Iterator.first != End.first && Iterator.second != End.second)
 	{
@@ -60,7 +75,7 @@ static int per_char_compare(const string_view Str1, const string_view Str2, cons
 
 static int number_comparer(string_view::const_iterator& It1, string_view::const_iterator const End1, string_view::const_iterator& It2, string_view::const_iterator const End2)
 {
-	const auto& IsZero = [](wchar_t Char) { return Char == L'0'; };
+	const auto IsZero = [](wchar_t Char) { return Char == L'0'; };
 
 	const auto Begin1 = It1;
 	const auto Begin2 = It2;
@@ -100,6 +115,12 @@ static int ordinal_comparer(wchar_t Char1, wchar_t Char2)
 
 static int compare_ordinal(const string_view Str1, const string_view Str2)
 {
+	if (imports.CompareStringOrdinal)
+	{
+		if (const auto Result = imports.CompareStringOrdinal(Str1.data(), static_cast<int>(Str1.size()), Str2.data(), static_cast<int>(Str2.size()), FALSE))
+			return Result - 2;
+	}
+
 	return per_char_compare(Str1, Str2, [](string_view::const_iterator& It1, string_view::const_iterator, string_view::const_iterator& It2, string_view::const_iterator)
 	{
 		return ordinal_comparer(*It1++, *It2++);
@@ -108,6 +129,12 @@ static int compare_ordinal(const string_view Str1, const string_view Str2)
 
 static int compare_ordinal_icase(const string_view Str1, const string_view Str2)
 {
+	if (imports.CompareStringOrdinal)
+	{
+		if (const auto Result = imports.CompareStringOrdinal(Str1.data(), static_cast<int>(Str1.size()), Str2.data(), static_cast<int>(Str2.size()), TRUE))
+			return Result - 2;
+	}
+
 	return per_char_compare(Str1, Str2, [](string_view::const_iterator& It1, string_view::const_iterator, string_view::const_iterator& It2, string_view::const_iterator)
 	{
 		return ordinal_comparer(upper(*It1++), upper(*It2++));
@@ -316,29 +343,74 @@ void string_sort::adjust_comparer()
 	DefaultComparer = Comparers[CollationIdex][Global->Opt->Sort.DigitsAsNumbers][Global->Opt->Sort.CaseSensitive];
 }
 
-SELF_TEST(
-	assert(compare_invariant_numeric_icase(L""sv, L""sv) == 0);
-	assert(compare_invariant_numeric_icase(L""sv, L"a"sv) < 0);
-	assert(compare_invariant_numeric_icase(L"a"sv, L"a"sv) == 0);
+int string_sort::keyhole::compare_ordinal_icase(string_view const Str1, string_view const Str2)
+{
+	return ::compare_ordinal_icase(Str1, Str2);
+}
 
-	assert(compare_invariant_numeric_icase(L"0"sv, L"1"sv) < 0);
-	assert(compare_invariant_numeric_icase(L"0"sv, L"00"sv) > 0);
-	assert(compare_invariant_numeric_icase(L"1"sv, L"00"sv) > 0);
-	assert(compare_invariant_numeric_icase(L"10"sv, L"1"sv) > 0);
-	assert(compare_invariant_numeric_icase(L"10"sv, L"2"sv) > 0);
-	assert(compare_invariant_numeric_icase(L"10"sv, L"0100"sv) < 0);
-	assert(compare_invariant_numeric_icase(L"1"sv, L"001"sv) > 0);
+int string_sort::keyhole::compare_ordinal_numeric(string_view const Str1, string_view const Str2)
+{
+	return ::compare_ordinal_numeric(Str1, Str2);
+}
 
-	assert(compare_invariant_numeric_icase(L"10a"sv, L"2b"sv) > 0);
-	assert(compare_invariant_numeric_icase(L"10a"sv, L"0100b"sv) < 0);
-	assert(compare_invariant_numeric_icase(L"a1a"sv, L"a001a"sv) > 0);
-	assert(compare_invariant_numeric_icase(L"a1b2c"sv, L"a1b2c"sv) == 0);
-	assert(compare_invariant_numeric_icase(L"a01b2c"sv, L"a1b002c"sv) < 0);
-	assert(compare_invariant_numeric_icase(L"a01b3c"sv, L"a1b002"sv) < 0);
+#ifdef ENABLE_TESTS
 
-	assert(compare_invariant_numeric_icase(L"10"sv, L"01"sv) > 0);
-	assert(compare_invariant_numeric_icase(L"01"sv, L"01"sv) == 0);
+#include "testing.hpp"
 
-	assert(compare_invariant_numeric_icase(L"A1"sv, L"a2"sv) < 0);
-	assert(compare_invariant_numeric(L"A1"sv, L"a2"sv) < 0);
-)
+TEST_CASE("strings.sorting")
+{
+	static const struct
+	{
+		string_view Str1, Str2;
+		int CaseResult;
+		int IcaseResult;
+	}
+	Tests[]
+	{
+		{ {},          {},                 0,  0, },
+		{ {},          L"a"sv,            -1, -1, },
+		{ L"a"sv,      L"a"sv,             0,  0, },
+		{ L"a"sv,      L"A"sv,             1,  0, },
+
+		{ L"0"sv,      L"1"sv,            -1, -1, },
+		{ L"0"sv,      L"00"sv,            1,  1, },
+		{ L"1"sv,      L"00"sv,            1,  1, },
+		{ L"10"sv,     L"1"sv,             1,  1, },
+		{ L"10"sv,     L"2"sv,             1,  1, },
+		{ L"10"sv,     L"0100"sv,         -1, -1, },
+		{ L"1"sv,      L"001"sv,           1,  1, },
+
+		{ L"10a"sv,    L"2b"sv,            1,  1, },
+		{ L"10a"sv,    L"0100b"sv,        -1, -1, },
+		{ L"a1a"sv,    L"a001a"sv,         1,  1, },
+		{ L"a1b2c"sv,  L"a1b2c"sv,         0,  0, },
+		{ L"a01b2c"sv, L"a1b002c"sv,      -1, -1, },
+		{ L"a01b3c"sv, L"a1b002"sv,       -1, -1, },
+
+		{ L"10"sv,     L"01"sv,            1,  1, },
+		{ L"01"sv,     L"01"sv,            0,  0, },
+
+		{ L"A1"sv,     L"a2"sv,           -1, -1, },
+		{ L"a1"sv,     L"A2"sv,            1, -1, },
+	};
+
+	const auto normalise = [](int const Result)
+	{
+		return Result < 0? -1 : Result > 0? 1 : 0;
+	};
+
+	const auto invert = [](int const Result)
+	{
+		return Result < 0? 1 : Result > 0 ? -1 : 0;
+	};
+
+	for (const auto& i: Tests)
+	{
+		REQUIRE(normalise(compare_invariant_numeric(i.Str1, i.Str2)) == i.CaseResult);
+		REQUIRE(normalise(compare_invariant_numeric_icase(i.Str1, i.Str2)) == i.IcaseResult);
+
+		REQUIRE(invert(compare_invariant_numeric(i.Str2, i.Str1)) == i.CaseResult);
+		REQUIRE(invert(compare_invariant_numeric_icase(i.Str2, i.Str1)) == i.IcaseResult);
+	}
+}
+#endif

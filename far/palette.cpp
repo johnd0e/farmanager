@@ -31,12 +31,27 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "palette.hpp"
 
+// Internal:
 #include "farcolor.hpp"
 #include "colormix.hpp"
 #include "configdb.hpp"
 #include "plugin.hpp"
+
+// Platform:
+
+// Common:
+#include "common/view/enumerate.hpp"
+
+// External:
+#include "format.hpp"
+
+//----------------------------------------------------------------------------
 
 static const struct ColorsInit
 {
@@ -194,6 +209,7 @@ Init[]=
 	{L"WarnDialog.DefaultButton.Highlight.Selected"sv, F_YELLOW|B_LIGHTGRAY,   F_WHITE|B_BLACK,       }, // COL_WARNDIALOGHIGHLIGHTSELECTEDDEFAULTBUTTON,
 };
 
+static_assert(std::size(Init) == COL_LASTPALETTECOLOR);
 
 palette::palette():
 	CurrentPalette(std::size(Init))
@@ -209,8 +225,7 @@ void palette::Reset(bool Black)
 	{
 		return colors::ConsoleColorToFarColor(std::invoke(IndexPtr, i));
 	});
-	colors::make_transparent(CurrentPalette[COL_PANELTEXT].BackgroundColor);
-	colors::make_transparent(CurrentPalette[COL_PANELSELECTEDTEXT].BackgroundColor);
+
 	PaletteChanged = true;
 }
 
@@ -224,39 +239,84 @@ void palette::ResetToBlack()
 	Reset(true);
 }
 
-void palette::Set(size_t StartOffset, FarColor* Value, size_t Count)
+void palette::Set(size_t StartOffset, span<FarColor> Values)
 {
-	std::copy_n(Value, Count, CurrentPalette.begin() + StartOffset);
+	std::copy(ALL_CONST_RANGE(Values), CurrentPalette.begin() + StartOffset);
 	PaletteChanged = true;
 }
 
-void palette::CopyTo(FarColor* Destination, size_t Size) const
+void palette::CopyTo(span<FarColor> const Destination) const
 {
-	if (Size < CurrentPalette.size())
-		return;
+	const auto Size = std::min(CurrentPalette.size(), Destination.size());
+	std::copy_n(CurrentPalette.begin(), Size, Destination.begin());
+}
 
-	std::copy(ALL_CONST_RANGE(CurrentPalette), Destination);
+static palette::custom_colors CustomColors;
+
+static string CustomLabel(size_t Index)
+{
+	return format(FSTR(L"CustomColor{}"sv), Index);
 }
 
 void palette::Load()
 {
-	for_each_cnt(RANGE(CurrentPalette, i, size_t index)
+	const auto& ColorsCfg = *ConfigProvider().ColorsCfg();
+
+	for (const auto& [i, index]: enumerate(CurrentPalette))
 	{
-		ConfigProvider().ColorsCfg()->GetValue(Init[index].Name, i);
-	});
+		ColorsCfg.GetValue(Init[index].Name, i);
+	}
+
+	for (const auto& [i, index]: enumerate(CustomColors))
+	{
+		FarColor Color;
+		i = ColorsCfg.GetValue(CustomLabel(index), Color)?
+			Color.BackgroundColor :
+			RGB(255,255,255);
+	}
+
 	PaletteChanged = false;
+	CustomColorsChanged = false;
 }
 
 void palette::Save(bool always)
 {
-	if (!PaletteChanged && !always)
+	if (!PaletteChanged && !CustomColorsChanged && !always)
 		return;
 
 	SCOPED_ACTION(auto)(ConfigProvider().ColorsCfg()->ScopedTransaction());
 
-	for_each_cnt(CONST_RANGE(CurrentPalette, i, size_t index)
+	if (PaletteChanged)
 	{
-		ConfigProvider().ColorsCfg()->SetValue(Init[index].Name, i);
-	});
-	PaletteChanged = false;
+		for (const auto& [i, index]: enumerate(CurrentPalette))
+		{
+			ConfigProvider().ColorsCfg()->SetValue(Init[index].Name, i);
+		}
+		PaletteChanged = false;
+	}
+
+	if (CustomColorsChanged)
+	{
+		for (const auto& [i, index] : enumerate(CustomColors))
+		{
+			FarColor Color{};
+			Color.BackgroundColor = i;
+			ConfigProvider().ColorsCfg()->SetValue(CustomLabel(index), Color);
+		}
+		CustomColorsChanged = false;
+	}
+}
+
+palette::custom_colors palette::GetCustomColors() const
+{
+	return CustomColors;
+}
+
+void palette::SetCustomColors(const custom_colors& Colors)
+{
+	if (CustomColors == Colors)
+		return;
+
+	CustomColors = Colors;
+	CustomColorsChanged = true;
 }

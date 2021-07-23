@@ -1,4 +1,4 @@
-#include <all_far.h>
+﻿#include <all_far.h>
 #pragma hdrstop
 
 #include "fstdlib.h"
@@ -17,7 +17,7 @@ extern CRITICAL_SECTION PLOG_cs;
 int FP_LogErrorStringLength = 30;
 
 //------------------------------------------------------------------------
-void _cdecl FP_FILELog(LPCSTR msg,...)
+void __cdecl FP_FILELog(LPCSTR msg,...)
 {
 	FILE   *f;
 	BOOL    first;

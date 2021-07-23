@@ -32,25 +32,27 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "preprocessor.hpp"
+
+//----------------------------------------------------------------------------
+
 namespace placement
 {
 	template<typename T, typename... args>
 	auto& construct(T& Object, args&&... Args)
 	{
-#ifdef MEMCHECK
-#pragma push_macro("new")
-#undef new
-#endif
-		return *new(std::addressof(Object)) T(FWD(Args)...);
-#ifdef MEMCHECK
-#pragma pop_macro("new")
-#endif
+		return *new(std::addressof(Object)) T{ FWD(Args)... };
 	}
 
 	template<typename T>
-	void destruct(T& Object)
+	void destruct(T& Object) noexcept
 	{
 		Object.~T();
+
+#ifdef _DEBUG
+		// To increase the chance of crash on use-after-delete
+		std::memset(static_cast<void*>(&Object), 0xFE, sizeof(Object));
+#endif
 	}
 }
 

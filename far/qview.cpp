@@ -31,8 +31,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "qview.hpp"
 
+// Internal:
 #include "macroopcode.hpp"
 #include "flink.hpp"
 #include "farcolor.hpp"
@@ -41,7 +46,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "help.hpp"
 #include "viewer.hpp"
 #include "interf.hpp"
-#include "execute.hpp"
+#include "imports.hpp"
 #include "dirinfo.hpp"
 #include "pathmix.hpp"
 #include "mix.hpp"
@@ -54,11 +59,20 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "cvtname.hpp"
 #include "datetime.hpp"
 #include "global.hpp"
+#include "exception.hpp"
+#include "log.hpp"
 
+
+// Platform:
+#include "platform.com.hpp"
 #include "platform.fs.hpp"
-#include "platform.reg.hpp"
 
+// Common:
+
+// External:
 #include "format.hpp"
+
+//----------------------------------------------------------------------------
 
 static bool LastMode = false;
 static bool LastWrapMode = false;
@@ -70,12 +84,7 @@ qview_panel_ptr QuickView::create(window_ptr Owner)
 }
 
 QuickView::QuickView(private_tag, window_ptr Owner):
-	Panel(std::move(Owner)),
-	Data(),
-	OldWrapMode(false),
-	OldWrapType(false),
-	m_TemporaryFile(),
-	uncomplete_dirscan(false)
+	Panel(std::move(Owner))
 {
 	m_Type = panel_type::QVIEW_PANEL;
 	if (!LastMode)
@@ -109,40 +118,38 @@ void QuickView::DisplayObject()
 		Parent()->GetAnotherPanel(this)->UpdateViewPanel();
 
 	if (QView)
-		QView->SetPosition(m_X1+1,m_Y1+1,m_X2-1,m_Y2-3);
+		QView->SetPosition({ m_Where.left + 1, m_Where.top + 1, m_Where.right - 1, m_Where.bottom - 3 });
 
-	Box(m_X1,m_Y1,m_X2,m_Y2,colors::PaletteColorToFarColor(COL_PANELBOX),DOUBLE_BOX);
-	SetScreen(m_X1+1,m_Y1+1,m_X2-1,m_Y2-1,L' ',colors::PaletteColorToFarColor(COL_PANELTEXT));
+	Box(m_Where, colors::PaletteColorToFarColor(COL_PANELBOX), DOUBLE_BOX);
+	SetScreen({ m_Where.left + 1, m_Where.top + 1, m_Where.right - 1, m_Where.bottom - 1 }, L' ', colors::PaletteColorToFarColor(COL_PANELTEXT));
 	SetColor(IsFocused()? COL_PANELSELECTEDTITLE:COL_PANELTITLE);
 
 	const auto& strTitle = GetTitleForDisplay();
 	if (!strTitle.empty())
 	{
-		GotoXY(m_X1+(m_X2-m_X1+1-(int)strTitle.size())/2,m_Y1);
+		GotoXY(m_Where.left + (m_Where.width() - static_cast<int>(strTitle.size())) / 2, m_Where.top);
 		Text(strTitle);
 	}
 
-	DrawSeparator(m_Y2-2);
+	DrawSeparator(m_Where.bottom - 2);
 	SetColor(COL_PANELTEXT);
-	GotoXY(m_X1+1,m_Y2-1);
-	Text(fit_to_left(string(PointToName(strCurFileName)), m_X2 - m_X1 - 1));
+	GotoXY(m_Where.left + 1, m_Where.bottom - 1);
+	Text(fit_to_left(string(PointToName(strCurFileName)), m_Where.width() - 2));
 
 	if (!strCurFileType.empty())
 	{
-		auto strTypeText = concat(L' ', strCurFileType, L' ');
-		TruncStr(strTypeText,m_X2-m_X1-1);
+		const auto strTypeText = truncate_left(concat(L' ', strCurFileType, L' '), m_Where.width() - 2);
 		SetColor(COL_PANELSELECTEDINFO);
-		GotoXY(m_X1+(m_X2-m_X1+1-(int)strTypeText.size())/2,m_Y2-2);
+		GotoXY(m_Where.left + (m_Where.width() - static_cast<int>(strTypeText.size())) / 2, m_Where.bottom - 2);
 		Text(strTypeText);
 	}
 
 	if (m_DirectoryScanStatus != scan_status::none)
 	{
 		SetColor(COL_PANELTEXT);
-		GotoXY(m_X1+2,m_Y1+2);
-		auto DisplayName = strCurFileName;
-		TruncPathStr(DisplayName, std::max(0, m_X2 - m_X1 - 1 - static_cast<int>(msg(lng::MQuickViewFolder).size() - 5)));
-		PrintText(format(LR"({0} "{1}")", msg(lng::MQuickViewFolder), DisplayName));
+		GotoXY(m_Where.left + 2, m_Where.top + 2);
+		const auto DisplayName = truncate_path(strCurFileName, std::max(size_t{}, m_Where.width() - 2 - msg(lng::MListFolder).size() - 5));
+		PrintText(format(FSTR(LR"({} "{}")"), msg(lng::MListFolder), DisplayName));
 
 		const auto currAttr = os::fs::get_file_attributes(strCurFileName); // обламывается, если нет доступа
 		if (currAttr != INVALID_FILE_ATTRIBUTES && (currAttr&FILE_ATTRIBUTE_REPARSE_POINT))
@@ -155,69 +162,23 @@ void QuickView::DisplayObject()
 				NormalizeSymlinkName(Target);
 				switch(ReparseTag)
 				{
-				// 0xA0000003L = Directory Junction or Volume Mount Point
+				// Directory Junction or Volume Mount Point
 				case IO_REPARSE_TAG_MOUNT_POINT:
 					{
-						auto ID_Msg = lng::MQuickViewJunction;
+						auto ID_Msg = lng::MListJunction;
 						bool Root;
 						if(ParsePath(Target, nullptr, &Root) == root_type::volume && Root)
 						{
-							ID_Msg = lng::MQuickViewVolMount;
+							ID_Msg = lng::MListVolMount;
 						}
 						TypeName = msg(ID_Msg);
 					}
 					break;
-				// 0xA000000CL = Directory or File Symbolic Link
-				case IO_REPARSE_TAG_SYMLINK:
-					TypeName = msg(lng::MQuickViewSymlink);
-					break;
-				// 0x8000000AL = Distributed File System
-				case IO_REPARSE_TAG_DFS:
-					TypeName = msg(lng::MQuickViewDFS);
-					break;
-				// 0x80000012L = Distributed File System Replication
-				case IO_REPARSE_TAG_DFSR:
-					TypeName = msg(lng::MQuickViewDFSR);
-					break;
-				// 0xC0000004L = Hierarchical Storage Management
-				case IO_REPARSE_TAG_HSM:
-					TypeName = msg(lng::MQuickViewHSM);
-					break;
-				// 0x80000006L = Hierarchical Storage Management2
-				case IO_REPARSE_TAG_HSM2:
-					TypeName = msg(lng::MQuickViewHSM2);
-					break;
-				// 0x80000007L = Single Instance Storage
-				case IO_REPARSE_TAG_SIS:
-					TypeName = msg(lng::MQuickViewSIS);
-					break;
-				// 0x80000008L = Windows Imaging Format
-				case IO_REPARSE_TAG_WIM:
-					TypeName = msg(lng::MQuickViewWIM);
-					break;
-				// 0x80000009L = Cluster Shared Volumes
-				case IO_REPARSE_TAG_CSV:
-					TypeName = msg(lng::MQuickViewCSV);
-					break;
-				case IO_REPARSE_TAG_DEDUP:
-					TypeName = msg(lng::MQuickViewDEDUP);
-					break;
-				case IO_REPARSE_TAG_NFS:
-					TypeName = msg(lng::MQuickViewNFS);
-					break;
-				case IO_REPARSE_TAG_FILE_PLACEHOLDER:
-					TypeName = msg(lng::MQuickViewPlaceholder);
-					break;
-					// 0x????????L = anything else
+
 				default:
-					if (Global->Opt->ShowUnknownReparsePoint)
-					{
-						TypeName = format(L":{0:0>8X}", ReparseTag);
-					}
-					else
-					{
+					if (!reparse_tag_to_string(ReparseTag, TypeName) && !Global->Opt->ShowUnknownReparsePoint)
 						TypeName = msg(lng::MQuickViewUnknownReparsePoint);
-					}
+					break;
 				}
 			}
 			else
@@ -226,14 +187,14 @@ void QuickView::DisplayObject()
 				Target = msg(lng::MQuickViewNoData);
 			}
 
-			TruncPathStr(Target, std::max(0, m_X2 - m_X1 - 1 - static_cast<int>(TypeName.size()) - 5));
+			inplace::truncate_path(Target, std::max(size_t{}, m_Where.width() - 2 - TypeName.size() - 5));
 			SetColor(COL_PANELTEXT);
-			GotoXY(m_X1+2,m_Y1+3);
-			PrintText(format(LR"({0} "{1}")", TypeName, Target));
+			GotoXY(m_Where.left + 2, m_Where.top + 3);
+			PrintText(format(FSTR(LR"({} "{}")"), TypeName, Target));
 		}
 
 		const auto bytes_suffix = upper(msg(lng::MListBytes));
-		const auto& size2str = [&bytes_suffix](ULONGLONG Size)
+		const auto size2str = [&bytes_suffix](uint64_t const Size)
 		{
 			if (Global->Opt->ShowBytes)
 			{
@@ -241,7 +202,7 @@ void QuickView::DisplayObject()
 			}
 			else
 			{
-				const auto str = trim(FileSizeToStr(Size, 10, COLUMN_FLOATSIZE | COLUMN_SHOWUNIT));
+				const auto str = trim(FileSizeToStr(Size, 10, COLFLAGS_FLOATSIZE | COLFLAGS_SHOW_MULTIPLIER));
 				return str.back() == bytes_suffix[0]? str : str + bytes_suffix;
 			}
 		};
@@ -263,9 +224,9 @@ void QuickView::DisplayObject()
 			const auto iColor = uncomplete_dirscan? COL_PANELHIGHLIGHTTEXT : COL_PANELINFOTEXT;
 			const auto prefix = uncomplete_dirscan? L"~"sv : L""sv;
 
-			const auto& PrintRow = [&](int Y, lng Id, string_view const Value)
+			const auto PrintRow = [&](int Y, lng Id, string_view const Value)
 			{
-				GotoXY(m_X1 + 2, m_Y1 + Y);
+				GotoXY(m_Where.left + 2, m_Where.top + Y);
 				SetColor(COL_PANELTEXT);
 				PrintText(pad_right(msg(Id), ColumnSize));
 
@@ -278,7 +239,7 @@ void QuickView::DisplayObject()
 			PrintRow(5, lng::MQuickViewFiles, str(Data.FileCount));
 			PrintRow(6, lng::MQuickViewBytes, size2str(Data.FileSize));
 
-			const auto Format = L"{0} ({1}%)";
+			const auto Format = FSTR(L"{} ({}%)"sv);
 			PrintRow(7, lng::MQuickViewAllocated, format(Format, size2str(Data.AllocationSize), ToPercent(Data.AllocationSize, Data.FileSize)));
 
 			if (m_DirectoryScanStatus == scan_status::real_ok)
@@ -331,11 +292,11 @@ bool QuickView::ProcessKey(const Manager::Key& Key)
 
 	if (LocalKey == KEY_F1)
 	{
-		Help::create(L"QViewPanel"sv);
+		help::show(L"QViewPanel"sv);
 		return true;
 	}
 
-	if (LocalKey==KEY_F3 || LocalKey==KEY_NUMPAD5 || LocalKey == KEY_SHIFTNUMPAD5)
+	if (any_of(LocalKey, KEY_F3, KEY_NUMPAD5, KEY_SHIFTNUMPAD5))
 	{
 		const auto AnotherPanel = Parent()->GetAnotherPanel(this);
 
@@ -345,7 +306,7 @@ bool QuickView::ProcessKey(const Manager::Key& Key)
 		return true;
 	}
 
-	if (LocalKey==KEY_ADD || LocalKey==KEY_SUBTRACT)
+	if (any_of(LocalKey, KEY_ADD, KEY_SUBTRACT))
 	{
 		const auto AnotherPanel = Parent()->GetAnotherPanel(this);
 
@@ -359,15 +320,13 @@ bool QuickView::ProcessKey(const Manager::Key& Key)
 	{
 		const auto ret = QView->ProcessKey(Manager::Key(LocalKey));
 
-		if (LocalKey == KEY_F2 || LocalKey == KEY_SHIFTF2
-		 || LocalKey == KEY_F4 || LocalKey == KEY_SHIFTF4
-		 || LocalKey == KEY_F8 || LocalKey == KEY_SHIFTF8)
+		if (any_of(LocalKey, KEY_F2, KEY_SHIFTF2, KEY_F4, KEY_SHIFTF4, KEY_F8, KEY_SHIFTF8))
 		{
 			DynamicUpdateKeyBar();
 			Parent()->GetKeybar().Redraw();
 		}
 
-		if (LocalKey == KEY_F7 || LocalKey == KEY_SHIFTF7)
+		if (any_of(LocalKey, KEY_F7, KEY_SHIFTF7))
 		{
 			//long long Pos;
 			//int Length;
@@ -436,21 +395,17 @@ void QuickView::ShowFile(string_view const FileName, const UserDataItem* const U
 	if (UserData)
 		CurUserData = *UserData;
 
-	size_t pos = strCurFileName.rfind(L'.');
-	if (pos != string::npos)
-	{
-		string strValue;
-
-		if (GetShellType(string_view(strCurFileName).substr(pos), strValue))
-		{
-			os::reg::key::classes_root.get(strValue, {}, strCurFileType);
-		}
-	}
+	strCurFileType.clear();
 
 	if (hDirPlugin || os::fs::is_directory(strCurFileName))
 	{
-		// Не показывать тип файла для каталогов в "Быстром просмотре"
-		strCurFileType.clear();
+		const time_check TimeCheck;
+
+		const auto DirInfoCallback = [&](string_view const Name, unsigned long long const ItemsCount, unsigned long long const Size)
+		{
+			if (TimeCheck)
+				DirInfoMsg(msg(lng::MQuickViewTitle), Name, ItemsCount, Size);
+		};
 
 		if (SameFile && !hDirPlugin)
 		{
@@ -458,44 +413,33 @@ void QuickView::ShowFile(string_view const FileName, const UserDataItem* const U
 		}
 		else if (hDirPlugin)
 		{
-			const auto Result = GetPluginDirInfo(hDirPlugin, strCurFileName, UserData, Data.DirCount, Data.FileCount, Data.FileSize, Data.AllocationSize);
+			const auto Result = GetPluginDirInfo(hDirPlugin, strCurFileName, UserData, Data, DirInfoCallback);
 			m_DirectoryScanStatus = Result? scan_status::plugin_ok : scan_status::plugin_fail;
 			uncomplete_dirscan = !Result;
 		}
 		else
 		{
-			time_check TimeCheck(time_check::mode::delayed, GetRedrawTimeout());
-
-			const auto& DirInfoCallback = [&](string_view const Name, unsigned long long const Items, unsigned long long const Size) mutable
-			{
-				if (TimeCheck)
-					DirInfoMsg(msg(lng::MQuickViewTitle), Name, Items, Size);
-			};
-
 			const auto ExitCode = GetDirInfo(strCurFileName, Data, nullptr, DirInfoCallback, GETDIRINFO_ENHBREAK | GETDIRINFO_SCANSYMLINKDEF);
 			m_DirectoryScanStatus = ExitCode == -1? scan_status::real_fail : scan_status::real_ok; // ExitCode: 1=done; 0=Esc,CtrlBreak; -1=Other
 			uncomplete_dirscan = ExitCode != 1;
-
-			if (const auto Window = m_Owner.lock())
-			{
-				Window->Redraw();
-			}
 		}
 	}
 	else
 	{
+		strCurFileType = os::com::get_shell_filetype_description(strCurFileName);
+
 		if (!strCurFileName.empty())
 		{
 			QView = std::make_unique<Viewer>(GetOwner(), true);
 			QView->SetRestoreScreenMode(false);
-			QView->SetPosition(m_X1+1,m_Y1+1,m_X2-1,m_Y2-3);
+			QView->SetPosition({ m_Where.left + 1, m_Where.top + 1, m_Where.right - 1, m_Where.bottom - 3 });
 			QView->SetStatusMode(0);
 			QView->EnableHideCursor(0);
 			OldWrapMode = QView->GetWrapMode();
 			OldWrapType = QView->GetWrapType();
 			QView->SetWrapMode(LastWrapMode);
 			QView->SetWrapType(LastWrapType);
-			QView->OpenFile(strCurFileName,FALSE);
+			QView->OpenFile(strCurFileName, false);
 		}
 	}
 
@@ -541,11 +485,24 @@ void QuickView::QViewDelTempName()
 			QView=nullptr;
 		}
 
-		os::fs::set_file_attributes(strCurFileName, FILE_ATTRIBUTE_ARCHIVE);
-		os::fs::delete_file(strCurFileName);  //BUGBUG
-		string TempDirectoryName = strCurFileName;
+		if (!os::fs::set_file_attributes(strCurFileName, FILE_ATTRIBUTE_NORMAL)) // BUGBUG
+		{
+			LOGWARNING(L"set_file_attributes({}): {}"sv, strCurFileName, last_error());
+		}
+
+		if (!os::fs::delete_file(strCurFileName))  //BUGBUG
+		{
+			LOGWARNING(L"delete_file({}): {}"sv, strCurFileName, last_error());
+		}
+
+		string_view TempDirectoryName = strCurFileName;
 		CutToSlash(TempDirectoryName);
-		os::fs::remove_directory(TempDirectoryName);
+		// BUGBUG check result
+		if (!os::fs::remove_directory(TempDirectoryName))
+		{
+			LOGWARNING(L"remove_directory({}): {}"sv, TempDirectoryName, last_error());
+		}
+
 		m_TemporaryFile = false;
 	}
 }
@@ -553,23 +510,20 @@ void QuickView::QViewDelTempName()
 
 void QuickView::PrintText(string_view const Str) const
 {
-	if (WhereY()>m_Y2-3 || WhereX()>m_X2-2)
+	if (WhereY() > m_Where. bottom - 3 || WhereX() > m_Where.right - 2)
 		return;
 
-	Text(cut_right(Str, m_X2 - 2 - WhereX() + 1));
+	Text(cut_right(Str, m_Where.right - 2 - WhereX() + 1));
 }
 
 
-bool QuickView::UpdateIfChanged(bool Idle)
+void QuickView::UpdateIfChanged(bool Changed)
 {
-	if (IsVisible() && !strCurFileName.empty() && m_DirectoryScanStatus == scan_status::real_fail)
-	{
-		const auto strViewName = strCurFileName;
-		ShowFile(strViewName, &CurUserData, m_TemporaryFile, nullptr);
-		return true;
-	}
+	if (!IsVisible() || strCurFileName.empty() || m_DirectoryScanStatus != scan_status::real_fail)
+		return;
 
-	return false;
+	const auto strViewName = strCurFileName;
+	ShowFile(strViewName, &CurUserData, m_TemporaryFile, nullptr);
 }
 
 void QuickView::RefreshTitle()
@@ -622,4 +576,10 @@ void QuickView::DynamicUpdateKeyBar() const
 Viewer* QuickView::GetById(int ID)
 {
 	return QView && ID==QView->GetId()?GetViewer():nullptr;
+}
+
+void QuickView::OnDestroy()
+{
+	if (QView)
+		QView->OnDestroy();
 }

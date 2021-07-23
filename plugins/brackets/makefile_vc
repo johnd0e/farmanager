@@ -1,9 +1,8 @@
 !include ../makefile_vc_base
 
 NAME = Brackets
-LINK_OBJS = $(OBJDIR)\Brackets.obj
 
-DOCS = BrackEng.hlf BrackRus.hlf BrackEng.lng BrackRus.lng BrackSky.lng BrackSpa.lng Brackets.lua
+LINK_OBJS = $(OBJDIR)\Brackets.obj
 
 !include ..\makefile_vc_def_inc
 

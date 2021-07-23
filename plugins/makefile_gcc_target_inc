@@ -1,48 +1,65 @@
-all: $(DLLFULLNAME)
+DSTDOCS = $(patsubst %,$(DLLDIR)/%,$(notdir $(filter %,$(DOCS))))
+
+all: $(DLLFULLNAME) $(DSTDOCS)
 
 ifndef DISABLEAUTODEPS
 ifeq ($(findstring clean,$(MAKECMDGOALS)),)
 $(OBJDIR)/%.d: %.cpp
 	@echo making depends for $<
 	@$(MKDIR) $(@D)
-	@$(CXX) -c -MM $(CXXFLAGS) $< | $(GAWK) -f $(DEP_FILTER) -v n=$(notdir $(basename $@)) -v r=$(OBJDIR) > $(call os_name,$@)
+	@$(CXX) -c -MM $(CPPFLAGS) $< | $(GAWK) -f $(DEP_FILTER) -v n=$(notdir $(basename $@)) -v r=$(OBJDIR) > $(call os_name,$@)
 
 $(OBJDIR)/%.d: %.c
 	@echo making depends for $<
 	@$(MKDIR) $(@D)
-	@$(CC) -c -MM $(CCFLAGS) $< | $(GAWK) -f $(DEP_FILTER) -v n=$(notdir $(basename $@)) -v r=$(OBJDIR) > $(call os_name,$@)
+	@$(CC) -c -MM $(CFLAGS) $< | $(GAWK) -f $(DEP_FILTER) -v n=$(notdir $(basename $@)) -v r=$(OBJDIR) > $(call os_name,$@)
 endif
 endif
 
 $(OBJDIR)/%.o: %.cpp
-	@echo compiling $<
+	@echo $<
 	@$(MKDIR) -p $(@D)
-	@$(CXX) $(CXXFLAGS) -c -o $@ $<
+	@$(CXX) $(CPPFLAGS) -c -o $@ $<
 
 $(OBJDIR)/%.o: %.c
-	@echo compiling $<
+	@echo $<
 	@$(MKDIR) -p $(@D)
-	@$(CC) $(CCFLAGS) -c -o $@ $<
+	@$(CC) $(CFLAGS) -c -o $@ $<
 
 $(RES): $(RC_NAME).rc $(COMINC)/farversion.hpp $(COMINC)/plugin.hpp
-	@echo compiling $<
+	@echo $<
 	@$(MKDIR) -p $(@D)
 	@$(WINDRES) $(RCFLAGS) -i $< -o $@
 
+ifdef USE_OBJDUMP_MAPS
+X_OPT =
+else
 X_OPT = $(if $(MAP),-Xlinker -Map -Xlinker $(MAP),)
+endif
 
-$(DLLFULLNAME): $(OBJS) $(DEF)
-	@echo linking $@
+$(DLLFULLNAME): $(OBJS) $(DEF) $(USERTARGETS)
+	@echo Linking $@
 	@$(MKDIR) -p $(@D)
 	@$(CXX) -o $@ $(DEF) $(OBJS) $(LNKFLAGS) -Wl,--kill-at -shared $(X_OPT)
-ifdef DOCS
-	@$(CP) $(DOCS) $(DLLDIR)
+ifdef USE_OBJDUMP_MAPS
+	@echo Generating map file
+	objdump --syms --demangle $(DLLFULLNAME) > $(MAP)
+ifndef DEBUG
+	strip $(DLLFULLNAME)
+endif
 endif
 
-ifndef SKIPCLEAN
-clean:
+$(foreach \
+	prereq, \
+	$(DOCS), \
+	$(eval \
+	$(DLLDIR)/$(notdir $(prereq)): $(prereq); \
+		echo $$< && $(CP) $$< $$@ \
+	) \
+)
+
+clean::
 	@$(RM) -r $(BASEDIR)/obj $(BASEDIR)/lib $(BASEDIR)/Formats $(BASEDIR)/*
-endif
 
 ifndef DISABLEAUTODEPS
 -include $(DEPS)

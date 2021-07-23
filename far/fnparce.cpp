@@ -31,41 +31,47 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "fnparce.hpp"
 
+// Internal:
 #include "panel.hpp"
 #include "ctrlobj.hpp"
 #include "flink.hpp"
 #include "cmdline.hpp"
 #include "filepanels.hpp"
 #include "dialog.hpp"
-#include "DlgGuid.hpp"
+#include "uuids.far.dialogs.hpp"
 #include "pathmix.hpp"
 #include "strmix.hpp"
-#include "panelmix.hpp"
 #include "mix.hpp"
 #include "lang.hpp"
 #include "cvtname.hpp"
 #include "global.hpp"
+#include "filelist.hpp"
+#include "delete.hpp"
+#include "message.hpp"
+#include "eol.hpp"
+#include "interf.hpp"
+#include "datetime.hpp"
+#include "log.hpp"
 
+// Platform:
 #include "platform.env.hpp"
 #include "platform.fs.hpp"
 
-#include "common/algorithm.hpp"
+// Common:
+#include "common/string_utils.hpp"
+#include "common/scope_exit.hpp"
+#include "common/view/select.hpp"
 
+// External:
 #include "format.hpp"
 
-list_names::names::~names()
-{
-	const auto& Delete = [](string_view const Filename)
-	{
-		if (!Filename.empty())
-			os::fs::delete_file(Filename);
-	};
-
-	Delete(Name);
-	Delete(ShortName);
-}
+//----------------------------------------------------------------------------
 
 subst_context::subst_context(string_view NameStr, string_view ShortNameStr):
 	Name(NameStr),
@@ -83,11 +89,6 @@ subst_context::subst_context(string_view NameStr, string_view ShortNameStr):
 	}
 }
 
-bool list_names::any() const
-{
-	return !This.Name.empty() || !This.ShortName.empty() || !Another.Name.empty() || !Another.ShortName.empty();
-}
-
 struct subst_data
 {
 	struct
@@ -96,19 +97,44 @@ struct subst_data
 		{
 			string_view Name;
 			string_view NameOnly;
-			string* ListName{};
 		}
 		Normal, Short;
 		panel_ptr Panel;
+
+		string_view GetDescription() const
+		{
+			if (!m_Description.has_value())
+			{
+				if (const auto FList = dynamic_cast<FileList*>(Panel.get()))
+				{
+					FList->ReadDiz();
+					// BUGBUG size
+					m_Description = FList->GetDescription(string(Normal.Name), string(Short.Name), 0);
+				}
+				else
+				{
+					m_Description = L""sv;
+				}
+			}
+
+			return *m_Description;
+		}
+
+	private:
+		mutable std::optional<string_view> m_Description;
 	}
 	This, Another;
 
 	auto& Default() { return PassivePanel? Another : This; }
 	const auto& Default() const { return PassivePanel? Another : This; }
 
+	delayed_deleter* ListNames{};
 	string CmdDir;
-	bool PreserveLFN;
-	bool PassivePanel;
+	bool PreserveLFN{};
+	bool PassivePanel{};
+	bool EscapeAmpersands{};
+
+	std::unordered_map<string, string>* Variables;
 };
 
 
@@ -135,6 +161,7 @@ namespace tokens
 		short_path                   = L"!/"sv,
 		real_path                    = L"!=\\"sv,
 		real_short_path              = L"!=/"sv,
+		description                  = L"!?!"sv,
 		input                        = L"!?"sv,
 		name                         = L"!"sv;
 
@@ -231,7 +258,7 @@ static int ProcessBrackets(string_view const Str, wchar_t const EndMark, bracket
 	}
 
 	return 0;
-};
+}
 
 static size_t SkipInputToken(string_view const Str, subst_strings* const Strings = nullptr)
 {
@@ -240,7 +267,7 @@ static size_t SkipInputToken(string_view const Str, subst_strings* const Strings
 	if (!cTail)
 		return 0;
 
-	string_view Tail(cTail);
+	const string_view Tail(cTail);
 
 	auto Range = Tail;
 
@@ -269,8 +296,96 @@ static size_t SkipInputToken(string_view const Str, subst_strings* const Strings
 	return tokens::input.size() + TitleSize + TextSize;
 }
 
-static string_view ProcessMetasymbol(string_view const CurStr, subst_data& SubstData, string &Out)
+static void MakeListFile(panel_ptr const& Panel, string& ListFileName, bool const ShortNames, string_view const Modifers)
 {
+	auto CodePage = encoding::codepage::oem();
+	bool UseFullPaths{}, QuotePaths{}, UseForwardSlash{};
+
+	for (const auto& i: Modifers)
+	{
+		switch (i)
+		{
+		case L'A':
+			CodePage = encoding::codepage::ansi();
+			break;
+
+		case L'U':
+			CodePage = CP_UTF8;
+			break;
+
+		case L'W':
+			CodePage = CP_UNICODE;
+			break;
+
+		case L'F':
+			UseFullPaths = true;
+			break;
+
+		case L'Q':
+			QuotePaths = true;
+			break;
+
+		case L'S':
+			UseForwardSlash = true;
+			break;
+		}
+	}
+
+	const auto transform = [&](string& strFileName)
+	{
+		if (UseFullPaths && PointToName(strFileName).size() == strFileName.size())
+		{
+			const auto& CurDir = Panel->GetCurDir();
+			strFileName = path::join(ShortNames? ConvertNameToShort(CurDir) : CurDir, strFileName); //BUGBUG?
+		}
+
+		if (QuotePaths)
+			inplace::quote(strFileName);
+
+		if (UseForwardSlash)
+			ReplaceBackslashToSlash(strFileName);
+	};
+
+	ListFileName = MakeTemp();
+
+	const os::fs::file ListFile(ListFileName, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, CREATE_ALWAYS);
+	if (!ListFile)
+		throw MAKE_FAR_EXCEPTION(msg(lng::MCannotCreateListTemp));
+
+	SCOPE_FAIL
+	{
+		if (!os::fs::delete_file(ListFileName)) // BUGBUG
+		{
+			LOGWARNING(L"delete_file({}): {}"sv, ListFileName, last_error());
+		}
+	};
+
+	os::fs::filebuf StreamBuffer(ListFile, std::ios::out);
+	std::ostream Stream(&StreamBuffer);
+	Stream.exceptions(Stream.badbit | Stream.failbit);
+	encoding::writer Writer(Stream, CodePage);
+	const auto Eol = eol::system.str();
+
+	for (const auto& i: Panel->enum_selected())
+	{
+		auto Name = ShortNames? i.AlternateFileName() : i.FileName;
+
+		transform(Name);
+
+		Writer.write(Name);
+		Writer.write(Eol);
+	}
+
+	Stream.flush();
+}
+
+static string_view ProcessMetasymbol(string_view const CurStr, subst_data& SubstData, string& Out)
+{
+	const auto append_with_escape = [EscapeAmpersands = SubstData.EscapeAmpersands](string& Destination, string_view const Str)
+	{
+		append(Destination, EscapeAmpersands && contains(Str, L"&"sv)? escape_ampersands(Str) : Str);
+	};
+
 	if (const auto Tail = tokens::skip(CurStr, tokens::passive_panel))
 	{
 		SubstData.PassivePanel = true;
@@ -296,46 +411,64 @@ static string_view ProcessMetasymbol(string_view const CurStr, subst_data& Subst
 	{
 		if (!starts_with(Tail, L'?'))
 		{
-			append(Out, SubstData.Default().Normal.Name);
+			append_with_escape(Out, SubstData.Default().Normal.Name);
 			return Tail;
 		}
 	}
 
 	if (const auto Tail = tokens::skip(CurStr, tokens::short_name))
 	{
-		append(Out, SubstData.Default().Short.NameOnly);
+		append_with_escape(Out, SubstData.Default().Short.NameOnly);
 		return Tail;
 	}
 
-	const auto& GetExtension = [](string_view const Name)
+	const auto GetExtension = [](string_view const Name)
 	{
-		const auto Extension = PointToExt(Name);
+		const auto Extension = name_ext(Name).second;
 		return Extension.empty()? Extension : Extension.substr(1);
 	};
 
 	if (const auto Tail = tokens::skip(CurStr, tokens::short_extension))
 	{
-		append(Out, GetExtension(SubstData.Default().Short.Name));
+		append_with_escape(Out, GetExtension(SubstData.Default().Short.Name));
 		return Tail;
 	}
 
 	if (const auto Tail = tokens::skip(CurStr, tokens::extension))
 	{
-		append(Out, GetExtension(SubstData.Default().Normal.Name));
+		append_with_escape(Out, GetExtension(SubstData.Default().Normal.Name));
 		return Tail;
 	}
 
-	const auto CollectNames = [&SubstData](string& Str, auto const Selector)
+	const auto CollectNames = [&SubstData, &append_with_escape](string_view const Tail, string& Str, auto const Selector)
 	{
-		join(Str, select(SubstData.Default().Panel->enum_selected(), Selector), L" "sv);
+		const auto ExplicitQuote = starts_with(Tail, L'Q');
+		const auto ExplicitNoQuote = starts_with(Tail, L'q');
+
+		const auto Quote = ExplicitQuote || !ExplicitNoQuote;
+
+		append_with_escape(
+			Str,
+			join(
+				select(
+					SubstData.Default().Panel->enum_selected(),
+					[&](os::fs::find_data const& i)
+					{
+						const auto Data = std::invoke(Selector, i);
+						return Quote? quote(Data) : quote_space(Data);
+					}),
+					L" "sv
+			)
+		);
+
+		return Tail.substr(ExplicitQuote || ExplicitNoQuote? 1 : 0);
 	};
 
 	if (const auto Tail = tokens::skip(CurStr, tokens::short_list))
 	{
 		if (!starts_with(Tail, L'?'))
 		{
-			CollectNames(Out, &os::fs::find_data::AlternateFileName);
-			return Tail;
+			return CollectNames(Tail, Out, &os::fs::find_data::AlternateFileName);
 		}
 	}
 
@@ -343,18 +476,11 @@ static string_view ProcessMetasymbol(string_view const CurStr, subst_data& Subst
 	{
 		if (!starts_with(Tail, L'?'))
 		{
-			CollectNames(Out, [](const os::fs::find_data& Data)
-			{
-				auto Name = Data.FileName;
-				QuoteSpaceOnly(Name);
-				return Name;
-			});
-
-			return Tail;
+			return CollectNames(Tail, Out, &os::fs::find_data::FileName);
 		}
 	}
 
-	const auto& GetListName = [&Out](string_view const Tail, auto& Data, bool Short)
+	const auto GetListName = [&Out, &append_with_escape](string_view const Tail, subst_data& Data, bool Short)
 	{
 		const auto ExclPos = Tail.find(L'!');
 		if (ExclPos == Tail.npos || starts_with(Tail.substr(ExclPos + 1), L'?'))
@@ -362,17 +488,16 @@ static string_view ProcessMetasymbol(string_view const CurStr, subst_data& Subst
 
 		const auto Modifiers = Tail.substr(0, ExclPos);
 
-		const auto ListName = Short? Data.Normal.ListName : Data.Short.ListName;
-
-		if (ListName)
+		if (Data.ListNames)
 		{
-			if(!ListName->empty() || Data.Panel->MakeListFile(*ListName, Short, Modifiers))
-			{
-				if (Short)
-					*ListName = ConvertNameToShort(*ListName);
+			string Str;
+			MakeListFile(Data.Default().Panel, Str, Short, Modifiers);
 
-				Out += *ListName;
-			}
+			if (Short)
+				Str = ConvertNameToShort(Str);
+
+			append_with_escape(Out, Str);
+			Data.ListNames->add(std::move(Str));
 		}
 		else
 		{
@@ -384,13 +509,13 @@ static string_view ProcessMetasymbol(string_view const CurStr, subst_data& Subst
 
 	if (const auto Tail = tokens::skip(CurStr, tokens::list_file))
 	{
-		if (const auto Offset = GetListName(Tail, SubstData.Default(), false))
+		if (const auto Offset = GetListName(Tail, SubstData, false))
 			return string_view(Tail).substr(Offset);
 	}
 
 	if (const auto Tail = tokens::skip(CurStr, tokens::short_list_file))
 	{
-		if (const auto Offset = GetListName(Tail, SubstData.Default(), true))
+		if (const auto Offset = GetListName(Tail, SubstData, true))
 			return string_view(Tail).substr(Offset);
 	}
 
@@ -398,7 +523,7 @@ static string_view ProcessMetasymbol(string_view const CurStr, subst_data& Subst
 	{
 		if (!starts_with(Tail, L'?'))
 		{
-			append(Out, SubstData.Default().Short.Name);
+			append_with_escape(Out, SubstData.Default().Short.Name);
 			return Tail;
 		}
 	}
@@ -407,7 +532,7 @@ static string_view ProcessMetasymbol(string_view const CurStr, subst_data& Subst
 	{
 		if (!starts_with(Tail, L'?'))
 		{
-			append(Out, SubstData.Default().Short.Name);
+			append_with_escape(Out, SubstData.Default().Short.Name);
 			SubstData.PreserveLFN = true;
 			return Tail;
 		}
@@ -424,11 +549,17 @@ static string_view ProcessMetasymbol(string_view const CurStr, subst_data& Subst
 
 		auto RootDir = GetPathRoot(CurDir);
 		DeleteEndSlash(RootDir);
-		Out += RootDir;
+		append_with_escape(Out, RootDir);
 		return Tail;
 	}
 
-	const auto& GetPath = [](string_view const Tail, const subst_data& Data, bool Short, bool Real)
+	if (const auto Tail = tokens::skip(CurStr, tokens::description))
+	{
+		Out += SubstData.Default().GetDescription();
+		return Tail;
+	}
+
+	const auto GetPath = [](string_view const Tail, const subst_data& Data, bool Short, bool Real)
 	{
 		// TODO: paths on plugin panels are ambiguous
 
@@ -469,14 +600,14 @@ static string_view ProcessMetasymbol(string_view const CurStr, subst_data& Subst
 	}
 
 	// !?<title>?<init>!
-	if (const auto Tail = tokens::skip(CurStr, tokens::input))
+	if (tokens::skip(CurStr, tokens::input))
 	{
 		auto SkipSize = SkipInputToken(CurStr);
 		// if bad format string skip 1 char
 		if (!SkipSize)
 			SkipSize = 1;
 
-		Out.append(CurStr.data(), SkipSize);
+		Out += CurStr.substr(0, SkipSize);
 		return CurStr.substr(SkipSize);
 	}
 
@@ -489,6 +620,25 @@ static string_view ProcessMetasymbol(string_view const CurStr, subst_data& Subst
 	return CurStr;
 }
 
+static string_view ProcessVariable(string_view const CurStr, subst_data& SubstData, string& Out)
+{
+	const auto Str = CurStr.substr(1);
+
+	const auto Iterator = std::find_if(ALL_CONST_RANGE(*SubstData.Variables), [&](std::pair<string, string> const& i)
+	{
+		return starts_with_icase(Str, i.first);
+	});
+
+	if (Iterator == SubstData.Variables->cend())
+	{
+		Out += CurStr.front();
+		return Str;
+	}
+
+	Out += Iterator->second;
+	return Str.substr(Iterator->first.size());
+}
+
 static string ProcessMetasymbols(string_view Str, subst_data& Data)
 {
 	string Result;
@@ -499,6 +649,10 @@ static string ProcessMetasymbols(string_view Str, subst_data& Data)
 		if (Str.front() == L'!')
 		{
 			Str = ProcessMetasymbol(Str, Data, Result);
+		}
+		else if (Str.front() == L'%')
+		{
+			Str = ProcessVariable(Str, Data, Result);
 		}
 		else
 		{
@@ -514,8 +668,20 @@ static bool InputVariablesDialog(string& strStr, subst_data& SubstData, string_v
 {
 	// TODO: use DialogBuilder
 
+	// TODO: Dynamic?
+	const int DlgWidth = 76;
+
+	constexpr auto HistoryAndVariablePrefix = L"UserVar"sv;
+
+	const auto GenerateHistoryName = [&](size_t const Index)
+	{
+		return format(FSTR(L"{}{}"sv), HistoryAndVariablePrefix, Index);
+	};
+
+	constexpr auto ExpectedTokensCount = 64;
+
 	std::vector<DialogItemEx> DlgData;
-	DlgData.reserve(30);
+	DlgData.reserve(ExpectedTokensCount * 2 + 4); // + Box, separator, 2 buttons
 
 	struct pos_item
 	{
@@ -523,15 +689,15 @@ static bool InputVariablesDialog(string& strStr, subst_data& SubstData, string_v
 		size_t EndPos;
 	};
 	std::vector<pos_item> Positions;
-	Positions.reserve(128);
+	Positions.reserve(ExpectedTokensCount);
 
 	{
 		DialogItemEx Item;
 		Item.Type = DI_DOUBLEBOX;
 		Item.X1 = 3;
 		Item.Y1 = 1;
-		Item.X2 = 72;
-		assign(Item.strData, DlgTitle);
+		Item.X2 = DlgWidth - 4;
+		Item.strData = DlgTitle;
 		DlgData.emplace_back(Item);
 	}
 
@@ -559,6 +725,7 @@ static bool InputVariablesDialog(string& strStr, subst_data& SubstData, string_v
 			Item.Type = DI_TEXT;
 			Item.X1 = 5;
 			Item.Y1 = Item.Y2 = DlgData.size() + 1;
+			Item.X2 = DlgWidth - 6;
 			DlgData.emplace_back(Item);
 		}
 
@@ -566,10 +733,10 @@ static bool InputVariablesDialog(string& strStr, subst_data& SubstData, string_v
 			DialogItemEx Item;
 			Item.Type = DI_EDIT;
 			Item.X1 = 5;
-			Item.X2 = 70;
+			Item.X2 = DlgWidth - 6;
 			Item.Y1 = Item.Y2 = DlgData.size() + 1;
 			Item.Flags = DIF_HISTORY | DIF_USELASTHISTORY;
-			Item.strHistory = concat(L"UserVar"sv, str((DlgData.size() - 1) / 2));
+			Item.strHistory = GenerateHistoryName((DlgData.size() - 1) / 2);
 			DlgData.emplace_back(Item);
 		}
 
@@ -584,35 +751,39 @@ static bool InputVariablesDialog(string& strStr, subst_data& SubstData, string_v
 
 				if (HistoryEnd != string_view::npos)
 				{
-					DlgData.back().strHistory.assign(Strings.Title.All.data(), HistoryBegin, HistoryEnd - HistoryBegin);
+					DlgData.back().strHistory = Strings.Title.All.substr(HistoryBegin, HistoryEnd - HistoryBegin);
 					const auto HistorySize = HistoryEnd - HistoryBegin + 2;
 					Strings.Title.All.remove_prefix(HistorySize);
 				}
 			}
 
-			string TitleBuffer;
+			auto& LatelItem = DlgData[DlgData.size() - 2];
+
 			if (!Strings.Title.Sub.empty())
 			{
 				// Something between '(' and ')'
-				TitleBuffer = concat(Strings.Title.prefix(), ProcessMetasymbols(Strings.Title.Sub, SubstData), Strings.Title.suffix());
-				Strings.Title.All = TitleBuffer;
+				LatelItem.strData = os::env::expand(concat(Strings.Title.prefix(), ProcessMetasymbols(Strings.Title.Sub, SubstData), Strings.Title.suffix()));
+			}
+			else
+			{
+				LatelItem.strData = os::env::expand(Strings.Title.All);
 			}
 
-			DlgData[DlgData.size() - 2].strData = os::env::expand(Strings.Title.All);
+			inplace::truncate_right(LatelItem.strData, LatelItem.X2 - LatelItem.X1 + 1);
 		}
 
 		if (!Strings.Text.All.empty())
 		{
 			// Something between '?' and '!'
-			string TextBuffer;
 			if (!Strings.Text.Sub.empty())
 			{
 				// Something between '(' and ')'
-				TextBuffer = concat(Strings.Text.prefix(), ProcessMetasymbols(Strings.Text.Sub, SubstData), Strings.Text.suffix());
-				Strings.Text.All = TextBuffer;
+				DlgData.back().strData = concat(Strings.Text.prefix(), ProcessMetasymbols(Strings.Text.Sub, SubstData), Strings.Text.suffix());
 			}
-
-			assign(DlgData.back().strData, Strings.Text.All);
+			else
+			{
+				DlgData.back().strData = Strings.Text.All;
+			}
 		}
 
 		Range.remove_prefix(SkipSize);
@@ -650,7 +821,7 @@ static bool InputVariablesDialog(string& strStr, subst_data& SubstData, string_v
 	int ExitCode;
 	{
 		const auto Dlg = Dialog::create(DlgData);
-		Dlg->SetPosition(-1, -1, 76, static_cast<int>(DlgData.size() + 2));
+		Dlg->SetPosition({ -1, -1, DlgWidth, static_cast<int>(DlgData.size() + 2) });
 		Dlg->SetId(UserMenuUserInputId);
 		Dlg->Process();
 		ExitCode=Dlg->GetExitCode();
@@ -677,8 +848,39 @@ static bool InputVariablesDialog(string& strStr, subst_data& SubstData, string_v
 		}
 	}
 
+	for (const auto& i: DlgData)
+	{
+		if (i.Type != DI_EDIT)
+			continue;
+
+		const auto Index = (&i - DlgData.data() - 1) / 2;
+		const auto VariableName = format(FSTR(L"%{}{}"sv), HistoryAndVariablePrefix, Index + 1);
+		replace_icase(strTmpStr, VariableName, i.strData);
+
+		if (!i.strHistory.empty() && i.strHistory != GenerateHistoryName(Index))
+		{
+			replace_icase(strTmpStr, L'%' + i.strHistory, i.strData);
+			SubstData.Variables->emplace(i.strHistory, i.strData);
+		}
+	}
+
 	strStr = os::env::expand(strTmpStr);
 	return true;
+}
+
+static auto get_delayed_deleter()
+{
+	static std::optional<delayed_deleter> s_DelayedDeleter(std::in_place, false);
+
+	// Housekeeping
+	static time_check TimeCheck(time_check::mode::delayed, 5min);
+	if (TimeCheck)
+	{
+		s_DelayedDeleter.reset();
+		s_DelayedDeleter.emplace(false);
+	}
+
+	return &*s_DelayedDeleter;
 }
 
 /*
@@ -686,17 +888,19 @@ static bool InputVariablesDialog(string& strStr, subst_data& SubstData, string_v
   Преобразование метасимволов ассоциации файлов в реальные значения
 
 */
-static bool SubstFileName(
-	string &strStr,                  // результирующая строка
-	string_view const Name,
-	string_view const ShortName,
-	list_names* ListNames,
+bool SubstFileName(
+	string &Str,                  // результирующая строка
+	const subst_context& Context,
 	bool* PreserveLongName,
-	bool IgnoreInput,                // true - не исполнять "!?<title>?<init>!"
-	string_view const CmdLineDir,    // Каталог исполнения
-	string_view const DlgTitle
+	bool IgnoreInputAndLists,                // true - не исполнять "!?<title>?<init>!"
+	string_view const DlgTitle,
+	bool const EscapeAmpersands
 )
 {
+	const auto& Name = Context.Name;
+	const auto& ShortName = Context.ShortName;
+	const auto& CmdLineDir = Context.Path;
+
 	if (PreserveLongName)
 		*PreserveLongName = false;
 
@@ -705,31 +909,21 @@ static bool SubstFileName(
 	  нужно будет либо убрать эту проверку либо изменить условие (последнее
 	  предпочтительнее!)
 	*/
-	if (!contains(strStr, L'!'))
+	if (Str.find_first_of(L"!%"sv) == Str.npos)
 		return true;
 
 	subst_data SubstData;
 	SubstData.This.Normal.Name = Name;
 	SubstData.This.Short.Name = ShortName;
-	if (ListNames)
-	{
-		SubstData.This.Normal.ListName = &ListNames->This.Name;
-		SubstData.This.Short.ListName = &ListNames->This.ShortName;
-		SubstData.Another.Normal.ListName = &ListNames->Another.Name;
-		SubstData.Another.Short.ListName = &ListNames->Another.ShortName;
-	}
 
-	assign(SubstData.CmdDir, CmdLineDir.empty()? Global->CtrlObject->CmdLine()->GetCurDir() : CmdLineDir);
+	if (!IgnoreInputAndLists)
+		SubstData.ListNames = get_delayed_deleter();
 
-	const auto& GetNameOnly = [](string_view Str)
-	{
-		Str.remove_suffix(PointToExt(Str).size());
-		return Str;
-	};
+	SubstData.CmdDir = CmdLineDir.empty()? Global->CtrlObject->CmdLine()->GetCurDir() : CmdLineDir;
 
 	// Предварительно получим некоторые "константы" :-)
-	SubstData.This.Normal.NameOnly = GetNameOnly(Name);
-	SubstData.This.Short.NameOnly = GetNameOnly(ShortName);
+	SubstData.This.Normal.NameOnly = name_ext(Name).first;
+	SubstData.This.Short.NameOnly = name_ext(ShortName).first;
 
 	SubstData.This.Panel = Global->CtrlObject->Cp()->ActivePanel();
 	SubstData.Another.Panel = Global->CtrlObject->Cp()->PassivePanel();
@@ -739,41 +933,33 @@ static bool SubstFileName(
 	SubstData.Another.Normal.Name = AnotherName;
 	SubstData.Another.Short.Name = AnotherShortName;
 
-	SubstData.Another.Normal.NameOnly = GetNameOnly(SubstData.Another.Normal.Name);
-	SubstData.Another.Short.NameOnly = GetNameOnly(SubstData.Another.Short.Name);
+	SubstData.Another.Normal.NameOnly = name_ext(SubstData.Another.Normal.Name).first;
+	SubstData.Another.Short.NameOnly = name_ext(SubstData.Another.Short.Name).first;
 
 	SubstData.PreserveLFN = false;
 	SubstData.PassivePanel = false; // первоначально речь идет про активную панель!
+	SubstData.EscapeAmpersands = EscapeAmpersands;
 
-	strStr = ProcessMetasymbols(strStr, SubstData);
+	SubstData.Variables = &Context.Variables;
 
-	const auto Result = IgnoreInput || InputVariablesDialog(strStr, SubstData, DlgTitle.empty()? DlgTitle : os::env::expand(DlgTitle));
+	try
+	{
+		Str = ProcessMetasymbols(Str, SubstData);
+	}
+	catch (far_exception const& e)
+	{
+		Message(MSG_WARNING, e,
+			msg(lng::MError),
+			{
+			},
+			{ lng::MOk });
+		return false;
+	}
+
+	const auto Result = IgnoreInputAndLists || InputVariablesDialog(Str, SubstData, DlgTitle.empty()? DlgTitle : os::env::expand(DlgTitle));
 
 	if (PreserveLongName)
 		*PreserveLongName = SubstData.PreserveLFN;
 
 	return Result;
 }
-
-bool SubstFileName(
-	string& Str,
-	const subst_context& Context,
-	list_names* const ListNames,
-	bool* const PreserveLongName,
-	bool const IgnoreInput,
-	string_view const DlgTitle
-)
-{
-	return SubstFileName(
-		Str,
-		Context.Name,
-		Context.ShortName,
-		ListNames,
-		PreserveLongName,
-		IgnoreInput,
-		Context.Path,
-		DlgTitle
-	);
-}
-
-

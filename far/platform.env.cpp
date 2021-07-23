@@ -29,24 +29,31 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "platform.env.hpp"
 
-#include "lasterror.hpp"
+// Internal:
 
+// Platform:
 #include "platform.hpp"
+#include "platform.security.hpp"
+
+// Common:
+#include "common/range.hpp"
+#include "common/string_utils.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 namespace os::env
 {
-	const wchar_t* provider::detail::provider::data() const
+	provider::strings::strings():
+		m_Data(GetEnvironmentStrings())
 	{
-		return m_Data;
-	}
-
-	//-------------------------------------------------------------------------
-
-	provider::strings::strings()
-	{
-		m_Data = GetEnvironmentStrings();
 	}
 
 	provider::strings::~strings()
@@ -57,13 +64,16 @@ namespace os::env
 		}
 	}
 
+	const wchar_t* provider::strings::data() const
+	{
+		return m_Data;
+	}
+
 	//-------------------------------------------------------------------------
 
 	provider::block::block()
 	{
-		m_Data = nullptr;
-		handle TokenHandle;
-		if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &ptr_setter(TokenHandle)))
+		if (const auto TokenHandle = security::open_current_process_token(TOKEN_QUERY))
 		{
 			CreateEnvironmentBlock(reinterpret_cast<void**>(&m_Data), TokenHandle.native_handle(), TRUE);
 		}
@@ -77,11 +87,16 @@ namespace os::env
 		}
 	}
 
+	const wchar_t* provider::block::data() const
+	{
+		return m_Data;
+	}
+
 	//-------------------------------------------------------------------------
 
 	bool get(const string_view Name, string& Value)
 	{
-		GuardLastError ErrorGuard;
+		last_error_guard ErrorGuard;
 		null_terminated C_Name(Name);
 
 		// GetEnvironmentVariable might return 0 not only in case of failure, but also when the variable is empty.
@@ -89,7 +104,7 @@ namespace os::env
 		// which doesn't change it upon success.
 		SetLastError(ERROR_SUCCESS);
 
-		if (detail::ApiDynamicStringReceiver(Value, [&](range<wchar_t*> Buffer)
+		if (detail::ApiDynamicStringReceiver(Value, [&](span<wchar_t> Buffer)
 		{
 			return ::GetEnvironmentVariable(C_Name.c_str(), Buffer.data(), static_cast<DWORD>(Buffer.size()));
 		}))
@@ -132,7 +147,7 @@ namespace os::env
 		bool Failure = false;
 
 		string Result;
-		if (!detail::ApiDynamicStringReceiver(Result, [&](range<wchar_t*> Buffer)
+		if (!detail::ApiDynamicStringReceiver(Result, [&](span<wchar_t> Buffer)
 		{
 			// ExpandEnvironmentStrings return value always includes the terminating null character.
 			// ApiDynamicStringReceiver expects a string length upon success (e.g. without the \0),
@@ -157,7 +172,7 @@ namespace os::env
 		}))
 		{
 			if (Failure)
-				assign(Result, Str);
+				Result = Str;
 		}
 		return Result;
 	}
@@ -168,3 +183,31 @@ namespace os::env
 		return !PathExt.empty()? PathExt : L".COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC"s;
 	}
 }
+
+#ifdef ENABLE_TESTS
+
+#include "testing.hpp"
+
+TEST_CASE("platform.env")
+{
+	const auto Name = L"FAR_TEST_ENV_NAME"sv;
+	const auto Value = L"VALUE"sv;
+
+	string Str;
+
+	REQUIRE(os::env::set(Name, Value));
+	REQUIRE(os::env::get(Name, Str));
+	REQUIRE(Str == Value);
+
+	REQUIRE(os::env::expand(concat(L"PRE_%"sv, Name, L"%_POST"sv)) == concat(L"PRE_"sv, Value, L"_POST"sv));
+
+	REQUIRE(os::env::set(Name, {}));
+	REQUIRE(os::env::get(Name, Str));
+	REQUIRE(Str.empty());
+
+	REQUIRE(os::env::del(Name));
+	REQUIRE(!os::env::get(Name, Str));
+
+	REQUIRE(!os::env::get_pathext().empty());
+}
+#endif

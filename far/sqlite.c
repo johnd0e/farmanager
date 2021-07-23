@@ -31,23 +31,43 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "common/preprocessor.hpp"
+// Self
+#define SQLITE_CONFIG_ONLY
+#include "sqlite.hpp"
+#undef SQLITE_CONFIG_ONLY
+
+// Internal:
+
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
+
 
 WARNING_PUSH(3)
 
-WARNING_DISABLE_MSC(4701) // https://msdn.microsoft.com/en-us/library/1wea5zwe.aspx Potentially uninitialized local variable 'name' used
-WARNING_DISABLE_MSC(4703) // https://msdn.microsoft.com/en-us/library/jj851030.aspx Potentially uninitialized local pointer variable 'name' used
+WARNING_DISABLE_MSC(4668) // 'symbol' is not defined as a preprocessor macro, replacing with '0' for 'directives'
+WARNING_DISABLE_MSC(5105) // macro expansion producing 'defined' has undefined behavior
 
-WARNING_DISABLE_GCC("-Wpragmas")
-WARNING_DISABLE_GCC("-Warray-bounds")
+WARNING_DISABLE_GCC("-Wcast-function-type")
 WARNING_DISABLE_GCC("-Wcast-qual")
 WARNING_DISABLE_GCC("-Wimplicit-fallthrough")
+WARNING_DISABLE_GCC("-Wmisleading-indentation")
+WARNING_DISABLE_GCC("-Wmissing-declarations")
+WARNING_DISABLE_GCC("-Wredundant-decls")
+WARNING_DISABLE_GCC("-Wundef")
 WARNING_DISABLE_GCC("-Wunused-but-set-variable")
-WARNING_DISABLE_GCC("-Wcast-function-type")
+#ifdef _DEBUG
+WARNING_DISABLE_GCC("-Wformat=")
+WARNING_DISABLE_GCC("-Wformat-extra-args")
+WARNING_DISABLE_GCC("-Wformat-nonliteral")
+WARNING_DISABLE_GCC("-Wsign-compare")
+#endif
 
 WARNING_DISABLE_CLANG("-Weverything")
-
-#define SQLITE_WIN32_NO_ANSI
 
 #include "thirdparty/sqlite/sqlite3.c"
 

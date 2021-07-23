@@ -31,50 +31,58 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "drivemix.hpp"
 
+// Internal:
 #include "config.hpp"
 #include "notification.hpp"
 #include "global.hpp"
 
+// Platform:
 #include "platform.fs.hpp"
-#include "platform.security.hpp"
 
-static std::pair<os::fs::drives_set, bool> SavedLogicalDrives;
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
+
+static std::optional<os::fs::drives_set> SavedLogicalDrives;
 
 void UpdateSavedDrives(const std::any& Payload)
 {
-	if (!SavedLogicalDrives.second)
+	if (!SavedLogicalDrives)
 		return;
 
 	const auto& Message = std::any_cast<const update_devices_message&>(Payload);
+	if (Message.Media)
+		return;
+
 	const os::fs::drives_set Drives(Message.Drives);
 
 	if (Message.Arrival)
-		SavedLogicalDrives.first |= Drives;
+		*SavedLogicalDrives |= Drives;
 	else
-		SavedLogicalDrives.first &= ~Drives;
+		*SavedLogicalDrives &= ~Drives;
 }
 
 os::fs::drives_set allowed_drives_mask()
 {
 	return Global->Opt->Policies.ShowHiddenDrives?
 		os::fs::drives_set{}.set() :
-		os::security::allowed_drives_mask();
+		os::fs::allowed_drives_mask();
 }
 
 os::fs::drives_set os::fs::get_logical_drives()
 {
-	if (!SavedLogicalDrives.second || !(Global && Global->Opt && Global->Opt->RememberLogicalDrives))
+	if (!SavedLogicalDrives || !(Global && Global->Opt && Global->Opt->RememberLogicalDrives))
 	{
-		SavedLogicalDrives.first = GetLogicalDrives();
-		SavedLogicalDrives.second = true;
+		SavedLogicalDrives = GetLogicalDrives();
 	}
 
-	return SavedLogicalDrives.first;
-}
-
-bool IsDriveTypeRemote(UINT DriveType)
-{
-	return DriveType == DRIVE_REMOTE || DriveType == DRIVE_REMOTE_NOT_CONNECTED;
+	return *SavedLogicalDrives;
 }

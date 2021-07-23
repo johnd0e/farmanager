@@ -1,10 +1,6 @@
 NAME = SameFolder
-SRCS = SameFolder.cpp
-DOCS = SameFolderEng.hlf SameFolderRus.hlf SameFolderEng.lng SameFolderRus.lng SameFolderSky.lng SameFolderSpa.lng
-USERLIBS = -lole32 -luuid
 
-include ../../far/makefile_gcc_common
+SRCS = SameFolder.cpp
 
 include ../makefile_gcc_def_inc
-
 include ../makefile_gcc_target_inc

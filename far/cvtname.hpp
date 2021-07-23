@@ -35,6 +35,16 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
+
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
+
 string ConvertNameToFull(string_view Object);
 
 string ConvertNameToReal(string_view Object);
@@ -47,6 +57,6 @@ string ConvertNameToUNC(string_view Object);
 
 void PrepareDiskPath(string &strPath, bool CheckFullPath=true);
 
-size_t GetMountPointLen(string_view abs_path, string_view drive_root);
+std::optional<wchar_t> get_volume_drive(string_view VolumePath);
 
 #endif // CVTNAME_HPP_6F805D7A_7988_492E_9583_A5668BCA99D2

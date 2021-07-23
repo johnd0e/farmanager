@@ -1,22 +1,21 @@
-#include <cwchar>
+п»ї#include <cwchar>
 #include <shlobj.h>
 #include <plugin.hpp>
 
 #include "FARCmds.hpp"
 #include "Lang.hpp"
-#include <initguid.h>
 #include "guid.hpp"
 
 
 const wchar_t *GetMsg(int MsgId)
 {
-	return Info.GetMsg(&MainGuid,MsgId);
+	return PsInfo.GetMsg(&MainGuid,MsgId);
 }
 
 // need "delete[]"
 wchar_t *ExpandEnv(const wchar_t* Src, DWORD* Length)
 {
-	DWORD sizeExp=ExpandEnvironmentStrings(Src,NULL,0);
+	DWORD sizeExp=ExpandEnvironmentStrings(Src,{},0);
 	wchar_t *temp=new wchar_t[sizeExp+1];
 	if (temp)
 		ExpandEnvironmentStrings(Src,temp,sizeExp);
@@ -30,8 +29,8 @@ wchar_t *ExpandEnv(const wchar_t* Src, DWORD* Length)
 }
 
 /*
-	возвращает число, вырезав его из строки, или -2 в случае ошибки
-	Start, End - начало и конец строки
+	РІРѕР·РІСЂР°С‰Р°РµС‚ С‡РёСЃР»Рѕ, РІС‹СЂРµР·Р°РІ РµРіРѕ РёР· СЃС‚СЂРѕРєРё, РёР»Рё -2 РІ СЃР»СѓС‡Р°Рµ РѕС€РёР±РєРё
+	Start, End - РЅР°С‡Р°Р»Рѕ Рё РєРѕРЅРµС† СЃС‚СЂРѕРєРё
 */
 int GetInt(const wchar_t *Start, wchar_t *End)
 {
@@ -67,9 +66,9 @@ int GetInt(const wchar_t *Start, wchar_t *End)
 }
 
 /*
-	Заменить в строке Str Count вхождений подстроки FindStr на подстроку ReplStr
-	Если Count < 0 - заменять "до полной победы"
-	Return - количество замен
+	Р—Р°РјРµРЅРёС‚СЊ РІ СЃС‚СЂРѕРєРµ Str Count РІС…РѕР¶РґРµРЅРёР№ РїРѕРґСЃС‚СЂРѕРєРё FindStr РЅР° РїРѕРґСЃС‚СЂРѕРєСѓ ReplStr
+	Р•СЃР»Рё Count < 0 - Р·Р°РјРµРЅСЏС‚СЊ "РґРѕ РїРѕР»РЅРѕР№ РїРѕР±РµРґС‹"
+	Return - РєРѕР»РёС‡РµСЃС‚РІРѕ Р·Р°РјРµРЅ
 */
 int ReplaceStrings(wchar_t *Str,const wchar_t *FindStr,const wchar_t *ReplStr,int Count,BOOL IgnoreCase)
 {
@@ -106,17 +105,17 @@ int ReplaceStrings(wchar_t *Str,const wchar_t *FindStr,const wchar_t *ReplStr,in
 
 
 /*
-	возвращает PipeFound
-	NewCmdStr и NewCmdPar после использования удалить
+	РІРѕР·РІСЂР°С‰Р°РµС‚ PipeFound
+	NewCmdStr Рё NewCmdPar РїРѕСЃР»Рµ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ СѓРґР°Р»РёС‚СЊ
 */
 int PartCmdLine(const wchar_t *CmdStr,wchar_t **NewCmdStr,wchar_t **NewCmdPar)
 {
 	int PipeFound = FALSE;
 
 	if (NewCmdStr)
-		*NewCmdStr=0;
+		*NewCmdStr = {};
 	if (NewCmdPar)
-		*NewCmdPar=0;
+		*NewCmdPar = {};
 
 	wchar_t *Temp=ExpandEnv(CmdStr,nullptr);
 
@@ -124,12 +123,12 @@ int PartCmdLine(const wchar_t *CmdStr,wchar_t **NewCmdStr,wchar_t **NewCmdPar)
 	{
 		FSF.Trim(Temp);
 		wchar_t *CmdPtr = Temp;
-		wchar_t *ParPtr = NULL;
+		wchar_t *ParPtr{};
 		int QuoteFound = FALSE;
 
-		// Разделим собственно команду для исполнения и параметры.
-		// При этом заодно определим наличие символов переопределения потоков
-		// Работаем с учетом кавычек. Т.е. пайп в кавычках - не пайп.
+		// Р Р°Р·РґРµР»РёРј СЃРѕР±СЃС‚РІРµРЅРЅРѕ РєРѕРјР°РЅРґСѓ РґР»СЏ РёСЃРїРѕР»РЅРµРЅРёСЏ Рё РїР°СЂР°РјРµС‚СЂС‹.
+		// РџСЂРё СЌС‚РѕРј Р·Р°РѕРґРЅРѕ РѕРїСЂРµРґРµР»РёРј РЅР°Р»РёС‡РёРµ СЃРёРјРІРѕР»РѕРІ РїРµСЂРµРѕРїСЂРµРґРµР»РµРЅРёСЏ РїРѕС‚РѕРєРѕРІ
+		// Р Р°Р±РѕС‚Р°РµРј СЃ СѓС‡РµС‚РѕРј РєР°РІС‹С‡РµРє. Рў.Рµ. РїР°Р№Рї РІ РєР°РІС‹С‡РєР°С… - РЅРµ РїР°Р№Рї.
 
 		while (*CmdPtr)
 		{
@@ -140,7 +139,7 @@ int PartCmdLine(const wchar_t *CmdStr,wchar_t **NewCmdStr,wchar_t **NewCmdPar)
 			{
 				if (*CmdPtr == L'>' || *CmdPtr == L'<' ||
 				        *CmdPtr == L'|' || *CmdPtr == L' ' ||
-				        *CmdPtr == L'/' ||      // вариант "far.exe/?"
+				        *CmdPtr == L'/' ||      // РІР°СЂРёР°РЅС‚ "far.exe/?"
 				        *CmdPtr == L'&'
 				   )
 				{
@@ -152,13 +151,13 @@ int PartCmdLine(const wchar_t *CmdStr,wchar_t **NewCmdStr,wchar_t **NewCmdPar)
 				}
 			}
 
-			if (ParPtr && PipeFound) // Нам больше ничего не надо узнавать
+			if (ParPtr && PipeFound) // РќР°Рј Р±РѕР»СЊС€Рµ РЅРёС‡РµРіРѕ РЅРµ РЅР°РґРѕ СѓР·РЅР°РІР°С‚СЊ
 				break;
 
 			CmdPtr++;
 		}
 
-		if (NewCmdPar && ParPtr) // Мы нашли параметры и отделяем мух от котлет
+		if (NewCmdPar && ParPtr) // РњС‹ РЅР°С€Р»Рё РїР°СЂР°РјРµС‚СЂС‹ Рё РѕС‚РґРµР»СЏРµРј РјСѓС… РѕС‚ РєРѕС‚Р»РµС‚
 		{
 			wchar_t *ptrNewCmdPar=new wchar_t[lstrlen(ParPtr)+1];
 			if (ptrNewCmdPar)
@@ -188,13 +187,13 @@ static wchar_t *GetAlias(const wchar_t *ModuleName, const wchar_t *FindAlias)
 {
 	wchar_t *FoundAlias=nullptr;
 
-	int ret=GetConsoleAliasesLength((LPWSTR)ModuleName);
+	int ret=GetConsoleAliasesLength(const_cast<LPWSTR>(ModuleName));
 	if (ret)
 	{
 		wchar_t *AllAliases=new wchar_t[ret];
 		if (AllAliases)
 		{
-			ret=GetConsoleAliases(AllAliases, ret, (LPWSTR)ModuleName);
+			ret=GetConsoleAliases(AllAliases, ret, const_cast<LPWSTR>(ModuleName));
 			if (ret)
 			{
 				wchar_t *ptr=AllAliases;
@@ -254,7 +253,7 @@ wchar_t* ProcessOSAliases(const wchar_t *Str)
 				if (ModuleNameTemp)
 				{
 					ModuleName=ModuleNameTemp;
-					SizeModuleName = GetModuleFileName(NULL, ModuleName, BufferSize);
+					SizeModuleName = GetModuleFileName({}, ModuleName, BufferSize);
 				}
 			} while ((SizeModuleName >= BufferSize) || (!SizeModuleName && GetLastError() == ERROR_INSUFFICIENT_BUFFER));
 		}
@@ -368,7 +367,7 @@ wchar_t *GetShellLinkPath(const wchar_t *LinkFile)
 	}
 
 	// <Check lnk-header>
-	HANDLE hFile = CreateFile(FileName, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL );
+	HANDLE hFile = CreateFile(FileName, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, {}, OPEN_EXISTING, 0, {});
 
 	if (hFile != INVALID_HANDLE_VALUE)
 	{
@@ -392,7 +391,7 @@ wchar_t *GetShellLinkPath(const wchar_t *LinkFile)
 
 		ShellLinkHeader slh = { 0 };
 		DWORD read = 0;
-		ReadFile( hFile, &slh, sizeof( ShellLinkHeader ), &read, NULL );
+		ReadFile(hFile, &slh, sizeof(ShellLinkHeader), &read, {});
 
 		if ( read == sizeof( ShellLinkHeader ) && slh.HeaderSize == 0x0000004C)
 		{
@@ -408,24 +407,24 @@ wchar_t *GetShellLinkPath(const wchar_t *LinkFile)
 	{
 		// <get target>
 		Result=false;
-		/*HRESULT hres0 = */CoInitialize(NULL);
+		const auto CoInited = SUCCEEDED(CoInitialize(nullptr));
 
-		IShellLink* psl = NULL;
-		HRESULT hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLink, (LPVOID*)&psl);
+		IShellLink* psl{};
+		HRESULT hres = CoCreateInstance(CLSID_ShellLink, {}, CLSCTX_INPROC_SERVER, IID_IShellLink, (LPVOID*)&psl);
 		if (SUCCEEDED(hres))
 		{
-			IPersistFile* ppf = NULL;
+			IPersistFile* ppf{};
 			hres = psl->QueryInterface(IID_IPersistFile, (void**)&ppf);
 			if (SUCCEEDED(hres))
 			{
 				hres = ppf->Load(FileName, STGM_READ);
 				if (SUCCEEDED(hres))
 				{
-					hres = psl->Resolve(NULL, 0);
+					hres = psl->Resolve({}, 0);
 					if (SUCCEEDED(hres))
 					{
 						wchar_t TargPath[MAX_PATH] = {0};
-						hres = psl->GetPath(TargPath, ARRAYSIZE(TargPath), NULL, SLGP_RAWPATH);
+						hres = psl->GetPath(TargPath, ARRAYSIZE(TargPath), {}, SLGP_RAWPATH);
 						if (SUCCEEDED(hres))
 						{
 							Path=new wchar_t[lstrlen(TargPath)+1];
@@ -439,7 +438,8 @@ wchar_t *GetShellLinkPath(const wchar_t *LinkFile)
 			psl->Release();
 		}
 
-		CoUninitialize();
+		if (CoInited)
+			CoUninitialize();
 		// </get target>
 	}
 
@@ -450,7 +450,7 @@ wchar_t *GetShellLinkPath(const wchar_t *LinkFile)
 
 bool StrToGuid(const wchar_t *Value,GUID *Guid)
 {
-	return UuidFromString(reinterpret_cast<unsigned short*>((void*)Value), Guid) == RPC_S_OK;
+	return UuidFromString(reinterpret_cast<unsigned short*>(const_cast<wchar_t*>(Value)), Guid) == RPC_S_OK;
 }
 
 bool IsTextUTF8(const char* Buffer,size_t Length)
@@ -506,7 +506,7 @@ UINT GetCPBuffer(const void* data, size_t size, size_t* off)
 
 	UINT cp=(UINT)-1;
 	size_t Pos = 0;
-	wchar_t* Ptr = (wchar_t *)data;
+	const auto Ptr = static_cast<const wchar_t*>(data);
 	size_t PtrSize = size;
 
 	if (Ptr)
@@ -528,7 +528,7 @@ UINT GetCPBuffer(const void* data, size_t size, size_t* off)
 		}
 		else
 		{
-			if (IsTextUTF8((char*)Ptr,PtrSize))
+			if (IsTextUTF8(reinterpret_cast<const char*>(Ptr),PtrSize))
 			{
 				cp=CP_UTF8;
 			}
@@ -546,7 +546,7 @@ UINT GetCPBuffer(const void* data, size_t size, size_t* off)
 					{
 						cp=CP_REVERSEBOM;
 					}
-					else if (test & IS_TEXT_UNICODE_STATISTICS) // !!! допускаем возможность, что это Unicode
+					else if (test & IS_TEXT_UNICODE_STATISTICS) // !!! РґРѕРїСѓСЃРєР°РµРј РІРѕР·РјРѕР¶РЅРѕСЃС‚СЊ, С‡С‚Рѕ СЌС‚Рѕ Unicode
 					{
 						cp=CP_UNICODE;
 					}
@@ -595,7 +595,7 @@ wchar_t *ConvertBuffer(wchar_t* Ptr,size_t PtrSize,BOOL outputtofile, size_t& sh
 			//case CP_UTF8:
 			default:
 			{
-				size_t PtrLength=MultiByteToWideChar(cp,0,(char*)Ptr+off,-1,NULL,0);
+				size_t PtrLength=MultiByteToWideChar(cp,0,(char*)Ptr+off,-1,{},0);
 
 				if (PtrLength)
 				{

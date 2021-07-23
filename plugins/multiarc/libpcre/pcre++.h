@@ -8,7 +8,9 @@ namespace PCRE
 
   class Match
   {
-    int ovector[30];
+    enum { matched_field_names_count = 12 };
+
+    int ovector[(matched_field_names_count + 1) * 3];
     int matchCount;
     const pcre *re;
     const char *str;
@@ -134,8 +136,8 @@ namespace PCRE
 
       if(Match m = r.match(pattern))
       {
-        char options[8] = "";
-        strncat(options, m[2], sizeof(options));
+        char options[8] = {};
+        strncpy(options, m[2], sizeof(options) - 1);
         return compile(m[1], options);
       }
       return false;

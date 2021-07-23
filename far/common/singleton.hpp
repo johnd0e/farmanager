@@ -32,19 +32,40 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "noncopyable.hpp"
+
+//----------------------------------------------------------------------------
+
 template<typename type>
 class singleton: noncopyable
 {
 public:
+	[[nodiscard]]
 	static type& instance()
 	{
-		static_assert((std::is_base_of_v<singleton, type>));
+		static_assert(std::is_base_of_v<singleton, type>);
 
 		static type Instance;
+
+		assert(!Instance.Destroyed);
+
 		return Instance;
 	}
+
+protected:
+	using singleton_type = singleton<type>;
+
+	singleton() = default;
+
+	~singleton()
+	{
+		Destroyed = true;
+	}
+
+private:
+	bool Destroyed{};
 };
 
-#define IMPLEMENTS_SINGLETON(...) friend class singleton<__VA_ARGS__>
+#define IMPLEMENTS_SINGLETON friend singleton_type
 
 #endif // SINGLETON_HPP_689EF327_41C5_4AB7_B9A6_CB5361D7B040

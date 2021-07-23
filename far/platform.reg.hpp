@@ -33,8 +33,18 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
+
+// Platform:
+
+// Common:
 #include "common/enumerator.hpp"
+#include "common/noncopyable.hpp"
 #include "common/type_traits.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 namespace os::reg
 {
@@ -49,22 +59,38 @@ namespace os::reg
 		static const key current_user;
 		static const key local_machine;
 
+		[[nodiscard]]
 		static key open(const key& Key, string_view SubKey, DWORD SamDesired);
 
 		void close();
+
+		[[nodiscard]]
 		HKEY native_handle() const;
 
+		[[nodiscard]]
 		bool enum_keys(size_t Index, string& Name) const;
+
+		[[nodiscard]]
 		bool enum_values(size_t Index, value& Value) const;
 
+		[[nodiscard]]
 		bool get(string_view Name) const;
+
+		[[nodiscard]]
 		bool get(string_view Name, string& Value) const;
+
+		[[nodiscard]]
 		bool get(string_view Name, unsigned int& Value) const;
+
+		[[nodiscard]]
 		bool get(string_view Name, unsigned long long& Value) const;
 
-		template<class T, REQUIRES(is_one_of_v<T, string, unsigned int, unsigned long long>)>
+		template<class T>
+		[[nodiscard]]
 		bool get(string_view SubKey, string_view Name, T& Value, REGSAM Sam = 0) const
 		{
+			static_assert(is_one_of_v<T, string, unsigned int, unsigned long long>);
+
 			const auto NewKey = open(*this, SubKey, KEY_QUERY_VALUE | Sam);
 			if (!NewKey)
 				return false;
@@ -72,6 +98,7 @@ namespace os::reg
 			return NewKey.get(Name, Value);
 		}
 
+		[[nodiscard]]
 		explicit operator bool() const;
 
 	private:
@@ -79,7 +106,7 @@ namespace os::reg
 
 		struct hkey_deleter
 		{
-			void operator()(HKEY Key) const;
+			void operator()(HKEY Key) const noexcept;
 		};
 
 		std::unique_ptr<std::remove_pointer_t<HKEY>, hkey_deleter> m_Key;
@@ -88,10 +115,19 @@ namespace os::reg
 	class value
 	{
 	public:
+		[[nodiscard]]
 		const string& name() const;
+
+		[[nodiscard]]
 		DWORD type() const;
+
+		[[nodiscard]]
 		string get_string() const;
+
+		[[nodiscard]]
 		unsigned int get_unsigned() const;
+
+		[[nodiscard]]
 		unsigned long long get_unsigned_64() const;
 
 	private:
@@ -102,7 +138,7 @@ namespace os::reg
 		const key* m_Key{};
 	};
 
-	class enum_key: noncopyable, public enumerator<enum_key, string>
+	class [[nodiscard]] enum_key: noncopyable, public enumerator<enum_key, string>
 	{
 		IMPLEMENTS_ENUMERATOR(enum_key);
 
@@ -111,14 +147,15 @@ namespace os::reg
 		enum_key(const key& Key, string_view SubKey, REGSAM Sam = 0);
 
 	private:
+		[[nodiscard]]
 		bool get(bool Reset, value_type& Value) const;
 
 		key m_Key;
-		const key& m_KeyRef;
+		const key* m_KeyRef{};
 		mutable size_t m_Index{};
 	};
 
-	class enum_value: noncopyable, public enumerator<enum_value, value>
+	class [[nodiscard]] enum_value: noncopyable, public enumerator<enum_value, value>
 	{
 		IMPLEMENTS_ENUMERATOR(enum_value);
 
@@ -127,10 +164,11 @@ namespace os::reg
 		enum_value(const key& Key, string_view SubKey, REGSAM Sam = 0);
 
 	private:
+		[[nodiscard]]
 		bool get(bool Reset, value_type& Value) const;
 
 		key m_Key;
-		const key& m_KeyRef;
+		const key* m_KeyRef{};
 		mutable size_t m_Index{};
 	};
 }

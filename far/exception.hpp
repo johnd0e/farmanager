@@ -32,18 +32,35 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
+
+// Platform:
 #include "platform.hpp"
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
 
 struct error_state
 {
-	static error_state fetch();
-	bool engaged() const;
-
+	int Errno = 0;
 	DWORD Win32Error = ERROR_SUCCESS;
 	NTSTATUS NtError = STATUS_SUCCESS;
 
-private:
-	bool m_Engaged = false;
+	bool any() const
+	{
+		return Errno || Win32Error != ERROR_SUCCESS || NtError != STATUS_SUCCESS;
+	}
+
+	string ErrnoStr() const;
+	string Win32ErrorStr() const;
+	string NtErrorStr() const;
+
+	std::array<string, 3> format_errors() const;
+
+	string to_string() const;
 };
 
 struct error_state_ex: public error_state
@@ -56,91 +73,90 @@ struct error_state_ex: public error_state
 	{
 	}
 
+	string format_error() const;
+
 	string What;
 };
 
+error_state last_error();
+
 namespace detail
 {
-	class exception_impl
+	class far_base_exception: public error_state_ex
 	{
 	public:
-		exception_impl(string_view Message, const char* Function, const char* File, int Line);
+		[[nodiscard]] const auto& message() const noexcept { return What; }
+		[[nodiscard]] const auto& full_message() const noexcept { return m_FullMessage; }
+		[[nodiscard]] const auto& function() const noexcept { return m_Function; }
+		[[nodiscard]] const auto& location() const noexcept { return m_Location; }
 
-		const auto& get_message() const noexcept { return m_ErrorState.What; }
-		const auto& get_full_message() const noexcept { return m_FullMessage; }
-		const auto& get_error_state() const noexcept { return m_ErrorState; }
+	protected:
+		far_base_exception(bool CaptureErrors, string_view Message, std::string_view Function, std::string_view File, int Line);
 
 	private:
+		std::string m_Function;
+		string m_Location;
 		string m_FullMessage;
-		error_state_ex m_ErrorState;
+	};
+
+	class far_std_exception : public far_base_exception, public std::runtime_error
+	{
+	public:
+		template<typename... args>
+		explicit far_std_exception(args&&... Args):
+			far_base_exception(FWD(Args)...),
+			std::runtime_error(convert_message())
+		{}
+
+	private:
+		[[nodiscard]] std::string convert_message() const;
+	};
+
+	class break_into_debugger
+	{
+	protected:
+		break_into_debugger();
 	};
 }
 
-class far_exception: public detail::exception_impl, public std::runtime_error
+/*
+  Represents a non-continuable failure:
+  - logic errors, which shouldn't happen
+  - fatal OS errors
+  - ...
+  I.e. we either don't really know what to do or doing anything will do more harm than good.
+  It shouldn't be caught explicitly in general and fly straight to main().
+*/
+class far_fatal_exception: private detail::break_into_debugger, public detail::far_std_exception
 {
-public:
-	far_exception(string_view Message, const char* Function, const char* File, int Line);
-	far_exception(string_view Message, std::vector<string>&& Stack, const char* Function, const char* File, int Line);
-	const std::vector<string>& get_stack() const;
-
-private:
-	std::vector<string> m_Stack;
+	using far_std_exception::far_std_exception;
 };
 
-#define MAKE_EXCEPTION(ExceptionType, ...) ExceptionType(__VA_ARGS__, __FUNCTION__, __FILE__, __LINE__)
-#define MAKE_FAR_EXCEPTION(...) MAKE_EXCEPTION(far_exception, __VA_ARGS__)
-
-class exception_context
+/*
+  Represents all other failures, potentially continuable.
+  Base class for more specific exceptions.
+*/
+class far_exception: public detail::far_std_exception
 {
-public:
-	NONCOPYABLE(exception_context);
-
-	explicit exception_context(DWORD Code = 0, const EXCEPTION_POINTERS* Pointers = nullptr, bool ResumeThread = false);
-	~exception_context();
-
-	auto code() const { return m_Code; }
-	auto pointers() const { return const_cast<EXCEPTION_POINTERS*>(&m_Pointers); }
-	auto thread_handle() const { return m_ThreadHandle.native_handle(); }
-	auto thread_id() const { return m_ThreadId; }
-
-private:
-	DWORD m_Code;
-	EXCEPTION_RECORD m_ExceptionRecord;
-	std::list<EXCEPTION_RECORD> m_ExceptionRecords;
-	CONTEXT m_ContextRecord;
-	EXCEPTION_POINTERS m_Pointers;
-	os::handle m_ThreadHandle;
-	DWORD m_ThreadId;
-	bool m_ResumeThread;
+	using far_std_exception::far_std_exception;
 };
 
-class seh_exception: public std::exception
+/*
+  For the cases where it is pretty clear what is wrong, no need to show the stack etc.
+ */
+class far_known_exception: public far_exception
 {
-public:
-	seh_exception(DWORD Code, EXCEPTION_POINTERS* Pointers, bool ResumeThread):
-		m_Context(std::make_shared<exception_context>(Code, Pointers, ResumeThread))
-	{
-	}
-
-	const auto& context() const { return *m_Context; }
-
-private:
-	std::shared_ptr<exception_context> m_Context;
+	using far_exception::far_exception;
 };
 
+#define MAKE_EXCEPTION(ExceptionType, ...) ExceptionType(__VA_ARGS__, CURRENT_FUNCTION_NAME, CURRENT_FILE_NAME, __LINE__)
+#define MAKE_FAR_FATAL_EXCEPTION(...) MAKE_EXCEPTION(far_fatal_exception, true, __VA_ARGS__)
+#define MAKE_FAR_EXCEPTION(...) MAKE_EXCEPTION(far_exception, true, __VA_ARGS__)
+#define MAKE_FAR_KNOWN_EXCEPTION(...) MAKE_EXCEPTION(far_known_exception, false, __VA_ARGS__)
 
-std::exception_ptr CurrentException();
-std::exception_ptr CurrentException(const std::exception& e);
-void RethrowIfNeeded(std::exception_ptr& Ptr);
-
-#define CATCH_AND_SAVE_EXCEPTION_TO(ExceptionPtr) \
-		catch (const std::exception& e) \
-		{ \
-			ExceptionPtr = CurrentException(e); \
-		} \
-		catch (...) \
-		{ \
-			ExceptionPtr = CurrentException(); \
-		}
+std::wostream& operator<<(std::wostream& Stream, error_state const& e);
+std::wostream& operator<<(std::wostream& Stream, error_state_ex const& e);
+std::wostream& operator<<(std::wostream& Stream, detail::far_base_exception const& e);
+std::wostream& operator<<(std::wostream& Stream, far_exception const& e);
 
 #endif // EXCEPTION_HPP_2CD5B7D1_D39C_4CAF_858A_62496C9221DF

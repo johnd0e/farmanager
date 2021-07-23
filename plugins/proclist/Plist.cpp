@@ -1,333 +1,83 @@
+﻿#include <algorithm>
+#include <mutex>
+
 #include "Proclist.hpp"
 #include "Proclng.hpp"
 #include "perfthread.hpp"
+#include "ipc.hpp"
 
-// obtained from PSAPI.DLL
-/*
-struct ModuleData {
-    void* p1,*p2;
-    wchar_t* pNext;
-    void* p3;
-    DWORD dw1,dw2;
-    HMODULE hModule;
-    DWORD dwEntryPoint; //28
-    DWORD dwSizeOfImage; //32
-    DWORD dw3; //36
-    wchar_t* lpModuleFileName; //40
-    wchar_t* lpModuleFileName1;
-    wchar_t* lpModuleBaseName; //48
-    DWORD unknown[5];
-};
-*/
+#include <psapi.h>
 
-struct UNICODE_STRING
+using namespace std::literals;
+
+#ifndef _WIN64
+static bool is_wow64_itself()
 {
-	USHORT  Length; USHORT  MaximumLength; PWSTR  Buffer;
-};
-
-#if 0
-typedef struct _LIST_ENTRY
-{
-	struct _LIST_ENTRY *Flink;
-	struct _LIST_ENTRY *Blink;
-} LIST_ENTRY, *PLIST_ENTRY;
+#ifdef _WIN64
+	return false;
+#else
+	static const auto IsWow64 = is_wow64_process(GetCurrentProcess());
+	return IsWow64;
+#endif
+}
 #endif
 
-#if 0
-struct PROCESS_PARAMETERS
+HANDLE OpenProcessForced(DebugToken* const token, DWORD const Flags, DWORD const ProcessId, BOOL const Inh)
 {
-	ULONG          AllocationSize;
-	ULONG          ActualSize;
-	ULONG          Flags;
-	ULONG          Unknown1;
-	UNICODE_STRING Unknown2;
-	HANDLE         InputHandle;
-	HANDLE         OutputHandle;
-	HANDLE         ErrorHandle;
-	UNICODE_STRING CurrentDirectory;
-	HANDLE         CurrentDirectoryHandle;
-	UNICODE_STRING SearchPaths;
-	UNICODE_STRING ApplicationName;
-	UNICODE_STRING CommandLine;
-	PVOID          EnvironmentBlock;
-	ULONG          Unknown[9];
-	UNICODE_STRING Unknown3;
-	UNICODE_STRING Unknown4;
-	UNICODE_STRING Unknown5;
-	UNICODE_STRING Unknown6;
-} ;
-#endif
+	if (const auto Process = OpenProcess(Flags, Inh, ProcessId))
+		return Process;
 
-typedef struct _RTL_DRIVE_LETTER_CURDIR
-{
+	if (GetLastError() == ERROR_ACCESS_DENIED && token->Enable())
+		return OpenProcess(Flags, Inh, ProcessId);
 
-
-	USHORT                  Flags;
-	USHORT                  Length;
-	ULONG                   TimeStamp;
-	UNICODE_STRING          DosPath;
-
-
-
-} RTL_DRIVE_LETTER_CURDIR, *PRTL_DRIVE_LETTER_CURDIR;
-
-
-typedef struct _RTL_USER_PROCESS_PARAMETERS
-{
-
-
-	ULONG                   MaximumLength;
-	ULONG                   Length;
-	ULONG                   Flags;
-	ULONG                   DebugFlags;
-	PVOID                   ConsoleHandle;
-	ULONG                   ConsoleFlags;
-	HANDLE                  StdInputHandle;
-	HANDLE                  StdOutputHandle;
-	HANDLE                  StdErrorHandle;
-	UNICODE_STRING          CurrentDirectoryPath;
-	HANDLE                  CurrentDirectoryHandle;
-	UNICODE_STRING          DllPath;
-	UNICODE_STRING          ImagePathName;
-	UNICODE_STRING          CommandLine;
-	PVOID                   EnvironmentBlock;
-	ULONG                   StartingPositionLeft;
-	ULONG                   StartingPositionTop;
-	ULONG                   Width;
-	ULONG                   Height;
-	ULONG                   CharWidth;
-	ULONG                   CharHeight;
-	ULONG                   ConsoleTextAttributes;
-	ULONG                   WindowFlags;
-	ULONG                   ShowWindowFlags;
-	UNICODE_STRING          WindowTitle;
-	UNICODE_STRING          DesktopName;
-	UNICODE_STRING          ShellInfo;
-	UNICODE_STRING          RuntimeData;
-	RTL_DRIVE_LETTER_CURDIR DLCurrentDirectory[0x20];
-
-} RTL_USER_PROCESS_PARAMETERS, *PRTL_USER_PROCESS_PARAMETERS, PROCESS_PARAMETERS;
-
-
-
-typedef struct _LDR_MODULE
-{
-	LIST_ENTRY              InLoadOrderModuleList;
-	LIST_ENTRY              InMemoryOrderModuleList;
-	LIST_ENTRY              InInitializationOrderModuleList;
-	PVOID                   BaseAddress;
-	PVOID                   EntryPoint;
-	ULONG                   SizeOfImage;
-	UNICODE_STRING          FullDllName;
-	UNICODE_STRING          BaseDllName;
-	ULONG                   Flags;
-	SHORT                   LoadCount;
-	SHORT                   TlsIndex;
-	LIST_ENTRY              HashTableEntry;
-	ULONG                   TimeDateStamp;
-} LDR_MODULE, ModuleData, *PLDR_MODULE;
-
-
-typedef struct _PEB_LDR_DATA
-{
-	ULONG                   Length;
-	BOOLEAN                 Initialized;
-	PVOID                   SsHandle;
-	LIST_ENTRY              InLoadOrderModuleList;
-	LIST_ENTRY              InMemoryOrderModuleList;
-	LIST_ENTRY              InInitializationOrderModuleList;
-} PEB_LDR_DATA, *PPEB_LDR_DATA;
-
-typedef struct _PEB
-{
-	BOOLEAN                 InheritedAddressSpace;
-	BOOLEAN                 ReadImageFileExecOptions;
-	BOOLEAN                 BeingDebugged;
-	BOOLEAN                 Spare;
-	HANDLE                  Mutant;
-	PVOID                   ImageBaseAddress;
-	PPEB_LDR_DATA           LoaderData;
-	PROCESS_PARAMETERS      *ProcessParameters;
-	PVOID                   SubSystemData;
-	PVOID                   ProcessHeap;
-	PVOID                   FastPebLock;
-//  PPEBLOCKROUTINE         FastPebLockRoutine;
-	PVOID         FastPebLockRoutine;
-//  PPEBLOCKROUTINE         FastPebUnlockRoutine;
-	PVOID         FastPebUnlockRoutine;
-	ULONG                   EnvironmentUpdateCount;
-	PVOID                  *KernelCallbackTable;
-	PVOID                   EventLogSection;
-	PVOID                   EventLog;
-//  PPEB_FREE_BLOCK         FreeList;
-	PVOID         FreeList;
-	ULONG                   TlsExpansionCounter;
-	PVOID                   TlsBitmap;
-	ULONG                   TlsBitmapBits[0x2];
-	PVOID                   ReadOnlySharedMemoryBase;
-	PVOID                   ReadOnlySharedMemoryHeap;
-	PVOID                   *ReadOnlyStaticServerData;
-	PVOID                   AnsiCodePageData;
-	PVOID                   OemCodePageData;
-	PVOID                   UnicodeCaseTableData;
-	ULONG                   NumberOfProcessors;
-	ULONG                   NtGlobalFlag;
-	BYTE                    Spare2[0x4];
-	LARGE_INTEGER           CriticalSectionTimeout;
-	ULONG                   HeapSegmentReserve;
-	ULONG                   HeapSegmentCommit;
-	ULONG                   HeapDeCommitTotalFreeThreshold;
-	ULONG                   HeapDeCommitFreeBlockThreshold;
-	ULONG                   NumberOfHeaps;
-	ULONG                   MaximumNumberOfHeaps;
-	PVOID                  **ProcessHeaps;
-	PVOID                   GdiSharedHandleTable;
-	PVOID                   ProcessStarterHelper;
-	PVOID                   GdiDCAttributeList;
-	PVOID                   LoaderLock;
-	ULONG                   OSMajorVersion;
-	ULONG                   OSMinorVersion;
-	ULONG                   OSBuildNumber;
-	ULONG                   OSPlatformId;
-	ULONG                   ImageSubSystem;
-	ULONG                   ImageSubSystemMajorVersion;
-	ULONG                   ImageSubSystemMinorVersion;
-	ULONG                   GdiHandleBuffer[0x22];
-	ULONG                   PostProcessInitRoutine;
-	ULONG                   TlsExpansionBitmap;
-	BYTE                    TlsExpansionBitmapBits[0x80];
-	ULONG                   SessionId;
-} PEB, *PPEB;
-
-typedef struct _PROCESS_BASIC_INFORMATION
-{
-	PVOID Reserved1;
-	PPEB PebBaseAddress;
-	PVOID Reserved2[2];
-	ULONG_PTR UniqueProcessId;
-	PVOID Reserved3;
-} PROCESS_BASIC_INFORMATION;
-
-BOOL GetInternalProcessData(HANDLE hProcess, ModuleData* Data, PROCESS_PARAMETERS* &pProcessParams, char*&pEnd, bool bFirstModule=false)
-{
-	DWORD ret;
-	// From ntddk.h
-	PROCESS_BASIC_INFORMATION processInfo;
-
-	if (pNtQueryInformationProcess(hProcess, ProcessBasicInformation, &processInfo, sizeof(processInfo), &ret))
-		return FALSE;
-
-	char *p4;
-	//FindModule, obtained from PSAPI.DLL
-	PVOID hModule;
-	PEB peb;
-	PEB_LDR_DATA pld;
-
-	if (ReadProcessMemory(hProcess, processInfo.PebBaseAddress, &peb, sizeof(peb), 0) &&
-	        ReadProcessMemory(hProcess, peb.LoaderData, &pld, sizeof(pld), 0))
-	{
-		//pEnd = (void *)((void *)peb.LoaderData+((void *)&pld.InMemoryOrderModuleList-(void *)&pld));
-		hModule = peb.ImageBaseAddress;
-		pProcessParams = peb.ProcessParameters;
-		pEnd = (char *)peb.LoaderData+sizeof(pld)-sizeof(LIST_ENTRY)*2;
-		p4 = (char *)pld.InMemoryOrderModuleList.Flink;
-
-		while (p4)
-		{
-			if (p4==pEnd || !ReadProcessMemory(hProcess, p4-sizeof(PVOID)*2, Data, sizeof(*Data), 0))
-				return FALSE;
-
-			if (bFirstModule)
-				return TRUE;
-
-			if (Data->BaseAddress==hModule) break;
-
-			p4 = (char *)Data->InMemoryOrderModuleList.Flink;
-		}
-	}
-
-	return TRUE;
+	return {};
 }
 
-
-static size_t mwcslen(const wchar_t *str, size_t maxsize=0)
+bool GetPData(ProcessData& Data, const ProcessPerfData& pd)
 {
-	size_t sz=0;
-
-	for (const wchar_t *p = str; !maxsize || sz<maxsize-1; p++,sz++)
-		if (*(long*)p==0)
-			break;
-
-	return sz+1;
-}
-
-HANDLE OpenProcessForced(DebugToken* token, DWORD dwFlags, DWORD dwProcessId, BOOL bInh)
-{
-	HANDLE hProcess = OpenProcess(dwFlags, bInh, dwProcessId);
-
-	if (hProcess==NULL && GetLastError()==ERROR_ACCESS_DENIED)
-	{
-		if (token->Enable())
-		{
-			hProcess = OpenProcess(dwFlags, bInh, dwProcessId);
-		}
-	}
-
-	return hProcess;
-}
-
-bool GetPData(ProcessData& DATA, ProcessPerfData& pd)
-{
-	DATA.Size = sizeof(ProcessData);
-	DATA.dwPID = pd.dwProcessId;
-	DATA.dwPrBase = pd.dwProcessPriority;
-	DATA.dwParentPID = pd.dwCreatingPID;
-	DATA.dwElapsedTime = pd.dwElapsedTime;
-	wchar_t* pFullPath = pd.FullPath;
-	if (*(DWORD*)pFullPath==0x3F005C && ((DWORD*)pFullPath)[1]==0x5C003F) // "\??\"
-		pFullPath += 4;
-
-	lstrcpyn(DATA.FullPath, pFullPath, ARRAYSIZE(DATA.FullPath));
-	lstrcpyn(DATA.CommandLine, pd.CommandLine, ARRAYSIZE(DATA.CommandLine));
-	DATA.Bitness = pd.Bitness;
+	Data.Size = sizeof(Data);
+	Data.dwPID = pd.dwProcessId;
+	Data.dwPrBase = pd.dwProcessPriority;
+	Data.dwParentPID = pd.dwCreatingPID;
+	Data.dwElapsedTime = pd.dwElapsedTime;
+	Data.FullPath.assign(pd.FullPath, !std::wmemcmp(pd.FullPath.data(), L"\\??\\", 4)? 4 : 0, Data.FullPath.npos); // gcc 7.3-8.1 bug: npos required. TODO: Remove after we move to 8.2 or later
+	Data.CommandLine = pd.CommandLine;
+	Data.Bitness = pd.Bitness;
 	return true;
 }
 
-static void WINAPI FreeUserData(void* UserData,const FarPanelItemFreeInfo* Info)
+static void WINAPI FreeUserData(void* const UserData, const FarPanelItemFreeInfo* const Info)
 {
-	delete(ProcessData *)UserData;
+	delete static_cast<const ProcessData*>(UserData);
 }
 
-BOOL GetList(PluginPanelItem* &pPanelItem,size_t &ItemsNumber,PerfThread& Thread)
+bool GetList(PluginPanelItem*& pPanelItem, size_t& ItemsNumber, PerfThread& Thread)
 {
-	DWORD numTasks;
-	ProcessPerfData* pData=0;
-//    Lock l(&Thread); // it's already locked in Plist::GetFindData
+	//    Lock l(&Thread); // it's already locked in Plist::GetFindData
 	FILETIME ftSystemTime;
 	//Prepare system time to subtract dwElapsedTime
 	GetSystemTimeAsFileTime(&ftSystemTime);
-	Thread.GetProcessData(pData, numTasks);
+	auto pData = Thread.ProcessData();
 
-	if (numTasks && !Thread.IsOK())
-		return FALSE;
+	if (pData.empty() || !Thread.IsOK())
+		return false;
 
-	pPanelItem = new PluginPanelItem[numTasks];
-	memset(pPanelItem, 0, numTasks*sizeof(*pPanelItem));
-	ItemsNumber=numTasks;
+	pPanelItem = new PluginPanelItem[pData.size()]{};
+	ItemsNumber = pData.size();
 
-	for (DWORD i=0; i<numTasks; i++)
+	for (size_t i = 0; i != pData.size(); ++i)
 	{
-		PluginPanelItem& CurItem = pPanelItem[i];
-		ProcessPerfData& pd = pData[i];
-		CurItem.UserData.FreeData=FreeUserData;
- 		//delete CurItem.FileName;  // ???
- 		CurItem.FileName = new wchar_t[lstrlen(pd.ProcessName)+1];
- 		lstrcpy((wchar_t*)CurItem.FileName, pd.ProcessName);
+		auto& CurItem = pPanelItem[i];
+		auto& pd = pData[i];
+		CurItem.UserData.FreeData = FreeUserData;
+		//delete CurItem.FileName;  // ???
+		CurItem.FileName = new wchar_t[pd.ProcessName.size() + 1];
+		*std::copy(pd.ProcessName.cbegin(), pd.ProcessName.cend(), const_cast<wchar_t*>(CurItem.FileName)) = L'\0';
 
-		if (*pd.Owner)
+		if (!pd.Owner.empty())
 		{
-			CurItem.Owner = new wchar_t[lstrlen(pd.Owner)+1];
-			lstrcpy((wchar_t*)CurItem.Owner, pd.Owner);
+			CurItem.Owner = new wchar_t[pd.Owner.size() + 1];
+			*std::copy(pd.Owner.cbegin(), pd.Owner.cend(), const_cast<wchar_t*>(CurItem.Owner)) = L'\0';
 		}
 
 		CurItem.UserData.Data = new ProcessData();
@@ -338,170 +88,81 @@ BOOL GetList(PluginPanelItem* &pPanelItem,size_t &ItemsNumber,PerfThread& Thread
 			St.LowPart = ftSystemTime.dwLowDateTime;
 			St.HighPart = ftSystemTime.dwHighDateTime;
 			ULARGE_INTEGER Cr;
-			Cr.QuadPart = St.QuadPart - (UINT64)pd.dwElapsedTime * 10000000;
+			Cr.QuadPart = St.QuadPart - pd.dwElapsedTime * 10000000;
 			pd.ftCreation.dwLowDateTime = Cr.LowPart;
 			pd.ftCreation.dwHighDateTime = Cr.HighPart;
 		}
 
-		CurItem.CreationTime = CurItem.LastWriteTime = CurItem.LastAccessTime = pd.ftCreation;
-		ULONGLONG ullSize = pd.qwCounters[IDX_WORKINGSET] + pd.qwCounters[IDX_PAGEFILE];
+		CurItem.CreationTime = CurItem.LastWriteTime = CurItem.LastAccessTime = CurItem.ChangeTime = pd.ftCreation;
+		const auto ullSize = pd.qwCounters[IDX_WORKINGSET] + pd.qwCounters[IDX_PAGEFILE];
 		CurItem.FileSize = ullSize;
 		CurItem.AllocationSize = pd.qwResults[IDX_PAGEFILE];
-//yjh:???      CurItem.AllocationSize = pd.dwProcessId;
+		//yjh:???      CurItem.AllocationSize = pd.dwProcessId;
 
-		CurItem.AlternateFileName=new wchar_t[16];
-		FSF.itoa(pd.dwProcessId, (wchar_t*)CurItem.AlternateFileName, 10);
+		CurItem.AlternateFileName = new wchar_t[16];
+		FSF.itoa(pd.dwProcessId, const_cast<wchar_t*>(CurItem.AlternateFileName), 10);
 
 		CurItem.NumberOfLinks = pd.dwThreads;
 		GetPData(*static_cast<ProcessData*>(CurItem.UserData.Data), pd);
 
-		if (pd.dwProcessId==0 && pd.dwThreads >5) //_Total
+		if (pd.dwProcessId == 0 && pd.ProcessName == L"_Total")
 			CurItem.FileAttributes |= FILE_ATTRIBUTE_HIDDEN;
 
 		if (pd.Bitness != Thread.GetDefaultBitness())
 			CurItem.FileAttributes |= FILE_ATTRIBUTE_READONLY;
 
-	}//for
-
-	return TRUE;
-}
-
-void GetOpenProcessData(HANDLE hProcess, wchar_t* pProcessName, DWORD cbProcessName,
-                          wchar_t* pFullPath, DWORD cbFullPath, wchar_t* pCommandLine, DWORD cbCommandLine,
-                          wchar_t** ppEnvStrings, wchar_t** psCurDir)
-{
-	ModuleData Data={};
-	char *pEnd;
-	PROCESS_PARAMETERS* pProcessParams = 0;
-
-	if (GetInternalProcessData(hProcess, &Data, pProcessParams, pEnd))
-	{
-		WCHAR szProcessName[MAX_PATH];
-		memset(szProcessName, 0, sizeof(szProcessName));
-
-		if (pProcessName)
-		{
-			SIZE_T sz = sizeof(szProcessName);//min(sizeof(szProcessName), Data.BaseDllName.MaximumLength*2);
-
-			if (ReadProcessMemory(hProcess, Data.BaseDllName.Buffer, szProcessName, sz,0))
-				lstrcpyn(pProcessName, szProcessName, cbProcessName);
-			else
-				*pProcessName = 0;
-		}
-
-		if (pFullPath)
-		{
-			SIZE_T sz = sizeof(szProcessName);//min(sizeof(szProcessName), Data.FullDllName.MaximumLength*2);
-
-			if (ReadProcessMemory(hProcess, Data.FullDllName.Buffer, szProcessName, sz,0))
-				lstrcpyn(pFullPath, szProcessName, cbFullPath);
-			else
-				*pFullPath = 0;
-		}
-
-		if (pCommandLine)
-		{
-			UNICODE_STRING pCmd;
-
-			if (ReadProcessMemory(hProcess, &pProcessParams->CommandLine, &pCmd, sizeof(pCmd), 0))
-			{
-				SIZE_T sz = Min(cbCommandLine, (ULONG)pCmd.Length/sizeof(WCHAR) + 1);
-				Array<WCHAR> sCommandLine((DWORD)sz);
-				*pCommandLine = 0;
-
-				if (ReadProcessMemory(hProcess, pCmd.Buffer, sCommandLine, (sz-1)*sizeof(WCHAR),0))
-				{
-					sCommandLine[sz-1] = 0;
-					lstrcpyn(pCommandLine, sCommandLine, cbCommandLine);
-				}
-			}
-		}
-
-		if (ppEnvStrings)
-		{
-			wchar_t *pEnv;
-			*ppEnvStrings = 0;
-
-			if (ReadProcessMemory(hProcess, &pProcessParams->EnvironmentBlock, &pEnv, sizeof(pEnv), 0))
-			{
-				WCHAR* pwEnvStrings = 0;
-				DWORD dwSize = 0;
-
-				while (1)
-				{
-					pwEnvStrings = new WCHAR[dwSize+=1024];
-
-					if (!ReadProcessMemory(hProcess, pEnv, pwEnvStrings, dwSize*2,0))
-					{
-						delete[] pwEnvStrings;
-						pwEnvStrings = 0;
-						break;
-					}
-
-					if (mwcslen(pwEnvStrings, dwSize)<dwSize)
-						break;
-
-					delete[] pwEnvStrings;
-				}
-
-				if (pwEnvStrings)
-				{
-					if (pwEnvStrings && *pwEnvStrings)
-						*ppEnvStrings = pwEnvStrings;
-					else
-						delete[] pwEnvStrings;
-				}
-			}
-		}
-
-		if (psCurDir)
-		{
-			*psCurDir = 0;
-			UNICODE_STRING CurDir;
-
-			if (ReadProcessMemory(hProcess, &pProcessParams->CurrentDirectoryPath, &CurDir, sizeof(CurDir), 0))
-			{
-				wchar_t *wsCurDir = new wchar_t[(CurDir.Length+1)/2 + 1];
-
-				if (ReadProcessMemory(hProcess, CurDir.Buffer, wsCurDir, CurDir.Length,0))
-				{
-					wsCurDir[(CurDir.Length+1)/2] = 0;
-					*psCurDir = wsCurDir;
-				}
-			}
-		}
 	}
+
+	return true;
 }
 
-volatile HANDLE DebugToken::hDebugToken = NULL;
+void GetOpenProcessData(
+	HANDLE hProcess,
+	std::wstring* ProcessName,
+	std::wstring* FullPath,
+	std::wstring* CommandLine,
+	std::wstring* CurDir,
+	std::wstring* EnvStrings
+)
+{
+	return (
+#ifndef _WIN64
+		is_wow64_itself() && !is_wow64_process(hProcess)?
+		ipc_functions<x64>::GetOpenProcessData :
+#endif
+		ipc_functions<same>::GetOpenProcessData
+	)
+	(
+		hProcess,
+		ProcessName,
+		FullPath,
+		CommandLine,
+		CurDir,
+		EnvStrings
+	);
+}
+
+// Debug thread token
+static handle hDebugToken;
 
 bool DebugToken::Enable()
 {
-	if (enabled || hDebugToken == NULL)
+	if (enabled || !hDebugToken)
 		return true;
 
-	BOOL rc = OpenThreadToken(GetCurrentThread(), TOKEN_IMPERSONATE, TRUE, &hSavedToken);
-
-	if (!rc)
+	if (HANDLE RawToken; OpenThreadToken(GetCurrentThread(), TOKEN_IMPERSONATE, TRUE, &RawToken))
 	{
-		hSavedToken = NULL;
-
-		if (GetLastError()==ERROR_NO_TOKEN)
-			rc = ERROR_SUCCESS;
-		else
+		hSavedToken.reset(RawToken);
+	}
+	else
+	{
+		if (GetLastError() != ERROR_NO_TOKEN)
 			return false;
 	}
 
-	rc = SetThreadToken(NULL, hDebugToken);
-
-	if (!rc)
+	if (!SetThreadToken({}, hDebugToken.get()))
 	{
-		if (hSavedToken != NULL)
-		{
-			CloseHandle(hSavedToken);
-			hSavedToken = NULL;
-		}
-
+		hSavedToken = {};
 		return false;
 	}
 
@@ -514,16 +175,10 @@ bool DebugToken::Revert()
 	if (!enabled)
 		return true;
 
-	BOOL rc = SetThreadToken(NULL, hSavedToken);
-
-	if (!rc)
+	if (!SetThreadToken({}, hSavedToken.get()))
 		return false;
 
-	if (hSavedToken != NULL)
-	{
-		CloseHandle(hSavedToken);
-		hSavedToken = NULL;
-	}
+	hSavedToken = {};
 
 	enabled = false;
 	return true;
@@ -531,73 +186,45 @@ bool DebugToken::Revert()
 
 bool DebugToken::CreateToken()
 {
-	HANDLE hProcessToken = NULL;
-	BOOL rc = OpenProcessToken(GetCurrentProcess(), TOKEN_DUPLICATE, &hProcessToken);
-
-	if (!rc)
+	handle ProcessToken;
+	if (HANDLE RawProcessToken; !OpenProcessToken(GetCurrentProcess(), TOKEN_DUPLICATE, &RawProcessToken))
 		return false;
+	else
+		ProcessToken.reset(RawProcessToken);
 
-	HANDLE hToken = NULL;
-	rc = DuplicateTokenEx(
-	         hProcessToken,
-	         TOKEN_IMPERSONATE | TOKEN_QUERY | TOKEN_ADJUST_PRIVILEGES,
-	         NULL,
-	         SecurityImpersonation,
-	         TokenImpersonation,
-	         &hToken);
-
-	if (!rc)
-	{
-		CloseHandle(hProcessToken);
+	handle Token;
+	if (HANDLE RawToken; !DuplicateTokenEx(ProcessToken.get(), TOKEN_IMPERSONATE | TOKEN_QUERY | TOKEN_ADJUST_PRIVILEGES, {}, SecurityImpersonation, TokenImpersonation, &RawToken))
 		return false;
-	}
+	else
+		Token.reset(RawToken);
 
 	TOKEN_PRIVILEGES tp;
 	tp.PrivilegeCount = 1;
 	tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-	rc = LookupPrivilegeValue(NULL, SE_DEBUG_NAME, &tp.Privileges[0].Luid);
-
-	if (!rc)
-	{
-		CloseHandle(hToken);
-		CloseHandle(hProcessToken);
+	if (!LookupPrivilegeValue({}, SE_DEBUG_NAME, &tp.Privileges[0].Luid))
 		return false;
-	}
 
-	rc = AdjustTokenPrivileges(
-	         hToken,
-	         FALSE,
-	         &tp,
-	         sizeof(tp),
-	         NULL,
-	         NULL);
-
-	if (!rc)
-	{
-		CloseHandle(hToken);
-		CloseHandle(hProcessToken);
+	if (!AdjustTokenPrivileges(Token.get(), false, &tp, sizeof(tp), {}, {}))
 		return false;
-	}
 
-	hDebugToken = hToken;
+	hDebugToken = std::move(Token);
 	return true;
 }
 
 void DebugToken::CloseToken()
 {
-	CloseHandle(hDebugToken);
-	hDebugToken = NULL;
+	hDebugToken = {};
 }
 
-BOOL KillProcess(DWORD pid,HWND hwnd)
+bool KillProcess(DWORD pid, HWND hwnd)
 {
 	DebugToken token;
-	HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
+	handle Process(OpenProcess(PROCESS_TERMINATE, FALSE, pid));
 
 	// If access denied, try to assign debug privileges
-	if (hProcess==NULL && GetLastError()==ERROR_ACCESS_DENIED)
+	if (!Process && GetLastError() == ERROR_ACCESS_DENIED)
 	{
-		const wchar_t *MsgItems[]=
+		const wchar_t* MsgItems[]
 		{
 			GetMsg(MDeleteTitle),
 			GetMsg(MCannotDeleteProc),
@@ -607,204 +234,143 @@ BOOL KillProcess(DWORD pid,HWND hwnd)
 			GetMsg(MNo)
 		};
 
-		if (Message(FMSG_WARNING,NULL,MsgItems,ARRAYSIZE(MsgItems),2)==0)
-		{
-			if (token.Enable())
-				hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
-		}
+		if (Message(FMSG_WARNING, {}, MsgItems, std::size(MsgItems), 2) != 0)
+			return false;
+
+		if (token.Enable())
+			Process.reset(OpenProcess(PROCESS_TERMINATE, FALSE, pid));
 	}
 
-	BOOL bRet = FALSE;
+	if (!Process)
+		return false;
 
-	if (hProcess)
-	{
-		bRet = TerminateProcess(hProcess, 1);
-		CloseHandle(hProcess);
-	}
-
-	return bRet;
-}
-
-wchar_t* PrintTime(ULONG s, bool bDays=true)
-{
-	ULONG m = s/60;
-	s %= 60;
-	ULONG h = m / 60;
-	m %= 60;
-	static wchar_t buf[32];
-
-	if (!bDays || h<24)
-		FSF.sprintf(buf, L"%02d:%02d:%02d", h, m, s);
-	else
-		FSF.sprintf(buf, L"%d %02d:%02d:%02d", h/24, h%24, m, s);
-
-	return buf;
-}
-
-wchar_t* PrintTime(ULONGLONG ul100ns, bool bDays)
-{
-	wchar_t* buf = PrintTime((ULONG)(ul100ns/10000000), bDays);
-	FSF.sprintf(buf+lstrlen(buf), L".%03d", (ul100ns/10000)%1000);
-	return buf;
-}
-
-wchar_t* PrintNTUptime(void*p)
-{
-	return PrintTime((ULONG)(static_cast<ProcessData*>(p))->dwElapsedTime);
-}
-
-void DumpNTCounters(HANDLE InfoFile, PerfThread& Thread, DWORD dwPid, DWORD dwThreads)
-{
-	fputc(L'\n',InfoFile);
-	Lock l(&Thread);
-	ProcessPerfData* pdata = Thread.GetProcessData(dwPid, dwThreads);
-
-	if (!pdata)
-		return;
-
-	const PerfLib* pf = Thread.GetPerfLib();
-
-	for (size_t i=0; i<ARRAYSIZE(Counters); i++)
-	{
-		if (!pf->dwCounterTitles[i]) // counter is absent
-			continue;
-
-		wchar_t buf[28];
-		lstrcpyn(buf,GetMsg(Counters[i].idName),ARRAYSIZE(buf)-2);
-		lstrcat(buf,L":");
-		fprintf(InfoFile, L"%-24s ", buf);
-
-		switch (pf->CounterTypes[i])
-		{
-			case PERF_COUNTER_RAWCOUNT:
-			{
-				// Display as is.  No Display Suffix.
-				fprintf(InfoFile, L"%10I64u\n", pdata->qwResults[i]);
-			}
-			break;
-			case PERF_COUNTER_LARGE_RAWCOUNT: //  same, large int
-			{
-				fprintf(InfoFile, L"%10I64u\n", pdata->qwResults[i]);
-			}
-			break;
-			case PERF_100NSEC_TIMER:
-			{
-				// 64-bit Timer in 100 nsec units. Display delta divided by delta time. Display suffix: "%"
-				fprintf(InfoFile, L"%s %7I64u%%\n", PrintTime((ULONGLONG)pdata->qwCounters[i]), pdata->qwResults[i]);
-			}
-			break;
-			case PERF_COUNTER_COUNTER:
-			{
-				// 32-bit Counter.  Divide delta by delta time.  Display suffix: "/sec"
-				fprintf(InfoFile, L"%10I64u  %5I64u%s\n", pdata->qwCounters[i], pdata->qwResults[i], GetMsg(MperSec));
-			}
-			break;
-			case PERF_COUNTER_BULK_COUNT: //PERF_COUNTER_BULK_COUNT
-			{
-				// 64-bit Counter.  Divide delta by delta time. Display Suffix: "/sec"
-				fprintf(InfoFile, L"%10I64u  %5I64u%s\n", pdata->qwCounters[i], pdata->qwResults[i], GetMsg(MperSec));
-			}
-			break;
-			default:
-				fputc(L'\n',InfoFile);
-		}
-	}
+	return TerminateProcess(Process.get(), ERROR_PROCESS_ABORTED);
 }
 
 void PrintNTCurDirAndEnv(HANDLE InfoFile, HANDLE hProcess, BOOL bExportEnvironment)
 {
-	wchar_t* sCurDir=0;
-	wchar_t *pEnvStrings = 0;
-	GetOpenProcessData(hProcess, 0,0,0,0,0,0, bExportEnvironment ? &pEnvStrings : 0, &sCurDir);
-	fputc(L'\n',InfoFile);
+	std::wstring CurDir, EnvStrings;
+	GetOpenProcessData(hProcess, {}, {}, {}, &CurDir, bExportEnvironment? &EnvStrings : nullptr);
+	WriteToFile(InfoFile, L'\n');
 
-	if (sCurDir)
+	if (!CurDir.empty())
 	{
-		fprintf(InfoFile, L"%s %s\n\n", Plist::PrintTitle(MCurDir), sCurDir);
-		delete[] sCurDir;
+		WriteToFile(InfoFile, format(FSTR(L"{0}:\n{1}\n"), GetMsg(MCurDir), CurDir));
 	}
 
-	if (bExportEnvironment && pEnvStrings)
+	if (bExportEnvironment && !EnvStrings.empty())
 	{
-		fprintf(InfoFile, L"%s\n\n", GetMsg(MEnvironment));
+		WriteToFile(InfoFile, format(FSTR(L"\n{0}:\n"), GetMsg(MEnvironment)));
 
-		for (wchar_t* p = pEnvStrings; *p; p+=lstrlen(p)+1)
+		for (wchar_t* p = EnvStrings.data(); *p; p += std::wcslen(p) + 1)
 		{
-			fprintf(InfoFile, L"%s\n", p);
+			WriteToFile(InfoFile, format(FSTR(L"{0}\n"), p));
 		}
-
-		delete[] pEnvStrings;
 	}
 }
 
-void PrintModuleVersion(HANDLE InfoFile, wchar_t* pVersion, wchar_t* pDesc, int len)
+static void PrintModuleVersion(HANDLE InfoFile, const wchar_t* pVersion, const wchar_t* pDesc, size_t len)
 {
-	//Changes pVersion and pDesc contents!
-
 	do
 	{
-		fputc(L'\t', InfoFile);
-	}
-	while ((len=(len|7)+1) < 56);
+		WriteToFile(InfoFile, L'\t');
+	} while ((len = (len | 7) + 1) < 56);
 
-	int len2=0;
-	fprintf2(len2, InfoFile, L"%s", pVersion?pVersion:L"");
-	len += len2;
+	len += WriteToFile(InfoFile, pVersion? pVersion : L"");
 
 	if (pDesc)
 	{
 		do
 		{
-			fputc(L' ', InfoFile);
-		}
-		while (len++ < 72);
+			WriteToFile(InfoFile, L' ');
+		} while (len++ < 72);
 
-		fprintf(InfoFile, L"%s", pDesc);
+		WriteToFile(InfoFile, pDesc);
 	}
 }
 
-void PrintModules(HANDLE InfoFile, DWORD dwPID, _Opt& Opt)
+static void print_module_impl(HANDLE const InfoFile, const std::wstring& Module, DWORD const SizeOfImage, const options& LocalOpt, const std::function<bool(wchar_t*, size_t)>& GetName)
 {
-	ModuleData Data;
-	DebugToken token;
-	HANDLE hProcess = OpenProcessForced(&token, PROCESS_QUERY_INFORMATION|PROCESS_VM_READ|READ_CONTROL, dwPID);
-	PROCESS_PARAMETERS* pProcessParams;
-	char *pEnd;
+	auto len = WriteToFile(InfoFile, format(FSTR(L"{0} {1:8X}"), Module, SizeOfImage));
 
-	if (hProcess && GetInternalProcessData(hProcess, &Data, pProcessParams, pEnd, true))
+	WCHAR wszModuleName[MAX_PATH];
+
+	if (GetName(wszModuleName, std::size(wszModuleName)))
 	{
-		char *p4;
+		len += WriteToFile(InfoFile, format(FSTR(L" {0}"), wszModuleName));
 
-		do
+		const wchar_t* pVersion, * pDesc;
+		std::unique_ptr<char[]> Buffer;
+
+		if (LocalOpt.ExportModuleVersion && Plist::GetVersionInfo(static_cast<wchar_t*>(wszModuleName), Buffer, pVersion, pDesc))
 		{
-			int len = 0;
-			fprintf2(len, InfoFile, L"  %p  %6X", Data.BaseAddress, Data.SizeOfImage);
-			WCHAR wszModuleName[MAX_PATH];
-			SIZE_T sz = sizeof(wszModuleName);//min(sizeof(wszModuleName), Data.BaseDllName.MaximumLength*2);
-
-			if (ReadProcessMemory(hProcess, Data.FullDllName.Buffer, wszModuleName, sz,0))
-			{
-				int len2=0;
-				fprintf2(len2, InfoFile, L" %s", wszModuleName);
-				len += len2;
-				wchar_t   *pVersion, *pDesc;
-				LPBYTE  pBuf;
-
-				if (Opt.ExportModuleVersion && Plist::GetVersionInfo((wchar_t*)wszModuleName, pBuf, pVersion, pDesc))
-				{
-					PrintModuleVersion(InfoFile, pVersion, pDesc, len);
-					delete[] pBuf;
-				}
-			}
-
-			fputc(L'\n', InfoFile);
-			p4 = (char *)Data.InMemoryOrderModuleList.Flink;
+			PrintModuleVersion(InfoFile, pVersion, pDesc, len);
 		}
-		while (p4 && p4!=pEnd && ReadProcessMemory(hProcess, p4-sizeof(PVOID)*2, &Data, sizeof(Data), 0));
 	}
 
-	fputc(L'\n', InfoFile);
+	WriteToFile(InfoFile, L'\n');
+}
 
-	if (hProcess)
-		CloseHandle(hProcess);
+template<typename module_type>
+static void print_module(HANDLE const InfoFile, module_type Module, DWORD const SizeOfImage, options& LocalOpt, const std::function<bool(wchar_t*, size_t)>& GetName)
+{
+	std::wstring ModuleStr;
+
+	if constexpr (sizeof(module_type) > sizeof(void*))
+		ModuleStr = format(FSTR(L"{0:016X}"), Module);
+	else
+		ModuleStr = format(FSTR(L"{0:0{1}X}"), reinterpret_cast<uintptr_t>(Module), sizeof(void*) * 2);
+
+	print_module_impl(InfoFile, ModuleStr, SizeOfImage, LocalOpt, GetName);
+}
+
+void PrintModules(HANDLE InfoFile, DWORD dwPID, options& LocalOpt)
+{
+	DebugToken token;
+	const handle Process(OpenProcessForced(&token, PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | READ_CONTROL, dwPID));
+	if (!Process)
+		return;
+
+	std::vector<HMODULE> Modules(1024);
+	DWORD RequiredSize = 0;
+	const auto Size = [&] { return static_cast<DWORD>(Modules.size() * sizeof(Modules[0])); };
+	const auto Resize = [&] { Modules.resize(RequiredSize / sizeof(Modules[0])); };
+
+	while (pEnumProcessModulesEx(Process.get(), Modules.data(), Size(), &RequiredSize, LIST_MODULES_ALL) && RequiredSize > Size())
+	{
+		Resize();
+	}
+
+	Resize();
+
+	if (RequiredSize)
+	{
+		for (const auto Module: Modules)
+		{
+			MODULEINFO Info{};
+			GetModuleInformation(Process.get(), Module, &Info, sizeof(Info));
+
+			print_module(InfoFile, Info.lpBaseOfDll, Info.SizeOfImage, LocalOpt, [&](wchar_t* const Buffer, size_t const BufferSize)
+			{
+				return GetModuleFileNameExW(Process.get(), Module, Buffer, static_cast<DWORD>(BufferSize)) != 0;
+			});
+		}
+	}
+	else
+	{
+		return (
+#ifndef _WIN64
+			is_wow64_itself() && !is_wow64_process(Process.get())?
+			ipc_functions<x64>::PrintModules :
+#endif
+			ipc_functions<same>::PrintModules
+		)
+		(
+			Process.get(),
+			InfoFile,
+			LocalOpt
+		);
+	}
+
+	WriteToFile(InfoFile, L'\n');
 }

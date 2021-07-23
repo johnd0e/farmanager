@@ -35,53 +35,77 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "plugin.hpp"
 
+// Platform:
 #include "platform.fwd.hpp"
 
+// Common:
+#include "common/noncopyable.hpp"
 #include "common/range.hpp"
 
-template<class T>
-auto ToPercent(T Value, T Base)
-{
-	if (!Base)
-		return 0;
+// External:
 
-	return static_cast<int>(std::numeric_limits<T>::max() / 100 > Value?
-		Value * 100 / Base :
-		Value / Base * 100);
-}
+//----------------------------------------------------------------------------
 
-template<typename T>
-T FromPercent(int Percent, T Base)
-{
-	if (!Percent)
-		return 0;
-
-	return std::numeric_limits<T>::max() / Percent > Base?
-		Base * Percent / 100 :
-		Base / 100 * Percent;
-};
+unsigned int ToPercent(unsigned long long Value, unsigned long long Base);
+unsigned long long FromPercent(unsigned int Percent, unsigned long long Base);
 
 string MakeTemp(string_view Prefix = {}, bool WithTempPath = true, string_view UserTempPath = {});
+string MakeTempInSameDir(string_view FileName);
 
 void PluginPanelItemToFindDataEx(const PluginPanelItem& Src, os::fs::find_data& Dest);
 
 class PluginPanelItemHolder
 {
 public:
-	NONCOPYABLE(PluginPanelItemHolder);
-
-	PluginPanelItemHolder() = default;
-	~PluginPanelItemHolder();
+	virtual void set_name(string_view Value) = 0;
+	virtual void set_alt_name(string_view Value) = 0;
+	virtual void set_description(string_view Value) = 0;
+	virtual void set_owner(string_view Value) = 0;
+	virtual void set_columns(span<const wchar_t* const> Value) = 0;
 
 	PluginPanelItem Item{};
+
+protected:
+	virtual ~PluginPanelItemHolder() = default;
 };
 
-class PluginPanelItemHolderNonOwning: public PluginPanelItemHolder
+class PluginPanelItemHolderRef: public PluginPanelItemHolder
 {
 public:
-	~PluginPanelItemHolderNonOwning()
+	~PluginPanelItemHolderRef() override = default;
+
+	void set_name(string_view Value) override;
+	void set_alt_name(string_view Value) override;
+	void set_description(string_view Value) override;
+	void set_owner(string_view Value) override;
+	void set_columns(span<const wchar_t* const> Value) override;
+};
+
+class PluginPanelItemHolderHeap: public PluginPanelItemHolder
+{
+public:
+	NONCOPYABLE(PluginPanelItemHolderHeap);
+
+	PluginPanelItemHolderHeap() = default;
+	~PluginPanelItemHolderHeap() override;
+
+	void set_name(string_view Value) override;
+	void set_alt_name(string_view Value) override;
+	void set_description(string_view Value) override;
+	void set_owner(string_view Value) override;
+	void set_columns(span<const wchar_t* const> Value) override;
+
+private:
+	static const wchar_t* make_copy(string_view Value);
+};
+
+class PluginPanelItemHolderHeapNonOwning: public PluginPanelItemHolderHeap
+{
+public:
+	~PluginPanelItemHolderHeapNonOwning() override
 	{
 		Item = {};
 	}
@@ -89,16 +113,15 @@ public:
 
 void FindDataExToPluginPanelItemHolder(const os::fs::find_data& Src, PluginPanelItemHolder& Holder);
 
-void FreePluginPanelItemNames(const PluginPanelItem& Data);
+void FreePluginPanelItemData(const PluginPanelItem& Data);
 void FreePluginPanelItemUserData(HANDLE hPlugin, const UserDataItem& Data);
-void FreePluginPanelItemDescriptionOwnerAndColumns(const PluginPanelItem& Data);
-void FreePluginPanelItemsNames(const std::vector<PluginPanelItem>& Items);
+void FreePluginPanelItemsData(span<PluginPanelItem> Items);
 
 class plugin_item_list
 {
 public:
 	NONCOPYABLE(plugin_item_list);
-	MOVABLE(plugin_item_list);
+	MOVE_CONSTRUCTIBLE(plugin_item_list);
 
 	plugin_item_list() = default;
 	~plugin_item_list();
@@ -117,13 +140,13 @@ private:
 };
 
 template<class T>
-void DeleteRawArray(range<T> Data)
+void DeleteRawArray(span<T> Data)
 {
-	for (const auto& i : Data)
+	for (const auto& i: Data)
 	{
 		delete[] i;
 	}
-	
+
 	delete[] Data.data();
 }
 
@@ -145,7 +168,7 @@ private:
 template<>
 struct std::hash<UUID>
 {
-	size_t operator()(const UUID& Value) const
+	size_t operator()(const UUID& Value) const noexcept
 	{
 		RPC_STATUS Status;
 		return UuidHash(const_cast<UUID*>(&Value), &Status);
@@ -154,6 +177,6 @@ struct std::hash<UUID>
 
 void ReloadEnvironment();
 
-unsigned int CRC32(unsigned int crc, const void* buffer, size_t size);
+string version_to_string(const VersionInfo& Version);
 
 #endif // MIX_HPP_67869A41_F20D_4C95_86E1_4D598A356EE1

@@ -35,11 +35,21 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "filemasks.hpp"
 #include "hilight.hpp"
 
+// Platform:
 #include "platform.chrono.hpp"
 #include "platform.fwd.hpp"
+
+// Common:
+#include "common/function_ref.hpp"
+#include "common/utility.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 enum
 {
@@ -48,34 +58,34 @@ enum
 
 enum enumFileFilterFlagsType: int
 {
-	FFFT_FIRST = 0, //обязан быть первым
-
-	FFFT_LEFTPANEL = FFFT_FIRST,
+	// Keep the order
+	FFFT_LEFTPANEL,
 	FFFT_RIGHTPANEL,
 	FFFT_FINDFILE,
 	FFFT_COPY,
 	FFFT_SELECT,
 	FFFT_CUSTOM,
 
-	FFFT_COUNT, //обязан быть последним
+	FFFT_COUNT
 };
 
 enum enumFileFilterFlags
 {
-	FFF_NONE    = 0x00000000,
-	FFF_INCLUDE = 0x00000001,
-	FFF_EXCLUDE = 0x00000002,
-	FFF_STRONG  = 0x10000000
+	FFF_NONE    = 0,
+	FFF_INCLUDE = 0_bit,
+	FFF_EXCLUDE = 1_bit,
+	FFF_STRONG  = 28_bit
 };
 
 enum enumFDateType
 {
-	FDATE_MODIFIED=0,
+	// Keep the order
+	FDATE_MODIFIED,
 	FDATE_CREATED,
 	FDATE_OPENED,
 	FDATE_CHANGED,
 
-	FDATE_COUNT, // всегда последний !!!
+	FDATE_COUNT
 };
 
 class filter_dates
@@ -97,7 +107,7 @@ public:
 private:
 	os::chrono::duration m_After;
 	os::chrono::duration m_Before;
-	bool m_Relative;
+	bool m_Relative{};
 };
 
 class FileFilterParams
@@ -115,7 +125,7 @@ public:
 	void SetDate(bool Used, enumFDateType DateType, const filter_dates& Dates);
 	void SetSize(bool Used, string_view SizeAbove, string_view SizeBelow);
 	void SetHardLinks(bool Used, DWORD HardLinksAbove, DWORD HardLinksBelow);
-	void SetAttr(bool Used, DWORD AttrSet, DWORD AttrClear);
+	void SetAttr(bool Used, os::fs::attributes AttrSet, os::fs::attributes AttrClear);
 	void SetColors(const highlight::element& Colors);
 	void SetSortGroup(int SortGroup) { FHighlight.SortGroup = SortGroup; }
 	void SetContinueProcessing(bool bContinueProcessing) { FHighlight.bContinueProcessing = bContinueProcessing; }
@@ -127,77 +137,78 @@ public:
 	bool IsMaskUsed() const { return FMask.Used; }
 	bool GetDate(DWORD* DateType, filter_dates* Dates) const;
 	bool IsSizeUsed() const {return FSize.Used;}
-	const string& GetSizeAbove() const {return FSize.SizeAbove;}
-	const string& GetSizeBelow() const {return FSize.SizeBelow;}
+	const string& GetSizeAbove() const {return FSize.Above.Size;}
+	const string& GetSizeBelow() const {return FSize.Below.Size;}
 	bool  GetHardLinks(DWORD *HardLinksAbove, DWORD *HardLinksBelow) const;
-	bool  GetAttr(DWORD *AttrSet, DWORD *AttrClear) const;
+	bool  GetAttr(os::fs::attributes* AttrSet, os::fs::attributes* AttrClear) const;
 	highlight::element GetColors() const;
 	wchar_t GetMarkChar() const;
 	int   GetSortGroup() const { return FHighlight.SortGroup; }
 	bool  GetContinueProcessing() const { return FHighlight.bContinueProcessing; }
 	DWORD GetFlags(enumFileFilterFlagsType FType) const { return FFlags[FType]; }
-	void RefreshMask() {if(FMask.Used) FMask.FilterMask.Set(FMask.strMask, FMF_SILENT);}
+	void RefreshMask() {if(FMask.Used) FMask.FilterMask.assign(FMask.strMask, FMF_SILENT);}
 
 
 	// Данный метод вызывается "снаружи" и служит для определения:
 	// попадает ли файл fd под условие установленного фильтра.
 	// Возвращает true  - попадает;
 	//            false - не попадает.
-	bool FileInFilter(const FileListItem* fli, const FileList* Owner, os::chrono::time_point CurrentTime) const;
-	bool FileInFilter(const os::fs::find_data& fde, os::chrono::time_point CurrentTime, const string* FullName = nullptr) const; //Used in dirinfo, copy, findfile
-	bool FileInFilter(const PluginPanelItem& fd, os::chrono::time_point CurrentTime) const;
+	bool FileInFilter(const FileListItem& Object, const FileList* Owner, os::chrono::time_point CurrentTime) const;
+	bool FileInFilter(const os::fs::find_data& Object, os::chrono::time_point CurrentTime, string_view FullName = {}) const; //Used in dirinfo, copy, findfile
+	bool FileInFilter(const PluginPanelItem& Object, os::chrono::time_point CurrentTime) const;
 
 
 private:
-	bool FileInFilter(struct filter_file_object& Object, os::chrono::time_point CurrentTime, const std::function<void(filter_file_object&)>& Getter) const;
+	bool FileInFilter(struct filter_file_object const& Object, os::chrono::time_point CurrentTime, function_ref<int()> HardlinkGetter) const;
 
 	string m_strTitle;
 
 	struct fmask
 	{
-		bool Used;
+		bool Used{};
 		string strMask;
 		filemasks FilterMask; // Хранилище скомпилированной маски.
 	} FMask;
 
 	struct
 	{
+		bool Used{};
 		filter_dates Dates;
-		enumFDateType DateType;
-		bool Used;
+		enumFDateType DateType{ FDATE_MODIFIED };
 	} FDate;
 
 	struct
 	{
-		unsigned long long SizeAboveReal; // Здесь всегда будет размер в байтах
-		unsigned long long SizeBelowReal; // Здесь всегда будет размер в байтах
-		string SizeAbove; // Здесь всегда будет размер как его ввёл юзер
-		string SizeBelow; // Здесь всегда будет размер как его ввёл юзер
-		bool Used;
+		bool Used{};
+		struct
+		{
+			string Size; // Здесь всегда будет размер как его ввёл юзер
+			unsigned long long SizeReal{}; // Здесь всегда будет размер в байтах
+		} Above, Below;
 	} FSize;
 
 	struct // Новая структура в фильтре, чтобы считать количество жестких ссылок. Пока что реально используем только флаг Used и априорно заданное условие "ссылок больше чем одна"
 	{
-		bool Used;
-		DWORD CountAbove;
-		DWORD CountBelow;
+		bool Used{};
+		DWORD CountAbove{};
+		DWORD CountBelow{};
 	} FHardLinks;
 
 	struct
 	{
-		bool Used;
-		DWORD AttrSet;
-		DWORD AttrClear;
+		bool Used{};
+		os::fs::attributes AttrSet{};
+		os::fs::attributes AttrClear{};
 	} FAttr;
 
 	struct
 	{
 		highlight::element Colors;
-		int SortGroup;
-		bool bContinueProcessing;
+		int SortGroup{ DEFAULT_SORT_GROUP };
+		bool bContinueProcessing{};
 	} FHighlight;
 
-	std::array<DWORD, FFFT_COUNT> FFlags;
+	std::array<DWORD, FFFT_COUNT> FFlags{};
 };
 
 bool FileFilterConfig(FileFilterParams *FF, bool ColorConfig=false);

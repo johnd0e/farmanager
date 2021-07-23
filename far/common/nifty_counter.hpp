@@ -32,17 +32,12 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+//----------------------------------------------------------------------------
+
 namespace nifty_counter
 {
-	// GCC 7.1 says that using an aligned_storage here (which is the whole purpose of it) "will break strict-aliasing rules".
-	// However, if you wrap this specially designed type into an arbitrary struct it will say nothing.
-	// Good job. *slow clap*
-
 	template<typename type>
-	struct buffer
-	{
-		std::aligned_storage_t<sizeof(type), alignof(type)> data;
-	};
+	using buffer = std::aligned_storage_t<sizeof(type), alignof(type)>;
 }
 
 #define NIFTY_DECLARE(Type, Instance)\
@@ -56,7 +51,7 @@ namespace Instance##_nifty_objects\
 	Initialiser;\
 }\
 \
-extern Type& Instance;
+extern Type& Instance
 
 
 #define NIFTY_DEFINE(Type, Instance)\

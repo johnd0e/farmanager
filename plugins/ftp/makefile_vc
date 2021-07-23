@@ -2,7 +2,10 @@
 
 ANSI = 1
 NAME = FarFtp
-DOCS = FtpEng.hlf FtpRus.hlf FtpEng.lng FtpRus.lng TechInfo.reg TechInfo_rus.reg FtpCmds.txt FtpCmds_rus.txt Notes.txt Notes_rus.txt
+
+DOCS = \
+	*.reg \
+	*.txt
 
 FSTDLIB=$(OBJDIR)\FsdLib.lib
 LIBSRC=FStdLib\FARStdLib
@@ -103,8 +106,10 @@ DEP_HDR=int.h FStdLib\fstdlib.h lib/Plugin.h Plugins.h Cfg.h \
 JM.h var.h Connect.h FtpAPI.h Ftp.h
 
 ##########
-
-USERCPP=/I.\FStdLib /D__NOMEM__=1 /D__USEASSERT__=1
+!if !defined(VC) || "$(VC)" >= "14"
+NOWRN15=/wd5033
+!endif
+USERCPP=/I.\FStdLib /D__NOMEM__=1 /D__USEASSERT__=1 /wd4996 $(NOWRN15)
 !ifdef DEBUG
 USERCPP=$(USERCPP) /D__FILELOG__=1
 !endif
@@ -138,7 +143,7 @@ $(LIB_OBJS)
 <<
 !else
 {$(LIBSRC)}.cpp{$(OBJDIR)}.obj:
-	@$(CC) $(CPPFLAGS) /Fo$(OBJDIR)\ { $< } 
+	@$(CC) $(CPPFLAGS) /Fo$(OBJDIR)\ { $< }
 !endif
 
 {$(LIBSRC)}.asm{$(OBJDIR)}.obj:
@@ -164,4 +169,3 @@ $(FLLLIST): $(FICTIVE)
 !else
 	@$(MAKE) $(_MKHIDE) /f makefile_vc_fll $(_MKDO_)FLL=$@ $(_MDEFS) INSTALL=$(INSTALL)
 !endif
-

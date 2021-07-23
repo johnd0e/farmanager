@@ -36,6 +36,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "range.hpp"
 #include "scope_exit.hpp"
 
+//----------------------------------------------------------------------------
+
 namespace io
 {
 	template<typename char_type>
@@ -63,17 +65,21 @@ namespace io
 
 	using wstreambuf_override = basic_streambuf_override<wchar_t>;
 
-	inline size_t read(std::istream& Stream, const range<char*>& Buffer)
+	[[nodiscard]]
+	inline size_t read(std::istream& Stream, span<std::byte> const Buffer)
 	{
+		try
 		{
-			const auto Exceptions = Stream.exceptions();
-			Stream.exceptions(Exceptions & ~(Stream.failbit | Stream.eofbit));
-			SCOPE_EXIT{ Stream.exceptions(Exceptions); };
-
-			Stream.read(Buffer.data(), Buffer.size());
-			if (!Stream.bad() && Stream.eof())
-				Stream.clear();
+			Stream.read(static_cast<char*>(static_cast<void*>(Buffer.data())), Buffer.size());
 		}
+		catch (std::ios::failure const&)
+		{
+			if (Stream.bad())
+				throw;
+		}
+
+		if (Stream.eof())
+			Stream.clear(Stream.eofbit);
 
 		return Stream.gcount();
 	}
@@ -87,7 +93,7 @@ namespace io
 		if (!Size)
 			return;
 
-		Stream.write(static_cast<const char*>(static_cast<const void*>(std::data(Container))), Size * sizeof(*std::data(Container)));
+		Stream.write(view_as<char const*>(std::data(Container)), Size * sizeof(*std::data(Container)));
 	}
 }
 

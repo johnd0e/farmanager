@@ -35,7 +35,17 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "common/range.hpp"
+// Internal:
+
+// Platform:
+
+// Common:
+#include "common/smart_ptr.hpp"
+#include "common/utility.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 namespace os
 {
@@ -49,37 +59,39 @@ namespace os
 		NT_MAX_PATH = 32768
 	};
 
+	template<typename buffer_type>
+	auto buffer()
+	{
+		return array_ptr<buffer_type, default_buffer_size>(default_buffer_size);
+	}
+
 	namespace detail
 	{
-		template<typename buffer_type>
-		auto default_buffer()
-		{
-			return array_ptr<buffer_type, default_buffer_size>(default_buffer_size);
-		}
-
 		template<typename buffer_type, typename receiver, typename condition, typename assigner>
+		[[nodiscard]]
 		bool ApiDynamicReceiver(buffer_type&& Buffer, const receiver& Receiver, const condition& Condition, const assigner& Assigner)
 		{
-			size_t Size = Receiver({ Buffer.get(), Buffer.size() });
+			size_t Size = Receiver(Buffer);
 
 			while (Condition(Size, Buffer.size()))
 			{
 				Buffer.reset(Size? Size : Buffer.size() * 2);
-				Size = Receiver({ Buffer.get(), Buffer.size() });
+				Size = Receiver(Buffer);
 			}
 
 			if (!Size)
 				return false;
 
-			Assigner({ Buffer.get(), Size });
+			Assigner({ Buffer.data(), Size });
 			return true;
 		}
 
 		template<typename T>
+		[[nodiscard]]
 		bool ApiDynamicStringReceiver(string& Destination, const T& Callable)
 		{
 			return ApiDynamicReceiver(
-				default_buffer<wchar_t>(),
+				buffer<wchar_t>(),
 				Callable,
 				[](size_t ReturnedSize, size_t AllocatedSize)
 				{
@@ -90,58 +102,122 @@ namespace os
 					// It's Callable's responsibility to handle and fix that.
 					return ReturnedSize >= AllocatedSize;
 				},
-				[&](range<const wchar_t*> Buffer)
+				[&](string_view const Buffer)
 				{
-					Destination.assign(ALL_CONST_RANGE(Buffer));
+					Destination = Buffer;
 				});
 		}
 
 		template<typename T>
+		[[nodiscard]]
 		bool ApiDynamicErrorBasedStringReceiver(DWORD ExpectedErrorCode, string& Destination, const T& Callable)
 		{
 			return ApiDynamicReceiver(
-				default_buffer<wchar_t>(),
+				buffer<wchar_t>(),
 				Callable,
 				[&](size_t ReturnedSize, size_t AllocatedSize)
 				{
 					return !ReturnedSize && GetLastError() == ExpectedErrorCode;
 				},
-				[&](range<const wchar_t*> Buffer)
+				[&](string_view const Buffer)
 				{
-					Destination.assign(ALL_CONST_RANGE(Buffer));
+					Destination = Buffer;
 				});
 		}
 
-		template<class deleter>
-		class handle_t: public base<std::unique_ptr<std::remove_pointer_t<HANDLE>, deleter>>
+		class handle_implementation
 		{
-			using base_type = typename handle_t::base_type;
+		protected:
+			[[nodiscard]]
+			static HANDLE normalise(HANDLE Handle);
+			[[nodiscard]]
+			static bool wait(HANDLE Handle, std::optional<std::chrono::milliseconds> Timeout = {});
+			[[nodiscard]]
+			static std::optional<size_t> wait(span<HANDLE const> Handles, bool WaitAll, std::optional<std::chrono::milliseconds> Timeout = {});
+		};
 
+		template<class deleter>
+		class handle_t: handle_implementation, public base<std::unique_ptr<std::remove_pointer_t<HANDLE>, deleter>>
+		{
 		public:
 			MOVABLE(handle_t);
 
 			constexpr handle_t() = default;
-			constexpr handle_t(std::nullptr_t) {}
-			explicit handle_t(HANDLE Handle): base_type(normalise(Handle)) {}
-			void reset(HANDLE Handle = nullptr) { base_type::reset(normalise(Handle)); }
-			HANDLE native_handle() const { return base_type::get(); }
-			void close() { reset(); }
-			bool wait(std::chrono::milliseconds Timeout) const { return WaitForSingleObject(native_handle(), Timeout.count()) == WAIT_OBJECT_0; }
-			bool wait() const { return WaitForSingleObject(native_handle(), INFINITE) == WAIT_OBJECT_0; }
-			bool is_signaled() const { return wait(0ms); }
 
-		private:
-			static HANDLE normalise(HANDLE Handle) { return Handle == INVALID_HANDLE_VALUE? nullptr : Handle; }
+			constexpr handle_t(std::nullptr_t)
+			{
+			}
+
+			explicit handle_t(HANDLE Handle):
+				handle_t::base_ctor(normalise(Handle))
+			{
+			}
+
+			void reset(HANDLE Handle)
+			{
+				handle_t::base_type::reset(normalise(Handle));
+			}
+
+			[[nodiscard]]
+			HANDLE native_handle() const
+			{
+				return handle_t::base_type::get();
+			}
+
+			void close()
+			{
+				reset(nullptr);
+			}
+
+			void wait() const
+			{
+				(void)handle_implementation::wait(native_handle());
+			}
+
+			[[nodiscard]]
+			bool is_signaled(std::chrono::milliseconds Timeout = 0ms) const
+			{
+				return handle_implementation::wait(native_handle(), Timeout);
+			}
+
+			[[nodiscard]]
+			static bool is_signaled(HANDLE const Handle, std::chrono::milliseconds const Timeout = 0ms)
+			{
+				return handle_implementation::wait(Handle, Timeout);
+			}
+
+			[[nodiscard]]
+			static auto wait_any(span<HANDLE const> const Handles, std::optional<std::chrono::milliseconds> const Timeout)
+			{
+				return handle_implementation::wait(Handles, false, Timeout);
+			}
+
+			[[nodiscard]]
+			static auto wait_any(span<HANDLE const> const Handles)
+			{
+				return *handle_implementation::wait(Handles, false);
+			}
+
+			[[nodiscard]]
+			static bool wait_all(span<HANDLE const> const Handles, std::optional<std::chrono::milliseconds> const Timeout)
+			{
+				return handle_implementation::wait(Handles, true, Timeout).has_value();
+			}
+
+			static void wait_all(span<HANDLE const> const Handles)
+			{
+				(void)handle_implementation::wait(Handles, true);
+			}
 		};
 
 		struct handle_closer
 		{
-			void operator()(HANDLE Handle) const;
+			void operator()(HANDLE Handle) const noexcept;
 		};
 
 		struct printer_handle_closer
 		{
-			void operator()(HANDLE Handle) const;
+			void operator()(HANDLE Handle) const noexcept;
 		};
 	}
 
@@ -151,35 +227,83 @@ namespace os
 	void set_error_mode(unsigned Mask);
 	void unset_error_mode(unsigned Mask);
 
-	NTSTATUS GetLastNtStatus();
+	[[nodiscard]]
+	NTSTATUS get_last_nt_status();
 
-	string GetErrorString(bool Nt, DWORD Code);
+	void set_last_nt_status(NTSTATUS Status);
+	void set_last_error_from_ntstatus(NTSTATUS Status);
+
+	[[nodiscard]]
+	string format_errno(int ErrorCode);
+
+	[[nodiscard]]
+	string format_error(DWORD ErrorCode);
+
+	[[nodiscard]]
+	string format_ntstatus(NTSTATUS Status);
+
+	class last_error_guard
+	{
+	public:
+		NONCOPYABLE(last_error_guard);
+
+		last_error_guard();
+		~last_error_guard();
+
+		void dismiss();
+
+	private:
+		DWORD m_LastError;
+		NTSTATUS m_LastStatus;
+		bool m_Active;
+	};
+
 
 	bool WNetGetConnection(string_view LocalName, string &RemoteName);
 
-	void EnableLowFragmentationHeap();
-
-	string GetPrivateProfileString(const string& AppName, const string& KeyName, const string& Default, const string& FileName);
+	[[nodiscard]]
+	string GetPrivateProfileString(string_view AppName, string_view KeyName, string_view Default, string_view FileName);
 
 	bool GetWindowText(HWND Hwnd, string& Text);
 
+	[[nodiscard]]
+#ifdef _WIN64
+	constexpr bool IsWow64Process() { return false; }
+#else
 	bool IsWow64Process();
+#endif
 
+	[[nodiscard]]
 	DWORD GetAppPathsRedirectionFlag();
 
+	[[nodiscard]]
 	bool GetDefaultPrinter(string& Printer);
 
+	[[nodiscard]]
 	bool GetComputerName(string& Name);
+
+	[[nodiscard]]
 	bool GetComputerNameEx(COMPUTER_NAME_FORMAT NameFormat, string& Name);
+
+	[[nodiscard]]
 	bool GetUserName(string& Name);
+
+	[[nodiscard]]
 	bool GetUserNameEx(EXTENDED_NAME_FORMAT NameFormat, string& Name);
 
+	[[nodiscard]]
 	bool get_locale_value(LCID LcId, LCTYPE Id, string& Value);
+
+	[[nodiscard]]
 	bool get_locale_value(LCID LcId, LCTYPE Id, int& Value);
 
+	[[nodiscard]]
 	handle OpenCurrentThread();
 
+	[[nodiscard]]
 	handle OpenConsoleInputBuffer();
+
+	[[nodiscard]]
 	handle OpenConsoleActiveScreenBuffer();
 
 
@@ -193,16 +317,35 @@ namespace os
 			MOVABLE(module);
 
 			explicit module(string_view const Name, bool AlternativeLoad = false):
-				m_name(ALL_CONST_RANGE(Name)),
+				m_name(Name),
 				m_tried(),
 				m_AlternativeLoad(AlternativeLoad)
 			{}
 
-			void* GetProcAddress(const char* name) const { return reinterpret_cast<void*>(::GetProcAddress(get_module(), name)); }
-			explicit operator bool() const noexcept { return get_module() != nullptr; }
+			template<typename T>
+			[[nodiscard]]
+			T GetProcAddress(const char* name) const
+			{
+				return reinterpret_cast<T>(reinterpret_cast<void*>(get_proc_address(get_module(), name)));
+			}
+
+			[[nodiscard]]
+			explicit operator bool() const noexcept
+			{
+				return get_module() != nullptr;
+			}
+
+			[[nodiscard]]
+			const string& name() const
+			{
+				return m_name;
+			}
 
 		private:
-			HMODULE get_module() const;
+			[[nodiscard]]
+			HMODULE get_module() const noexcept;
+
+			FARPROC get_proc_address(HMODULE Module, const char* Name) const;
 
 			struct module_deleter { void operator()(HMODULE Module) const; };
 			using module_ptr = std::unique_ptr<std::remove_pointer_t<HMODULE>, module_deleter>;
@@ -214,23 +357,32 @@ namespace os
 		};
 
 		template<typename T>
-		class function_pointer: noncopyable
+		class function_pointer
 		{
 		public:
+			NONCOPYABLE(function_pointer);
+
 			function_pointer(const module& Module, const char* Name):
 				m_Module(&Module),
 				m_Name(Name)
 			{}
 
+			[[nodiscard]]
 			operator T() const { return get_pointer(); }
+
+			[[nodiscard]]
 			explicit operator bool() const noexcept { return get_pointer() != nullptr; }
 
+			[[nodiscard]]
+			std::string_view name() const { return m_Name; }
+
 		private:
+			[[nodiscard]]
 			T get_pointer() const
 			{
 				if (!m_Tried)
 				{
-					m_Pointer = reinterpret_cast<T>(m_Module->GetProcAddress(m_Name));
+					m_Pointer = m_Module->GetProcAddress<T>(m_Name);
 					m_Tried = true;
 				}
 
@@ -251,56 +403,32 @@ namespace os
 			template<class T>
 			struct deleter
 			{
-				void operator()(T* Ptr) const
+				void operator()(T* Ptr) const noexcept
 				{
 					NetApiBufferFree(Ptr);
 				}
 			};
-		};
+		}
 
 		template<class T>
 		using ptr = std::unique_ptr<T, detail::deleter<T>>;
 	}
 
-	namespace com
+	namespace uuid
 	{
-		class initialize: noncopyable
-		{
-		public:
-			initialize();
-			~initialize();
+		[[nodiscard]]
+		UUID generate();
+	}
 
-		private:
-			const bool m_Initialised;
-		};
-
-		namespace detail
-		{
-			template<typename T>
-			struct releaser
-			{
-				void operator()(T* Object) const
-				{
-					Object->Release();
-				}
-			};
-
-			struct memory_releaser
-			{
-				void operator()(const void* Object) const;
-			};
-		}
-
-		template<typename T>
-		using ptr = std::unique_ptr<T, detail::releaser<T>>;
-
-		template<typename T>
-		using memory = std::unique_ptr<std::remove_pointer_t<T>, detail::memory_releaser>;
+	namespace debug
+	{
+		bool debugger_present();
+		void breakpoint(bool Always = true);
+		void print(const wchar_t* Str);
+		void print(string const& Str);
+		void set_thread_name(const wchar_t* Name);
+		std::vector<uintptr_t> current_stack(size_t FramesToSkip = 0, size_t FramesToCapture = std::numeric_limits<size_t>::max());
 	}
 }
-
-UUID CreateUuid();
-string GuidToStr(const GUID& Guid);
-bool StrToGuid(string_view Value, GUID& Guid);
 
 #endif // PLATFORM_HPP_632CB91D_08A9_4793_8FC7_2E38C30CE234

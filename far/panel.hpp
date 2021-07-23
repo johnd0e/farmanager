@@ -35,12 +35,21 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "scrobj.hpp"
 #include "panelfwd.hpp"
+#include "panelctype.hpp"
 
+// Platform:
 #include "platform.fwd.hpp"
 
+// Common:
 #include "common/enumerator.hpp"
+#include "common/range.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 class plugin_panel;
 class DizList;
@@ -49,9 +58,10 @@ struct OpenPanelInfo;
 
 struct column
 {
-	unsigned long long type;
-	int width;
-	int width_type;
+	column_type type{ column_type::name };
+	int type_flags{};
+	int width{};
+	int width_type{};
 	string title;
 };
 
@@ -81,22 +91,22 @@ struct PanelViewSettings
 enum panel_view_settings_flags
 {
 	PVS_NONE                  = 0,
-	PVS_FULLSCREEN            = bit(0),
-	PVS_ALIGNEXTENSIONS       = bit(1),
-	PVS_FOLDERALIGNEXTENSIONS = bit(2),
-	PVS_FOLDERUPPERCASE       = bit(3),
-	PVS_FILELOWERCASE         = bit(5),
-	PVS_FILEUPPERTOLOWERCASE  = bit(6),
+	PVS_FULLSCREEN            = 0_bit,
+	PVS_ALIGNEXTENSIONS       = 1_bit,
+	PVS_FOLDERALIGNEXTENSIONS = 2_bit,
+	PVS_FOLDERUPPERCASE       = 3_bit,
+	PVS_FILELOWERCASE         = 5_bit,
+	PVS_FILEUPPERTOLOWERCASE  = 6_bit,
 };
 
 enum {VIEW_0=0,VIEW_1,VIEW_2,VIEW_3,VIEW_4,VIEW_5,VIEW_6,VIEW_7,VIEW_8,VIEW_9};
 
 enum
 {
-	UPDATE_KEEP_SELECTION = bit(0),
-	UPDATE_SECONDARY      = bit(1),
-	UPDATE_IGNORE_VISIBLE = bit(2),
-	UPDATE_DRAW_MESSAGE   = bit(3),
+	UPDATE_KEEP_SELECTION = 0_bit,
+	UPDATE_SECONDARY      = 1_bit,
+	UPDATE_IGNORE_VISIBLE = 2_bit,
+	UPDATE_DRAW_MESSAGE   = 3_bit,
 };
 
 enum class panel_mode
@@ -105,39 +115,13 @@ enum class panel_mode
 	PLUGIN_PANEL
 };
 
-enum class panel_sort
-{
-	UNSORTED,
-	BY_NAME,
-	BY_EXT,
-	BY_MTIME,
-	BY_CTIME,
-	BY_ATIME,
-	BY_SIZE,
-	BY_DIZ,
-	BY_OWNER,
-	BY_COMPRESSEDSIZE,
-	BY_NUMLINKS,
-	BY_NUMSTREAMS,
-	BY_STREAMSSIZE,
-	BY_FULLNAME,
-	BY_CHTIME,
-	BY_CUSTOMDATA,
+enum class panel_sort: int;
+enum class sort_order: int;
 
-	COUNT
-};
-
-enum sort_order
-{
-	SO_AUTO,
-	SO_KEEPCURRENT,
-	SO_DIRECT,
-	SO_REVERSE,
-};
+span<std::pair<panel_sort, sort_order> const> default_sort_layers(panel_sort SortMode);
 
 class VMenu2;
 class Edit;
-struct PanelMenuItem;
 class Viewer;
 class FilePanels;
 
@@ -164,54 +148,55 @@ public:
 	virtual void EditFilter() {}
 	virtual bool FileInFilter(size_t idxItem) {return true;}
 	virtual bool FilterIsEnabled() {return false;}
-	virtual void ReadDiz(PluginPanelItem *ItemList=nullptr,int ItemLength=0, DWORD dwFlags=0) {}
+	virtual void ReadDiz(span<PluginPanelItem> Items = {}) {}
 	virtual void DeleteDiz(const string& Name,const string& ShortName) {}
 	virtual string GetDizName() const { return {}; }
 	virtual void FlushDiz() {}
 	virtual void CopyDiz(const string& Name,const string& ShortName,const string& DestName, const string& DestShortName,DizList *DestDiz) {}
 	virtual bool IsDizDisplayed() const { return false; }
-	virtual bool IsColumnDisplayed(int Type) const {return false;}
+	virtual bool IsColumnDisplayed(column_type Type) const {return false;}
 	virtual int GetColumnsCount() const { return 1;}
 	virtual void SetReturnCurrentFile(bool Mode) {}
 	virtual void QViewDelTempName() {}
-	virtual void GetOpenPanelInfo(OpenPanelInfo *Info) const {}
-	virtual void SetPluginMode(std::unique_ptr<plugin_panel>&& hPlugin,const string& PluginFile,bool SendOnFocus=false) {}
+	virtual void GetOpenPanelInfo(OpenPanelInfo* Info) const;
+	virtual void SetPluginMode(std::unique_ptr<plugin_panel>&& hPlugin, string_view PluginFile, bool SendOnFocus = false) {}
 	virtual void SetPluginModified() {}
 	virtual bool ProcessPluginEvent(int Event,void *Param) {return false;}
 	virtual plugin_panel* GetPluginHandle() const {return nullptr;}
 	virtual void RefreshTitle();
 	virtual string GetTitle() const;
 	virtual bool SendKeyToPlugin(DWORD Key,bool Pred=false) {return false;}
-	virtual bool SetCurDir(const string& NewDir,bool ClosePanel,bool IsUpdated=true);
+	virtual bool SetCurDir(string_view NewDir, bool ClosePanel, bool IsUpdated = true, bool Silent = false);
 	virtual void ChangeDirToCurrent();
 	virtual const string& GetCurDir() const;
 	virtual size_t GetSelCount() const { return 0; }
 	virtual size_t GetRealSelCount() const {return 0;}
-	virtual bool GetSelName(string *strName, DWORD &FileAttr, string *ShortName = nullptr, os::fs::find_data *fd = nullptr) { return false; }
+	virtual bool GetSelName(string *strName, string *ShortName = nullptr, os::fs::find_data *fd = nullptr) { return false; }
 	virtual void ClearLastGetSelection() {}
 	virtual bool GetCurName(string &strName, string &strShortName) const;
 	virtual bool GetCurBaseName(string &strName, string &strShortName) const;
-	virtual bool GetFileName(string &strName, int Pos, DWORD &FileAttr) const { return false; }
+	virtual bool GetFileName(string& strName, int Pos, os::fs::attributes& FileAttr) const { return false; }
+	virtual const std::unordered_set<string>* GetFilteredExtensions() const { return {}; }
 	virtual int GetCurrentPos() const {return 0;}
 	virtual bool IsFocused() const;
 	virtual void OnFocusChange(bool Get);
 	virtual void Update(int Mode) = 0;
-	virtual bool UpdateIfChanged(bool Idle) {return false;}
+	virtual void UpdateIfChanged(bool Changed = false) {}
 	virtual void UpdateIfRequired() {}
 	virtual void StartFSWatcher(bool got_focus=false, bool check_time=true) {}
 	virtual void StopFSWatcher() {}
-	virtual bool FindPartName(const string& Name,int Next,int Direct=1) {return false;}
+	virtual bool FindPartName(string_view Name,int Next,int Direct=1) {return false;}
 	virtual bool GetPlainString(string& Dest, int ListPos) const { return false; }
 	virtual bool GoToFile(long idxItem) {return true;}
 	virtual bool GoToFile(string_view Name, bool OnlyPartName = false) {return true;}
 	virtual long FindFile(string_view Name, bool OnlyPartName = false) {return -1;}
-	virtual bool IsSelected(const string& Name) {return false;}
+	virtual bool IsSelected(string_view Name) {return false;}
 	virtual bool IsSelected(size_t indItem) {return false;}
-	virtual long FindFirst(const string& Name) {return -1;}
-	virtual long FindNext(int StartPos, const string& Name) {return -1;}
+	virtual long FindFirst(string_view Name) {return -1;}
+	virtual long FindNext(int StartPos, string_view Name) {return -1;}
 	virtual void SetSelectedFirstMode(bool) {}
 	virtual bool GetSelectedFirstMode() const { return false; }
-	virtual void SetViewMode(int ViewMode);
+	virtual void SetViewMode(int Mode);
 	virtual int GetPrevViewMode() const {return m_PrevViewMode;}
 	virtual panel_sort GetPrevSortMode() const { return m_SortMode; }
 	virtual bool GetPrevSortOrder() const { return m_ReverseSortOrder; }
@@ -219,15 +204,15 @@ public:
 	virtual void ChangeDirectoriesFirst(bool Mode) { SetDirectoriesFirst(Mode); }
 	virtual void OnSortingChange() {}
 	virtual void SetSortMode(panel_sort Mode, bool KeepOrder = false) { m_SortMode = Mode; }
-	virtual void SetCustomSortMode(int SortMode, sort_order Order = SO_AUTO, bool InvertByDefault = false) {}
+	virtual void SetCustomSortMode(panel_sort Mode, sort_order Order, bool InvertByDefault) {}
 	virtual void ChangeSortOrder(bool Reverse) {SetSortOrder(Reverse);}
-	virtual void IfGoHome(wchar_t Drive) {}
+	virtual void GoHome(string_view const Drive) {}
 	virtual void UpdateKeyBar() = 0;
 	virtual size_t GetFileCount() const { return 0; }
 	virtual Viewer* GetViewer() {return nullptr;}
 	virtual Viewer* GetById(int ID) { return nullptr;}
-
-	static void exclude_sets(string& mask);
+	virtual void OnDestroy() {}
+	virtual void InitCurDir(string_view CurDir);
 
 	panel_mode GetMode() const { return m_PanelMode; }
 	void SetMode(panel_mode Mode) { m_PanelMode = Mode; }
@@ -243,16 +228,14 @@ public:
 	void SetSortGroups(bool Mode) {m_SortGroups=Mode;}
 	bool GetShowShortNamesMode() const { return m_ShowShortNames; }
 	void SetShowShortNamesMode(bool Mode) {m_ShowShortNames=Mode;}
-	void InitCurDir(const string& CurDir);
 	bool ExecShortcutFolder(int Pos);
-	bool ExecShortcutFolder(string strShortcutFolder, const GUID& PluginGuid, const string& strPluginFile, const string& strPluginData, bool CheckType, bool TryClosest = true, bool Silent = false);
+	bool ExecFolder(string_view Folder, const UUID& PluginUuid, const string& strPluginFile, const string& strPluginData, bool CheckType, bool TryClosest, bool Silent);
 	bool SaveShortcutFolder(int Pos) const;
 	int SetPluginCommand(int Command,int Param1,void* Param2);
 	bool ProcessMouseDrag(const MOUSE_EVENT_RECORD* MouseEvent);
 	bool IsMouseInClientArea(const MOUSE_EVENT_RECORD *MouseEvent) const;
 	panel_type GetType() const {return m_Type;}
 	void SetUpdateMode(int Mode) {m_EnableUpdate=Mode;}
-	bool MakeListFile(string& ListFileName, bool ShortNames, string_view Modifers);
 	bool SetCurPath();
 	bool NeedUpdatePanel(const Panel *AnotherPanel) const;
 	bool IsFullScreen() const { return (m_ViewSettings.Flags & PVS_FULLSCREEN) != 0; }
@@ -269,22 +252,19 @@ public:
 		using value_type = os::fs::find_data;
 		return make_inline_enumerator<value_type>([this](const bool Reset, value_type& Value)
 		{
-			DWORD Attributes;
-
 			if (Reset)
-				GetSelName(nullptr, Attributes);
+				GetSelName(nullptr);
 
 			string Name;
-			return GetSelName(&Name, Attributes, nullptr, &Value);
+			return GetSelName(&Name, nullptr, &Value);
 		});
 	}
 
 	bool get_first_selected(os::fs::find_data& Value)
 	{
-		DWORD Attributes;
-		GetSelName(nullptr, Attributes);
+		GetSelName(nullptr);
 		string Name;
-		return GetSelName(&Name, Attributes, nullptr, &Value);
+		return GetSelName(&Name, nullptr, &Value);
 	}
 
 protected:
@@ -304,10 +284,10 @@ private:
 		string ShortcutFolder;
 		string PluginFile;
 		string PluginData;
-		GUID PluginGuid;
+		UUID PluginUuid;
 	};
 	bool GetShortcutInfo(ShortcutInfo& Info) const;
-	bool SetPluginDirectory(const string& strDirectory, bool Silent);
+	bool SetPluginDirectory(string_view Directory, bool Silent);
 
 	static void DragMessage(int X,int Y,int Move);
 
@@ -317,7 +297,7 @@ protected:
 	panel_type m_Type = panel_type::FILE_PANEL;
 	int m_EnableUpdate = TRUE;
 	panel_mode m_PanelMode = panel_mode::NORMAL_PANEL;
-	panel_sort m_SortMode = panel_sort::UNSORTED;
+	panel_sort m_SortMode{};
 	bool m_ReverseSortOrder = false;
 	bool m_SortGroups = false;
 	int m_PrevViewMode = VIEW_3;
@@ -342,8 +322,11 @@ public:
 	}
 
 private:
-	void Update(int Mode) override {};
+	void Update(int Mode) override {}
 	void UpdateKeyBar() override {}
 };
+
+int internal_sort_mode_to_plugin(panel_sort Mode);
+panel_sort plugin_sort_mode_to_internal(int Mode);
 
 #endif // PANEL_HPP_FFA15B35_5546_4AA9_84B2_B60D8AA904C7

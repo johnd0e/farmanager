@@ -1,4 +1,4 @@
-#include <all_far.h>
+﻿#include <all_far.h>
 #pragma hdrstop
 
 #include "Int.h"
@@ -35,7 +35,7 @@ static FTPInterface Interface;
 static BOOL         InterfaceInited = FALSE;
 
 //------------------------------------------------------------------------
-HANDLE _cdecl idProcStart(LPCSTR FunctionName,LPCSTR Format,...)
+HANDLE __cdecl idProcStart(LPCSTR FunctionName,LPCSTR Format,...)
 {
 	String str;
 	va_list argptr;

@@ -37,42 +37,33 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 
+// Internal:
 #include "bitflags.hpp"
 
+// Platform:
 #include "platform.fwd.hpp"
 
-enum
-{
-	// эту фигню может ставить плагин (младшие 8 бит)
-	FSCANTREE_RETUPDIR         = 0x00000001, // = FRS_RETUPDIR
-	// FSCANTREE_RETUPDIR causes GetNextName() to return every directory twice:
-	// 1. when scanning its parent directory 2. after directory scan is finished
-	FSCANTREE_RECUR            = 0x00000002, // = FRS_RECUR
-	FSCANTREE_SCANSYMLINK      = 0x00000004, // = FRS_SCANSYMLINK
+// Common:
+#include "common/noncopyable.hpp"
 
-	// в младшем слове старшие 8 бита служебные!
-	FSCANTREE_SECONDPASS       = 0x00002000, // то, что раньше было было SecondPass[]
-	FSCANTREE_SECONDDIRNAME    = 0x00004000, // set when FSCANTREE_RETUPDIR is enabled and directory scan is finished
-	FSCANTREE_INSIDEJUNCTION   = 0x00008000, // - мы внутри симлинка?
+// External:
 
-	// здесь те флаги, которые могут выставляться в 3-м параметре SetFindPath()
-	FSCANTREE_FILESFIRST       = 0x00010000, // Сканирование каталога за два прохода. Сначала файлы, затем каталоги
-};
+//----------------------------------------------------------------------------
 
 class ScanTree: noncopyable
 {
 public:
-	explicit ScanTree(bool RetUpDir, bool Recurse=true, int ScanJunction=-1);
+	explicit ScanTree(bool RetUpDir, bool Recurse=true, int ScanJunction=-1, bool FilesFirst = false);
 	~ScanTree();
 
 	// 3-й параметр - флаги из старшего слова
-	void SetFindPath(const string& Path, string_view Mask, DWORD NewScanFlags = FSCANTREE_FILESFIRST);
+	void SetFindPath(string_view Path, string_view Mask);
 	bool GetNextName(os::fs::find_data& fdata, string &strFullName);
 	void SkipDir();
-	int IsDirSearchDone() const {return Flags.Check(FSCANTREE_SECONDDIRNAME);}
-	int InsideJunction() const {return Flags.Check(FSCANTREE_INSIDEJUNCTION);}
+	bool IsDirSearchDone() const;
+	bool InsideReparsePoint() const;
 
-	struct scantree_item;
+	class scantree_item;
 
 private:
 	BitFlags Flags;

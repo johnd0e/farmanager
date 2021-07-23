@@ -32,6 +32,8 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+//----------------------------------------------------------------------------
+
 template<class T>
 class monitored
 {
@@ -49,11 +51,19 @@ public:
 
 	auto& operator=(T&& Value) noexcept { m_Value = std::move(Value); m_Touched = true; return *this; }
 
-	auto& value() { return m_Value; }
-	const auto& value() const { return m_Value; }
-	operator T&() { return m_Value; }
-	operator const T&() const { return m_Value; }
+	[[nodiscard]]
+	auto& value() noexcept { return m_Value; }
 
+	[[nodiscard]]
+	const auto& value() const noexcept { return m_Value; }
+
+	[[nodiscard]]
+	operator T&() noexcept { return m_Value; }
+
+	[[nodiscard]]
+	operator const T&() const noexcept { return m_Value; }
+
+	[[nodiscard]]
 	auto touched() const noexcept { return m_Touched; }
 
 	void forget() noexcept { m_Touched = false; }

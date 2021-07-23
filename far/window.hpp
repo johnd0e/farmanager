@@ -35,8 +35,18 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "scrobj.hpp"
 #include "plugin.hpp"
+
+// Platform:
+
+// Common:
+#include "common/smart_ptr.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 class KeyBar;
 
@@ -92,7 +102,8 @@ public:
 	void SetMacroMode(FARMACROAREA Area);
 	int ID() const {return m_ID;}
 
-	auto GetPinner() { return make_raii_wrapper(this, &window::Pin, &window::UnPin); }
+	[[nodiscard]]
+	auto GetPinner() { return make_raii_wrapper<&window::Pin, &window::UnPin>(this); }
 
 protected:
 	window();

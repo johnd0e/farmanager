@@ -34,52 +34,73 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "encoding.hpp"
 #include "eol.hpp"
 
-#include "platform.fwd.hpp"
+// Platform:
+#include "platform.fs.hpp"
 
+// Common:
 #include "common/enumerator.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 struct file_line
 {
 	string_view Str;
-	eol::type Eol;
+	eol Eol;
 };
 
 // TODO: rename
-class enum_file_lines : public enumerator<enum_file_lines, file_line>
+class [[nodiscard]] enum_lines: public enumerator<enum_lines, file_line>
 {
-	IMPLEMENTS_ENUMERATOR(enum_file_lines);
+	IMPLEMENTS_ENUMERATOR(enum_lines);
 
 public:
-	enum_file_lines(const os::fs::file& SrcFile, uintptr_t CodePage);
-	bool conversion_error() const { return m_ConversionError; }
+	enum_lines(std::istream& Stream, uintptr_t CodePage);
+
+	bool conversion_error() const { return !!m_ErrorPosition; }
 
 private:
+	[[nodiscard]]
 	bool get(bool Reset, file_line& Value) const;
 
-	bool GetString(string_view& Str, eol::type& Eol) const;
+	bool GetString(string_view& Str, eol& Eol) const;
+
+	bool fill() const;
 
 	template<typename T>
-	bool GetTString(std::vector<T>& From, std::vector<T>& To, eol::type& Eol, bool bBigEndian = false) const;
+	bool GetTString(std::basic_string<T>& To, eol& Eol, bool BigEndian = false) const;
 
-	const os::fs::file& SrcFile;
-	size_t BeginPos;
+	std::istream& m_Stream;
+	size_t m_BeginPos;
 	uintptr_t m_CodePage;
 	raw_eol m_Eol;
 
-	mutable std::vector<char> m_ReadBuf;
-	mutable std::vector<wchar_t> m_wReadBuf;
-	mutable std::vector<wchar_t> m_wStr;
-	mutable size_t ReadPos{};
-	mutable size_t ReadSize{};
-	mutable bool m_ConversionError{};
-	mutable bool m_CrSeen{};
+	mutable char_ptr m_Buffer;
+	mutable std::string_view m_BufferView;
+
+	enum
+	{
+		default_capacity = 1024,
+	};
+
+	struct conversion_data
+	{
+		mutable std::string m_Bytes;
+		mutable wchar_t_ptr_n<default_capacity> m_wBuffer;
+	};
+
+	mutable std::variant<conversion_data, string> m_Data;
+
 	mutable bool m_CrCr{};
+	mutable encoding::error_position m_ErrorPosition{};
 };
 
 // If the file contains a BOM this function will advance the file pointer by the BOM size (either 2 or 3)
-uintptr_t GetFileCodepage(const os::fs::file& File, uintptr_t DefautCodepage, bool* SignatureFound = nullptr, bool UseHeuristics = true);
+uintptr_t GetFileCodepage(const os::fs::file& File, uintptr_t DefaultCodepage, bool* SignatureFound = nullptr, bool UseHeuristics = true);
 
 #endif // FILESTR_HPP_1B6BCA12_AFF9_4C80_A59C_B4B92B21F83F

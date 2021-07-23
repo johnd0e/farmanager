@@ -1,23 +1,23 @@
 ANSI = 1
 NAME = MultiArc
-SRCS = MultiArc.cpp \
-arccfg.cpp \
-arccmd.cpp \
-arcget.cpp \
-ArcMix.cpp \
-ArcPlg.cpp \
-ArcProc.cpp \
-arcput.cpp \
-arcread.cpp \
-arcreg.cpp \
-global.cpp
-DOCS = arceng.hlf arcrus.hlf arceng.lng arcrus.lng MultiArc.TryIfNoOther.reg arcspa.lng
-NOENTRY=1
 
-include ../../far/makefile_gcc_common
+SRCS = \
+	MultiArc.cpp \
+	arccfg.cpp \
+	arccmd.cpp \
+	arcget.cpp \
+	ArcMix.cpp \
+	ArcPlg.cpp \
+	ArcProc.cpp \
+	arcput.cpp \
+	arcread.cpp \
+	arcreg.cpp \
+	global.cpp
+
+DOCS = \
+	MultiArc.TryIfNoOther.reg
 
 include ../makefile_gcc_def_inc
-
 include ../makefile_gcc_target_inc
 
 all: fmt

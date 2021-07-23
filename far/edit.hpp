@@ -35,45 +35,57 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "scrobj.hpp"
 #include "bitflags.hpp"
 #include "eol.hpp"
 #include "plugin.hpp"
 
+// Platform:
+
+// Common:
+#include "common/function_ref.hpp"
+#include "common/smart_ptr.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
+
 struct FarColor;
 class RegExp;
 struct RegExpMatch;
 struct MatchHash;
+struct position_parser_state;
+class positions_cache;
 
 // Младший байт (маска 0xFF) юзается классом ScreenObject!!!
 enum FLAGS_CLASS_EDITLINE
 {
-	FEDITLINE_MARKINGBLOCK         = 0x00000100,
-	FEDITLINE_DROPDOWNBOX          = 0x00000200,
-	FEDITLINE_CLEARFLAG            = 0x00000400,
-	FEDITLINE_PASSWORDMODE         = 0x00000800,
-	FEDITLINE_EDITBEYONDEND        = 0x00001000,
-	FEDITLINE_EDITORMODE           = 0x00002000,
-	FEDITLINE_OVERTYPE             = 0x00004000,
-	FEDITLINE_DELREMOVESBLOCKS     = 0x00008000,  // Del удаляет блоки (Global->Opt->EditorDelRemovesBlocks)
-	FEDITLINE_PERSISTENTBLOCKS     = 0x00010000,  // Постоянные блоки (Global->Opt->EditorPersistentBlocks)
-	FEDITLINE_SHOWWHITESPACE       = 0x00020000,
-	FEDITLINE_SHOWLINEBREAK        = 0x00040000,
-	FEDITLINE_READONLY             = 0x00080000,
-	FEDITLINE_CURSORVISIBLE        = 0x00100000,
+	FEDITLINE_MARKINGBLOCK         = 8_bit,
+	FEDITLINE_DROPDOWNBOX          = 9_bit,
+	FEDITLINE_CLEARFLAG            = 10_bit,
+	FEDITLINE_PASSWORDMODE         = 11_bit,
+	FEDITLINE_EDITBEYONDEND        = 12_bit,
+	FEDITLINE_EDITORMODE           = 13_bit,
+	FEDITLINE_OVERTYPE             = 14_bit,
+	FEDITLINE_DELREMOVESBLOCKS     = 15_bit,  // Del удаляет блоки (Global->Opt->EditorDelRemovesBlocks)
+	FEDITLINE_PERSISTENTBLOCKS     = 16_bit,  // Постоянные блоки (Global->Opt->EditorPersistentBlocks)
+	FEDITLINE_SHOWWHITESPACE       = 17_bit,
+	FEDITLINE_SHOWLINEBREAK        = 18_bit,
+	FEDITLINE_READONLY             = 19_bit,
+	FEDITLINE_CURSORVISIBLE        = 20_bit,
 	// Если ни один из FEDITLINE_PARENT_ не указан (или указаны оба), то Edit
 	// явно не в диалоге юзается.
-	FEDITLINE_PARENT_SINGLELINE    = 0x00200000,  // обычная строка ввода в диалоге
-	FEDITLINE_PARENT_MULTILINE     = 0x00400000,  // для будущего Memo-Edit (DI_EDITOR или DIF_MULTILINE)
-	FEDITLINE_PARENT_EDITOR        = 0x00800000,  // "вверху" обычный редактор
+	FEDITLINE_PARENT_SINGLELINE    = 21_bit,  // обычная строка ввода в диалоге
+	FEDITLINE_PARENT_MULTILINE     = 22_bit,  // для будущего Memo-Edit (DI_EDITOR или DIF_MULTILINE)
 };
 
 struct ColorItem
 {
 	// Usually we have only 1-2 coloring plugins.
-	// Keeping a copy of GUID in each of thousands of color items is a giant waste of memory,
-	// so GUIDs are stored in a separate set and here is only a pointer.
-	const GUID* Owner;
+	// Keeping a copy of UUID in each of thousands of color items is a giant waste of memory,
+	// so UUIDs are stored in a separate set and here is only a pointer.
+	const UUID* Owner;
 	// Usually we have only 5-10 unique colors.
 	// Keeping a copy of FarColor in each of thousands of color items is a giant waste of memory,
 	// so FarColors are stored in a separate set and here is only a pointer.
@@ -84,8 +96,8 @@ struct ColorItem
 	// it's an uint64 in plugin API, but only 0x1 and 0x2 are used now, so save some memory here.
 	unsigned int Flags;
 
-	const GUID& GetOwner() const { return *Owner; }
-	void SetOwner(const GUID& Value);
+	const UUID& GetOwner() const { return *Owner; }
+	void SetOwner(const UUID& Value);
 
 	const FarColor& GetColor() const { return *Color; }
 	void SetColor(const FarColor& Value);
@@ -94,14 +106,6 @@ struct ColorItem
 	{
 		return Priority < rhs.Priority;
 	}
-};
-
-enum SetCPFlags
-{
-	SETCP_NOERROR    = 0x00000000,
-	SETCP_WC2MBERROR = 0x00000001,
-	SETCP_MB2WCERROR = 0x00000002,
-	SETCP_OTHERERROR = 0x10000000,
 };
 
 class Editor;
@@ -115,9 +119,9 @@ class Edit: public SimpleScreenObject
 	};
 public:
 	NONCOPYABLE(Edit);
-	MOVABLE(Edit);
+	MOVE_CONSTRUCTIBLE(Edit);
 
-	using delete_color_condition = std::function<bool(const ColorItem&)>;
+	using delete_color_condition = function_ref<bool(const ColorItem&)>;
 
 	explicit Edit(window_ptr Owner);
 
@@ -137,36 +141,18 @@ public:
 
 	const string& GetString() const { return m_Str; }
 
-	void SetHiString(const string& Str);
+	void SetHiString(string_view Str);
 
-	void SetEOL(eol::type Eol);
-	eol::type GetEOL() const;
+	void SetEOL(eol Eol);
+	eol GetEOL() const;
 
 	string GetSelString() const;
 	int GetLength() const;
 
-	void SetString(string_view Str);
+	void SetString(string_view Str, bool KeepSelection = false);
 	void InsertString(string_view Str);
 	void AppendString(string_view Str);
-
 	void ClearString() { SetString({}); }
-
-	int Search(
-		string_view Str,
-		string_view UpperStr,
-		string_view LowerStr,
-		const RegExp& re,
-		RegExpMatch* pm,
-		MatchHash* hm,
-		string& ReplaceStr,
-		int& Position,
-		bool Case,
-		bool WholeWords,
-		bool Reverse,
-		bool Regexp,
-		bool PreserveStyle,
-		int *SearchLength
-	) const;
 
 	void SetCurPos(int NewPos) {m_CurPos=NewPos; SetPrevCurPos(NewPos);}
 	void AdjustMarkBlock();
@@ -179,8 +165,8 @@ public:
 	void SetPasswordMode(bool Mode) {m_Flags.Change(FEDITLINE_PASSWORDMODE,Mode);}
 	void SetOvertypeMode(bool Mode) {m_Flags.Change(FEDITLINE_OVERTYPE, Mode);}
 	bool GetOvertypeMode() const {return m_Flags.Check(FEDITLINE_OVERTYPE);}
-	int RealPosToTab(int Pos) const;
-	int TabPosToReal(int Pos) const;
+	int RealPosToVisual(int Pos, position_parser_state* State = {}) const;
+	int VisualPosToReal(int Pos, position_parser_state* State = {}) const;
 	void Select(int Start,int End);
 	void RemoveSelection();
 	void AddSelect(int Start,int End);
@@ -192,24 +178,27 @@ public:
 	bool ReplaceTabs();
 	void InsertTab();
 	void AddColor(const ColorItem& col);
-	void DeleteColor(const delete_color_condition& Condition);
+	void DeleteColor(delete_color_condition Condition);
 	bool GetColor(ColorItem& col, size_t Item) const;
 	void Xlat(bool All=false);
 	void SetDialogParent(DWORD Sets);
-	void SetCursorType(bool Visible, DWORD Size);
-	void GetCursorType(bool& Visible, DWORD& Size) const;
+	void SetCursorType(bool Visible, size_t Size);
+	void GetCursorType(bool& Visible, size_t& Size) const;
 	bool GetReadOnly() const {return m_Flags.Check(FEDITLINE_READONLY);}
 	void SetReadOnly(bool NewReadOnly) {m_Flags.Change(FEDITLINE_READONLY,NewReadOnly);}
-	void SetHorizontalPosition(int X1, int X2) {SetPosition(X1, m_Y2, X2, m_Y2);}
+	void SetHorizontalPosition(int X1, int X2) { SetPosition({ X1, m_Where.top, X2, m_Where.bottom }); }
+	static bool is_clear_selection_key(unsigned Key);
 
 protected:
 	virtual void RefreshStrByMask(int InitMode=FALSE) {}
 
-	auto CallbackSuppressor() { return make_raii_wrapper(this, &Edit::SuppressCallback, &Edit::RevertCallback); }
+	[[nodiscard]]
+	auto CallbackSuppressor() { return make_raii_wrapper<&Edit::SuppressCallback, &Edit::RevertCallback>(this); }
 
 	void DeleteBlock();
 
 	static int CheckCharMask(wchar_t Chr);
+	static int MaskDefaultChar(wchar_t Mask);
 
 private:
 	void DisplayObject() override;
@@ -221,29 +210,30 @@ private:
 	virtual const FarColor& GetUnchangedColor() const;
 	virtual size_t GetTabSize() const;
 	virtual EXPAND_TABS GetTabExpandMode() const;
-	virtual void SetInputMask(const string& InputMask) {}
+	virtual void SetInputMask(string_view InputMask) {}
 	virtual string GetInputMask() const {return {};}
 	virtual const string& WordDiv() const;
 	virtual int GetPrevCurPos() const { return 0; }
 	virtual void SetPrevCurPos(int Pos) {}
 	virtual int GetCursorSize() const;
-	virtual void SetCursorSize(int Size) {}
+	virtual void SetCursorSize(size_t Size) {}
 	virtual int GetMacroSelectionStart() const;
 	virtual void SetMacroSelectionStart(int Value);
 	virtual int GetLineCursorPos() const;
 	virtual void SetLineCursorPos(int Value);
 
-	bool InsertKey(int Key);
+	bool InsertKey(wchar_t Key);
 	bool RecurseProcessKey(int Key);
-	void ApplyColor(const FarColor& SelColor, int XPos, int FocusedLeftPos);
+	void ApplyColor(int XPos, int FocusedLeftPos, positions_cache& RealToVisual);
 	int GetNextCursorPos(int Position,int Where) const;
-	int KeyMatchedMask(int Key, const string& Mask) const;
+	static bool CharInMask(wchar_t Char, wchar_t Mask);
 	bool ProcessCtrlQ();
 	bool ProcessInsPath(unsigned int Key,int PrevSelStart=-1,int PrevSelEnd=0);
-	int RealPosToTab(int PrevLength, int PrevPos, int Pos, int* CorrectPos) const;
 	void FixLeftPos(int TabCurPos=-1);
-	void SetRightCoord(int Value) {SetPosition(m_X1, m_Y2, Value, m_Y2);}
+	void SetRightCoord(int Value) { SetPosition({ m_Where.left, m_Where.top, Value, m_Where.bottom }); }
 	Editor* GetEditor() const;
+
+	bool is_valid_surrogate_pair_at(size_t Position) const;
 
 protected:
 	// BUGBUG: the whole purpose of this class is to avoid zillions of casts in existing code by returning size() as int
@@ -257,7 +247,7 @@ protected:
 	edit_string m_Str;
 
 	// KEEP ALIGNED!
-	int m_CurPos;
+	int m_CurPos{};
 private:
 	friend class DlgEdit;
 	friend class Editor;
@@ -265,10 +255,10 @@ private:
 
 	// KEEP ALIGNED!
 	std::multiset<ColorItem> ColorList;
-	int m_SelStart;
-	int m_SelEnd;
-	int LeftPos;
-	eol::type m_Eol;
+	int m_SelStart{-1};
+	int m_SelEnd{};
+	int LeftPos{};
+	eol m_Eol{eol::none};
 };
 
 #endif // EDIT_HPP_5A787FA0_4FFF_4A61_811F_F8BAEDEF241B

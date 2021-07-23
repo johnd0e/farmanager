@@ -30,26 +30,33 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "string_utils.hpp"
 
-const string& GetSpaces()
+// Internal:
+
+// Platform:
+
+// Common:
+#include "common/preprocessor.hpp"
+#include "common/string_utils.hpp"
+#include "common/utility.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
+
+string_view GetSpaces()
 {
-	// TODO: test for consistency with IsSpace()
-	static const auto Spaces = L" \t"s;
-	return Spaces;
+	return L" \t"sv;
 }
 
-const string& GetEols()
+string_view GetEols()
 {
-	// TODO: test for consistency with IsEol()
-	static const auto Eols = L"\r\n"s;
-	return Eols;
-}
-
-const string& GetSpacesAndEols()
-{
-	static const auto SpacesOrEols = GetSpaces() + GetEols();
-	return SpacesOrEols;
+	return L"\r\n"sv;
 }
 
 bool is_alpha(wchar_t Char)
@@ -84,49 +91,64 @@ wchar_t lower(wchar_t Char)
 	return Char;
 }
 
-void inplace::upper(wchar_t *Str, size_t Size)
+void inplace::upper(span<wchar_t> const Str)
 {
-	CharUpperBuff(Str, static_cast<DWORD>(Size));
+	CharUpperBuff(Str.data(), static_cast<DWORD>(Str.size()));
 }
 
-void inplace::lower(wchar_t *Str, size_t Size)
+void inplace::lower(span<wchar_t> const Str)
 {
-	CharLowerBuff(Str, static_cast<DWORD>(Size));
+	CharLowerBuff(Str.data(), static_cast<DWORD>(Str.size()));
 }
 
 void inplace::upper(wchar_t* Str)
 {
-	upper(Str, wcslen(Str));
+	upper({ Str, wcslen(Str) });
 }
 
 void inplace::lower(wchar_t* Str)
 {
-	lower(Str, wcslen(Str));
+	lower({ Str, wcslen(Str) });
 }
 
-string& inplace::upper(string& Str, size_t Pos, size_t Count)
+void inplace::upper(string& Str, size_t Pos, size_t Count)
 {
-	upper(&Str[Pos], Count == string::npos? Str.size() - Pos : Count);
-	return Str;
+	upper({ &Str[Pos], Count == string::npos? Str.size() - Pos : Count });
 }
 
-string& inplace::lower(string& Str, size_t Pos, size_t Count)
+void inplace::lower(string& Str, size_t Pos, size_t Count)
 {
-	lower(&Str[Pos], Count == string::npos? Str.size() - Pos : Count);
-	return Str;
+	lower({ &Str[Pos], Count == string::npos? Str.size() - Pos : Count });
 }
 
 string upper(string Str)
 {
-	return inplace::upper(Str, 0, string::npos);
+	inplace::upper(Str, 0, string::npos);
+	return Str;
 }
 
 string lower(string Str)
 {
-	return inplace::lower(Str, 0, string::npos);
+	inplace::lower(Str, 0, string::npos);
+	return Str;
 }
 
-size_t hash_icase_t::operator()(const string& Str) const
+string upper(string_view const Str)
+{
+	return upper(string(Str));
+}
+
+string lower(string_view const Str)
+{
+	return lower(string(Str));
+}
+
+size_t hash_icase_t::operator()(wchar_t const Char) const
+{
+	return make_hash(upper(Char));
+}
+
+size_t hash_icase_t::operator()(string_view const Str) const
 {
 	return make_hash(upper(Str));
 }
@@ -156,7 +178,136 @@ bool ends_with_icase(const string_view Str, const string_view Suffix)
 	return Str.size() >= Suffix.size() && equal_icase(Str.substr(Str.size() - Suffix.size()), Suffix);
 }
 
-bool contains_icase(const string_view Str, const string_view Token)
+size_t find_icase(string_view const Str, string_view const What, size_t Pos)
 {
-	return std::search(ALL_CONST_RANGE(Str), ALL_CONST_RANGE(Token), equal_icase_t{}) != Str.cend();
+	if (Pos >= Str.size())
+		return Str.npos;
+
+	const auto It = std::search(Str.cbegin() + Pos, Str.cend(), ALL_CONST_RANGE(What), equal_icase_t{});
+	return It == Str.cend()? Str.npos : It - Str.cbegin();
 }
+
+size_t find_icase(string_view const Str, wchar_t const What, size_t Pos)
+{
+	if (Pos >= Str.size())
+		return Str.npos;
+
+	const auto It = std::find_if(Str.cbegin() + Pos, Str.cend(), [&](wchar_t const Char) { return equal_icase_t{}(What, Char); });
+	return It == Str.cend() ? Str.npos : It - Str.cbegin();
+}
+
+bool contains_icase(const string_view Str, const string_view What)
+{
+	return find_icase(Str, What) != Str.npos;
+}
+
+bool contains_icase(const string_view Str, wchar_t const What)
+{
+	return find_icase(Str, What) != Str.npos;
+}
+
+
+#ifdef ENABLE_TESTS
+
+#include "testing.hpp"
+
+TEST_CASE("string.spaces")
+{
+	for (const auto& i: GetSpaces())
+	{
+		REQUIRE(std::iswblank(i));
+	}
+}
+
+TEST_CASE("string.eols")
+{
+	for (const auto& i: GetEols())
+	{
+		REQUIRE(IsEol(i));
+	}
+}
+
+TEST_CASE("string.traits")
+{
+	REQUIRE(is_alpha(L'A'));
+	REQUIRE(!is_alpha(L'1'));
+
+	REQUIRE(is_alphanumeric(L'0'));
+	REQUIRE(!is_alphanumeric(L'?'));
+
+	REQUIRE(is_upper(L'A'));
+	REQUIRE(!is_upper(L'a'));
+
+	REQUIRE(is_lower(L'a'));
+	REQUIRE(!is_lower(L'A'));
+
+	REQUIRE(!is_upper(L'1'));
+	REQUIRE(!is_lower(L'1'));
+}
+
+TEST_CASE("string.case")
+{
+	REQUIRE(upper(L'a') == L'A');
+	REQUIRE(upper(L'A') == L'A');
+
+	REQUIRE(upper(L"foo"sv) == L"FOO"sv);
+	REQUIRE(upper(L"FOO"sv) == L"FOO"sv);
+
+	REQUIRE(lower(L'A') == L'a');
+	REQUIRE(lower(L'a') == L'a');
+
+	REQUIRE(lower(L"FOO"sv) == L"foo"sv);
+	REQUIRE(lower(L"foo"sv) == L"foo"sv);
+}
+
+TEST_CASE("string.utils")
+{
+	for (const auto& i: GetSpaces())
+	{
+		REQUIRE(std::isblank(i));
+	}
+
+	for (const auto& i: GetEols())
+	{
+		REQUIRE(IsEol(i));
+	}
+}
+
+TEST_CASE("string.utils.hash")
+{
+	const hash_icase_t hash;
+	REQUIRE(hash(L'A') == hash(L'a'));
+	REQUIRE(hash(L'A') != hash(L'B'));
+	REQUIRE(hash(L"fooBAR"sv) == hash(L"FOObar"sv));
+	REQUIRE(hash(L"fooBAR"sv) != hash(L"Banana"sv));
+}
+
+TEST_CASE("string.utils.icase")
+{
+	const auto npos = string_view::npos;
+
+	static const struct
+	{
+		string_view Str, Token;
+		size_t Pos;
+	}
+	Tests[]
+	{
+		{ {},                    {},                npos, },
+		{ {},                    L"abc"sv,          npos, },
+		{ L"foobar"sv,           {},                0,    },
+		{ L"foobar"sv,           L"FOOBAR"sv,       0,    },
+		{ L"foobar"sv,           L"foobar1"sv,      npos, },
+		{ L"foobar"sv,           L"foo"sv,          0,    },
+		{ L"foobar"sv,           L"FOO"sv,          0,    },
+		{ L"foobar"sv,           L"OoB"sv,          1,    },
+		{ L"foobar"sv,           L"BaR"sv,          3,    },
+	};
+
+	for (const auto& i: Tests)
+	{
+		REQUIRE(find_icase(i.Str, i.Token) == i.Pos);
+		REQUIRE(contains_icase(i.Str, i.Token) == (i.Pos != npos));
+	}
+}
+#endif

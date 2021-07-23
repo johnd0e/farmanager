@@ -35,7 +35,17 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-int RemoveHotplugDisk(wchar_t Disk, DWORD Flags);
+// Internal:
+
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
+
+bool RemoveHotplugDrive(string_view Path, bool Confirm, bool& Cancelled);
 void ShowHotplugDevices();
 
 #endif // HOTPLUG_HPP_0F56E211_1AA9_4160_BFA1_BB366C0244EB

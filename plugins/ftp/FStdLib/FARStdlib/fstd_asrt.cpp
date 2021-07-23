@@ -1,9 +1,9 @@
-#include <all_far.h>
+﻿#include <all_far.h>
 #pragma hdrstop
 
 #include "fstdlib.h"
 
-void _cdecl __WinAbort(LPCSTR msg,...)
+void __cdecl __WinAbort(LPCSTR msg,...)
 {
 	va_list a;
 	char    pnm[MAX_PATH],

@@ -35,22 +35,30 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "string_utils.hpp"
+
+// Platform:
+
+// Common:
+#include "common/noncopyable.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 class DizList: noncopyable
 {
 public:
-	DizList();
-
-	void Read(const string& Path, const string* DizName = nullptr);
+	void Read(string_view Path, const string* DizName = nullptr);
 
 	void Set(const string& Name, const string& ShortName, const string& DizText);
 	bool Erase(const string& Name, const string& ShortName);
 
-	const wchar_t* Get(const string& Name, const string& ShortName, long long FileSize) const;
+	string_view Get(const string& Name, const string& ShortName, long long FileSize) const;
 
 	void Reset();
-	bool Flush(const string& Path, const string *DizName=nullptr);
+	bool Flush(string_view Path, const string* DizName = nullptr);
 	bool CopyDiz(const string& Name, const string& ShortName, const string& DestName, const string& DestShortName,DizList *DestDiz) const;
 	const string& GetDizName() const { return m_DizFileName; }
 
@@ -58,7 +66,7 @@ private:
 	using description_data = std::list<string>;
 	using desc_map = std::unordered_multimap<string, description_data, hash_icase_t, equal_icase_t>;
 
-	desc_map::iterator Insert(const string& Name);
+	desc_map::iterator Insert(string_view Name);
 	desc_map::iterator Find(const string& Name, const string& ShortName);
 	desc_map::const_iterator Find(const string& Name, const string& ShortName) const;
 
@@ -66,8 +74,8 @@ private:
 	std::list<description_data> m_RemovedEntries;
 	std::list<desc_map::value_type*> m_OrderForWrite;
 	string m_DizFileName;
-	uintptr_t m_CodePage;
-	bool m_Modified;
+	std::optional<uintptr_t> m_CodePage;
+	bool m_Modified{};
 };
 
 #endif // DIZLIST_HPP_0115E7F4_A98B_42CE_A43A_275B8A6DFFEF

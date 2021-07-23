@@ -1,6 +1,11 @@
-#pragma once
+﻿#pragma once
 
+#include <compiler.hpp>
+
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
+
 #include <windows.h>
 #include <shobjidl.h>
 #include <winioctl.h>
@@ -11,6 +16,7 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 #include <list>
 #include <vector>
 #include <set>
@@ -23,13 +29,27 @@
 #include <iterator>
 #include <limits>
 #include <numeric>
-using namespace std;
+#include <optional>
+#include <cmath>
+#include <cstring>
 
-#define INITGUID
+#include <initguid.h>
+
+WARNING_PUSH()
+WARNING_DISABLE_GCC("-Wsuggest-override")
+WARNING_DISABLE_CLANG("-Weverything")
+
 #include <basetyps.h>
 #include "CPP/7zip/Archive/IArchive.h"
 #include "CPP/7zip/IPassword.h"
-#include "CPP/7Zip/ICoder.h"
+#include "CPP/7zip/ICoder.h"
+
+WARNING_POP()
 
 #include "plugin.hpp"
 #include "farcolor.hpp"
+
+inline namespace literals
+{
+	using namespace std::literals;
+}

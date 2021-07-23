@@ -89,6 +89,9 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
+    <CustomBuild Include="arcbel.lng">
+      <Filter>Language Files</Filter>
+    </CustomBuild>
     <CustomBuild Include="arceng.lng">
       <Filter>Language Files</Filter>
     </CustomBuild>
@@ -96,6 +99,9 @@
       <Filter>Language Files</Filter>
     </CustomBuild>
     <CustomBuild Include="arcspa.lng">
+      <Filter>Language Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="arcita.lng">
       <Filter>Language Files</Filter>
     </CustomBuild>
     <CustomBuild Include="arceng.hlf">

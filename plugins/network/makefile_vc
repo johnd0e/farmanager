@@ -1,13 +1,14 @@
 !include ../makefile_vc_base
 
 NAME = Network
-LINK_OBJS = $(OBJDIR)\Network.obj \
-$(OBJDIR)\NetCfg.obj \
-$(OBJDIR)\NetClass.obj \
-$(OBJDIR)\NetCommon.obj \
-$(OBJDIR)\NetFavorites.obj \
-$(OBJDIR)\NetMix.obj
-DOCS = NetEng.hlf NetRus.hlf NetEng.lng NetRus.lng NetSky.lng NetSpa.lng
+
+LINK_OBJS = \
+	$(OBJDIR)\Network.obj \
+	$(OBJDIR)\NetCfg.obj \
+	$(OBJDIR)\NetClass.obj \
+	$(OBJDIR)\NetCommon.obj \
+	$(OBJDIR)\NetFavorites.obj \
+	$(OBJDIR)\NetMix.obj
 
 !if defined(DEBUG) && !defined(NO_LOG)
 USERCPP=/DNETWORK_LOGGING

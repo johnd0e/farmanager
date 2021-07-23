@@ -50,6 +50,9 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
+    <CustomBuild Include="lm_bel.lng">
+      <Filter>Language Files</Filter>
+    </CustomBuild>
     <CustomBuild Include="lm_eng.lng">
       <Filter>Language Files</Filter>
     </CustomBuild>
@@ -60,6 +63,12 @@
       <Filter>Language Files</Filter>
     </CustomBuild>
     <CustomBuild Include="lm_spa.lng">
+      <Filter>Language Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="lm_ita.lng">
+      <Filter>Language Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="lm_pol.lng">
       <Filter>Language Files</Filter>
     </CustomBuild>
   </ItemGroup>

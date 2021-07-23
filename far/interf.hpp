@@ -35,20 +35,37 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "farcolor.hpp"
-#include "matrix.hpp"
 
+// Platform:
+
+// Common:
+#include "common/2d/matrix.hpp"
+#include "common/2d/rectangle.hpp"
+#include "common/function_ref.hpp"
 #include "common/singleton.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 struct FAR_CHAR_INFO;
 struct FarColor;
 enum class lng : int;
-extern WCHAR Oem2Unicode[];
-extern WCHAR BoxSymbols[];
-extern COORD InitSize, CurSize;
-extern SHORT ScrX,ScrY;
-extern SHORT PrevScrX,PrevScrY;
-extern DWORD InitialConsoleMode;
+extern wchar_t BoxSymbols[];
+extern point InitSize, CurSize;
+extern int ScrX, ScrY;
+extern int PrevScrX,PrevScrY;
+
+struct console_mode
+{
+	DWORD Input{};
+	DWORD Output{};
+	DWORD Error{};
+};
+
+extern std::optional<console_mode> InitialConsoleMode;
 
 // типы рамок
 enum
@@ -62,114 +79,128 @@ enum
 
 enum BOX_DEF_SYMBOLS
 {
-	BS_X_B0,          // 0xB0
-	BS_X_B1,          // 0xB1
-	BS_X_B2,          // 0xB2
-	BS_V1,            // 0xB3
-	BS_R_H1V1,        // 0xB4
-	BS_R_H2V1,        // 0xB5
-	BS_R_H1V2,        // 0xB6
-	BS_RT_H1V2,       // 0xB7
-	BS_RT_H2V1,       // 0xB8
-	BS_R_H2V2,        // 0xB9
-	BS_V2,            // 0xBA
-	BS_RT_H2V2,       // 0xBB
-	BS_RB_H2V2,       // 0xBC
-	BS_RB_H1V2,       // 0xBD
-	BS_RB_H2V1,       // 0xBE
-	BS_RT_H1V1,       // 0xBF
-	BS_LB_H1V1,       // 0xС0
-	BS_B_H1V1,        // 0xС1
-	BS_T_H1V1,        // 0xС2
-	BS_L_H1V1,        // 0xС3
-	BS_H1,            // 0xС4
-	BS_C_H1V1,        // 0xС5
-	BS_L_H2V1,        // 0xС6
-	BS_L_H1V2,        // 0xС7
-	BS_LB_H2V2,       // 0xС8
-	BS_LT_H2V2,       // 0xС9
-	BS_B_H2V2,        // 0xСA
-	BS_T_H2V2,        // 0xСB
-	BS_L_H2V2,        // 0xСC
-	BS_H2,            // 0xСD
-	BS_C_H2V2,        // 0xСE
-	BS_B_H2V1,        // 0xСF
-	BS_B_H1V2,        // 0xD0
-	BS_T_H2V1,        // 0xD1
-	BS_T_H1V2,        // 0xD2
-	BS_LB_H1V2,       // 0xD3
-	BS_LB_H2V1,       // 0xD4
-	BS_LT_H2V1,       // 0xD5
-	BS_LT_H1V2,       // 0xD6
-	BS_C_H1V2,        // 0xD7
-	BS_C_H2V1,        // 0xD8
-	BS_RB_H1V1,       // 0xD9
-	BS_LT_H1V1,       // 0xDA
-	BS_X_DB,          // 0xDB
-	BS_X_DC,          // 0xDC
-	BS_X_DD,          // 0xDD
-	BS_X_DE,          // 0xDE
-	BS_X_DF,          // 0xDF
+	BS_X_B0,          // ░
+	BS_X_B1,          // ▒
+	BS_X_B2,          // ▓
+	BS_V1,            // │
+	BS_R_H1V1,        // ┤
+	BS_R_H2V1,        // ╡
+	BS_R_H1V2,        // ╢
+	BS_RT_H1V2,       // ╖
+	BS_RT_H2V1,       // ╕
+	BS_R_H2V2,        // ╣
+	BS_V2,            // ║
+	BS_RT_H2V2,       // ╗
+	BS_RB_H2V2,       // ╝
+	BS_RB_H1V2,       // ╜
+	BS_RB_H2V1,       // ╛
+	BS_RT_H1V1,       // ┐
+	BS_LB_H1V1,       // └
+	BS_B_H1V1,        // ┴
+	BS_T_H1V1,        // ┬
+	BS_L_H1V1,        // ├
+	BS_H1,            // ─
+	BS_C_H1V1,        // ┼
+	BS_L_H2V1,        // ╞
+	BS_L_H1V2,        // ╟
+	BS_LB_H2V2,       // ╚
+	BS_LT_H2V2,       // ╔
+	BS_B_H2V2,        // ╩
+	BS_T_H2V2,        // ╦
+	BS_L_H2V2,        // ╠
+	BS_H2,            // ═
+	BS_C_H2V2,        // ╬
+	BS_B_H2V1,        // ╧
+	BS_B_H1V2,        // ╨
+	BS_T_H2V1,        // ╤
+	BS_T_H1V2,        // ╥
+	BS_LB_H1V2,       // ╙
+	BS_LB_H2V1,       // ╘
+	BS_LT_H2V1,       // ╒
+	BS_LT_H1V2,       // ╓
+	BS_C_H1V2,        // ╫
+	BS_C_H2V1,        // ╪
+	BS_RB_H1V1,       // ┘
+	BS_LT_H1V1,       // ┌
+	BS_X_DB,          // █
+	BS_X_DC,          // ▄
+	BS_X_DD,          // ▌
+	BS_X_DE,          // ▐
+	BS_X_DF,          // ▀
+	BS_SPACE,         // ' '
 
 	BS_COUNT
 };
 
 void ShowTime();
-void ShowTimeInBackground();
 
-/*$ 14.02.2001 SKV
-  Инитить ли палитру default значениями.
-  По умолчанию - да.
-  С 0 используется для ConsoleDetach.
-*/
-void InitConsole(int FirstInit=TRUE);
+void InitConsole();
 void CloseConsole();
 void SetFarConsoleMode(bool SetsActiveBuffer = false);
-void ChangeConsoleMode(HANDLE ConsoleHandle, DWORD Mode);
+bool ChangeConsoleMode(HANDLE ConsoleHandle, DWORD Mode);
 void FlushInputBuffer();
 void SetVideoMode();
 void ChangeVideoMode(bool Maximize);
 void ChangeVideoMode(int NumLines,int NumColumns);
 void UpdateScreenSize();
-void GenerateWINDOW_BUFFER_SIZE_EVENT(int Sx=-1, int Sy=-1);
+void GenerateWINDOW_BUFFER_SIZE_EVENT();
 void SaveConsoleWindowRect();
 void RestoreConsoleWindowRect();
 
 void GotoXY(int X,int Y);
 int WhereX();
 int WhereY();
-void MoveCursor(int X,int Y);
-void GetCursorPos(SHORT& X, SHORT& Y);
-void SetCursorType(bool Visible, DWORD Size);
+void MoveCursor(point Point);
+point GetCursorPos();
+void SetCursorType(bool Visible, size_t Size);
 void SetInitialCursorType();
-void GetCursorType(bool& Visible, DWORD& Size);
+void GetCursorType(bool& Visible, size_t& Size);
 void MoveRealCursor(int X,int Y);
-void GetRealCursorPos(SHORT& X,SHORT& Y);
 void ScrollScreen(int Count);
+bool DoWeReallyHaveToScroll(short Rows);
 
-void Text(int X, int Y, const FarColor& Color, const wchar_t* Str, size_t Size);
-inline void Text(int X, int Y, const FarColor& Color, string_view const Str) { return Text(X, Y, Color, Str.data(), Str.size()); }
+struct position_parser_state
+{
+	size_t StringIndex{};
+	size_t VisualIndex{};
 
-void Text(const wchar_t* Str, size_t Size);
-inline void Text(const string_view Str) { return Text(Str.data(), Str.size()); }
-inline void Text(wchar_t c) { return Text(&c, 1); }
+	function_ref<void(size_t, size_t)> signal{nullptr};
+};
 
-void Text(lng MsgId);
+size_t string_pos_to_visual_pos(string_view Str, size_t StringPos, size_t TabSize, position_parser_state* SavedState = {});
+size_t visual_pos_to_string_pos(string_view Str, size_t VisualPos, size_t TabSize, position_parser_state* SavedState = {});
 
-void VText(const wchar_t* Str, size_t Size);
-inline void VText(const string_view Str) { return VText(Str.data(), Str.size()); }
+size_t visual_string_length(string_view Str);
 
-void HiText(const string& Str,const FarColor& HiColor,int isVertText=0);
-void PutText(int X1,int Y1,int X2,int Y2,const FAR_CHAR_INFO* Src);
-void GetText(int X1, int Y1, int X2, int Y2, matrix<FAR_CHAR_INFO>& Dest);
+bool is_valid_surrogate_pair(string_view Str);
+bool is_valid_surrogate_pair(wchar_t First, wchar_t Second);
 
-void BoxText(const wchar_t* Str, size_t Size, bool IsVert = false);
-inline void BoxText(const string_view Str, const bool IsVert = false) { return BoxText(Str.data(), Str.size(), IsVert); }
-inline void BoxText(wchar_t Chr) { return BoxText(&Chr, 1, false); }
+void Text(point Where, const FarColor& Color, string_view Str);
 
-void SetScreen(int X1,int Y1,int X2,int Y2,wchar_t Ch,const FarColor& Color);
-void MakeShadow(int X1,int Y1,int X2,int Y2);
-void ChangeBlockColor(int X1,int Y1,int X2,int Y2,const FarColor& Color);
+size_t Text(string_view Str, size_t MaxWidth);
+size_t Text(string_view Str);
+
+size_t Text(wchar_t Char, size_t MaxWidth);
+size_t Text(wchar_t Char);
+
+size_t Text(lng MsgId, size_t MaxWidth);
+size_t Text(lng MsgId);
+
+size_t VText(string_view Str, size_t MaxWidth);
+size_t VText(string_view Str);
+
+size_t HiText(string_view Str, const FarColor& Color, size_t MaxWidth);
+size_t HiText(string_view Str, const FarColor& Color);
+
+size_t HiVText(string_view Str, const FarColor& Color, size_t MaxWidth);
+size_t HiVText(string_view Str, const FarColor& Color);
+
+void PutText(rectangle Where, const FAR_CHAR_INFO* Src);
+void GetText(rectangle Where, matrix<FAR_CHAR_INFO>& Dest);
+
+void SetScreen(rectangle Where, wchar_t Ch,const FarColor& Color);
+void MakeShadow(rectangle Where, bool IsLegacy = false);
+void DropShadow(rectangle Where, bool IsLegacy = false);
 void SetColor(int Color);
 void SetColor(PaletteColors Color);
 void SetColor(const FarColor& Color);
@@ -177,43 +208,73 @@ void SetRealColor(const FarColor& Color);
 void ClearScreen(const FarColor& Color);
 const FarColor& GetColor();
 
-void Box(int x1,int y1,int x2,int y2,const FarColor& Color,int Type);
-bool ScrollBarRequired(UINT Length, unsigned long long ItemsCount);
-bool ScrollBarEx(UINT X1, UINT Y1, UINT Length, unsigned long long TopItem, unsigned long long ItemsCount);
-bool ScrollBarEx3(UINT X1, UINT Y1, UINT Length, unsigned long long Start, unsigned long long End, unsigned long long Size);
-void DrawLine(int Length,int Type, const wchar_t *UserSep=nullptr);
-inline void ShowSeparator(int Length, int Type) { return DrawLine(Length,Type); }
-inline void ShowUserSeparator(int Length, int Type, const wchar_t* UserSep) { return DrawLine(Length,Type,UserSep); }
-string MakeSeparator(int Length, int Type=1, const wchar_t* UserSep=nullptr);
+void Box(rectangle Where, const FarColor& Color,int Type);
+bool ScrollBarRequired(size_t Length, unsigned long long ItemsCount);
+bool ScrollBar(size_t X1, size_t Y1, size_t Length, unsigned long long TopItem, unsigned long long ItemsCount);
+bool ScrollBarEx(size_t X1, size_t Y1, size_t Length, unsigned long long Start, unsigned long long End, unsigned long long Size);
+
+enum class line_type
+{
+	h1,
+	h2,
+	h1_to_none,
+	h2_to_none,
+	h1_to_v1,
+	h1_to_v2,
+	h2_to_v1,
+	h2_to_v2,
+	h_user,
+
+	v1,
+	v2,
+	v1_to_none,
+	v2_to_none,
+	v1_to_h1,
+	v1_to_h2,
+	v2_to_h1,
+	v2_to_h2,
+	v_user,
+
+	count
+};
+
+string MakeLine(int Length, line_type Type = line_type::h1_to_v2, string_view UserLine = {});
+void DrawLine(int Length, line_type Type, string_view UserLine = {});
+
 string make_progressbar(size_t Size, size_t Percent, bool ShowPercent, bool PropagateToTasbkar);
 
-void InitRecodeOutTable();
+void fix_coordinates(rectangle& Where);
 
-void fix_coordinates(int& X1, int& Y1, int& X2, int& Y2);
-
-void SetVidChar(FAR_CHAR_INFO& CI, wchar_t Chr);
-
-size_t HiStrlen(const string& Str);
-int HiFindRealPos(const string& Str, int Pos, bool ShowAmp);
-int HiFindNextVisualPos(const string& Str, int Pos, int Direct);
-string HiText2Str(const string& Str);
+size_t HiStrlen(string_view Str);
+size_t HiFindRealPos(string_view Str, size_t Pos);
+string HiText2Str(string_view Str, size_t* HotkeyVisualPos = {});
+bool HiTextHotkey(string_view Str, wchar_t& Hotkey, size_t* HotkeyVisualPos = {});
 void RemoveHighlights(string& Str);
+
+namespace inplace
+{
+	void escape_ampersands(string& Str);
+}
+
+string escape_ampersands(string_view Str);
 
 bool IsConsoleFullscreen();
 bool IsConsoleSizeChanged();
 
-void SaveNonMaximisedBufferSize(const COORD& Size);
-COORD GetNonMaximisedBufferSize();
+void SaveNonMaximisedBufferSize(point const& Size);
+point GetNonMaximisedBufferSize();
 
-void AdjustConsoleScreenBufferSize(bool TransitionFromFullScreen);
+void AdjustConsoleScreenBufferSize();
 
 class consoleicons: public singleton<consoleicons>
 {
-	IMPLEMENTS_SINGLETON(consoleicons);
+	IMPLEMENTS_SINGLETON;
 
 public:
-	void setFarIcons();
-	void restorePreviousIcons();
+	void set_icon();
+	void restore_icon();
+
+	size_t size() const;
 
 private:
 	consoleicons() = default;
@@ -221,15 +282,14 @@ private:
 	struct icon
 	{
 		bool IsBig;
-		HICON Icon;
-		HICON PreviousIcon;
-		bool Changed;
+		std::optional<HICON> InitialIcon;
 	};
 
 	icon m_Large{true};
 	icon m_Small{false};
-
-	bool m_Loaded{};
 };
+
+size_t ConsoleChoice(string_view Message, string_view Choices, size_t Default);
+bool ConsoleYesNo(string_view Message, bool Default);
 
 #endif // INTERF_HPP_A91E1A99_C78E_41EC_B0F8_5C35A6C99116

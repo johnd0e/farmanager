@@ -36,8 +36,17 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "edit.hpp"
 #include "farcolor.hpp"
+
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
 
 class History;
 class VMenu2;
@@ -54,6 +63,7 @@ public:
 	void Show() override;
 	void Changed(bool DelBlock=false) override;
 	int GetMaxLength() const override {return MaxLength;}
+	void ResizeConsole() override;
 
 	void AutoComplete(bool Manual,bool DelBlock);
 	void SetAutocomplete(bool State) {State? ECFlags.Set(EC_ENABLEAUTOCOMPLETE) : ECFlags.Clear(EC_ENABLEAUTOCOMPLETE);}
@@ -71,11 +81,11 @@ public:
 
 	enum ECFLAGS
 	{
-		EC_ENABLEAUTOCOMPLETE                   = bit(0),
-		EC_COMPLETE_FILESYSTEM                  = bit(1),
-		EC_COMPLETE_PATH                        = bit(2),
-		EC_COMPLETE_HISTORY                     = bit(3),
-		EC_COMPLETE_ENVIRONMENT                 = bit(4),
+		EC_ENABLEAUTOCOMPLETE                   = 0_bit,
+		EC_COMPLETE_FILESYSTEM                  = 1_bit,
+		EC_COMPLETE_PATH                        = 2_bit,
+		EC_COMPLETE_HISTORY                     = 3_bit,
+		EC_COMPLETE_ENVIRONMENT                 = 4_bit,
 	};
 
 protected:
@@ -90,12 +100,12 @@ private:
 	size_t GetTabSize() const override;
 	EXPAND_TABS GetTabExpandMode() const override;
 	string GetInputMask() const override {return m_Mask;}
-	void SetInputMask(const string& InputMask) override;
+	void SetInputMask(string_view InputMask) override;
 	const string& WordDiv() const override;
 	int GetPrevCurPos() const override { return PrevCurPos; }
 	void SetPrevCurPos(int Pos) override { PrevCurPos = Pos; }
 	int GetCursorSize() const override { return CursorSize; }
-	void SetCursorSize(int Size) override { CursorSize = Size; }
+	void SetCursorSize(size_t Size) override { CursorSize = static_cast<int>(Size); }
 	int GetMacroSelectionStart() const override {return MacroSelectionStart;}
 	void SetMacroSelectionStart(int Value) override {MacroSelectionStart = Value;}
 	int GetLineCursorPos() const override {return CursorPos;}
@@ -116,24 +126,25 @@ private:
 	string m_Mask;
 	History* pHistory;
 	FarList* pList;
+	std::weak_ptr<VMenu2> m_ComplMenu;
 
 	FarColor m_Color;
 	FarColor m_SelectedColor;
 	FarColor m_UnchangedColor;
 	parent_processkey_t m_ParentProcessKey;
 
-	int MaxLength;
-	int CursorSize;
-	int CursorPos;
-	int PrevCurPos; //Для определения направления передвижения курсора при наличии маски
-	int MacroSelectionStart;
-	int SelectionStart;
+	int MaxLength{-1};
+	int CursorSize{-1};
+	int CursorPos{};
+	int PrevCurPos{}; //Для определения направления передвижения курсора при наличии маски
+	int MacroSelectionStart{-1};
+	int SelectionStart{-1};
 	FARMACROAREA MacroAreaAC;
 	BitFlags ECFlags;
 	Callback m_Callback;
-	size_t m_CallbackSuppressionsCount;
-	bool Selection;
-	bool MenuUp;
+	std::atomic_size_t m_CallbackSuppressionsCount{};
+	bool Selection{};
+	bool MenuUp{};
 	bool ACState;
 };
 

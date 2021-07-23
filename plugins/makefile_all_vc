@@ -33,24 +33,8 @@ ALLDIRS = align arclite autowrap brackets compare drawline editcase emenu farcmd
 INSTALL=$(DEFINSTALL)
 !endif
 
-!if !defined(VC) && defined(_NMAKE_VER)
-
-!if "$(_NMAKE_VER)">"14"
-VC=14
-!elseif "$(_NMAKE_VER)">"11"
-VC=11
-!else
-#default
-VC=10
-!endif
-!endif
-
-!ifndef VC
-!error "VC must be defined (in make_vc_defs)"
-!endif
-
-!include ./makefile_vc_getmode
 !include ./makefile_vc_base
+!include ./makefile_vc_getmode
 
 ##########################
 all:    $(OUTPATH) $(ALLDIRS)
@@ -88,13 +72,13 @@ _ODB_=32
 
 !ifdef INSTALL
 
-OUTPATH=$(INSTALL)\$(_ODN_).$(_ODB_)W
+OUTPATH=$(INSTALL)
 
-$(OUTPATH): $(INSTALL)
+$(OUTPATH):
 	@if not exist "$(OUTPATH)\$(NULL)" mkdir "$(OUTPATH)"
 
-$(INSTALL):
-	@if not exist "$(INSTALL)\$(NULL)" mkdir "$(INSTALL)"
+#$(INSTALL):
+#@if not exist "$(INSTALL)\$(NULL)" mkdir "$(INSTALL)"
 
 !endif
 
@@ -104,7 +88,7 @@ $(ALLDIRS): $(FICTIVE) $(OUTPATH)
 !ifndef INSTALL
 	@$(MAKE) /nologo -s -f makefile_vc $(_MDEFS)
 !else
-	@$(MAKE) /nologo -s -f makefile_vc $(_MDEFS) $(_MKDO_)INSTALL=..\$(OUTPATH)\$@
+	@$(MAKE) /nologo -s -f makefile_vc $(_MDEFS) $(_MKDO_)INSTALL=..\$(OUTPATH)
 !endif
 	@cd ..
 
@@ -115,8 +99,6 @@ pdir=multiarc\libpcre\obj.$(DIRBIT).vc
 
 clean:
 	@if exist $(fdir)\lua*.* echo del $(fdir)\lua*.*& del /q $(fdir)\lua*.* 1>nul
-	@if exist $(clib) echo del $(clib)& del /q /s $(clib) 1>nul
-	@if exist $(cdir)\ echo del $(cdir)\& rd /q /s $(cdir) 1>nul
 	@for %d in (ftp multiarc multiarc\libpcre) do @if exist $(adir)\ echo del $(adir)\& rd /q /s $(adir) 1>nul
 	@if exist $(pdir)\ echo del $(pdir)\& rd /q /s $(pdir) 1>nul
 	@for %d in ($(ALLDIRS)) do @if not "%d" == "ftp" if not "%d" == "multiarc" @if exist $(wdir)\ echo del $(wdir)\& rd /q /s $(wdir) 1>nul

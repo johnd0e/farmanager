@@ -31,42 +31,43 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Self:
 #include "tinyxml.hpp"
 
+// Internal:
 #include "components.hpp"
 
+// Platform:
+
+// Common:
+
+// External:
 #include "format.hpp"
+
+//----------------------------------------------------------------------------
 
 namespace tinyxml_impl
 {
 
 WARNING_PUSH()
 
-WARNING_DISABLE_MSC(4296) // https://msdn.microsoft.com/en-us/library/wz2y40yt.aspx 'operator' : expression is always true
+WARNING_DISABLE_MSC(4668) // 'symbol' is not defined as a preprocessor macro, replacing with '0' for 'directives'
+WARNING_DISABLE_MSC(4774) // 'string' : format string expected in argument number is not a string literal
 
-WARNING_DISABLE_GCC("-Wpragmas")
-WARNING_DISABLE_GCC("-Wsuggest-override")
-WARNING_DISABLE_GCC("-Wzero-as-null-pointer-constant")
 WARNING_DISABLE_GCC("-Wdouble-promotion")
+WARNING_DISABLE_GCC("-Wimplicit-fallthrough")
+WARNING_DISABLE_GCC("-Wold-style-cast")
+WARNING_DISABLE_GCC("-Wzero-as-null-pointer-constant")
 
 WARNING_DISABLE_CLANG("-Weverything")
-
-#ifdef MEMCHECK
-#pragma push_macro("new")
-#undef new
-#endif
+WARNING_DISABLE_CLANG("-Wold-style-cast")
 
 #include "thirdparty/tinyxml2/tinyxml2.cpp"
 
-#ifdef MEMCHECK
-#pragma pop_macro("new")
-#endif
-
 WARNING_POP()
+}
 
 SCOPED_ACTION(components::component)([]
 {
-	return components::component::info{ L"TinyXML-2"s, format(L"{0}.{1}.{2}", TIXML2_MAJOR_VERSION, TIXML2_MINOR_VERSION, TIXML2_PATCH_VERSION) };
+	return components::info{ L"TinyXML-2"sv, format(FSTR(L"{}.{}.{}"sv), tinyxml_impl::TIXML2_MAJOR_VERSION, tinyxml_impl::TIXML2_MINOR_VERSION, tinyxml_impl::TIXML2_PATCH_VERSION) };
 });
-
-}

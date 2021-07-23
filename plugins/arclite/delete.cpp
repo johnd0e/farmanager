@@ -1,4 +1,4 @@
-#include "msg.h"
+﻿#include "msg.h"
 #include "utils.hpp"
 #include "sysutils.hpp"
 #include "farutils.hpp"
@@ -8,10 +8,10 @@
 
 class ArchiveFileDeleterProgress: public ProgressMonitor {
 private:
-  unsigned __int64 total;
-  unsigned __int64 completed;
+  UInt64 total;
+  UInt64 completed;
 
-  virtual void do_update_ui() {
+  void do_update_ui() override {
     const unsigned c_width = 60;
 
     if (total == 0)
@@ -21,38 +21,38 @@ private:
     if (percent_done > 100)
       percent_done = 100;
 
-    unsigned __int64 speed;
+    UInt64 speed;
     if (time_elapsed() == 0)
       speed = 0;
     else
       speed = al_round(static_cast<double>(completed) / time_elapsed() * ticks_per_sec());
 
-    wostringstream st;
-    st << setw(7) << format_data_size(completed, get_size_suffixes()) << L" / " << format_data_size(total, get_size_suffixes()) << L" @ " << setw(9) << format_data_size(speed, get_speed_suffixes()) << L'\n';
+    std::wostringstream st;
+    st << std::setw(7) << format_data_size(completed, get_size_suffixes()) << L" / " << format_data_size(total, get_size_suffixes()) << L" @ " << std::setw(9) << format_data_size(speed, get_speed_suffixes()) << L'\n';
     st << Far::get_progress_bar_str(c_width, percent_done, 100) << L'\n';
     progress_text = st.str();
   }
 
 public:
-  ArchiveFileDeleterProgress(): ProgressMonitor(Far::get_msg(MSG_PROGRESS_UPDATE)), completed(0), total(0) {
+  ArchiveFileDeleterProgress(): ProgressMonitor(Far::get_msg(MSG_PROGRESS_UPDATE)), total(0), completed(0) {
   }
 
-  void update_total(unsigned __int64 total) {
-    this->total = total;
+  void update_total(UInt64 total_value) {
+    total = total_value;
     update_ui();
   }
 
-  void update_completed(unsigned __int64 completed) {
-    this->completed = completed;
+  void update_completed(UInt64 completed_value) {
+    completed = completed_value;
     update_ui();
   }
 };
 
 class ArchiveFileDeleterStream: public IOutStream, public ComBase, private File {
 private:
-  shared_ptr<ProgressMonitor> progress;
+  std::shared_ptr<ProgressMonitor> progress;
 public:
-  ArchiveFileDeleterStream(const wstring& file_path, shared_ptr<ProgressMonitor> progress): progress(progress) {
+  ArchiveFileDeleterStream(const std::wstring& file_path, std::shared_ptr<ProgressMonitor> progress): progress(progress) {
     RETRY_OR_IGNORE_BEGIN
     open(file_path, GENERIC_WRITE, FILE_SHARE_READ, CREATE_ALWAYS, 0);
     RETRY_END(*progress)
@@ -63,7 +63,7 @@ public:
   UNKNOWN_IMPL_ITF(IOutStream)
   UNKNOWN_IMPL_END
 
-  STDMETHODIMP Write(const void *data, UInt32 size, UInt32 *processedSize) {
+  STDMETHODIMP Write(const void *data, UInt32 size, UInt32 *processedSize) noexcept override {
     COM_ERROR_HANDLER_BEGIN
     if (processedSize)
       *processedSize = 0;
@@ -77,17 +77,17 @@ public:
     COM_ERROR_HANDLER_END
   }
 
-  STDMETHODIMP Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition) {
+  STDMETHODIMP Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition) noexcept override {
     COM_ERROR_HANDLER_BEGIN
     if (newPosition)
       *newPosition = 0;
-    unsigned __int64 new_position = set_pos(offset, translate_seek_method(seekOrigin));
+    UInt64 new_position = set_pos(offset, translate_seek_method(seekOrigin));
     if (newPosition)
       *newPosition = new_position;
     return S_OK;
     COM_ERROR_HANDLER_END
   }
-  STDMETHODIMP SetSize(UInt64 newSize) {
+  STDMETHODIMP SetSize(UInt64 newSize) noexcept override {
     COM_ERROR_HANDLER_BEGIN
     RETRY_OR_IGNORE_BEGIN
     set_pos(newSize, FILE_BEGIN);
@@ -100,11 +100,11 @@ public:
 
 class ArchiveFileDeleter: public IArchiveUpdateCallback, public ComBase {
 private:
-  vector<UInt32> new_indices;
-  shared_ptr<ArchiveFileDeleterProgress> progress;
+  std::vector<UInt32> new_indices;
+  std::shared_ptr<ArchiveFileDeleterProgress> progress;
 
 public:
-  ArchiveFileDeleter(const vector<UInt32>& new_indices, shared_ptr<ArchiveFileDeleterProgress> progress): new_indices(new_indices), progress(progress) {
+  ArchiveFileDeleter(const std::vector<UInt32>& new_indices, std::shared_ptr<ArchiveFileDeleterProgress> progress): new_indices(new_indices), progress(progress) {
   }
 
   UNKNOWN_IMPL_BEGIN
@@ -112,13 +112,13 @@ public:
   UNKNOWN_IMPL_ITF(IArchiveUpdateCallback)
   UNKNOWN_IMPL_END
 
-  STDMETHODIMP SetTotal(UInt64 total) {
+  STDMETHODIMP SetTotal(UInt64 total) noexcept override {
     COM_ERROR_HANDLER_BEGIN
     progress->update_total(total);
     return S_OK;
     COM_ERROR_HANDLER_END
   }
-  STDMETHODIMP SetCompleted(const UInt64 *completeValue) {
+  STDMETHODIMP SetCompleted(const UInt64 *completeValue) noexcept override {
     COM_ERROR_HANDLER_BEGIN
     if (completeValue)
       progress->update_completed(*completeValue);
@@ -126,7 +126,7 @@ public:
     COM_ERROR_HANDLER_END
   }
 
-  STDMETHODIMP GetUpdateItemInfo(UInt32 index, Int32 *newData, Int32 *newProperties, UInt32 *indexInArchive) {
+  STDMETHODIMP GetUpdateItemInfo(UInt32 index, Int32 *newData, Int32 *newProperties, UInt32 *indexInArchive) noexcept override {
     COM_ERROR_HANDLER_BEGIN
     *newData = 0;
     *newProperties = 0;
@@ -134,20 +134,20 @@ public:
     return S_OK;
     COM_ERROR_HANDLER_END
   }
-  STDMETHODIMP GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value) {
+  STDMETHODIMP GetProperty(UInt32 index, PROPID propID, PROPVARIANT *value) noexcept override {
     COM_ERROR_HANDLER_BEGIN
     PropVariant prop;
     prop.detach(value);
     return S_OK;
     COM_ERROR_HANDLER_END
   }
-  STDMETHODIMP GetStream(UInt32 index, ISequentialInStream **inStream) {
+  STDMETHODIMP GetStream(UInt32 index, ISequentialInStream **inStream) noexcept override {
     COM_ERROR_HANDLER_BEGIN
     *inStream = nullptr;
     return S_OK;
     COM_ERROR_HANDLER_END
   }
-  STDMETHODIMP SetOperationResult(Int32 operationResult) {
+  STDMETHODIMP SetOperationResult(Int32 operationResult) noexcept override {
     COM_ERROR_HANDLER_BEGIN
     return S_OK;
     COM_ERROR_HANDLER_END
@@ -155,40 +155,40 @@ public:
 };
 
 
-void Archive::enum_deleted_indices(UInt32 file_index, vector<UInt32>& indices) {
+void Archive::enum_deleted_indices(UInt32 file_index, std::vector<UInt32>& indices) {
   const ArcFileInfo& file_info = file_list[file_index];
   indices.push_back(file_index);
   if (file_info.is_dir) {
     FileIndexRange dir_list = get_dir_list(file_index);
-    for_each(dir_list.first, dir_list.second, [&] (UInt32 file_index) {
-      enum_deleted_indices(file_index, indices);
+    std::for_each(dir_list.first, dir_list.second, [&] (UInt32 item) {
+      enum_deleted_indices(item, indices);
     });
   }
 }
 
-void Archive::delete_files(const vector<UInt32>& src_indices) {
-  vector<UInt32> deleted_indices;
+void Archive::delete_files(const std::vector<UInt32>& src_indices) {
+  std::vector<UInt32> deleted_indices;
   deleted_indices.reserve(file_list.size());
-  for_each(src_indices.begin(), src_indices.end(), [&] (UInt32 src_index) {
+  std::for_each(src_indices.begin(), src_indices.end(), [&] (UInt32 src_index) {
     enum_deleted_indices(src_index, deleted_indices);
   });
-  sort(deleted_indices.begin(), deleted_indices.end());
+  std::sort(deleted_indices.begin(), deleted_indices.end());
 
-  vector<UInt32> file_indices;
-  file_indices.reserve(num_indices);
-  for(UInt32 i = 0; i < num_indices; i++)
+  std::vector<UInt32> file_indices;
+  file_indices.reserve(m_num_indices);
+  for(UInt32 i = 0; i < m_num_indices; i++)
     file_indices.push_back(i);
 
-  vector<UInt32> new_indices;
-  new_indices.reserve(num_indices);
-  set_difference(file_indices.begin(), file_indices.end(), deleted_indices.begin(), deleted_indices.end(), back_inserter(new_indices));
+  std::vector<UInt32> new_indices;
+  new_indices.reserve(m_num_indices);
+  std::set_difference(file_indices.begin(), file_indices.end(), deleted_indices.begin(), deleted_indices.end(), back_inserter(new_indices));
 
-  wstring temp_arc_name = get_temp_file_name();
+  std::wstring temp_arc_name = get_temp_file_name();
   try {
     ComObject<IOutArchive> out_arc;
     CHECK_COM(in_arc->QueryInterface(IID_IOutArchive, reinterpret_cast<void**>(&out_arc)));
 
-    shared_ptr<ArchiveFileDeleterProgress> progress(new ArchiveFileDeleterProgress());
+    std::shared_ptr<ArchiveFileDeleterProgress> progress(new ArchiveFileDeleterProgress());
     ComObject<IArchiveUpdateCallback> deleter(new ArchiveFileDeleter(new_indices, progress));
     ComObject<IOutStream> update_stream(new ArchiveFileDeleterStream(temp_arc_name, progress));
 

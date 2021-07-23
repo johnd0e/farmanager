@@ -35,58 +35,73 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "exception.hpp"
+
+// Platform:
+
+// Common:
+#include "common/2d/rectangle.hpp"
+#include "common/preprocessor.hpp"
+#include "common/range.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 enum class lng;
 
 enum
 {
-	MSG_WARNING        =0x00000001,
-	MSG_KEEPBACKGROUND =0x00000004,
-	MSG_LEFTALIGN      =0x00000008,
-	MSG_KILLSAVESCREEN =0x10000000,
-	MSG_NOPLUGINS      =0x20000000,
-	MSG_NOFLUSH        =0x40000000,
+	MSG_WARNING        = 0_bit,
+	MSG_KEEPBACKGROUND = 2_bit,
+	MSG_LEFTALIGN      = 3_bit,
+
+	MSG_KILLSAVESCREEN = 28_bit,
+	MSG_NOPLUGINS      = 29_bit,
+	MSG_NOFLUSH        = 30_bit,
 };
 
 class Plugin;
 class Dialog;
 
-class Message: noncopyable
+class Message
 {
 public:
+	NONCOPYABLE(Message);
+
 	Message(
-		DWORD Flags,
+		unsigned Flags,
 		string_view Title,
 		std::vector<string> Strings,
-		const std::vector<lng>& Buttons,
+		span<lng const> Buttons,
 		string_view HelpTopic = {},
-		const GUID* Id = nullptr
+		const UUID* Id = nullptr
 	);
 
 	Message(
-		DWORD Flags,
+		unsigned Flags,
 		const error_state_ex& ErrorState,
 		string_view Title,
 		std::vector<string> Strings,
-		const std::vector<lng>& Buttons,
+		span<lng const> Buttons,
 		string_view HelpTopic = {},
-		const GUID* Id = nullptr,
-		const std::vector<string>& Inserts = {}
+		const UUID* Id = nullptr,
+		span<string const> Inserts = {}
 	);
 
 	Message(
-		DWORD Flags,
+		unsigned Flags,
 		const error_state_ex* ErrorState,
 		string_view Title,
 		std::vector<string> Strings,
 		std::vector<string> Buttons,
 		string_view HelpTopic,
-		const GUID* Id,
+		const UUID* Id,
 		Plugin* PluginNumber
 	);
 
-	enum
+	enum result
 	{
 		first_button,
 		second_button,
@@ -95,29 +110,30 @@ public:
 		fifth_button,
 	};
 
-	int GetExitCode() const {return m_ExitCode;}
-	void GetMessagePosition(int &X1,int &Y1,int &X2,int &Y2) const;
-	operator int() const { return GetExitCode(); }
+	result GetExitCode() const {return static_cast<result>(m_ExitCode);}
+	rectangle GetPosition() const;
+	operator result() const { return GetExitCode(); }
 
 private:
 	void Init(
-		DWORD Flags,
+		unsigned Flags,
 		string_view Title,
 		std::vector<string>&& Strings,
 		std::vector<string>&& Buttons,
 		const error_state_ex* ErrorState,
-		const std::vector<string>& Inserts,
+		span<string const> Inserts,
 		string_view HelpTopic,
 		Plugin* PluginNumber,
-		const GUID* Id
+		const UUID* Id
 	);
 	intptr_t MsgDlgProc(Dialog* Dlg,intptr_t Msg,intptr_t Param1,void* Param2);
 
-	int m_ExitCode;
-	int MessageX1,MessageY1,MessageX2,MessageY2;
-	int FirstButtonIndex,LastButtonIndex;
-	bool IsWarningStyle;
-	bool IsErrorType;
+	int m_ExitCode{};
+	rectangle m_Position{};
+	int FirstButtonIndex{};
+	int LastButtonIndex{};
+	bool IsWarningStyle{};
+	bool IsErrorType{};
 	error_state_ex m_ErrorState;
 };
 
@@ -129,7 +145,5 @@ private:
    TRUE  - прервать операцию
 */
 bool AbortMessage();
-
-string GetErrorString(const error_state_ex& ErrorState);
 
 #endif // MESSAGE_HPP_640AC104_875B_41AE_8EF5_8A99913A6896

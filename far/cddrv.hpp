@@ -35,8 +35,37 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-bool IsDriveTypeCDROM(UINT DriveType);
-bool DriveCanBeVirtual(UINT DriveType);
-UINT FAR_GetDriveType(string_view RootDir, DWORD Detect=0);
+// Internal:
+
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
+
+enum class cd_type
+{
+	cdrom,
+	cdr,
+	cdrw,
+	cdrwdvd,
+	dvdrom,
+	dvdr,
+	dvdrw,
+	dvdram,
+	bdrom,
+	bdr,
+	bdrw,
+	hddvdrom,
+	hddvdr,
+	hddvdrw,
+	hddvdram,
+};
+
+bool DriveCanBeVirtual(unsigned DriveType);
+cd_type get_cdrom_type(string_view RootDir);
+bool is_removable_usb(string_view RootDir);
 
 #endif // CDDRV_HPP_58900C1C_4DCC_4B5F_B2E1_2B118547DC70

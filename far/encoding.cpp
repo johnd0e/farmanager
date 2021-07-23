@@ -31,43 +31,62 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "encoding.hpp"
 
+// Internal:
 #include "strmix.hpp"
 #include "exception.hpp"
+#include "exception_handler.hpp"
 #include "plugin.hpp"
+#include "codepage_selection.hpp"
 
+// Platform:
+
+// Common:
+#include "common/algorithm.hpp"
+#include "common/function_ref.hpp"
 #include "common/io.hpp"
+
+// External:
+#include "format.hpp"
+
+//----------------------------------------------------------------------------
 
 class installed_codepages
 {
 public:
-	installed_codepages();
-	const auto& get() const { return m_InstalledCp; }
+	installed_codepages()
+	{
+		Context = this;
+		EnumSystemCodePages(callback, CP_INSTALLED);
+		Context = {};
+
+		rethrow_if(m_ExceptionPtr);
+	}
+
+	const auto& get() const
+	{
+		return m_InstalledCp;
+	}
 
 private:
-	void insert(UINT Codepage, UINT MaxCharSize, const string& Name)
+	static inline installed_codepages* Context;
+
+	static BOOL WINAPI callback(wchar_t* const cpNum)
 	{
-		m_InstalledCp.emplace(Codepage, std::make_pair(MaxCharSize, Name));
+		return Context->enum_cp_callback(cpNum);
 	}
-	friend class system_codepages_enumerator;
 
-	cp_map m_InstalledCp;
-	std::exception_ptr m_ExceptionPtr;
-};
-
-class system_codepages_enumerator
-{
-public:
-	static installed_codepages* context;
-
-	static BOOL CALLBACK enum_cp(wchar_t *cpNum)
+	BOOL enum_cp_callback(wchar_t const* cpNum)
 	{
-		try
+		return cpp_try(
+		[&]
 		{
-			const auto cp = static_cast<UINT>(std::wcstoul(cpNum, nullptr, 10));
-			if (cp == CP_UTF8)
-				return TRUE; // skip standard unicode
+			const auto cp = static_cast<unsigned>(std::wcstoul(cpNum, nullptr, 10));
 
 			CPINFOEX cpix;
 			if (!GetCPInfoEx(cp, 0, &cpix))
@@ -79,40 +98,35 @@ public:
 				cpix.MaxCharSize = cpi.MaxCharSize;
 				xwcsncpy(cpix.CodePageName, cpNum, std::size(cpix.CodePageName));
 			}
-			if (cpix.MaxCharSize > 0)
+
+			if (cpix.MaxCharSize < 1)
+				return TRUE;
+
+			string_view cp_data = cpix.CodePageName;
+			// Windows: "XXXX (Name)", Wine: "Name"
+			const auto OpenBracketPos = cp_data.find(L'(');
+			if (OpenBracketPos != string::npos)
 			{
-				string cp_data(cpix.CodePageName);
-				// Windows: "XXXX (Name)", Wine: "Name"
-				const auto OpenBracketPos = cp_data.find(L'(');
-				if (OpenBracketPos != string::npos)
+				const auto CloseBracketPos = cp_data.rfind(L')');
+				if (CloseBracketPos != string::npos && CloseBracketPos > OpenBracketPos)
 				{
-					const auto CloseBracketPos = cp_data.rfind(L')');
-					if (CloseBracketPos != string::npos && CloseBracketPos > OpenBracketPos)
-					{
-						cp_data.resize(CloseBracketPos);
-						cp_data.erase(0, OpenBracketPos + 1);
-					}
+					cp_data = cp_data.substr(OpenBracketPos + 1, CloseBracketPos - OpenBracketPos - 1);
 				}
-				context->insert(cp, cpix.MaxCharSize, cp_data);
 			}
 
+			m_InstalledCp[cp] = { string(cp_data), static_cast<unsigned char>(cpix.MaxCharSize) };
 			return TRUE;
-		}
-		CATCH_AND_SAVE_EXCEPTION_TO(context->m_ExceptionPtr);
-
-		return FALSE;
+		},
+		[&]
+		{
+			SAVE_EXCEPTION_TO(m_ExceptionPtr);
+			return FALSE;
+		});
 	}
+
+	cp_map m_InstalledCp;
+	std::exception_ptr m_ExceptionPtr;
 };
-
-installed_codepages* system_codepages_enumerator::context;
-
-installed_codepages::installed_codepages()
-{
-	system_codepages_enumerator::context = this;
-	EnumSystemCodePages(system_codepages_enumerator::enum_cp, CP_INSTALLED);
-	system_codepages_enumerator::context = nullptr;
-	RethrowIfNeeded(m_ExceptionPtr);
-}
 
 const cp_map& InstalledCodepages()
 {
@@ -120,18 +134,184 @@ const cp_map& InstalledCodepages()
 	return s_Icp.get();
 }
 
-cp_map::value_type::second_type GetCodePageInfo(UINT cp)
+cp_info const* GetCodePageInfo(uintptr_t cp)
 {
 	// Standard unicode CPs (1200, 1201, 65001) are NOT in the list.
 	const auto& InstalledCp = InstalledCodepages();
-	const auto found = InstalledCp.find(cp);
-	if (InstalledCp.end() == found)
-		return {};
 
-	return found->second;
+	if (const auto found = InstalledCp.find(static_cast<unsigned>(cp)); found != InstalledCp.cend())
+		return &found->second;
+
+	return {};
 }
 
-static bool IsValid(UINT cp)
+template<typename range1, typename range2>
+static std::optional<size_t> mismatch(range1 const& Range1, range2 const& Range2)
+{
+	const auto [Mismatch1, Mismatch2] = std::mismatch(ALL_CONST_RANGE(Range1), ALL_CONST_RANGE(Range2));
+
+	size_t const
+		Pos1 = Mismatch1 - std::cbegin(Range1),
+		Pos2 = Mismatch2 - std::cbegin(Range2);
+
+	if (Pos1 == std::size(Range1) && Pos2 == std::size(Range2))
+		return {};
+
+	return std::min(Pos1, Pos2);
+}
+
+static bool is_retarded_error()
+{
+	const auto Error = GetLastError();
+	return Error == ERROR_INVALID_FLAGS || Error == ERROR_INVALID_PARAMETER;
+}
+
+static size_t widechar_to_multibyte_with_validation(uintptr_t const Codepage, string_view const Str, span<char> Buffer, encoding::error_position* const ErrorPosition)
+{
+	if (ErrorPosition)
+		ErrorPosition->reset();
+
+	auto IsRetardedCodepage = IsNoFlagsCodepage(Codepage);
+	BOOL DefaultCharUsed = FALSE;
+
+	const auto convert = [&](span<char> const To)
+	{
+		for (;;)
+		{
+			if (const auto Result = WideCharToMultiByte(
+				Codepage,
+				IsRetardedCodepage || !ErrorPosition ? 0 : WC_NO_BEST_FIT_CHARS,
+				Str.data(),
+				static_cast<int>(Str.size()),
+				To.data(),
+				static_cast<int>(To.size()),
+				{},
+				IsRetardedCodepage? nullptr : &DefaultCharUsed
+			))
+				return Result;
+
+			if (!IsRetardedCodepage && is_retarded_error())
+				IsRetardedCodepage = true;
+			else
+				return 0;
+		}
+	};
+
+	auto Result = convert(Buffer);
+	if (GetLastError() == ERROR_INSUFFICIENT_BUFFER)
+	{
+		// If BufferSize is less than DataSize, this function writes the number of bytes specified by BufferSize to the buffer indicated by Buffer.
+		// If the function succeeds and BufferSize is 0, the return value is the required size, in bytes, for the buffer indicated by Buffer.
+		Result = convert({});
+	}
+
+	// The result is ok and can be trusted
+	if (Result && !DefaultCharUsed && !IsRetardedCodepage)
+		return Result;
+
+	// They don't care, no point to go deeper
+	if (!ErrorPosition)
+		return Result;
+
+	std::string LocalBuffer;
+
+	if (Buffer.size() < static_cast<size_t>(Result))
+	{
+		LocalBuffer.resize(Result);
+		Buffer = LocalBuffer;
+		Result = convert(Buffer);
+	}
+
+	const auto Roundtrip = encoding::get_chars(Codepage, { Buffer.data(), static_cast<size_t>(Result) });
+
+	if (const auto Pos = mismatch(Str, Roundtrip))
+	{
+		*ErrorPosition = *Pos;
+	}
+
+	return Result;
+}
+
+static size_t multibyte_to_widechar_with_validation(uintptr_t const Codepage, std::string_view Str, span<wchar_t> Buffer, encoding::error_position* const ErrorPosition)
+{
+	if (ErrorPosition)
+		ErrorPosition->reset();
+
+	auto IsRetardedCodepage = IsNoFlagsCodepage(Codepage);
+	auto Strict = true;
+
+	const auto convert = [&](span<wchar_t> const To)
+	{
+		for (;;)
+		{
+			if (const auto Result = MultiByteToWideChar(
+				Codepage,
+				!Strict || IsRetardedCodepage? 0 : MB_ERR_INVALID_CHARS,
+				Str.data(),
+				static_cast<int>(Str.size()),
+				To.data(),
+				static_cast<int>(To.size())
+			))
+				return Result;
+
+			if (!IsRetardedCodepage && is_retarded_error())
+				IsRetardedCodepage = true;
+			else
+				return 0;
+		}
+	};
+
+	const auto convert_and_get_size = [&]
+	{
+		auto Result = convert(Buffer);
+		if (Buffer.size() <= Str.size() && GetLastError() == ERROR_INSUFFICIENT_BUFFER)
+		{
+			// If BufferSize is less than DataSize, this function writes the number of characters specified by BufferSize to the buffer indicated by Buffer.
+			// If the function succeeds and BufferSize is 0, the return value is the required size, in characters, for the buffer indicated by Buffer.
+			Result = convert({});
+		}
+		return Result;
+	};
+
+	auto Result = convert_and_get_size();
+
+	// We're still in strict mode and the result is ok and can be trusted
+	if (Result && !IsRetardedCodepage)
+		return Result;
+
+	// Try to convert at least something
+	if (!Result && GetLastError() == ERROR_NO_UNICODE_TRANSLATION)
+	{
+		Strict = false;
+		Result = convert_and_get_size();
+	}
+
+	// They don't care, no point to go deeper
+	if (!ErrorPosition)
+		return Result;
+
+	string LocalBuffer;
+
+	if (Buffer.size() < static_cast<size_t>(Result))
+	{
+		LocalBuffer.resize(Result);
+		Buffer = LocalBuffer;
+		Result = convert(Buffer);
+		if (!Result)
+			return Result;
+	}
+
+	const auto Roundtrip = encoding::get_bytes(Codepage, { Buffer.data(), static_cast<size_t>(Result) }, nullptr);
+
+	if (const auto Pos = mismatch(Str, Roundtrip))
+	{
+		*ErrorPosition = *Pos;
+	}
+
+	return Result;
+}
+
+static bool IsValid(unsigned cp)
 {
 	if (cp==CP_ACP || cp==CP_OEMCP || cp==CP_MACCP || cp==CP_THREAD_ACP || cp==CP_SYMBOL)
 		return false;
@@ -139,13 +319,8 @@ static bool IsValid(UINT cp)
 	if (cp==CP_UTF8 || cp==CP_UNICODE || cp==CP_REVERSEBOM)
 		return false;
 
-	return GetCodePageInfo(cp).first == 2;
-}
-
-static auto GetNoBestFitCharsFlag(uintptr_t Codepage)
-{
-	// See https://msdn.microsoft.com/en-us/library/windows/desktop/dd374130.aspx
-	return Codepage == CP_UTF8 || Codepage == 54936 || IsNoFlagsCodepage(Codepage)? 0 : WC_NO_BEST_FIT_CHARS;
+	const auto Info = GetCodePageInfo(cp);
+	return Info && Info->MaxCharSize == 2;
 }
 
 bool MultibyteCodepageDecoder::SetCP(uintptr_t Codepage)
@@ -160,26 +335,22 @@ bool MultibyteCodepageDecoder::SetCP(uintptr_t Codepage)
 	m1.assign(256, 0);
 	m2.assign(256*256, 0);
 
-	BOOL DefUsed, *pDefUsed = (Codepage == CP_UTF8 || Codepage == CP_UTF7) ? nullptr : &DefUsed;
-
-	const DWORD flags = GetNoBestFitCharsFlag(Codepage);
-
 	union
 	{
 		char Buffer[2];
 		char b1;
 		wchar_t b2;
 	}
-	u;
+	u{};
 
 	int CharsProcessed = 0;
 	size_t Size = 0;
 	for (size_t i = 0; i != 65536; ++i) // only UCS2 range
 	{
-		DefUsed = FALSE;
+		encoding::error_position ErrorPosition;
 		const auto Char = static_cast<wchar_t>(i);
-		size_t CharSize = WideCharToMultiByte(Codepage, flags, &Char, 1, u.Buffer, static_cast<int>(std::size(u.Buffer)), nullptr, pDefUsed);
-		if (!CharSize || DefUsed)
+		const auto CharSize = widechar_to_multibyte_with_validation(Codepage, { &Char, 1 }, u.Buffer, &ErrorPosition);
+		if (!CharSize || ErrorPosition)
 			continue;
 
 		len_mask[u.b1] |= bit(CharSize - 1);
@@ -193,18 +364,14 @@ bool MultibyteCodepageDecoder::SetCP(uintptr_t Codepage)
 		}
 	}
 
-	assert(CharsProcessed >= 256);
-	if (CharsProcessed < 256)
-		return false;
-
 	m_Codepage = Codepage;
 	m_Size = Size;
 	return true;
 }
 
-size_t MultibyteCodepageDecoder::GetChar(const char* Buffer, size_t Size, wchar_t& Char, bool* End) const
+size_t MultibyteCodepageDecoder::GetChar(std::string_view const Str, wchar_t& Char, bool* End) const
 {
-	if (!Buffer || !Size)
+	if (Str.empty())
 	{
 		if (End)
 		{
@@ -213,8 +380,8 @@ size_t MultibyteCodepageDecoder::GetChar(const char* Buffer, size_t Size, wchar_
 		return 0;
 	}
 
-	char b1 = Buffer[0];
-	char lmask = len_mask[b1];
+	const auto b1 = Str[0];
+	const auto lmask = len_mask[b1];
 	if (!lmask)
 		return 0;
 
@@ -224,7 +391,7 @@ size_t MultibyteCodepageDecoder::GetChar(const char* Buffer, size_t Size, wchar_
 		return 1;
 	}
 
-	if (Size < 2)
+	if (Str.size() < 2)
 	{
 		if (End)
 		{
@@ -233,7 +400,7 @@ size_t MultibyteCodepageDecoder::GetChar(const char* Buffer, size_t Size, wchar_
 		return 0;
 	}
 
-	UINT16 b2 = b1 | (Buffer[1] << 8);
+	const uint16_t b2 = b1 | (Str[1] << 8);
 	if (!m2[b2])
 	{
 		return 0;
@@ -245,7 +412,9 @@ size_t MultibyteCodepageDecoder::GetChar(const char* Buffer, size_t Size, wchar_
 	}
 }
 
-static size_t get_bytes_impl(uintptr_t const Codepage, string_view const Str, char* const Buffer, size_t const BufferSize, bool* const UsedDefaultChar)
+static size_t utf8_get_bytes(string_view Str, span<char> Buffer);
+
+static size_t get_bytes_impl(uintptr_t const Codepage, string_view const Str, span<char> Buffer, encoding::error_position* const ErrorPosition)
 {
 	if (Str.empty())
 		return 0;
@@ -253,35 +422,24 @@ static size_t get_bytes_impl(uintptr_t const Codepage, string_view const Str, ch
 	switch(Codepage)
 	{
 	case CP_UTF8:
-		return Utf8::get_bytes(Str, Buffer, BufferSize);
+		return utf8_get_bytes(Str, Buffer);
 
 	case CP_UNICODE:
-		if (BufferSize) // paranoid gcc null checks are paranoid
-			memcpy(Buffer, Str.data(), std::min(Str.size() * sizeof(wchar_t), BufferSize));
-		return Str.size() * sizeof(wchar_t);
-
 	case CP_REVERSEBOM:
-		swap_bytes(Str.data(), Buffer, std::min(Str.size() * sizeof(wchar_t), BufferSize));
-		return Str.size() * sizeof(wchar_t);
+		{
+			const auto Size = std::min(Str.size() * sizeof(wchar_t), Buffer.size());
+			if (Codepage == CP_UNICODE)
+			{
+				copy_memory(Str.data(), Buffer.data(), Size);
+			}
+			else
+				swap_bytes(Str.data(), Buffer.data(), Size);
+
+			return Str.size() * sizeof(wchar_t);
+		}
 
 	default:
-		{
-			BOOL bUsedDefaultChar = FALSE;
-			auto Result = WideCharToMultiByte(Codepage, GetNoBestFitCharsFlag(Codepage), Str.data(), static_cast<int>(Str.size()), Buffer, static_cast<int>(BufferSize), nullptr, UsedDefaultChar? &bUsedDefaultChar : nullptr);
-			if (!Result && BufferSize < Str.size() && GetLastError() == ERROR_INSUFFICIENT_BUFFER)
-			{
-				// https://msdn.microsoft.com/en-us/library/windows/desktop/dd374130.aspx
-				// If BufferSize is less than DataSize, this function writes the number of characters specified by BufferSize to the buffer indicated by Buffer.
-
-				// If the function succeeds and BufferSize is 0, the return value is the required size, in bytes, for the buffer indicated by Buffer.
-				Result = WideCharToMultiByte(Codepage, GetNoBestFitCharsFlag(Codepage), Str.data(), static_cast<int>(Str.size()), nullptr, 0, nullptr, UsedDefaultChar ? &bUsedDefaultChar : nullptr);
-			}
-
-			if (UsedDefaultChar)
-				*UsedDefaultChar = bUsedDefaultChar != FALSE;
-
-			return Result;
-		}
+		return widechar_to_multibyte_with_validation(Codepage, Str, Buffer, ErrorPosition);
 	}
 }
 
@@ -295,80 +453,106 @@ uintptr_t encoding::codepage::oem()
 	return GetOEMCP();
 }
 
-size_t encoding::get_bytes(uintptr_t const Codepage, string_view const Str, char* const Buffer, size_t const BufferSize, bool* const UsedDefaultChar)
+uintptr_t encoding::codepage::normalise(uintptr_t const Codepage)
 {
-	const auto Result = get_bytes_impl(Codepage, Str, Buffer, BufferSize, UsedDefaultChar);
-	if (Result < BufferSize)
+	switch (Codepage)
+	{
+	case CP_OEMCP: return oem();
+	case CP_ACP:   return ansi();
+	default:       return Codepage;
+	}
+}
+
+size_t encoding::get_bytes(uintptr_t const Codepage, string_view const Str, span<char> const Buffer, error_position* const ErrorPosition)
+{
+	const auto Result = get_bytes_impl(Codepage, Str, Buffer, ErrorPosition);
+	if (Result < Buffer.size())
 	{
 		Buffer[Result] = '\0';
 	}
 	return Result;
 }
 
-std::string encoding::get_bytes(uintptr_t const Codepage, string_view const Str, bool* const UsedDefaultChar)
+void encoding::get_bytes(uintptr_t Codepage, string_view Str, std::string& Buffer, error_position* ErrorPosition)
 {
 	if (Str.empty())
-		return {};
+	{
+		Buffer.clear();
+		return;
+	}
 
 	// DataSize is a good estimation for the bytes count.
 	// With this approach we can fill the buffer with only one attempt in many cases.
-	std::string Buffer(Str.size(), '\0');
+	Buffer.resize(Str.size(), '\0');
 
 	for (auto Overflow = true; Overflow;)
 	{
-		const auto Size = get_bytes(Codepage, Str, Buffer.data(), Buffer.size(), UsedDefaultChar);
+		const auto Size = get_bytes(Codepage, Str, span(Buffer), ErrorPosition);
 		Overflow = Size > Buffer.size();
 		Buffer.resize(Size);
 	}
-
-	return Buffer;
 }
 
-namespace Utf7
+std::string encoding::get_bytes(uintptr_t const Codepage, string_view const Str, error_position* const ErrorPosition)
 {
-	size_t get_chars(std::string_view Str, wchar_t* Buffer, size_t BufferSize, Utf::errors *Errors);
+	std::string Result;
+	get_bytes(Codepage, Str, Result, ErrorPosition);
+	return Result;
 }
 
-static size_t get_chars_impl(uintptr_t const Codepage, std::string_view Str, wchar_t* const Buffer, size_t const BufferSize)
+size_t encoding::get_bytes_count(uintptr_t const Codepage, string_view const Str, error_position* ErrorPosition)
 {
+	return get_bytes(Codepage, Str, {}, ErrorPosition);
+}
+
+static size_t utf8_get_chars(std::string_view Str, span<wchar_t> Buffer, encoding::error_position* ErrorPosition);
+static size_t utf7_get_chars(std::string_view Str, span<wchar_t> Buffer, encoding::error_position* ErrorPosition);
+
+static size_t get_chars_impl(uintptr_t const Codepage, std::string_view Str, span<wchar_t> const Buffer, encoding::error_position* const ErrorPosition)
+{
+	if (Str.empty())
+		return 0;
+
 	switch (Codepage)
 	{
 	case CP_UTF8:
-		return Utf8::get_chars(Str, Buffer, BufferSize, nullptr);
+		return utf8_get_chars(Str, Buffer, ErrorPosition);
 
 	case CP_UTF7:
-		return Utf7::get_chars(Str, Buffer, BufferSize, nullptr);
+		return utf7_get_chars(Str, Buffer, ErrorPosition);
 
 	case CP_UNICODE:
-		if (BufferSize) // paranoid gcc null checks are paranoid
-			memcpy(Buffer, Str.data(), std::min(Str.size(), BufferSize * sizeof(wchar_t)));
+		copy_memory(Str.data(), Buffer.data(), std::min(Str.size(), Buffer.size() * sizeof(wchar_t)));
 		return Str.size() / sizeof(wchar_t);
 
 	case CP_REVERSEBOM:
-		swap_bytes(Str.data(), Buffer, std::min(Str.size(), BufferSize * sizeof(wchar_t)));
+		swap_bytes(Str.data(), Buffer.data(), std::min(Str.size(), Buffer.size() * sizeof(wchar_t)));
 		return Str.size() / sizeof(wchar_t);
 
 	default:
-		return MultiByteToWideChar(Codepage, 0, Str.data(), static_cast<int>(Str.size()), Buffer, static_cast<int>(BufferSize));
+		return multibyte_to_widechar_with_validation(Codepage, Str, Buffer, ErrorPosition);
 	}
 }
 
-size_t encoding::get_chars(uintptr_t const Codepage, std::string_view const Str, wchar_t* const Buffer, size_t const BufferSize)
+size_t encoding::get_chars(uintptr_t const Codepage, std::string_view const Str, span<wchar_t> const Buffer, error_position* const ErrorPosition)
 {
-	const auto Result = get_chars_impl(Codepage, Str, Buffer, BufferSize);
-	if (Result < BufferSize)
+	const auto Result = get_chars_impl(Codepage, Str, Buffer, ErrorPosition);
+	if (Result < Buffer.size())
 	{
-		Buffer[Result] = L'\0';
+		Buffer[Result] = {};
 	}
 	return Result;
 }
 
-string encoding::get_chars(uintptr_t const Codepage, std::string_view const Str)
+void encoding::get_chars(uintptr_t const Codepage, std::string_view const Str, string& Buffer, error_position* const ErrorPosition)
 {
 	if (Str.empty())
-		return {};
+	{
+		Buffer.clear();
+		return;
+	}
 
-	const auto& EstimatedCharsCount = [&]
+	const auto EstimatedCharsCount = [&]
 	{
 		switch (Codepage)
 		{
@@ -379,7 +563,7 @@ string encoding::get_chars(uintptr_t const Codepage, std::string_view const Str)
 		case CP_UTF7:
 		case CP_UTF8:
 			// Even though DataSize is always >= BufferSize for these guys, we can't use DataSize for estimation - it can be three times larger than necessary.
-			return get_chars_count(Codepage, Str);
+			return get_chars_count(Codepage, Str, ErrorPosition);
 
 		default:
 			return Str.size();
@@ -387,15 +571,57 @@ string encoding::get_chars(uintptr_t const Codepage, std::string_view const Str)
 	};
 
 	// With this approach we can fill the buffer with only one attempt in many cases.
-	string Buffer(EstimatedCharsCount(), L'\0');
+	resize_exp_noshrink(Buffer, EstimatedCharsCount());
+
 	for (auto Overflow = true; Overflow;)
 	{
-		const auto Size = get_chars(Codepage, Str, Buffer.data(), Buffer.size());
+		const auto Size = get_chars(Codepage, Str, span(Buffer), ErrorPosition);
 		Overflow = Size > Buffer.size();
 		Buffer.resize(Size);
 	}
+}
 
-	return Buffer;
+size_t encoding::get_chars(uintptr_t const Codepage, bytes_view const Str, span<wchar_t> Buffer, error_position* const ErrorPosition)
+{
+	return get_chars(Codepage, to_string_view(Str), Buffer, ErrorPosition);
+}
+
+void encoding::get_chars(uintptr_t const Codepage, bytes_view const Str, string& Buffer, error_position* const ErrorPosition)
+{
+	return get_chars(Codepage, to_string_view(Str), Buffer, ErrorPosition);
+}
+
+string encoding::get_chars(uintptr_t const Codepage, std::string_view const Str, error_position* const ErrorPosition)
+{
+	string Result;
+	get_chars(Codepage, Str, Result, ErrorPosition);
+	return Result;
+}
+
+string encoding::get_chars(uintptr_t const Codepage, bytes_view const Str, error_position* const ErrorPosition)
+{
+	return get_chars(Codepage, to_string_view(Str), ErrorPosition);
+}
+
+size_t encoding::get_chars_count(uintptr_t const Codepage, std::string_view const Str, error_position* const ErrorPosition)
+{
+	return get_chars(Codepage, Str, {}, ErrorPosition);
+}
+
+size_t encoding::get_chars_count(uintptr_t const Codepage, bytes_view const Str, error_position* const ErrorPosition)
+{
+	return get_chars(Codepage, Str, {}, ErrorPosition);
+}
+
+void encoding::raise_exception(uintptr_t const Codepage, string_view const Str, size_t const Position)
+{
+	throw MAKE_FAR_KNOWN_EXCEPTION(
+		concat(
+			codepages::UnsupportedCharacterMessage(Str[Position]),
+			L"\n"sv,
+			codepages::FormatName(Codepage)
+		)
+	);
 }
 
 std::string_view encoding::get_signature_bytes(uintptr_t Cp)
@@ -413,10 +639,11 @@ std::string_view encoding::get_signature_bytes(uintptr_t Cp)
 	}
 }
 
-encoding::writer::writer(std::ostream& Stream, uintptr_t Codepage, bool AddSignature):
+encoding::writer::writer(std::ostream& Stream, uintptr_t Codepage, bool AddSignature, bool IgnoreEncodingErrors):
 	m_Stream(&Stream),
 	m_Codepage(Codepage),
-	m_AddSignature(AddSignature)
+	m_AddSignature(AddSignature),
+	m_IgnoreEncodingErrors(IgnoreEncodingErrors)
 {
 }
 
@@ -436,31 +663,46 @@ void encoding::writer::write(const string_view Str)
 	if (m_Codepage == CP_UNICODE)
 		return io::write(*m_Stream, Str);
 
-	// External buffer to minimise allocations
-	m_Buffer.resize(m_Buffer.capacity());
 
-	for (auto Overflow = true; Overflow;)
-	{
-		const auto Size = get_bytes(m_Codepage, Str, m_Buffer);
-		Overflow = Size > m_Buffer.size();
-		m_Buffer.resize(Size);
-	}
+	error_position ErrorPosition;
+	get_bytes(m_Codepage, Str, m_Buffer, m_IgnoreEncodingErrors? nullptr : &ErrorPosition);
+
+	if (ErrorPosition)
+		raise_exception(m_Codepage, Str, *ErrorPosition);
 
 	io::write(*m_Stream, m_Buffer);
 }
 
-//################################################################################################
-
-size_t Utf::get_chars(uintptr_t const Codepage, std::string_view const Str, wchar_t* const Buffer, size_t const BufferSize, errors* const Errors)
+encoding::memory_writer::memory_writer(uintptr_t const Codepage, bool const AddSignature):
+	m_Codepage(Codepage),
+	m_AddSignature(AddSignature)
 {
-	switch (Codepage)
+}
+
+void encoding::memory_writer::write(string_view Str, const bool validate)
+{
+	if (m_AddSignature)
 	{
-	case CP_UTF7:
-		return Utf7::get_chars(Str, Buffer, BufferSize, Errors);
-	case CP_UTF8:
-		return Utf8::get_chars(Str, Buffer, BufferSize, Errors);
-	default:
-		throw MAKE_FAR_EXCEPTION(L"Not a utf codepage"sv);
+		m_Data.emplace_back(get_signature_bytes(m_Codepage));
+		m_AddSignature = false;
+	}
+
+	// Nothing to do here
+	if (Str.empty())
+		return;
+
+	error_position ErrorPosition;
+	m_Data.emplace_back(get_bytes(m_Codepage, Str, validate ? &ErrorPosition : nullptr));
+
+	if (ErrorPosition)
+		raise_exception(m_Codepage, Str, *ErrorPosition);
+}
+
+void encoding::memory_writer::flush_to(std::ostream& Stream)
+{
+	for (const auto& i: m_Data)
+	{
+		io::write(Stream, i);
 	}
 }
 
@@ -468,7 +710,7 @@ size_t Utf::get_chars(uintptr_t const Codepage, std::string_view const Str, wcha
 
 //                                   2                         5         6
 //         0                         6                         2         2
-// base64: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdrfghijklmnopqrstuvwxyz0123456789+/
+// base64: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/
 
 static const int ill = 0x0100; // illegal
 static const int dir = 0x0200; // direct
@@ -483,35 +725,40 @@ static const int OPT = opt + 255;
 static const int PLS = pls + b64 + 62;
 static const int MNS = mns + dir + 255;
 
-constexpr short D(int n) { return dir + b64 + n; }
+constexpr short operator ""_D(unsigned long long const n)
+{
+	return static_cast<short>(dir + b64 + n);
+}
 
 static const short m7[128] =
-//  x00   x01   x02   x03   x04   x05   x06   x07   x08   x09   x0a   x0b   x0c   x0d   x0e   x0f
-{   ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  DIR,  DIR,  ILL,  ILL,  DIR,  ILL,  ILL
+{
+	//  x00   x01   x02   x03   x04   x05   x06   x07   x08   x09   x0a   x0b   x0c   x0d   x0e   x0f
+	    ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  DIR,  DIR,  ILL,  ILL,  DIR,  ILL,  ILL,
 
-//  x10   x11   x12   x13   x14   x15   x16   x17   x18   x19   x1a   x1b   x1c   x1d   x1e   x1f
-,   ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  ILL
+	//  x10   x11   x12   x13   x14   x15   x16   x17   x18   x19   x1a   x1b   x1c   x1d   x1e   x1f
+	    ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  ILL,  ILL,
 
-// =x20 !=x21 "=x22 #=x23 $=x24 %=x25 &=x26 '=x27 (=x28 )=x29 *=x2a +=x2b ,x=2c -=x2d .=x2e /=x2f
-,   DIR,  OPT,  OPT,  OPT,  OPT,  OPT,  OPT,  DIR,  DIR,  DIR,  OPT,  PLS,  DIR,  MNS, DIR, D(63)
+	// =x20 !=x21 "=x22 #=x23 $=x24 %=x25 &=x26 '=x27 (=x28 )=x29 *=x2a +=x2b ,x=2c -=x2d .=x2e /=x2f
+	    DIR,  OPT,  OPT,  OPT,  OPT,  OPT,  OPT,  DIR,  DIR,  DIR,  OPT,  PLS,  DIR,  MNS,  DIR, 63_D,
 
-//0=x30 1=x31 2=x32 3=x33 4=x34 5=x35 6=x36 7=x37 8=x38 9=x39 :=x3a ;=x3b <=x3c ==x3d >=x3e ?=x3f
-, D(52),D(53),D(54),D(55),D(56),D(57),D(58),D(59),D(60),D(61),  DIR,  OPT,  OPT,  OPT,  OPT,  DIR
+	//0=x30 1=x31 2=x32 3=x33 4=x34 5=x35 6=x36 7=x37 8=x38 9=x39 :=x3a ;=x3b <=x3c ==x3d >=x3e ?=x3f
+	   52_D, 53_D, 54_D, 55_D, 56_D, 57_D, 58_D, 59_D, 60_D, 61_D,  DIR,  OPT,  OPT,  OPT,  OPT,  DIR,
 
-//@=x40 A=x41 B=x42 C=x43 D=x44 E=x45 F=x46 G=x47 H=x48 I=x49 J=x4a K=x4b L=x4c M=x4d N=x4e O=x4f
-,   OPT, D(0), D(1), D(2), D(3), D(4), D(5), D(6), D(7), D(8), D(9),D(10),D(11),D(12),D(13),D(14)
+	//@=x40 A=x41 B=x42 C=x43 D=x44 E=x45 F=x46 G=x47 H=x48 I=x49 J=x4a K=x4b L=x4c M=x4d N=x4e O=x4f
+	    OPT,  0_D,  1_D,  2_D,  3_D,  4_D,  5_D,  6_D,  7_D,  8_D,  9_D, 10_D, 11_D, 12_D, 13_D, 14_D,
 
-//P=x50 Q=x51 R=x52 S=x53 T=x54 U=x55 V=x56 W=x57 X=x58 Y=x59 Z=x5a [=x5b \=x5c ]=x5d ^=x5e _=x5f
-, D(15),D(16),D(17),D(18),D(19),D(20),D(21),D(22),D(23),D(24),D(25),  OPT,  ILL,  OPT,  OPT,  OPT
+	//P=x50 Q=x51 R=x52 S=x53 T=x54 U=x55 V=x56 W=x57 X=x58 Y=x59 Z=x5a [=x5b \=x5c ]=x5d ^=x5e _=x5f
+	   15_D, 16_D, 17_D, 18_D, 19_D, 20_D, 21_D, 22_D, 23_D, 24_D, 25_D,  OPT,  ILL,  OPT,  OPT,  OPT,
 
-//`=x60 a=x61 b=x62 c=x63 d=x64 e=x65 f=x66 g=x67 h=x68 i=x69 j=x6a k=x6b l=x6c m=x6d n=x6e o=x6f
-,   OPT,D(26),D(27),D(28),D(29),D(30),D(31),D(32),D(33),D(34),D(35),D(36),D(37),D(38),D(39),D(40)
+	//`=x60 a=x61 b=x62 c=x63 d=x64 e=x65 f=x66 g=x67 h=x68 i=x69 j=x6a k=x6b l=x6c m=x6d n=x6e o=x6f
+	    OPT, 26_D, 27_D, 28_D, 29_D, 30_D, 31_D, 32_D, 33_D, 34_D, 35_D, 36_D, 37_D, 38_D, 39_D, 40_D,
 
-//p=x70 q=x71 r=x72 s=x73 t=x74 u=x75 v=x76 w=x77 x=x78 y=x79 z=x7a {=x7b |=x7c }=x7d ~=x7e   x7f
-, D(41),D(42),D(43),D(44),D(45),D(46),D(47),D(48),D(49),D(50),D(51),  OPT,  OPT,  OPT,  ILL,  ILL
+	//p=x70 q=x71 r=x72 s=x73 t=x74 u=x75 v=x76 w=x77 x=x78 y=x79 z=x7a {=x7b |=x7c }=x7d ~=x7e   x7f
+	   41_D, 42_D, 43_D, 44_D, 45_D, 46_D, 47_D, 48_D, 49_D, 50_D, 51_D,  OPT,  OPT,  OPT,  ILL,  ILL,
 };
 
 // BUGBUG non-BMP range is not supported
+// TODO: Rewrite
 static size_t Utf7_GetChar(std::string_view::const_iterator const Iterator, std::string_view::const_iterator const End, wchar_t* const Buffer, bool& ConversionError, int& state)
 {
 	const size_t DataSize = End - Iterator;
@@ -544,9 +791,14 @@ static size_t Utf7_GetChar(std::string_view::const_iterator const Iterator, std:
 		return BytesConsumed;
 	}
 
+	if (m[0] == DIR || m[0] == OPT)
+	{
+		u.s.base64 = false;
+	}
+
 	if (!u.s.base64)
 	{
-		if (c != (BYTE)'+')
+		if (c != static_cast<BYTE>('+'))
 		{
 			*Buffer = static_cast<wchar_t>(c);
 			return BytesConsumed;
@@ -565,7 +817,7 @@ static size_t Utf7_GetChar(std::string_view::const_iterator const Iterator, std:
 			return BytesConsumed;
 		}
 
-		if (c == (BYTE)'-')
+		if (c == static_cast<BYTE>('-'))
 		{
 			*Buffer = L'+';
 			return BytesConsumed;
@@ -582,7 +834,7 @@ static size_t Utf7_GetChar(std::string_view::const_iterator const Iterator, std:
 		u.s.carry_count = 0;
 	}
 
-	int a = 2 - u.s.carry_count / 4;
+	const auto a = 2 - u.s.carry_count / 4;
 	if (BytesConsumed + a > DataSize)
 	{
 		ConversionError = true;
@@ -606,7 +858,7 @@ static size_t Utf7_GetChar(std::string_view::const_iterator const Iterator, std:
 	}
 	if (a < 2)
 	{
-		*Buffer = static_cast<wchar_t>((u.s.carry_bits << 12) | ((BYTE)m[0] << 6) | (BYTE)m[1]);
+		*Buffer = static_cast<wchar_t>((u.s.carry_bits << 12) | (static_cast<BYTE>(m[0]) << 6) | static_cast<BYTE>(m[1]));
 		u.s.carry_count = 0;
 	}
 	else
@@ -627,24 +879,24 @@ static size_t Utf7_GetChar(std::string_view::const_iterator const Iterator, std:
 			ConversionError = true;
 			return BytesConsumed;
 		}
-		unsigned m18 = ((BYTE)m[0] << 12) | ((BYTE)m[1] << 6) | ((BYTE)m[2]);
+		const unsigned m18 = (static_cast<BYTE>(m[0]) << 12) | (static_cast<BYTE>(m[1]) << 6) | static_cast<BYTE>(m[2]);
 
 		if (u.s.carry_count == 0)
 		{
 			*Buffer = static_cast<wchar_t>(m18 >> 2);
-			u.s.carry_bits = (BYTE)(m18 & 0x03);
+			u.s.carry_bits = static_cast<BYTE>(m18 & 0x03);
 			u.s.carry_count = 2;
 		}
 		else
 		{
 			*Buffer = static_cast<wchar_t>((u.s.carry_bits << 14) | (m18 >> 4));
-			u.s.carry_bits = (BYTE)(m18 & 0x07);
+			u.s.carry_bits = static_cast<BYTE>(m18 & 0x0F);
 			u.s.carry_count = 4;
 		}
 	}
 	++BytesConsumed;
 
-	if (DataSize > BytesConsumed && *Iterator == '-')
+	if (DataSize > BytesConsumed && *StrIterator == '-')
 	{
 		u.s.base64 = false;
 		++BytesConsumed;
@@ -656,21 +908,18 @@ static size_t Utf7_GetChar(std::string_view::const_iterator const Iterator, std:
 
 static size_t BytesToUnicode(
 	std::string_view const Str,
-	wchar_t* const Buffer, size_t const BufferSize,
-	size_t(*GetChar)(std::string_view::const_iterator, std::string_view::const_iterator, wchar_t*, bool&, int&),
-	Utf::errors* const Errors)
+	span<wchar_t> const Buffer,
+	function_ref<size_t(std::string_view::const_iterator, std::string_view::const_iterator, wchar_t*, bool&, int&)> const GetChar,
+	encoding::error_position* const ErrorPosition)
 {
 	if (Str.empty())
 		return 0;
 
-	if (Errors)
-		*Errors = {};
-
 	auto StrIterator = Str.begin();
 	const auto StrEnd = Str.end();
 
-	auto BufferIterator = Buffer;
-	const auto BufferEnd = Buffer + BufferSize;
+	auto BufferIterator = Buffer.begin();
+	const auto BufferEnd = Buffer.end();
 
 	int State = 0;
 	size_t RequiredSize = 0;
@@ -686,15 +935,13 @@ static size_t BytesToUnicode(
 
 		if (ConversionError)
 		{
-			TmpBuffer[0] = Utf::REPLACE_CHAR;
-			if (Errors && !Errors->Conversion.Error)
-			{
-				Errors->Conversion.Error = true;
-				Errors->Conversion.Position = StrIterator - Str.begin();
-			}
+			TmpBuffer[0] = encoding::replace_char;
+
+			if (ErrorPosition && !*ErrorPosition)
+				*ErrorPosition = StrIterator - Str.begin();
 		}
 
-		const auto& StoreChar = [&](wchar_t Char)
+		const auto StoreChar = [&](wchar_t Char)
 		{
 			if (BufferIterator != BufferEnd)
 			{
@@ -716,20 +963,44 @@ static size_t BytesToUnicode(
 	return RequiredSize;
 }
 
-size_t Utf7::get_chars(std::string_view const Str, wchar_t* const Buffer, size_t const BufferSize, Utf::errors* const Errors)
+static size_t utf7_get_chars(std::string_view const Str, span<wchar_t> const Buffer, encoding::error_position* const ErrorPosition)
 {
-	return BytesToUnicode(Str, Buffer, BufferSize, Utf7_GetChar, Errors);
+	return BytesToUnicode(Str, Buffer, Utf7_GetChar, ErrorPosition);
+}
+
+namespace utf16
+{
+	const auto
+		surrogate_high_first = 0b11011000'00000000u, // D800 55296
+		surrogate_high_last  = 0b11011011'11111111u, // DBFF 56319
+		surrogate_low_first  = 0b11011100'00000000u, // DC00 56320
+		surrogate_low_last   = 0b11011111'11111111u, // DFFF 57343
+
+		surrogate_first      = surrogate_high_first,
+		surrogate_last       = surrogate_low_last,
+
+		invalid_first        = 0b11011100'10000000u, // DC80 56448
+		invalid_last         = 0b11011100'11111111u; // DCFF 56575
 }
 
 namespace utf8
 {
-	const auto surrogate_low_first  = 0b11011100'00000000u;
-	const auto surrogate_low_last   = 0b11011111'11111111u;
-	const auto surrogate_high_first = 0b11011000'00000000u;
-	const auto surrogate_high_last  = 0b11011011'11111111u;
+	// https://en.wikipedia.org/wiki/UTF-8
 
-	const auto invalid_first        = 0b11011100'10000000u;
-	const auto invalid_last         = 0b11011100'11111111u;
+	// In WTF-8 (Wobbly Transformation Format, 8-bit) unpaired surrogate halves (U+D800 through U+DFFF) are allowed.
+	// This is necessary to store possibly-invalid UTF-16, such as Windows filenames.
+	// Many systems that deal with UTF-8 work this way without considering it a different encoding, as it is simpler.
+	static constexpr auto support_unpaired_surrogates = true;
+
+	// Version 3 of the Python programming language treats each byte of an invalid UTF-8 bytestream as an error;
+	// this gives 128 different possible errors. Extensions have been created to allow any byte sequence that is assumed
+	// to be UTF-8 to be lossless transformed to UTF-16 or UTF-32, by translating the 128 possible error bytes to
+	// reserved code points, and transforming those code points back to error bytes to output UTF-8.
+	// The most common approach is to translate the codes to U+DC80...U+DCFF which are low (trailing) surrogate values
+	// and thus "invalid" UTF-16, as used by Python's PEP 383 (or "surrogateescape") approach.
+	static constexpr auto support_embedded_raw_bytes = true;
+
+	static_assert(support_unpaired_surrogates && support_embedded_raw_bytes);
 
 	static constexpr bool is_ascii_byte(unsigned int c)
 	{
@@ -749,12 +1020,17 @@ namespace utf8
 			return (Char & (0b11111111 >> (continuation_bytes + 2))) << (6 * continuation_bytes);
 		}
 
-		static unsigned int extract_continuation_bits() { return 0; }
+		template<size_t... I, typename... bytes>
+		static constexpr unsigned int extract_continuation_bits_impl(std::index_sequence<I...>, bytes... Bytes)
+		{
+			return (... | ((Bytes & 0b00111111) << (6 * (sizeof...(Bytes) - 1 - I))));
+		}
 
 		template<typename... bytes>
-		static constexpr unsigned int extract_continuation_bits(unsigned char const Byte, bytes... Bytes)
+		static constexpr unsigned int extract_continuation_bits(bytes... Bytes)
 		{
-			return ((Byte & 0b00111111) << (6 * sizeof...(Bytes))) | extract_continuation_bits(Bytes...);
+			static_assert(sizeof...(bytes) > 0);
+			return extract_continuation_bits_impl(std::index_sequence_for<bytes...>{}, Bytes...);
 		}
 
 		template<size_t total>
@@ -763,21 +1039,16 @@ namespace utf8
 			return ((0b11111111 << (8 - total)) & 0b11111111) | (Char >> (6 * (total - 1)));
 		}
 
-		template<size_t total, size_t number>
+		template<size_t index>
 		static constexpr unsigned char make_continuation_byte(unsigned int const Char)
 		{
-			static_assert(number <= total);
-			return 0b10000000 | ((Char >> (6 * (total - number))) & 0b00111111);
+			return 0b10000000 | ((Char >> (index * 6)) & 0b00111111);
 		}
 
-		template<size_t total, size_t number, typename iterator, REQUIRES((number > total))>
-		static constexpr void write_continuation_bytes(unsigned int, iterator&) {}
-
-		template<size_t total, size_t number, typename iterator, REQUIRES(number <= total)>
-		static void write_continuation_bytes(unsigned int const Char, iterator& Iterator)
+		template<size_t... I, typename iterator>
+		static void write_continuation_bytes(unsigned int const Char, iterator& Iterator, std::index_sequence<I...>)
 		{
-			*Iterator++ = make_continuation_byte<total, number>(Char);
-			write_continuation_bytes<total, number + 1>(Char, Iterator);
+			(..., (*Iterator++ = make_continuation_byte<sizeof...(I) - 1 - I>(Char)));
 		}
 	}
 
@@ -788,17 +1059,18 @@ namespace utf8
 		return detail::extract_leading_bits<sizeof...(Bytes)>(Byte) | detail::extract_continuation_bits(Bytes...);
 	}
 
-	template<size_t total, typename iterator, REQUIRES(total == 1)>
+	template<size_t total, typename iterator>
 	static void write(unsigned int const Char, iterator& Iterator)
 	{
-		*Iterator++ = Char;
-	}
-
-	template<size_t total, typename iterator, REQUIRES((total > 1))>
-	static void write(unsigned int const Char, iterator& Iterator)
-	{
-		*Iterator++ = detail::make_leading_byte<total>(Char);
-		detail::write_continuation_bytes<total - 1, 1>(Char, Iterator);
+		if constexpr (total == 1)
+		{
+			*Iterator++ = Char;
+		}
+		else
+		{
+			*Iterator++ = detail::make_leading_byte<total>(Char);
+			detail::write_continuation_bytes(Char, Iterator, std::make_index_sequence<total - 1>{});
+		}
 	}
 }
 
@@ -806,7 +1078,12 @@ size_t Utf8::get_char(std::string_view::const_iterator& StrIterator, std::string
 {
 	size_t NumberOfChars = 1;
 
-	const auto& InvalidChar = [](unsigned char c) { return utf8::surrogate_low_first | c; };
+	const auto InvalidChar = [](unsigned char c)
+	{
+		return utf8::support_embedded_raw_bytes?
+			utf16::surrogate_low_first | c :
+			encoding::replace_char;
+	};
 
 	const unsigned char c1 = *StrIterator++;
 
@@ -821,7 +1098,7 @@ size_t Utf8::get_char(std::string_view::const_iterator& StrIterator, std::string
 	}
 	else
 	{
-		const auto& Unfinished = [&]
+		const auto Unfinished = [&]
 		{
 			First = InvalidChar(c1);
 			return NumberOfChars;
@@ -835,7 +1112,8 @@ size_t Utf8::get_char(std::string_view::const_iterator& StrIterator, std::string
 
 		const unsigned char c2 = *StrIterator;
 
-		if (c2 > 0b10111111 ||                       // illegal 2-nd byte
+		if (
+			 c2 <  0b10000000 || c2 > 0b10111111  || // illegal 2-nd byte
 			(c1 == 0b11100000 && c2 < 0b10100000) || // illegal 3-byte start (overlaps with 2-byte)
 			(c1 == 0b11110000 && c2 < 0b10010000) || // illegal 4-byte start (overlaps with 3-byte)
 			(c1 == 0b11110100 && c2 > 0b10001111))   // illegal 4-byte (out of unicode range)
@@ -867,14 +1145,21 @@ size_t Utf8::get_char(std::string_view::const_iterator& StrIterator, std::string
 				// legal 3-byte
 				First = utf8::extract(c1, c2, c3);
 
-				if (utf8::surrogate_high_first <= First && First <= utf8::surrogate_low_last)
+				if constexpr (utf8::support_unpaired_surrogates)
 				{
-					// invalid: surrogate area code
-					First = InvalidChar(c1);
+					StrIterator += 2;
 				}
 				else
 				{
-					StrIterator += 2;
+					if (in_closed_range(utf16::surrogate_first, First, utf16::surrogate_last))
+					{
+						// invalid: surrogate area code
+						First = InvalidChar(c1);
+					}
+					else
+					{
+						StrIterator += 2;
+					}
 				}
 			}
 			else
@@ -894,10 +1179,7 @@ size_t Utf8::get_char(std::string_view::const_iterator& StrIterator, std::string
 				else
 				{
 					// legal 4-byte (produces 2 WCHARs)
-					const auto FullChar = utf8::extract(c1, c2, c3, c4) - 0b1'00000000'00000000;
-					
-					First  = utf8::surrogate_high_first + (FullChar >> 10);
-					Second = utf8::surrogate_low_first + (FullChar & 0b00000011'11111111);
+					std::tie(First, Second) = encoding::utf16::to_surrogate(utf8::extract(c1, c2, c3, c4));
 					NumberOfChars = 2;
 					StrIterator += 3;
 				}
@@ -908,15 +1190,15 @@ size_t Utf8::get_char(std::string_view::const_iterator& StrIterator, std::string
 	return NumberOfChars;
 }
 
-size_t Utf8::get_chars(std::string_view const Str, wchar_t* const Buffer, size_t const BufferSize, int& Tail)
+size_t Utf8::get_chars(std::string_view const Str, span<wchar_t> const Buffer, int& Tail)
 {
 	auto StrIterator = Str.begin();
 	const auto StrEnd = Str.end();
 
-	auto BufferIterator = Buffer;
-	const auto BufferEnd = Buffer + BufferSize;
+	auto BufferIterator = Buffer.begin();
+	const auto BufferEnd = Buffer.end();
 
-	const auto& StoreChar = [&](wchar_t Char)
+	const auto StoreChar = [&](wchar_t Char)
 	{
 		if (BufferIterator != BufferEnd)
 		{
@@ -931,7 +1213,7 @@ size_t Utf8::get_chars(std::string_view const Str, wchar_t* const Buffer, size_t
 		wchar_t First, Second;
 		const auto NumberOfChars = get_char(StrIterator, StrEnd, First, Second);
 
-		if (!StoreChar(NumberOfChars == 1 || BufferIterator + 1 != BufferEnd? First : Utf::REPLACE_CHAR))
+		if (!StoreChar(NumberOfChars == 1 || BufferIterator + 1 != BufferEnd? First : encoding::replace_char))
 			break;
 
 		if (NumberOfChars == 2)
@@ -942,27 +1224,27 @@ size_t Utf8::get_chars(std::string_view const Str, wchar_t* const Buffer, size_t
 	}
 
 	Tail = StrEnd - StrIterator;
-	return BufferIterator - Buffer;
+	return BufferIterator - Buffer.begin();
 }
 
-size_t Utf8::get_chars(std::string_view const Str, wchar_t* const Buffer, size_t const BufferSize, Utf::errors* const Errors)
+static size_t utf8_get_chars(std::string_view const Str, span<wchar_t> const Buffer, encoding::error_position* const ErrorPosition)
 {
-	return BytesToUnicode(Str, Buffer, BufferSize, [](std::string_view::const_iterator const Iterator, std::string_view::const_iterator const End, wchar_t* CharBuffer, bool&, int&)
+	return BytesToUnicode(Str, Buffer, [](std::string_view::const_iterator const Iterator, std::string_view::const_iterator const End, wchar_t* CharBuffer, bool&, int&)
 	{
 		auto NextIterator = Iterator;
-		get_char(NextIterator, End, CharBuffer[0], CharBuffer[1]);
+		(void)Utf8::get_char(NextIterator, End, CharBuffer[0], CharBuffer[1]);
 		return static_cast<size_t>(NextIterator - Iterator);
-	}, Errors);
+	}, ErrorPosition);
 }
 
-size_t Utf8::get_bytes(string_view const Str, char* const Buffer, size_t const BufferSize)
+static size_t utf8_get_bytes(string_view const Str, span<char> const Buffer)
 {
 	auto StrIterator = Str.begin();
 	const auto StrEnd = Str.end();
 
-	auto BufferIterator = Buffer;
+	auto BufferIterator = Buffer.begin();
 	size_t RequiredCapacity = 0;
-	auto AvailableCapacity = BufferSize;
+	auto AvailableCapacity = Buffer.size();
 
 	while (StrIterator != StrEnd)
 	{
@@ -978,29 +1260,31 @@ size_t Utf8::get_bytes(string_view const Str, char* const Buffer, size_t const B
 		{
 			BytesNumber = 2;
 		}
-		else if (!InRange(utf8::surrogate_high_first, Char, utf8::surrogate_low_last))
+		else if (!in_closed_range(utf16::surrogate_first, Char, utf16::surrogate_last))
 		{
 			// not surrogates
 			BytesNumber = 3;
 		}
-		else if (InRange(utf8::invalid_first, Char, utf8::invalid_last))
+		else if (utf8::support_embedded_raw_bytes && in_closed_range(utf16::invalid_first, Char, utf16::invalid_last))
 		{
 			// embedded raw byte
 			BytesNumber = 1;
 			Char &= 0b11111111;
 		}
-		else if (StrIterator != StrEnd &&
-			InRange(utf8::surrogate_high_first, Char, utf8::surrogate_high_last) &&
-			InRange(utf8::surrogate_low_first, *StrIterator, utf8::surrogate_low_last))
+		else if (StrIterator != StrEnd && encoding::utf16::is_valid_surrogate_pair(Char, *StrIterator))
 		{
 			// valid surrogate pair
 			BytesNumber = 4;
-			Char = 0b1'00000000'00000000u + ((Char - utf8::surrogate_high_first) << 10) + (*StrIterator++ - utf8::surrogate_low_first);
+			Char = encoding::utf16::extract_codepoint(Char, *StrIterator++);
 		}
 		else
 		{
-			BytesNumber = 1;
-			Char = Utf::REPLACE_CHAR;
+			BytesNumber = 3;
+
+			if constexpr (!utf8::support_unpaired_surrogates)
+			{
+				Char = encoding::replace_char;
+			}
 		}
 
 		RequiredCapacity += BytesNumber;
@@ -1024,6 +1308,50 @@ size_t Utf8::get_bytes(string_view const Str, char* const Buffer, size_t const B
 	return RequiredCapacity;
 }
 
+bool encoding::utf16::is_high_surrogate(wchar_t const Char)
+{
+	return in_closed_range(::utf16::surrogate_high_first, Char, ::utf16::surrogate_high_last);
+}
+
+bool encoding::utf16::is_low_surrogate(wchar_t const Char)
+{
+	return in_closed_range(::utf16::surrogate_low_first, Char, ::utf16::surrogate_low_last);
+}
+
+bool encoding::utf16::is_valid_surrogate_pair(wchar_t const First, wchar_t const Second)
+{
+	return is_high_surrogate(First) && is_low_surrogate(Second);
+}
+
+unsigned int encoding::utf16::extract_codepoint(wchar_t const First, wchar_t const Second)
+{
+	static_assert(sizeof(wchar_t) == 2);
+	return 0b1'00000000'00000000u + ((First - ::utf16::surrogate_high_first) << 10) + (Second - ::utf16::surrogate_low_first);
+}
+
+unsigned int encoding::utf16::extract_codepoint(string_view const Str)
+{
+	static_assert(sizeof(wchar_t) == 2);
+
+	return Str.size() > 1 && is_valid_surrogate_pair(Str[0], Str[1])?
+		extract_codepoint(Str[0], Str[1]) :
+		Str.front();
+}
+
+std::pair<wchar_t, wchar_t> encoding::utf16::to_surrogate(unsigned int const Codepoint)
+{
+	if (Codepoint <= std::numeric_limits<wchar_t>::max())
+		return { static_cast<wchar_t>(Codepoint), 0 };
+
+	const auto TwentyBits = Codepoint - 0b1'00000000'00000000u;
+	const auto TenBitsMask = 0b11'11111111;
+	return
+	{
+		static_cast<wchar_t>(::utf16::surrogate_high_first | ((TwentyBits >> 10) & TenBitsMask)),
+		static_cast<wchar_t>(::utf16::surrogate_low_first | (TwentyBits & TenBitsMask))
+	};
+}
+
 void swap_bytes(const void* const Src, void* const Dst, const size_t SizeInBytes)
 {
 	if (!SizeInBytes)
@@ -1032,7 +1360,7 @@ void swap_bytes(const void* const Src, void* const Dst, const size_t SizeInBytes
 		// It's safer to not call it.
 		return;
 	}
-	_swab(reinterpret_cast<char*>(const_cast<void*>(Src)), reinterpret_cast<char*>(Dst), static_cast<int>(SizeInBytes));
+	_swab(static_cast<char*>(const_cast<void*>(Src)), static_cast<char*>(Dst), static_cast<int>(SizeInBytes));
 }
 
 bool IsVirtualCodePage(uintptr_t cp)
@@ -1059,6 +1387,8 @@ bool IsUnicodeOrUtfCodePage(uintptr_t cp)
 bool IsNoFlagsCodepage(uintptr_t cp)
 {
 	return
+		cp == CP_UTF8 ||
+		cp == 54936 ||
 		(cp >= 50220 && cp <= 50222) ||
 		cp == 50225 ||
 		cp == 50227 ||
@@ -1066,6 +1396,21 @@ bool IsNoFlagsCodepage(uintptr_t cp)
 		(cp >= 57002 && cp <= 57011) ||
 		cp == CP_UTF7 ||
 		cp == CP_SYMBOL;
+}
+
+string ShortReadableCodepageName(uintptr_t cp)
+{
+	switch (cp)
+	{
+	case CP_UTF7:        return L"UTF-7"s;
+	case CP_UTF8:        return L"UTF-8"s;
+	case CP_UNICODE:     return L"U16LE"s;
+	case CP_REVERSEBOM:  return L"U16BE"s;
+	default: return
+		cp == encoding::codepage::ansi()? L"ANSI"s :
+		cp == encoding::codepage::oem()?  L"OEM"s :
+		str(cp);
+	}
 }
 
 /*
@@ -1096,7 +1441,7 @@ bool IsNoFlagsCodepage(uintptr_t cp)
 bool encoding::is_valid_utf8(std::string_view const Str, bool const PartialContent, bool& PureAscii)
 {
 	// The number of consecutive 1 bits in 000-111
-	static const char LookupTable[] =
+	static constexpr char LookupTable[]
 	{
 		0, // 000
 		0, // 001
@@ -1135,12 +1480,13 @@ bool encoding::is_valid_utf8(std::string_view const Str, bool const PartialConte
 
 		Ascii = false;
 
-		const auto Bits = (c & 0b01111000) >> 3;
-		if (Bits & 1)
+		const auto Bits = (c & 0b01110000) >> 4;
+
+		ContinuationBytes = LookupTable[Bits];
+		if (!ContinuationBytes)
 			return false;
 
-		ContinuationBytes = LookupTable[Bits >> 1];
-		if (!ContinuationBytes)
+		if (c & bit(7 - 1 - ContinuationBytes))
 			return false;
 
 		NextMin = Min;
@@ -1173,43 +1519,350 @@ bool encoding::is_valid_utf8(std::string_view const Str, bool const PartialConte
 	return !ContinuationBytes || PartialContent;
 }
 
-SELF_TEST
-({
-	const auto& TestUtfDetection = [](bool Utf8, bool Ascii, std::string_view const Str)
+#ifdef ENABLE_TESTS
+
+#include "testing.hpp"
+
+TEST_CASE("encoding.basic")
+{
+	static const struct
 	{
-		bool PureAscii = false;
-		assert(encoding::is_valid_utf8(Str, false, PureAscii) == Utf8);
-		assert(PureAscii == Ascii);
+		std::string_view Str;
+		string_view WideStr;
+	}
+	Tests[]
+	{
+#define INIT(x) { x, L ## x }
+		INIT(""),
+		INIT("0123456789"),
+		INIT("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+#undef INIT
 	};
 
-	TestUtfDetection(true, false, u8R"(
+	std::array const Codepages
+	{
+		static_cast<uintptr_t>(CP_UTF8),
+		encoding::codepage::ansi(),
+		encoding::codepage::oem()
+	};
+
+	for (const auto& Codepage: Codepages)
+	{
+		for (const auto& i: Tests)
+		{
+			{
+				auto WideStr = encoding::get_chars(Codepage, i.Str);
+				REQUIRE(i.WideStr == WideStr);
+
+				auto Str = encoding::get_bytes(Codepage, i.WideStr);
+				REQUIRE(i.Str == Str);
+			}
+
+			{
+				string WideStr;
+				encoding::get_chars(Codepage, i.Str, WideStr);
+				REQUIRE(i.WideStr == WideStr);
+
+				std::string Str;
+				encoding::get_bytes(Codepage, i.WideStr, Str);
+				REQUIRE(i.Str == Str);
+			}
+		}
+	}
+}
+
+TEST_CASE("encoding.utf8")
+{
+	static const struct
+	{
+		bool Utf8;
+		bool Ascii;
+		std::string_view Str;
+	}
+	Tests[]
+	{
+		{ true, false, R"(
 ᚠᛇᚻ᛫ᛒᛦᚦ᛫ᚠᚱᚩᚠᚢᚱ᛫ᚠᛁᚱᚪ᛫ᚷᛖᚻᚹᛦᛚᚳᚢᛗ
 ᛋᚳᛖᚪᛚ᛫ᚦᛖᚪᚻ᛫ᛗᚪᚾᚾᚪ᛫ᚷᛖᚻᚹᛦᛚᚳ᛫ᛗᛁᚳᛚᚢᚾ᛫ᚻᛦᛏ᛫ᛞᚫᛚᚪᚾ
 ᚷᛁᚠ᛫ᚻᛖ᛫ᚹᛁᛚᛖ᛫ᚠᚩᚱ᛫ᛞᚱᛁᚻᛏᚾᛖ᛫ᛞᚩᛗᛖᛋ᛫ᚻᛚᛇᛏᚪᚾ᛬
-)"sv);
+)"sv },
 
-	TestUtfDetection(true, false, u8R"(
+		{ true, false, R"(
+぀ ぁ あ ぃ い ぅ う ぇ え ぉ お か が き ぎ く
+ぐ け げ こ ご さ ざ し じ す ず せ ぜ そ ぞ た
+だ ち ぢ っ つ づ て で と ど な に ぬ ね の は
+ば ぱ ひ び ぴ ふ ぶ ぷ へ べ ぺ ほ ぼ ぽ ま み
+む め も ゃ や ゅ ゆ ょ よ ら り る れ ろ ゎ わ
+ゐ ゑ を ん ゔ ゕ ゖ ゗ ゘ ゙ ゚ ゛ ゜ ゝ ゞ ゟ
+)"sv },
+
+		{ true, false, R"(
+゠ ァ ア ィ イ ゥ ウ ェ エ ォ オ カ ガ キ ギ ク
+グ ケ ゲ コ ゴ サ ザ シ ジ ス ズ セ ゼ ソ ゾ タ
+ダ チ ヂ ッ ツ ヅ テ デ ト ド ナ ニ ヌ ネ ノ ハ
+バ パ ヒ ビ ピ フ ブ プ ヘ ベ ペ ホ ボ ポ マ ミ
+ム メ モ ャ ヤ ュ ユ ョ ヨ ラ リ ル レ ロ ヮ ワ
+ヰ ヱ ヲ ン ヴ ヵ ヶ ヷ ヸ ヹ ヺ ・ ー ヽ ヾ ヿ
+)"sv },
+
+		// Surrogate half width
+		{ true, false, R"(
+𑀐 𑀑 𑀒 𑀓 𑀔 𑀕 𑀖 𑀗 𑀘 𑀙 𑀚 𑀛 𑀜 𑀝 𑀞 𑀟
+𑀠 𑀡 𑀢 𑀣 𑀤 𑀥 𑀦 𑀧 𑀨 𑀩 𑀪 𑀫 𑀬 𑀭 𑀮 𑀯
+𑀰 𑀱 𑀲 𑀳 𑀴 𑀵 𑀶 𑀷 𑀸 𑀹 𑀺 𑀻 𑀼 𑀽 𑀾 𑀿
+)"sv },
+
+		// Surrogate full width
+		{ true, false, R"(
 𠜎 𠜱 𠝹 𠱓 𠱸 𠲖 𠳏 𠳕 𠴕 𠵼 𠵿 𠸎
 𠸏 𠹷 𠺝 𠺢 𠻗 𠻹 𠻺 𠼭 𠼮 𠽌 𠾴 𠾼
 𠿪 𡁜 𡁯 𡁵 𡁶 𡁻 𡃁 𡃉 𡇙 𢃇 𢞵 𢫕
 𢭃 𢯊 𢱑 𢱕 𢳂 𢴈 𢵌 𢵧 𢺳 𣲷 𤓓 𤶸
 𤷪 𥄫 𦉘 𦟌 𦧲 𦧺 𧨾 𨅝 𨈇 𨋢 𨳊 𨳍
-)"sv);
+)"sv },
 
-	TestUtfDetection(true, true, u8R"(
+		{ true, true, R"(
 Lorem ipsum dolor sit amet,
 consectetur adipiscing elit,
 sed do eiusmod tempor incididunt
 ut labore et dolore magna aliqua.
-)"sv);
+)"sv },
+		{ true,  false, "φ"sv },
+		{ false, false, "\x80"sv },
+		{ false, false, "\xFF"sv },
+		{ false, false, "\xC0"sv },
+		{ false, false, "\xC1"sv },
+		{ false, false, "\xC2\x20"sv },
+		{ false, false, "\xC2\xC0"sv },
+		{ false, false, "\xE0\xC0\xC0"sv },
+		{ false, false, "\xEB\x20\xA8"sv },
+		{ false, false, "\xEB\xA0\x28"sv },
+		{ false, false, "\xF0\xC0\xC0\xC0"sv },
+		{ false, false, "\xF4\xBF\xBF\xBF"sv },
+		{ false, false, "\xF0\xA0\xA0\x20"sv },
+	};
 
-	TestUtfDetection(false, false, "\x80"sv);
-	TestUtfDetection(false, false, "\xFF"sv);
-	TestUtfDetection(false, false, "\xC0"sv);
-	TestUtfDetection(false, false, "\xC1"sv);
-	TestUtfDetection(false, false, "\xC2\x20"sv);
-	TestUtfDetection(false, false, "\xC2\xC0"sv);
-	TestUtfDetection(false, false, "\xE0\xC0\xC0"sv);
-	TestUtfDetection(false, false, "\xF0\xC0\xC0\xC0"sv);
-	TestUtfDetection(false, false, "\xF4\xBF\xBF\xBF"sv);
-})
+	for (const auto& i: Tests)
+	{
+		bool PureAscii = false;
+		REQUIRE(i.Utf8 == encoding::is_valid_utf8(i.Str, false, PureAscii));
+		REQUIRE(i.Ascii == PureAscii);
+
+		const auto Str = encoding::utf8::get_chars(i.Str);
+
+		if (utf8::support_embedded_raw_bytes)
+		{
+			// Lossless
+			const auto Bytes = encoding::utf8::get_bytes(Str);
+			REQUIRE(i.Str == Bytes);
+		}
+		else
+		{
+			// Lossy
+			if (!i.Utf8)
+				REQUIRE(contains(Str, encoding::replace_char));
+		}
+	}
+}
+
+TEST_CASE("encoding.ucs2-utf8.round-trip")
+{
+	const auto round_trip = [](wchar_t const Char)
+	{
+		char Bytes[4];
+		const auto Size = encoding::utf8::get_bytes({ &Char, 1 }, Bytes);
+		assert(Size);
+		assert(Size <= std::size(Bytes));
+
+		wchar_t Result;
+		[[maybe_unused]] const auto ResultSize = encoding::utf8::get_chars({ Bytes, Size }, { &Result, 1 });
+		assert(ResultSize == 1u);
+
+		return Result;
+	};
+
+	const irange Chars(std::numeric_limits<wchar_t>::max() + 1);
+
+	const auto AllValid = std::all_of(ALL_CONST_RANGE(Chars), [&](wchar_t const Char)
+	{
+		const auto Result = round_trip(Char);
+
+		if constexpr (utf8::support_unpaired_surrogates)
+		{
+			return Result == Char;
+		}
+		else
+		{
+			const auto
+				IsSurrogate = in_closed_range(utf16::surrogate_first, Char, utf16::surrogate_last),
+				IsInvalid = in_closed_range(utf16::invalid_first, Char, utf16::invalid_last);
+
+			return Result == (!IsSurrogate || (utf8::support_embedded_raw_bytes && IsInvalid)? Char : encoding::replace_char);
+		}
+	});
+
+	REQUIRE(AllValid);
+}
+
+TEST_CASE("encoding.utf8-ucs2.round-trip")
+{
+	const auto there = [](char const Byte)
+	{
+		wchar_t Char;
+		[[maybe_unused]] const auto Size = encoding::utf8::get_chars({ &Byte, 1 }, { &Char, 1 });
+		assert(Size == 1u);
+		return Char;
+	};
+
+	const auto back = [](wchar_t const Char)
+	{
+		char Byte;
+		[[maybe_unused]] const auto Size = encoding::utf8::get_bytes({ &Char, 1 }, { &Byte, 1 });
+		assert(Size == 1u);
+		return Byte;
+	};
+
+	const irange Bytes(std::numeric_limits<char>::max() + 1);
+
+	const auto AllValid = std::all_of(ALL_CONST_RANGE(Bytes), [&](char const Byte)
+	{
+		if (!(Byte & 0b10000000) || utf8::support_embedded_raw_bytes)
+		{
+			return back(there(Byte)) == Byte;
+		}
+		else if (!utf8::support_embedded_raw_bytes)
+		{
+			return there(Byte) == encoding::replace_char;
+		}
+	});
+
+	REQUIRE(AllValid);
+}
+
+TEST_CASE("encoding.errors")
+{
+	static const struct
+	{
+		unsigned Codepage;
+		std::string_view Bytes;
+		size_t Position;
+	}
+	Tests[]
+	{
+		{ 932,   "0123\xE0"sv,     4, },
+		{ 936,   "0\xDB"sv,        1, },
+		{ 949,   "012345\x97"sv,   6, },
+		{ 950,   "012\x81"sv,      3, },
+		{ 1361,  "\x84"sv,         0, },
+		{ 10001, "01\x85"sv,       2, },
+		{ 10002, "0123\x81"sv,     4, },
+		{ 20000, "012\xED"sv,      3, },
+		{ 20001, "\xED"sv,         0, },
+		{ 20003, "01\xFB"sv,       2, },
+		{ 20004, "0123\xED"sv,     4, },
+		{ 57011, "0123\xA0"sv,     4, },
+	};
+
+	for (const auto& i: Tests)
+	{
+		encoding::error_position ErrorPosition;
+		REQUIRE(encoding::get_chars_count(i.Codepage, i.Bytes, &ErrorPosition));
+		REQUIRE(ErrorPosition);
+		REQUIRE(*ErrorPosition == i.Position);
+	}
+}
+
+TEST_CASE("encoding.utf7.valid")
+{
+	static const struct
+	{
+		std::string_view Bytes;
+		string_view Chars;
+		bool OneWay;
+	}
+	Tests[]
+	{
+		{ {},                                     {} },
+		{ "."sv,                                  L"."sv, },
+		{ " \t\r\n"sv,                            L" \t\r\n"sv, },
+		{ "+AKM-1"sv,                             L"£1"sv, },
+		{ "A+ImIDkQ-"sv,                          L"A≢Α"sv, },
+		{ "A+ImIDkQ."sv,                          L"A≢Α."sv, true, },
+		{ "+ADw- and +AD4-"sv,                    L"< and >"sv, },
+		{ "+ZeVnLIqe-"sv,                         L"日本語"sv, },
+		{ "Hello, World+ACE-"sv,                  L"Hello, World!"sv, },
+		{ "INBOX"sv,                              L"INBOX"sv, },
+		{ "Bo+AO4-te de r+AOk-ception"sv,         L"Boîte de réception"sv, },
+		{ "+U9dP4TDIMOwwpA-"sv,                   L"受信トレイ"sv, },
+		{ "+2Dzfttg838HYPN/H-"sv,                 L"🎶🏁🏇"sv, },
+		{ "This+-That-"sv,                        L"This+That-"sv, },
+		{ "+/v8"sv,                               L"\xFEFF"sv, true, },
+		{ "+/v9"sv,                               L"\xFEFF"sv, true, },
+		{ "+/v+"sv,                               L"\xFEFF"sv, true, },
+		{ "+/v/"sv,                               L"\xFEFF"sv, true, },
+		{ "+/v8-"sv,                              L"\xFEFF"sv, },
+	};
+
+	for (const auto& i: Tests)
+	{
+		REQUIRE(encoding::get_chars(CP_UTF7, i.Bytes) == i.Chars);
+
+		if (!i.OneWay)
+			REQUIRE(encoding::get_bytes(CP_UTF7, i.Chars) == i.Bytes);
+	}
+}
+
+TEST_CASE("encoding.raw_eol")
+{
+	static const struct
+	{
+		unsigned Codepage;
+		char Cr, Lf;
+	}
+	Tests[]
+	{
+		{CP_ACP,   '\r', '\n' },
+		{CP_OEMCP, '\r', '\n' },
+		{37,       '\r', '%'  },
+		{500,      '\r', '%'  },
+	};
+
+	for (const auto& i: Tests)
+	{
+		raw_eol Eol(i.Codepage);
+
+		REQUIRE(Eol.cr<char>() == i.Cr);
+		REQUIRE(Eol.lf<char>() == i.Lf);
+
+		REQUIRE(Eol.cr<wchar_t>() == '\r');
+		REQUIRE(Eol.lf<wchar_t>() == '\n');
+	}
+}
+
+TEST_CASE("encoding.utf16.surrogate")
+{
+	static const struct
+	{
+		unsigned Codepoint;
+		std::array<wchar_t, 2> Pair;
+	}
+	Tests[]
+	{
+		{ U'\x000000', {L'\x0000', L'\x0000'} },
+		{ U'\x010000', {L'\xD800', L'\xDC00'} },
+		{ U'\x02070E', {L'\xD841', L'\xDF0E'} },
+		{ U'\x10FFFF', {L'\xDBFF', L'\xDFFF'} },
+	};
+
+	for (const auto& i: Tests)
+	{
+		const auto Codepoint = encoding::utf16::extract_codepoint({ i.Pair.data(), i.Pair.size() });
+		REQUIRE(i.Codepoint == Codepoint);
+
+		const auto Pair = encoding::utf16::to_surrogate(i.Codepoint);
+		REQUIRE(i.Pair[0] == Pair.first);
+		REQUIRE(i.Pair[1] == Pair.second);
+	}
+}
+
+#endif

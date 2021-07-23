@@ -1,6 +1,7 @@
 ﻿.Language=English,English
 .PluginContents=Temporary panel
 
+
 @Contents
 $ #Temporary panel#
     The temporary panel operates in a similar manner to a file panel
@@ -11,6 +12,7 @@ and processing them as a single group.
    ~Temporary panel configuration~@Config@
    ~Working with file lists~@List@
    ~Command line syntax~@CMD@
+
 
 @TempPanel
 $ #Working with temporary panel#
@@ -54,8 +56,8 @@ you can use a menu (#Alt-Shift-F12#) or hotkeys for immediate switching
    To save the current contents of the panel to a list file, you
 can use the hotkey #Alt-Shift-F2#.
 
-
  ~Contents~@Contents@
+
 
 @Config
 $ #Temporary panel: configuration#
@@ -63,11 +65,6 @@ $ #Temporary panel: configuration#
 
  #Add to disks menu#
    Enables adding the "Temporary" item to the disks menu.
-
- #Disks menu hotkey#
-   Hotkey for the temporary panel item in the disks menu.
-You can enter a value from 1 to 9 or leave this field empty if
-you prefer the hotkey to be assigned automatically.
 
  #Add to plugins menu#
    Enables adding the "Temporary" item to the plugins menu.
@@ -118,7 +115,7 @@ files are also copied to the panel. If set to the undefined state
 (#[?]#), a prompt is shown when folders are copied to the panel.
 
  #Replace files with file list# : ~+replace~@CMD@
-   If this option is checked, then, when doing a file list operation,
+   If this option is checked, then, when doing a ~file list~@List@ operation,
 the names in the file list will replace the file names already in the
 panel. Otherwise the filenames will be added to the existing ones.
 
@@ -171,8 +168,8 @@ panel.
    Specifies the prefix for opening the temporary panel from the command
 line and for ~file list operations~@List@.
 
-
  ~Contents~@Contents@
+
 
 @List
 $ #Temporary panel: list files#
@@ -225,11 +222,11 @@ sequence:
    The command line prefix used for file list operations (in the examples
 given above - #tmp:#) can be set in the configuration dialog.
 
-
  ~Contents~@Contents@
 
+
 @CMD
-$^#Temporary panel: Command line#
+$ #Temporary panel: Command line#
  Command line syntax:
    #<prefix>:[<options>] [<filelist>]# , where:
 

@@ -38,24 +38,35 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "disable_warnings_in_std_begin.hpp"
 //----------------------------------------------------------------------------
 #endif // END FAR_USE_INTERNALS
-#include <windows.h>
 #include <utility>
+
+#include <windows.h>
 #ifdef FAR_USE_INTERNALS
 //----------------------------------------------------------------------------
 #include "disable_warnings_in_std_end.hpp"
 #endif // END FAR_USE_INTERNALS
 
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Wmissing-prototypes"
+#endif
+
+
 template<typename T>
-T GetFunctionPointer(const wchar_t* ModuleName, const char* FunctionName, T Replacement)
+static T GetFunctionPointer(const wchar_t* ModuleName, const char* FunctionName, T Replacement)
 {
-	const auto Address = GetProcAddress(GetModuleHandleW(ModuleName), FunctionName);
+	const auto Module = GetModuleHandleW(ModuleName);
+	const auto Address = Module? GetProcAddress(Module, FunctionName) : nullptr;
 	return Address? reinterpret_cast<T>(reinterpret_cast<void*>(Address)) : Replacement;
 }
 
 #define CREATE_FUNCTION_POINTER(ModuleName, FunctionName)\
 static const auto Function = GetFunctionPointer(ModuleName, #FunctionName, &implementation::FunctionName)
 
-static const wchar_t kernel32[] = L"kernel32";
+namespace modules
+{
+	static const wchar_t kernel32[] = L"kernel32";
+	static const wchar_t ntdll[] = L"ntdll";
+}
 
 static void* XorPointer(void* Ptr)
 {
@@ -86,7 +97,7 @@ extern "C" PVOID WINAPI EncodePointerWrapper(PVOID Ptr)
 		}
 	};
 
-	CREATE_FUNCTION_POINTER(kernel32, EncodePointer);
+	CREATE_FUNCTION_POINTER(modules::kernel32, EncodePointer);
 	return Function(Ptr);
 }
 
@@ -101,7 +112,7 @@ extern "C" PVOID WINAPI DecodePointerWrapper(PVOID Ptr)
 		}
 	};
 
-	CREATE_FUNCTION_POINTER(kernel32, DecodePointer);
+	CREATE_FUNCTION_POINTER(modules::kernel32, DecodePointer);
 	return Function(Ptr);
 }
 
@@ -146,7 +157,7 @@ extern "C" BOOL WINAPI GetModuleHandleExWWrapper(DWORD Flags, LPCWSTR ModuleName
 		}
 	};
 
-	CREATE_FUNCTION_POINTER(kernel32, GetModuleHandleExW);
+	CREATE_FUNCTION_POINTER(modules::kernel32, GetModuleHandleExW);
 	return Function(Flags, ModuleName, Module);
 }
 
@@ -317,14 +328,14 @@ namespace slist
 			return ListHead->Depth;
 		}
 #endif
-	};
+	}
 }
 
 // InitializeSListHead (VC2015)
 extern "C" void WINAPI InitializeSListHeadWrapper(PSLIST_HEADER ListHead)
 {
 	using namespace slist;
-	CREATE_FUNCTION_POINTER(kernel32, InitializeSListHead);
+	CREATE_FUNCTION_POINTER(modules::kernel32, InitializeSListHead);
 	return Function(ListHead);
 }
 
@@ -332,7 +343,7 @@ extern "C" void WINAPI InitializeSListHeadWrapper(PSLIST_HEADER ListHead)
 extern "C" PSLIST_ENTRY WINAPI InterlockedFlushSListWrapper(PSLIST_HEADER ListHead)
 {
 	using namespace slist;
-	CREATE_FUNCTION_POINTER(kernel32, InterlockedFlushSList);
+	CREATE_FUNCTION_POINTER(modules::kernel32, InterlockedFlushSList);
 	return Function(ListHead);
 }
 
@@ -340,7 +351,7 @@ extern "C" PSLIST_ENTRY WINAPI InterlockedFlushSListWrapper(PSLIST_HEADER ListHe
 extern "C" PSLIST_ENTRY WINAPI InterlockedPopEntrySListWrapper(PSLIST_HEADER ListHead)
 {
 	using namespace slist;
-	CREATE_FUNCTION_POINTER(kernel32, InterlockedPopEntrySList);
+	CREATE_FUNCTION_POINTER(modules::kernel32, InterlockedPopEntrySList);
 	return Function(ListHead);
 }
 
@@ -348,7 +359,7 @@ extern "C" PSLIST_ENTRY WINAPI InterlockedPopEntrySListWrapper(PSLIST_HEADER Lis
 extern "C" PSLIST_ENTRY WINAPI InterlockedPushEntrySListWrapper(PSLIST_HEADER ListHead, PSLIST_ENTRY ListEntry)
 {
 	using namespace slist;
-	CREATE_FUNCTION_POINTER(kernel32, InterlockedPushEntrySList);
+	CREATE_FUNCTION_POINTER(modules::kernel32, InterlockedPushEntrySList);
 	return Function(ListHead, ListEntry);
 }
 
@@ -356,7 +367,7 @@ extern "C" PSLIST_ENTRY WINAPI InterlockedPushEntrySListWrapper(PSLIST_HEADER Li
 extern "C" PSLIST_ENTRY WINAPI InterlockedPushListSListExWrapper(PSLIST_HEADER ListHead, PSLIST_ENTRY List, PSLIST_ENTRY ListEnd, ULONG Count)
 {
 	using namespace slist;
-	CREATE_FUNCTION_POINTER(kernel32, InterlockedPushListSListEx);
+	CREATE_FUNCTION_POINTER(modules::kernel32, InterlockedPushListSListEx);
 	return Function(ListHead, List, ListEnd, Count);
 }
 
@@ -364,7 +375,7 @@ extern "C" PSLIST_ENTRY WINAPI InterlockedPushListSListExWrapper(PSLIST_HEADER L
 extern "C" PSLIST_ENTRY WINAPI RtlFirstEntrySListWrapper(PSLIST_HEADER ListHead)
 {
 	using namespace slist;
-	CREATE_FUNCTION_POINTER(kernel32, RtlFirstEntrySList);
+	CREATE_FUNCTION_POINTER(modules::ntdll, RtlFirstEntrySList);
 	return Function(ListHead);
 }
 
@@ -372,7 +383,7 @@ extern "C" PSLIST_ENTRY WINAPI RtlFirstEntrySListWrapper(PSLIST_HEADER ListHead)
 extern "C" USHORT WINAPI QueryDepthSListWrapper(PSLIST_HEADER ListHead)
 {
 	using namespace slist;
-	CREATE_FUNCTION_POINTER(kernel32, QueryDepthSList);
+	CREATE_FUNCTION_POINTER(modules::kernel32, QueryDepthSList);
 	return Function(ListHead);
 }
 
@@ -388,7 +399,7 @@ extern "C" BOOL WINAPI GetNumaHighestNodeNumberWrapper(PULONG HighestNodeNumber)
 		}
 	};
 
-	CREATE_FUNCTION_POINTER(kernel32, GetNumaHighestNodeNumber);
+	CREATE_FUNCTION_POINTER(modules::kernel32, GetNumaHighestNodeNumber);
 	return Function(HighestNodeNumber);
 }
 
@@ -404,9 +415,73 @@ extern "C" BOOL WINAPI GetLogicalProcessorInformationWrapper(PSYSTEM_LOGICAL_PRO
 		}
 	};
 
-	CREATE_FUNCTION_POINTER(kernel32, GetLogicalProcessorInformation);
+	CREATE_FUNCTION_POINTER(modules::kernel32, GetLogicalProcessorInformation);
 	return Function(Buffer, ReturnLength);
 }
+
+// SetThreadStackGuarantee (VC2019)
+extern "C" BOOL WINAPI SetThreadStackGuaranteeWrapper(PULONG StackSizeInBytes)
+{
+	struct implementation
+	{
+		static BOOL WINAPI SetThreadStackGuarantee(PULONG StackSizeInBytes)
+		{
+			SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+			return FALSE;
+		}
+	};
+
+	CREATE_FUNCTION_POINTER(modules::kernel32, SetThreadStackGuarantee);
+	return Function(StackSizeInBytes);
+}
+
+// InitializeCriticalSectionEx (VC2019)
+extern "C" BOOL WINAPI InitializeCriticalSectionExWrapper(LPCRITICAL_SECTION CriticalSection, DWORD SpinCount, DWORD Flags)
+{
+	struct implementation
+	{
+		static int WINAPI InitializeCriticalSectionEx(LPCRITICAL_SECTION CriticalSection, DWORD SpinCount, DWORD Flags)
+		{
+			InitializeCriticalSection(CriticalSection);
+			CriticalSection->SpinCount = Flags | SpinCount;
+			return TRUE;
+		}
+	};
+
+	CREATE_FUNCTION_POINTER(modules::kernel32, InitializeCriticalSectionEx);
+	return Function(CriticalSection, SpinCount, Flags);
+}
+
+// CompareStringEx (VC2019)
+extern "C" int WINAPI CompareStringExWrapper(LPCWSTR LocaleName, DWORD CmpFlags, LPCWCH String1, int Count1, LPCWCH String2, int Count2, LPNLSVERSIONINFO VersionInformation, LPVOID Reserved, LPARAM Param)
+{
+	struct implementation
+	{
+		static int WINAPI CompareStringEx(LPCWSTR LocaleName, DWORD CmpFlags, LPCWCH String1, int Count1, LPCWCH String2, int Count2, LPNLSVERSIONINFO VersionInformation, LPVOID Reserved, LPARAM Param)
+		{
+			return CompareStringW(LOCALE_USER_DEFAULT, CmpFlags, String1, Count1, String2, Count2);
+		}
+	};
+
+	CREATE_FUNCTION_POINTER(modules::kernel32, CompareStringEx);
+	return Function(LocaleName, CmpFlags, String1, Count1, String2, Count2, VersionInformation, Reserved, Param);
+}
+
+// LCMapStringEx (VC2019)
+extern "C" int WINAPI LCMapStringExWrapper(LPCWSTR LocaleName, DWORD MapFlags, LPCWSTR SrcStr, int SrcCount, LPWSTR DestStr, int DestCount, LPNLSVERSIONINFO VersionInformation, LPVOID Reserved, LPARAM SortHandle)
+{
+	struct implementation
+	{
+		static int WINAPI CompareStringEx(LPCWSTR LocaleName, DWORD MapFlags, LPCWSTR SrcStr, int SrcCount, LPWSTR DestStr, int DestCount, LPNLSVERSIONINFO VersionInformation, LPVOID Reserved, LPARAM SortHandle)
+		{
+			return LCMapStringW(LOCALE_USER_DEFAULT, MapFlags, SrcStr, SrcCount, DestStr, DestCount);
+		}
+	};
+
+	CREATE_FUNCTION_POINTER(modules::kernel32, CompareStringEx);
+	return Function(LocaleName, MapFlags, SrcStr, SrcCount, DestStr, DestCount, VersionInformation, Reserved, SortHandle);
+}
+
 
 // disable VS2015 telemetry
 extern "C"
@@ -415,4 +490,4 @@ extern "C"
 	void __telemetry_main_invoke_trigger() {}
 	void __telemetry_main_return_trigger() {}
 	void __vcrt_uninitialize_telemetry_provider() {}
-};
+}

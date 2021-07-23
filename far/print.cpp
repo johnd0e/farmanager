@@ -31,8 +31,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "print.hpp"
 
+// Internal:
 #include "panel.hpp"
 #include "vmenu.hpp"
 #include "vmenu2.hpp"
@@ -48,33 +53,40 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "plugins.hpp"
 #include "strmix.hpp"
 #include "global.hpp"
+#include "log.hpp"
 
+// Platform:
 #include "platform.fs.hpp"
 
+// Common:
 #include "common/io.hpp"
 #include "common/range.hpp"
 
+// External:
 #include "format.hpp"
 
-static void AddToPrintersMenu(VMenu2 *PrinterList, range<const PRINTER_INFO_4W*> Printers)
-{
-	// Получаем принтер по умолчанию
-	string strDefaultPrinter;
-	os::GetDefaultPrinter(strDefaultPrinter);
+//----------------------------------------------------------------------------
 
-	// Признак наличия принтера по умолчанию
+static void AddToPrintersMenu(VMenu2 *PrinterList, span<PRINTER_INFO_4W const> const Printers)
+{
+	string strDefaultPrinter;
+	// BUGBUG check result
+	if (!os::GetDefaultPrinter(strDefaultPrinter))
+	{
+		LOGWARNING(L"GetDefaultPrinter(): {}"sv, last_error());
+	}
+
 	bool bDefaultPrinterFound = false;
 
-	// Заполняем список принтеров
 	for (const auto& printer: Printers)
 	{
 		MenuItemEx Item(printer.pPrinterName);
 
-		if (strDefaultPrinter == printer.pPrinterName)
+		if (!bDefaultPrinterFound && printer.pPrinterName == strDefaultPrinter)
 		{
 			bDefaultPrinterFound = true;
-			Item.SetCheck(TRUE);
-			Item.SetSelect(TRUE);
+			Item.SetCheck();
+			Item.SetSelect(true);
 		}
 		Item.ComplexUserData = Item.Name;
 		PrinterList->AddItem(Item);
@@ -101,16 +113,34 @@ void PrintFiles(FileList* SrcPanel)
 		if (DirsCount == SelCount)
 			return;
 
-		DWORD Needed = 0, Returned;
-		EnumPrinters(PRINTER_ENUM_LOCAL | PRINTER_ENUM_CONNECTIONS, nullptr, 4, nullptr, 0, &Needed, &Returned);
+		block_ptr<PRINTER_INFO_4W, os::default_buffer_size> pi(os::default_buffer_size);
 
-		if (!Needed)
-			return;
+		DWORD Needed = 0, PrintersCount = 0;
 
-		block_ptr<PRINTER_INFO_4W> pi(Needed);
+		for (;;)
+		{
+			if (EnumPrinters(
+				PRINTER_ENUM_LOCAL | PRINTER_ENUM_CONNECTIONS,
+				nullptr,
+				4,
+				static_cast<BYTE*>(static_cast<void*>(pi.data())),
+				static_cast<DWORD>(pi.size()),
+				&Needed,
+				&PrintersCount
+			))
+				break;
 
-		if (!EnumPrinters(PRINTER_ENUM_LOCAL | PRINTER_ENUM_CONNECTIONS, nullptr, 4, reinterpret_cast<BYTE*>(pi.get()), Needed, &Needed, &Returned))
+			if (Needed > pi.size())
+			{
+				pi.reset(Needed);
+				continue;
+			}
+
 			throw MAKE_FAR_EXCEPTION(msg(lng::MCannotEnumeratePrinters));
+		}
+
+		if (!PrintersCount)
+			return;
 
 		string strPrinterName;
 
@@ -122,8 +152,7 @@ void PrintFiles(FileList* SrcPanel)
 				if (!SrcPanel->get_first_selected(Data))
 					return;
 
-				auto Name = Data.FileName;
-				strTitle = format(msg(lng::MPrintTo), inplace::quote_unconditional(TruncStr(Name, 50)));
+				strTitle = format(msg(lng::MPrintTo), quote_unconditional(truncate_left(Data.FileName, 50)));
 			}
 			else
 			{
@@ -132,14 +161,13 @@ void PrintFiles(FileList* SrcPanel)
 
 			const auto PrinterList = VMenu2::create(strTitle, {}, ScrY - 4);
 			PrinterList->SetMenuFlags(VMENU_WRAPMODE | VMENU_SHOWAMPERSAND);
-			PrinterList->SetPosition(-1, -1, 0, 0);
-			AddToPrintersMenu(PrinterList.get(), { pi.get(), Returned });
+			PrinterList->SetPosition({ -1, -1, 0, 0 });
+			AddToPrintersMenu(PrinterList.get(), { pi.data(), PrintersCount });
 
 			if (PrinterList->Run() < 0)
 				return;
 
-		if (const auto NamePtr = PrinterList->GetComplexUserDataPtr<string>())
-				strPrinterName = *NamePtr;
+			strPrinterName = *PrinterList->GetComplexUserDataPtr<string>();
 		}
 
 		os::printer_handle Printer;
@@ -149,7 +177,7 @@ void PrintFiles(FileList* SrcPanel)
 
 		SCOPED_ACTION(SaveScreen);
 
-		const auto& PR_PrintMsg = []
+		const auto PR_PrintMsg = []
 		{
 			Message(0,
 				msg(lng::MPrintTitle),
@@ -163,14 +191,22 @@ void PrintFiles(FileList* SrcPanel)
 		SetCursorType(false, 0);
 		PR_PrintMsg();
 		const auto hPlugin = SrcPanel->GetPluginHandle();
-		const auto PluginMode = SrcPanel->GetMode() == panel_mode::PLUGIN_PANEL && !Global->CtrlObject->Plugins->UseFarCommand(hPlugin, PLUGIN_FARGETFILE);
 
-		for (const auto& i : SrcPanel->enum_selected())
+		const auto UseInternalCommand = [&]
+		{
+			OpenPanelInfo Info;
+			Global->CtrlObject->Plugins->GetOpenPanelInfo(hPlugin, &Info);
+			return PluginManager::UseInternalCommand(hPlugin, PLUGIN_FARGETFILE, Info);
+		};
+
+		const auto PluginMode = SrcPanel->GetMode() == panel_mode::PLUGIN_PANEL && !UseInternalCommand();
+
+		for (const auto& i: SrcPanel->enum_selected())
 		{
 			if (i.Attributes & FILE_ATTRIBUTE_DIRECTORY)
 				continue;
 
-			delayed_deleter Deleter;
+			delayed_deleter Deleter(true);
 
 			string FileName;
 
@@ -184,16 +220,21 @@ void PrintFiles(FileList* SrcPanel)
 				if (!ListItem)
 					throw MAKE_FAR_EXCEPTION(L"GetLastSelectedItem error"sv);
 
-				PluginPanelItemHolder PanelItem;
+				PluginPanelItemHolderHeap PanelItem;
 				SrcPanel->FileListToPluginItem(*ListItem, PanelItem);
 
 				if (!Global->CtrlObject->Plugins->GetFile(hPlugin, &PanelItem.Item, strTempDir, FileName, OPM_SILENT))
 				{
-					os::fs::remove_directory(strTempDir);
+					// BUGBUG check result
+					if (!os::fs::remove_directory(strTempDir))
+					{
+						LOGWARNING(L"remove_directory({}): {}"sv, strTempDir, last_error());
+					}
+
 					throw MAKE_FAR_EXCEPTION(L"GetFile error"sv);
 				}
 
-				Deleter.set(FileName);
+				Deleter.add(FileName);
 			}
 			else
 			{
@@ -202,9 +243,9 @@ void PrintFiles(FileList* SrcPanel)
 
 			try
 			{
-				const auto SrcFile = os::fs::file(FileName, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING);
+				const os::fs::file SrcFile(FileName, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING);
 				if (!SrcFile)
-					throw MAKE_FAR_EXCEPTION(L"Cannot open file"sv);
+					throw MAKE_FAR_EXCEPTION(L"Cannot open the file"sv);
 
 				os::fs::filebuf StreamBuffer(SrcFile, std::ios::in);
 				std::istream Stream(&StreamBuffer);
@@ -219,7 +260,7 @@ void PrintFiles(FileList* SrcPanel)
 
 				for (;;)
 				{
-					char Buffer[8192];
+					std::byte Buffer[8192];
 					const auto Read = io::read(Stream, Buffer);
 					if (!Read)
 						break;
@@ -233,7 +274,7 @@ void PrintFiles(FileList* SrcPanel)
 			}
 			catch (const far_exception& e)
 			{
-				if (Message(MSG_WARNING, e.get_error_state(),
+				if (Message(MSG_WARNING, e,
 					msg(lng::MPrintTitle),
 					{
 						msg(lng::MCannotPrint),
@@ -246,7 +287,7 @@ void PrintFiles(FileList* SrcPanel)
 	}
 	catch (const far_exception& e)
 	{
-		Message(MSG_WARNING, e.get_error_state(),
+		Message(MSG_WARNING, e,
 			msg(lng::MPrintTitle),
 			{},
 			{ lng::MOk });

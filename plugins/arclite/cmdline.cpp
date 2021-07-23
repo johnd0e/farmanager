@@ -1,4 +1,4 @@
-#include "utils.hpp"
+﻿#include "utils.hpp"
 #include "sysutils.hpp"
 #include "farutils.hpp"
 #include "common.hpp"
@@ -6,10 +6,10 @@
 #include "options.hpp"
 #include "cmdline.hpp"
 
-#define CHECK_FMT(code) { if (!(code)) FAIL(E_BAD_FORMAT); }
+#define CHECK_FMT(code) do { if (!(code)) FAIL(E_BAD_FORMAT); } while(false)
 
-wstring lc(const wstring& str) {
-  wstring res;
+static std::wstring lc(const std::wstring& str) {
+  std::wstring res;
   res.reserve(str.size());
   for (unsigned i = 0; i < str.size(); i++) {
     res += tolower(str[i]);
@@ -17,12 +17,12 @@ wstring lc(const wstring& str) {
   return res;
 }
 
-CommandArgs parse_command(const wstring& cmd_text) {
+CommandArgs parse_command(const std::wstring& cmd_text) {
   CommandArgs cmd_args;
   cmd_args.cmd = cmdOpen;
   bool is_token = false;
   bool is_quote = false;
-  wstring token;
+  std::wstring token;
   for (unsigned i = 0; i < cmd_text.size(); i++) {
     if (is_token) {
       if (cmd_text[i] == L'"') {
@@ -47,7 +47,7 @@ CommandArgs parse_command(const wstring& cmd_text) {
   if (!token.empty())
     cmd_args.args.push_back(token);
   if (!cmd_args.args.empty()) {
-    wstring cmd = lc(cmd_args.args.front());
+    std::wstring cmd = lc(cmd_args.args.front());
     if (cmd == L"c")
       cmd_args.cmd = cmdCreate;
     else if (cmd == L"u")
@@ -72,7 +72,7 @@ CommandArgs parse_plugin_call(const OpenMacroInfo *omi) {
   for (size_t i = 0; i < omi->Count; ++i) {
     const auto& v = omi->Values[i];
     CHECK_FMT(v.Type == FMVT_STRING);
-    wstring s = v.String;
+    std::wstring s = v.String;
     if (i == 0) {
       if (s == L"c" || s == L"C") { cmd_args.cmd = cmdCreate; continue; }
       if (s == L"u" || s == L"U") { cmd_args.cmd = cmdUpdate; continue; }
@@ -87,18 +87,18 @@ CommandArgs parse_plugin_call(const OpenMacroInfo *omi) {
 }
 
 struct Param {
-  wstring name;
-  wstring value;
+  std::wstring name;
+  std::wstring value;
 };
 
-bool is_param(const wstring& param_str) {
+static bool is_param(const std::wstring& param_str) {
   return !param_str.empty() && (param_str[0] == L'-' || param_str[0] == L'/');
 }
 
-Param parse_param(const wstring& param_str) {
+static Param parse_param(const std::wstring& param_str) {
   Param param;
   size_t p = param_str.find(L':');
-  if (p == wstring::npos) {
+  if (p == std::wstring::npos) {
     param.name = lc(param_str.substr(1));
   }
   else {
@@ -108,10 +108,10 @@ Param parse_param(const wstring& param_str) {
   return param;
 }
 
-bool parse_bool_value(const wstring& value) {
+static bool parse_bool_value(const std::wstring& value) {
   if (value.empty())
     return true;
-  wstring lcvalue = lc(value);
+  std::wstring lcvalue = lc(value);
   if (lcvalue == L"y")
     return true;
   else if (lcvalue == L"n")
@@ -120,10 +120,10 @@ bool parse_bool_value(const wstring& value) {
     CHECK_FMT(false);
 }
 
-TriState parse_tri_state_value(const wstring& value) {
+static TriState parse_tri_state_value(const std::wstring& value) {
   if (value.empty())
     return triTrue;
-  wstring lcvalue = lc(value);
+  std::wstring lcvalue = lc(value);
   if (lcvalue == L"y")
     return triTrue;
   else if (lcvalue == L"n")
@@ -134,8 +134,8 @@ TriState parse_tri_state_value(const wstring& value) {
     CHECK_FMT(false);
 }
 
-list<wstring> parse_listfile(const wstring& str) {
-  list<wstring> files;
+std::list<std::wstring> parse_listfile(const std::wstring& str) {
+  std::list<std::wstring> files;
   unsigned pos = 0;
   for (unsigned i = 0; i < str.size(); i++) {
     if (str[i] == L'\r' || str[i] == L'\n') {
@@ -154,7 +154,7 @@ list<wstring> parse_listfile(const wstring& str) {
 
 OpenCommand parse_open_command(const CommandArgs& ca) {
   OpenCommand command;
-  const vector<wstring>& args = ca.args;
+  const std::vector<std::wstring>& args = ca.args;
   CHECK_FMT(!args.empty());
   bool arc_type_spec = false;
   for (unsigned i = 0; i + 1 < args.size(); i++) {
@@ -190,8 +190,8 @@ OpenCommand parse_open_command(const CommandArgs& ca) {
 //   <level> = 0|1|3|5|7|9
 //   <method> = lzma|lzma2|ppmd
 
-const unsigned c_levels[] = { 0, 1, 3, 5, 7, 9 };
-const wchar_t* c_methods[] = { L"lzma", L"lzma2", L"ppmd" };
+static const unsigned c_levels[] = { 0, 1, 3, 5, 7, 9 };
+static const wchar_t* c_methods[] = { L"lzma", L"lzma2", L"ppmd" };
 
 UpdateCommand parse_update_command(const CommandArgs& ca) {
   bool create = ca.cmd == cmdCreate;
@@ -204,7 +204,7 @@ UpdateCommand parse_update_command(const CommandArgs& ca) {
     }
   }
   UpdateCommand command;
-  const vector<wstring>& args = ca.args;
+  const std::vector<std::wstring>& args = ca.args;
   command.new_arc = create;
   command.level_defined = false;
   command.method_defined = false;
@@ -241,7 +241,7 @@ UpdateCommand parse_update_command(const CommandArgs& ca) {
     else if (param.name == L"l") {
       command.level_defined = true;
       command.options.level = str_to_int(param.value);
-      CHECK_FMT(find(c_levels, c_levels + ARRAYSIZE(c_levels), command.options.level) != c_levels + ARRAYSIZE(c_levels));
+      CHECK_FMT(std::find(c_levels, c_levels + ARRAYSIZE(c_levels), command.options.level) != c_levels + ARRAYSIZE(c_levels));
     }
     else if (param.name == L"m") {
       command.method_defined = true;
@@ -283,7 +283,7 @@ UpdateCommand parse_update_command(const CommandArgs& ca) {
       command.options.ignore_errors = parse_bool_value(param.value);
     else if (param.name == L"o") {
       CHECK_FMT(!create);
-      wstring lcvalue = lc(param.value);
+      std::wstring lcvalue = lc(param.value);
       if (lcvalue.empty())
         command.options.overwrite = oaOverwrite;
       else if (lcvalue == L"o")
@@ -330,9 +330,9 @@ UpdateCommand parse_update_command(const CommandArgs& ca) {
 //
 // arc:d [-ie[:(y|n)]] [-p:<password>] <archive> <delete_item> ...
 //
-static void parse_extract_params(const CommandArgs& ca, ExtractOptions& o, vector<wstring>& items) {
-	bool options_enabled = true;
-	for (const auto& a : ca.args) {
+static void parse_extract_params(const CommandArgs& ca, ExtractOptions& o, std::vector<std::wstring>& items) {
+  bool options_enabled = true;
+  for (const auto& a : ca.args) {
     if (options_enabled && a == L"--")
       options_enabled = false;
     else if (options_enabled && is_param(a)) {
@@ -395,7 +395,7 @@ ExtractItemsCommand parse_extractitems_command(const CommandArgs& ca) {
 //
 TestCommand parse_test_command(const CommandArgs& ca) {
   TestCommand command;
-  const vector<wstring>& args = ca.args;
+  const std::vector<std::wstring>& args = ca.args;
   for (unsigned i = 0; i < args.size(); i++) {
     CHECK_FMT(!is_param(args.back()));
     command.arc_list.push_back(unquote(args[i]));

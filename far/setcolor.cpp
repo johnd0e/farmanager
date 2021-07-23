@@ -31,8 +31,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "setcolor.hpp"
 
+// Internal:
 #include "farcolor.hpp"
 #include "vmenu.hpp"
 #include "vmenu2.hpp"
@@ -48,30 +53,45 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "lang.hpp"
 #include "manager.hpp"
 #include "global.hpp"
+#include "strmix.hpp"
+#include "lockscrn.hpp"
 
-#include "common/range.hpp"
+// Platform:
 
-static void GetColor(PaletteColors PaletteIndex)
+// Common:
+#include "common.hpp"
+#include "common/2d/point.hpp"
+#include "common/from_string.hpp"
+#include "common/null_iterator.hpp"
+#include "common/scope_exit.hpp"
+
+// External:
+#include "format.hpp"
+
+//----------------------------------------------------------------------------
+
+static void ChangeColor(PaletteColors PaletteIndex, PaletteColors const* const BottomPaletteIndex)
 {
 	auto NewColor = Global->Opt->Palette[PaletteIndex];
+	const auto BottomColor = BottomPaletteIndex? &Global->Opt->Palette[*BottomPaletteIndex] : nullptr;
 
-	if (!console.GetColorDialog(NewColor))
+	if (!console.GetColorDialog(NewColor, false, BottomColor))
 		return;
 
-	Global->Opt->Palette.Set(PaletteIndex, &NewColor, 1);
-	Global->ScrBuf->Lock(); // отменяем всякую прорисовку
-	Global->CtrlObject->Cp()->LeftPanel()->Update(UPDATE_KEEP_SELECTION);
-	Global->CtrlObject->Cp()->LeftPanel()->Redraw();
-	Global->CtrlObject->Cp()->RightPanel()->Update(UPDATE_KEEP_SELECTION);
-	Global->CtrlObject->Cp()->RightPanel()->Redraw();
+	Global->Opt->Palette.Set(PaletteIndex, { &NewColor, 1 });
 
-	Global->WindowManager->ResizeAllWindows(); // рефрешим
-	Global->WindowManager->PluginCommit(); // коммитим.
+	{
+		SCOPED_ACTION(LockScreen);
 
-	if (Global->Opt->Clock)
-		ShowTimeInBackground();
+		Global->CtrlObject->Cp()->LeftPanel()->Update(UPDATE_KEEP_SELECTION);
+		Global->CtrlObject->Cp()->LeftPanel()->Redraw();
+		Global->CtrlObject->Cp()->RightPanel()->Update(UPDATE_KEEP_SELECTION);
+		Global->CtrlObject->Cp()->RightPanel()->Redraw();
 
-	Global->ScrBuf->Unlock(); // разрешаем прорисовку
+		Global->WindowManager->ResizeAllWindows(); // рефрешим
+		Global->WindowManager->PluginCommit(); // коммитим.
+	}
+
 	Global->WindowManager->PluginCommit(); // коммитим.
 }
 
@@ -88,24 +108,21 @@ enum list_mode
 struct color_item
 {
 	lng LngId;
-	union
-	{
-		size_t SubColorCount;
-		PaletteColors Color;
-	};
-	const color_item* SubColor;
+	PaletteColors Color;
+	span<const color_item> SubColor;
+	PaletteColors const* BottomColor;
 };
 
-static void SetItemColors(const color_item* Items, size_t Size, COORD Position = {})
+static void SetItemColors(span<const color_item> const Items, point Position = {})
 {
 	const auto ItemsMenu = VMenu2::create(msg(lng::MSetColorItemsTitle), {});
 
-	for (const auto& i : make_range(Items, Size))
+	for (const auto& i: Items)
 	{
 		ItemsMenu->AddItem(msg(i.LngId));
 	}
 
-	ItemsMenu->SetPosition(Position.X += 10, Position.Y += 5, 0, 0);
+	ItemsMenu->SetPosition({ Position.x += 10, Position.y += 5, 0, 0 });
 	ItemsMenu->SetMenuFlags(VMENU_WRAPMODE);
 	ItemsMenu->RunEx([&](int Msg, void *param)
 	{
@@ -113,18 +130,19 @@ static void SetItemColors(const color_item* Items, size_t Size, COORD Position =
 		if (Msg != DN_CLOSE || ItemsCode < 0)
 			return 0;
 
-		if (Items[ItemsCode].SubColor)
+		if (!Items[ItemsCode].SubColor.empty())
 		{
-			SetItemColors(Items[ItemsCode].SubColor, Items[ItemsCode].SubColorCount, Position);
+			SetItemColors(Items[ItemsCode].SubColor, Position);
 		}
 		else
 		{
-			GetColor(Items[ItemsCode].Color);
+			ChangeColor(Items[ItemsCode].Color, Items[ItemsCode].BottomColor);
 		}
 
 		return 1;
 	});
 }
+
 void SetColors()
 {
 	static const color_item
@@ -235,8 +253,8 @@ void SetColors()
 		{ lng::MSetColorDialogSelectedDefaultButton,                    COL_DIALOGSELECTEDDEFAULTBUTTON },
 		{ lng::MSetColorDialogHighlightedDefaultButton,                 COL_DIALOGHIGHLIGHTDEFAULTBUTTON },
 		{ lng::MSetColorDialogSelectedHighlightedDefaultButton,         COL_DIALOGHIGHLIGHTSELECTEDDEFAULTBUTTON },
-		{ lng::MSetColorDialogListBoxControl,                           std::size(ListItemsNormal), ListItemsNormal },
-		{ lng::MSetColorDialogComboBoxControl,                          std::size(ComboItemsNormal), ComboItemsNormal },
+		{ lng::MSetColorDialogListBoxControl,                           {}, ListItemsNormal },
+		{ lng::MSetColorDialogComboBoxControl,                          {}, ComboItemsNormal },
 	},
 
 	WarnDialogItems[] =
@@ -259,8 +277,8 @@ void SetColors()
 		{ lng::MSetColorDialogSelectedDefaultButton,                    COL_WARNDIALOGSELECTEDDEFAULTBUTTON },
 		{ lng::MSetColorDialogHighlightedDefaultButton,                 COL_WARNDIALOGHIGHLIGHTDEFAULTBUTTON },
 		{ lng::MSetColorDialogSelectedHighlightedDefaultButton,         COL_WARNDIALOGHIGHLIGHTSELECTEDDEFAULTBUTTON },
-		{ lng::MSetColorDialogListBoxControl,                           std::size(ListItemsWarn), ListItemsWarn },
-		{ lng::MSetColorDialogComboBoxControl,                          std::size(ComboItemsWarn), ComboItemsWarn },
+		{ lng::MSetColorDialogListBoxControl,                           {}, ListItemsWarn },
+		{ lng::MSetColorDialogComboBoxControl,                          {}, ComboItemsWarn },
 	},
 
 	MenuItems[] =
@@ -322,7 +340,7 @@ void SetColors()
 	EditorItems[] =
 	{
 		{ lng::MSetColorEditorNormal,                 COL_EDITORTEXT },
-		{ lng::MSetColorEditorSelected,               COL_EDITORSELECTEDTEXT },
+		{ lng::MSetColorEditorSelected,               COL_EDITORSELECTEDTEXT, {}, &EditorItems[0].Color },
 		{ lng::MSetColorEditorStatus,                 COL_EDITORSTATUS },
 		{ lng::MSetColorEditorScrollbar,              COL_EDITORSCROLLBAR },
 	},
@@ -343,21 +361,21 @@ void SetColors()
 		static const struct
 		{
 			lng MenuId;
-			range<const color_item*> Subitems;
+			span<const color_item> Subitems;
 		}
-		Groups[] =
+		Groups[]
 		{
-			{ lng::MSetColorPanel,       make_range(PanelItems) },
-			{ lng::MSetColorDialog,      make_range(DialogItems) },
-			{ lng::MSetColorWarning,     make_range(WarnDialogItems) },
-			{ lng::MSetColorMenu,        make_range(MenuItems) },
-			{ lng::MSetColorHMenu,       make_range(HMenuItems) },
-			{ lng::MSetColorKeyBar,      make_range(KeyBarItems) },
-			{ lng::MSetColorCommandLine, make_range(CommandLineItems) },
-			{ lng::MSetColorClock,       make_range(ClockItems) },
-			{ lng::MSetColorViewer,      make_range(ViewerItems) },
-			{ lng::MSetColorEditor,      make_range(EditorItems) },
-			{ lng::MSetColorHelp,        make_range(HelpItems) },
+			{ lng::MSetColorPanel,       PanelItems },
+			{ lng::MSetColorDialog,      DialogItems },
+			{ lng::MSetColorWarning,     WarnDialogItems },
+			{ lng::MSetColorMenu,        MenuItems },
+			{ lng::MSetColorHMenu,       HMenuItems },
+			{ lng::MSetColorKeyBar,      KeyBarItems },
+			{ lng::MSetColorCommandLine, CommandLineItems },
+			{ lng::MSetColorClock,       ClockItems },
+			{ lng::MSetColorViewer,      ViewerItems },
+			{ lng::MSetColorEditor,      EditorItems },
+			{ lng::MSetColorHelp,        HelpItems },
 		};
 
 		const auto GroupsMenu = VMenu2::create(msg(lng::MSetColorGroupsTitle), {});
@@ -378,14 +396,14 @@ void SetColors()
 		const auto BlackWhiteId = static_cast<int>(GroupsMenu->size());
 		GroupsMenu->AddItem(msg(lng::MSetBW));
 
-		GroupsMenu->SetPosition(2,1,0,0);
+		GroupsMenu->SetPosition({ 2, 1, 0, 0 });
 		GroupsMenu->SetMenuFlags(VMENU_WRAPMODE);
-		int GroupsCode=GroupsMenu->RunEx([&](int Msg, void *param)
+		const auto GroupsCode=GroupsMenu->RunEx([&](int Msg, void *param)
 		{
 			const auto ItemsCode = reinterpret_cast<intptr_t>(param);
 			if (Msg != DN_CLOSE || ItemsCode < 0 || static_cast<size_t>(ItemsCode) >= std::size(Groups))
 				return 0;
-			SetItemColors(Groups[ItemsCode].Subitems.data(), Groups[ItemsCode].Subitems.size());
+			SetItemColors(Groups[ItemsCode].Subitems);
 			return 1;
 		});
 
@@ -409,76 +427,340 @@ constexpr auto distinct(T value)
 	return (~value & 0xff) >> 4 | value;
 }
 
-static int ColorIndex[] =
+static const int ColorIndex[]
 {
 	distinct(B_BLACK),
-	distinct(B_RED),
 	distinct(B_DARKGRAY),
-	distinct(B_LIGHTRED),
 	distinct(B_BLUE),
-	distinct(B_MAGENTA),
 	distinct(B_LIGHTBLUE),
-	distinct(B_LIGHTMAGENTA),
 	distinct(B_GREEN),
-	distinct(B_BROWN),
 	distinct(B_LIGHTGREEN),
-	distinct(B_YELLOW),
 	distinct(B_CYAN),
-	distinct(B_LIGHTGRAY),
 	distinct(B_LIGHTCYAN),
+	distinct(B_RED),
+	distinct(B_LIGHTRED),
+	distinct(B_MAGENTA),
+	distinct(B_LIGHTMAGENTA),
+	distinct(B_BROWN),
+	distinct(B_YELLOW),
+	distinct(B_LIGHTGRAY),
 	distinct(B_WHITE)
 };
 
+enum color_dialog_items
+{
+	cd_border,
+
+	cd_separator1,
+	cd_separator2,
+	cd_separator3,
+	cd_separator4,
+
+	cd_fg_text,
+	cd_fg_active,
+	cd_fg_color_first,
+	cd_fg_color_last = cd_fg_color_first + 15,
+
+	cd_fg_colorcode_title,
+	cd_fg_colorcode,
+	cd_fg_advanced,
+
+	cd_bg_text,
+	cd_bg_active,
+	cd_bg_color_first,
+	cd_bg_color_last = cd_bg_color_first + 15,
+
+	cd_bg_colorcode_title,
+	cd_bg_colorcode,
+	cd_bg_advanced,
+
+	cd_style,
+	cd_style_first,
+	cd_style_inherit = cd_style_first,
+	cd_style_bold,
+	cd_style_italic,
+	cd_style_underline,
+	cd_style_underline2,
+	cd_style_overline,
+	cd_style_strikeout,
+	cd_style_faint,
+	cd_style_blink,
+	cd_style_last = cd_style_blink,
+
+	cd_sample_first,
+	cd_sample_last = cd_sample_first + 2,
+
+	cd_button_ok,
+	cd_button_cancel,
+
+	cd_count
+};
+
+static string color_code(COLORREF const Color, bool const Is4Bit)
+{
+	return Is4Bit?
+		format(FSTR(L"{:02X}     {:X}"sv), colors::alpha_value(Color), colors::index_value(Color)) :
+		format(FSTR(L"{:08X}"sv), colors::ARGB2ABGR(Color));
+}
+
+static std::optional<COLORREF> parse_color(string_view const Str, bool const Is4Bit)
+{
+	if (Is4Bit)
+	{
+		unsigned Alpha;
+		if (!from_string(Str.substr(0, 2), Alpha, {}, 16))
+			return {};
+
+		unsigned Index;
+		if (!from_string(Str.substr(7, 1), Index, {}, 16))
+			return {};
+
+		return Alpha << 24 | Index;
+	}
+	else
+	{
+		unsigned Value;
+		if (!from_string(Str, Value, {}, 16))
+			return {};
+
+		return colors::ARGB2ABGR(Value);
+	}
+}
+
+// BUGBUG
+static bool IgnoreEditChange = false;
+static bool IgnoreColorIndexClick = false;
+
+static const std::pair<color_dialog_items, FARCOLORFLAGS> StyleMapping[]
+{
+	{ cd_style_inherit,     FCF_INHERIT_STYLE  },
+	{ cd_style_bold,        FCF_FG_BOLD        },
+	{ cd_style_italic,      FCF_FG_ITALIC      },
+	{ cd_style_underline,   FCF_FG_UNDERLINE   },
+	{ cd_style_underline2,  FCF_FG_UNDERLINE2  },
+	{ cd_style_overline,    FCF_FG_OVERLINE    },
+	{ cd_style_strikeout,   FCF_FG_STRIKEOUT   },
+	{ cd_style_faint,       FCF_FG_FAINT       },
+	{ cd_style_blink,       FCF_FG_BLINK       },
+};
+
+struct color_state
+{
+	FarColor CurColor, BaseColor;
+	bool TransparencyEnabled;
+};
+
+constexpr auto
+	MaskIndex = L"HH     H"sv,
+	MaskARGB  = L"HHHHHHHH"sv;
+
 static intptr_t GetColorDlgProc(Dialog* Dlg, intptr_t Msg, intptr_t Param1, void* Param2)
 {
-	const auto& GetColor = [Param1](size_t Offset)
+	auto& ColorState = *reinterpret_cast<color_state*>(Dlg->SendMessage(DM_GETDLGDATA, 0, nullptr));
+	auto& CurColor = ColorState.CurColor;
+
+	const auto GetColor = [Param1](size_t const Offset)
 	{
 		return colors::ConsoleColorToFarColor(ColorIndex[Param1 - Offset]);
 	};
 
+	const auto Flag4Bit = [](bool const IsFg)
+	{
+		return IsFg? FCF_FG_4BIT : FCF_BG_4BIT;
+	};
+
+	const auto SetComponentColorValue = [&CurColor](bool IsFg, COLORREF const Value)
+	{
+		auto& Component = IsFg? CurColor.ForegroundColor : CurColor.BackgroundColor;
+		Component = colors::alpha_bits(Component) | colors::color_bits(Value);
+	};
+
+
+	const auto DM_UPDATECOLORCODE = DM_USER + 1;
+
 	switch (Msg)
 	{
+		case DN_INITDIALOG:
+			Dlg->SendMessage(DM_EDITUNCHANGEDFLAG, cd_fg_colorcode, {});
+			Dlg->SendMessage(DM_EDITUNCHANGEDFLAG, cd_bg_colorcode, {});
+			break;
+
 		case DN_CTLCOLORDLGITEM:
 			{
+				const auto preview_or_disabled = [&](COLORREF const Color, size_t const Index)
+				{
+					return ColorState.TransparencyEnabled && colors::is_transparent(Color)?
+						colors::PaletteColorToFarColor(COL_DIALOGDISABLED) :
+						GetColor(Index);
+				};
+
 				const auto Colors = static_cast<FarDialogItemColors*>(Param2);
-				if (Param1 >= 2 && Param1 <= 17) // Fore
+				if (Param1 >= cd_fg_color_first && Param1 <= cd_fg_color_last)
 				{
-					Colors->Colors[0] = GetColor(2);
+					Colors->Colors[0] = preview_or_disabled(CurColor.ForegroundColor, cd_fg_color_first);
+					return TRUE;
 				}
-				else if (Param1 >= 19 && Param1 <= 34) // Back
+				else if (Param1 >= cd_bg_color_first && Param1 <= cd_bg_color_last)
 				{
-					Colors->Colors[0] = GetColor(19);
+					Colors->Colors[0] = preview_or_disabled(CurColor.BackgroundColor, cd_bg_color_first);
+					return TRUE;
 				}
-				else if (Param1 >= 37 && Param1 <= 39)
+				else if (Param1 >= cd_sample_first && Param1 <= cd_sample_last)
 				{
-					Colors->Colors[0] = *reinterpret_cast<FarColor*>(Dlg->SendMessage(DM_GETDLGDATA, 0, nullptr));
+					Colors->Colors[0] = colors::merge(ColorState.BaseColor, ColorState.CurColor);
+					return TRUE;
 				}
+				else
+					return FALSE;
 			}
-			break;
 
 		case DN_BTNCLICK:
-
-			if (Param1 >= 2 && Param1 <= 34)
 			{
-				const auto CurColor = reinterpret_cast<FarColor*>(Dlg->SendMessage(DM_GETDLGDATA, 0, nullptr));
-				FarDialogItem DlgItem = {};
-				Dlg->SendMessage( DM_GETDLGITEMSHORT, Param1, &DlgItem);
-
-				if (Param1 <= 17) // Fore
+				if (Param2 && ((Param1 >= cd_fg_color_first && Param1 <= cd_fg_color_last) || (Param1 >= cd_bg_color_first && Param1 <= cd_bg_color_last)))
 				{
-					CurColor->ForegroundColor = GetColor(2).BackgroundColor;
-					CurColor->SetFg4Bit(true);
-				}
-				else if (Param1 >= 19) // Back
-				{
-					CurColor->BackgroundColor = GetColor(19).BackgroundColor;
-					CurColor->SetBg4Bit(true);
-				}
+					if (IgnoreColorIndexClick)
+						return true;
 
-				return TRUE;
+					const auto IsFg = Param1 >= cd_fg_color_first && Param1 <= cd_fg_color_last;
+					const auto First = IsFg? cd_fg_color_first : cd_bg_color_first;
+
+					auto& Component = IsFg? CurColor.ForegroundColor : CurColor.BackgroundColor;
+					Component = GetColor(First).BackgroundColor;
+
+					CurColor.Flags |= Flag4Bit(IsFg);
+
+					Dlg->SendMessage(DM_UPDATECOLORCODE, IsFg? cd_fg_colorcode : cd_bg_colorcode, {});
+
+					return TRUE;
+				}
+				else if (Param1 >= cd_style_first && Param1 <= cd_style_last)
+				{
+					flags::change(CurColor.Flags, StyleMapping[Param1 - cd_style_first].second, Param2 != nullptr);
+				}
+				else if (Param1 == cd_fg_active || Param1 == cd_bg_active)
+				{
+					const auto IsFg = Param1 == cd_fg_active;
+					auto& Component = IsFg? CurColor.ForegroundColor : CurColor.BackgroundColor;
+					Param2? colors::make_opaque(Component) : colors::make_transparent(Component);
+
+					SCOPED_ACTION(Dialog::suppress_redraw)(Dlg);
+					const auto Offset = IsFg? cd_fg_color_first : cd_bg_color_first;
+					for (auto i = 0; i != 16; ++i)
+					{
+						Dlg->SendMessage(DM_ENABLE, i + Offset, Param2);
+					}
+
+					Dlg->SendMessage(DM_UPDATECOLORCODE, IsFg? cd_fg_colorcode : cd_bg_colorcode, {});
+
+					Dlg->SendMessage(DM_ENABLE, IsFg? cd_fg_colorcode : cd_bg_colorcode, Param2);
+					Dlg->SendMessage(DM_ENABLE, IsFg? cd_fg_advanced : cd_bg_advanced, Param2);
+				}
+				else if (Param1 == cd_fg_advanced || Param1 == cd_bg_advanced)
+				{
+					const auto IsFg = Param1 == cd_fg_advanced;
+					auto CustomColors = Global->Opt->Palette.GetCustomColors();
+
+					CHOOSECOLOR Params{sizeof(Params)};
+					Params.hwndOwner = console.GetWindow();
+
+					Params.Flags = CC_ANYCOLOR | CC_FULLOPEN | CC_RGBINIT;
+					Params.lpCustColors = CustomColors.data();
+
+					auto& Component = IsFg? CurColor.ForegroundColor : CurColor.BackgroundColor;
+
+					Params.rgbResult = colors::color_value(CurColor.Flags & Flag4Bit(IsFg)?
+						colors::ConsoleIndexToTrueColor(Component) :
+						Component
+					);
+
+					if (ChooseColor(&Params))
+					{
+						SetComponentColorValue(IsFg, Params.rgbResult);
+						CurColor.Flags &= ~Flag4Bit(IsFg);
+
+						Dlg->SendMessage(DM_SETCHECK, IsFg? cd_fg_color_first : cd_bg_color_first, ToPtr(BSTATE_3STATE));
+						Dlg->SendMessage(DM_UPDATECOLORCODE, IsFg? cd_fg_colorcode : cd_bg_colorcode, {});
+
+						Global->Opt->Palette.SetCustomColors(CustomColors);
+					}
+
+					return TRUE;
+				}
 			}
-
 			break;
+
+		case DN_EDITCHANGE:
+			if (!IgnoreEditChange && (Param1 == cd_fg_colorcode || Param1 == cd_bg_colorcode))
+			{
+				const auto& Item = *static_cast<const FarDialogItem*>(Param2);
+				const auto Iterator = null_iterator(Item.Data);
+				if (std::any_of(Iterator, Iterator.end(), std::iswxdigit))
+				{
+					const auto IsFg = Param1 == cd_fg_colorcode;
+					const auto Is4Bit = IsFg? CurColor.IsFg4Bit() : CurColor.IsBg4Bit();
+					auto& Component = IsFg? CurColor.ForegroundColor : CurColor.BackgroundColor;
+
+					const auto ParsedColor = parse_color(Item.Data, Is4Bit);
+					if (!ParsedColor)
+						return false;
+
+					const auto OldColorIndex = colors::index_value(Component);
+					Component = *ParsedColor;
+
+					if (Is4Bit)
+					{
+						const auto NewColorIndex = colors::index_value(Component);
+
+						if (NewColorIndex != OldColorIndex)
+						{
+							IgnoreColorIndexClick = true;
+							SCOPE_EXIT{ IgnoreColorIndexClick = false; };
+							const auto ColorButtonIndex = NewColorIndex < 8? NewColorIndex * 2 : (NewColorIndex - 8) * 2 + 1;
+							Dlg->SendMessage(DM_SETCHECK, (IsFg? cd_fg_color_first : cd_bg_color_first) + ColorButtonIndex, ToPtr(BSTATE_CHECKED));
+						}
+					}
+
+					if (ColorState.TransparencyEnabled && colors::is_transparent(Component))
+					{
+						Dlg->SendMessage(DM_SETCHECK, IsFg? cd_fg_active : cd_bg_active, ToPtr(BSTATE_UNCHECKED));
+						Dlg->SendMessage(DN_BTNCLICK, IsFg? cd_fg_active : cd_bg_active, ToPtr(BSTATE_UNCHECKED));
+					}
+				}
+			}
+			return TRUE;
+
+		case DM_UPDATECOLORCODE:
+			{
+				IgnoreEditChange = true;
+				SCOPE_EXIT{ IgnoreEditChange = false; };
+				const auto IsFg = Param1 == cd_fg_colorcode;
+
+				FarDialogItem Item;
+				if (!Dlg->SendMessage(DM_GETDLGITEMSHORT, Param1, &Item))
+					return false;
+
+				const auto Color = IsFg? CurColor.ForegroundColor : CurColor.BackgroundColor;
+				const auto Is4Bit = IsFg? CurColor.IsFg4Bit() : CurColor.IsBg4Bit();
+				const auto Value = color_code(Color, Is4Bit);
+
+				Item.Mask = (Is4Bit? MaskIndex :MaskARGB).data();
+				Item.Data = UNSAFE_CSTR(Value);
+
+				Dlg->SendMessage(DM_SETDLGITEM, Param1, &Item);
+
+				constexpr lng Titles[][2]
+				{
+					{ lng::MSetColorForeIndex, lng::MSetColorForeAARRGGBB },
+					{ lng::MSetColorBackIndex, lng::MSetColorBackAARRGGBB },
+				};
+
+				Dlg->SendMessage(DM_SETTEXTPTR,
+					IsFg? cd_fg_colorcode_title : cd_bg_colorcode_title,
+					UNSAFE_CSTR(msg(Titles[IsFg? 0 : 1][Is4Bit? 0 : 1]))
+				);
+			}
+			return TRUE;
+
 		default:
 			break;
 	}
@@ -486,146 +768,203 @@ static intptr_t GetColorDlgProc(Dialog* Dlg, intptr_t Msg, intptr_t Param1, void
 	return Dlg->DefProc(Msg, Param1, Param2);
 }
 
-
-bool GetColorDialogInternal(FarColor& Color,bool bCentered,bool bAddTransparent)
+bool GetColorDialogInternal(FarColor& Color, bool const bCentered, const FarColor* const BaseColor)
 {
-	FarDialogItem ColorDlgData[]=
+	auto ColorDlg = MakeDialogItems<cd_count>(
 	{
-		{DI_DOUBLEBOX,   3, 1,35,13, 0,nullptr,nullptr,0,msg(lng::MSetColorTitle).c_str()},
-		{DI_SINGLEBOX,   5, 2,18, 7, 0,nullptr,nullptr,0,msg(lng::MSetColorForeground).c_str()},
-		{DI_RADIOBUTTON, 6, 3, 0, 3, 0,nullptr,nullptr,DIF_GROUP|DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON, 6, 4, 0, 4, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON, 6, 5, 0, 5, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON, 6, 6, 0, 6, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON, 9, 3, 0, 3, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON, 9, 4, 0, 4, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON, 9, 5, 0, 5, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON, 9, 6, 0, 6, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON,12, 3, 0, 3, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON,12, 4, 0, 4, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON,12, 5, 0, 5, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON,12, 6, 0, 6, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON,15, 3, 0, 3, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON,15, 4, 0, 4, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON,15, 5, 0, 5, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON,15, 6, 0, 6, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_SINGLEBOX,  20, 2,33, 7, 0,nullptr,nullptr,0,msg(lng::MSetColorBackground).c_str()},
-		{DI_RADIOBUTTON,21, 3, 0, 3, 0,nullptr,nullptr,DIF_GROUP|DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON,21, 4, 0, 4, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON,21, 5, 0, 5, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON,21, 6, 0, 6, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON,24, 3, 0, 3, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON,24, 4, 0, 4, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON,24, 5, 0, 5, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON,24, 6, 0, 6, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON,27, 3, 0, 3, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON,27, 4, 0, 4, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON,27, 5, 0, 5, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON,27, 6, 0, 6, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON,30, 3, 0, 3, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON,30, 4, 0, 4, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON,30, 5, 0, 5, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
-		{DI_RADIOBUTTON,30, 6, 0, 6, 0,nullptr,nullptr,DIF_MOVESELECT,L""},
+		{ DI_DOUBLEBOX,   {{3,  1 }, {62, 15}}, DIF_NONE, msg(lng::MSetColorTitle), },
 
-		{DI_CHECKBOX,    5, 10,0, 10,0,nullptr,nullptr,0,msg(lng::MSetColorForeTransparent).c_str()},
-		{DI_CHECKBOX,   22, 10,0, 10,0,nullptr,nullptr,0,msg(lng::MSetColorBackTransparent).c_str()},
+		{ DI_TEXT,        {{-1, 13}, {0,  13}}, DIF_SEPARATOR, },
+		{ DI_VTEXT,       {{39, 1 }, {39, 13}}, DIF_SEPARATORUSER, },
+		{ DI_TEXT,        {{3,  5 }, {39,  5}}, DIF_SEPARATORUSER, },
+		{ DI_TEXT,        {{3,  9 }, {39, 9 }}, DIF_SEPARATORUSER, },
 
-		{DI_TEXT,        5, 8, 33,8, 0,nullptr,nullptr,0,msg(lng::MSetColorSample).c_str()},
-		{DI_TEXT,        5, 9, 33,9, 0,nullptr,nullptr,0,msg(lng::MSetColorSample).c_str()},
-		{DI_TEXT,        5,10, 33,10,0,nullptr,nullptr,0,msg(lng::MSetColorSample).c_str()},
-		{DI_TEXT,       -1,11, 0, 11,0,nullptr,nullptr,DIF_SEPARATOR,L""},
-		{DI_BUTTON,      0,12, 0, 12,0,nullptr,nullptr,DIF_DEFAULTBUTTON|DIF_CENTERGROUP,msg(lng::MSetColorSet).c_str()},
-		{DI_BUTTON,      0,12, 0, 12,0,nullptr,nullptr,DIF_CENTERGROUP,msg(lng::MSetColorCancel).c_str()},
+		{ DI_TEXT,        {{5,  2 }, {0,  2 }}, DIF_NONE, msg(lng::MSetColorForeground), },
+		{ DI_CHECKBOX,    {{5,  2 }, {0,  2 }}, DIF_NONE, msg(lng::MSetColorForeground), },
 
+		{ DI_RADIOBUTTON, {{5,  3 }, {0,  3 }}, DIF_MOVESELECT | DIF_GROUP,},
+		{ DI_RADIOBUTTON, {{5,  4 }, {0,  4 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{8,  3 }, {0,  3 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{8,  4 }, {0,  4 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{11, 3 }, {0,  3 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{11, 4 }, {0,  4 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{14, 3 }, {0,  3 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{14, 4 }, {0,  4 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{17, 3 }, {0,  3 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{17, 4 }, {0,  4 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{20, 3 }, {0,  3 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{20, 4 }, {0,  4 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{23, 3 }, {0,  3 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{23, 4 }, {0,  4 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{26, 3 }, {0,  3 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{26, 4 }, {0,  4 }}, DIF_MOVESELECT, },
+
+		{ DI_TEXT,        {{30, 2 }, {0,  2 }}, DIF_NONE, msg(Color.IsFg4Bit()? lng::MSetColorForeIndex : lng::MSetColorForeAARRGGBB) },
+		{ DI_FIXEDIT,     {{30, 3 }, {37, 3 }}, DIF_MASKEDIT, },
+		{ DI_BUTTON,      {{30, 4 }, {37, 4 }}, DIF_NONE, msg(lng::MSetColorForeRGB), },
+
+		{ DI_TEXT,        {{5,  6 }, {0,  6 }}, DIF_NONE, msg(lng::MSetColorBackground), },
+		{ DI_CHECKBOX,    {{5,  6 }, {0,  6 }}, DIF_NONE, msg(lng::MSetColorBackground), },
+
+		{ DI_RADIOBUTTON, {{5,  7 }, {0,  7 }}, DIF_MOVESELECT | DIF_GROUP, },
+		{ DI_RADIOBUTTON, {{5,  8 }, {0,  8 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{8,  7 }, {0,  7 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{8,  8 }, {0,  8 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{11, 7 }, {0,  7 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{11, 8 }, {0,  8 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{14, 7 }, {0,  7 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{14, 8 }, {0,  8 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{17, 7 }, {0,  7 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{17, 8 }, {0,  8 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{20, 7 }, {0,  7 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{20, 8 }, {0,  8 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{23, 7 }, {0,  7 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{23, 8 }, {0,  8 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{26, 7 }, {0,  7 }}, DIF_MOVESELECT, },
+		{ DI_RADIOBUTTON, {{26, 8 }, {0,  8 }}, DIF_MOVESELECT, },
+
+		{ DI_TEXT,        {{30, 6 }, {0,  6 }}, DIF_NONE, msg(Color.IsBg4Bit()? lng::MSetColorBackIndex : lng::MSetColorBackAARRGGBB) },
+		{ DI_FIXEDIT,     {{30, 7 }, {37, 7 }}, DIF_MASKEDIT, },
+		{ DI_BUTTON,      {{30, 8 }, {37, 8 }}, DIF_NONE, msg(lng::MSetColorBackRGB), },
+
+		{ DI_TEXT,        {{41, 2 }, {0,  2 }}, DIF_NONE, msg(lng::MSetColorStyle), },
+		{ DI_CHECKBOX,    {{41, 3 }, {0,  3 }}, DIF_NONE, msg(lng::MSetColorStyleInherit), },
+		{ DI_CHECKBOX,    {{41, 4 }, {0,  4 }}, DIF_NONE, msg(lng::MSetColorStyleBold), },
+		{ DI_CHECKBOX,    {{41, 5 }, {0,  5 }}, DIF_NONE, msg(lng::MSetColorStyleItalic), },
+		{ DI_CHECKBOX,    {{41, 6 }, {0,  6 }}, DIF_NONE, msg(lng::MSetColorStyleUnderline), },
+		{ DI_CHECKBOX,    {{41, 7 }, {0,  7 }}, DIF_NONE, msg(lng::MSetColorStyleUnderline2), },
+		{ DI_CHECKBOX,    {{41, 8 }, {0,  8 }}, DIF_NONE, msg(lng::MSetColorStyleOverline), },
+		{ DI_CHECKBOX,    {{41, 9 }, {0,  9 }}, DIF_NONE, msg(lng::MSetColorStyleStrikeout), },
+		{ DI_CHECKBOX,    {{41, 10}, {0,  10}}, DIF_NONE, msg(lng::MSetColorStyleFaint), },
+		{ DI_CHECKBOX,    {{41, 11}, {0,  11}}, DIF_NONE, msg(lng::MSetColorStyleBlink), },
+
+		{ DI_TEXT,        {{5,  10}, {37, 10}}, DIF_NONE, msg(lng::MSetColorSample), },
+		{ DI_TEXT,        {{5,  11}, {37, 11}}, DIF_NONE, msg(lng::MSetColorSample), },
+		{ DI_TEXT,        {{5,  12}, {37, 12}}, DIF_NONE, msg(lng::MSetColorSample), },
+
+		{ DI_BUTTON,      {{0,  14}, {0,  14}}, DIF_CENTERGROUP | DIF_DEFAULTBUTTON, msg(lng::MSetColorSet), },
+		{ DI_BUTTON,      {{0,  14}, {0,  14}}, DIF_CENTERGROUP, msg(lng::MSetColorCancel), },
+	});
+
+	ColorDlg[cd_separator2].strMask = { BoxSymbols[BS_T_H2V1], BoxSymbols[BS_V1], BoxSymbols[BS_B_H1V1] };
+	ColorDlg[cd_separator3].strMask = ColorDlg[cd_separator4].strMask = { BoxSymbols[BS_L_H1V2], BoxSymbols[BS_H1], BoxSymbols[BS_R_H1V1] };
+
+	ColorDlg[cd_fg_colorcode].strData = color_code(Color.ForegroundColor, Color.IsFg4Bit());
+	ColorDlg[cd_bg_colorcode].strData = color_code(Color.BackgroundColor, Color.IsBg4Bit());
+	ColorDlg[cd_fg_colorcode].strMask = Color.IsFg4Bit()? MaskIndex : MaskARGB;
+	ColorDlg[cd_bg_colorcode].strMask = Color.IsBg4Bit()? MaskIndex : MaskARGB;
+
+	color_state ColorState
+	{
+		Color,
+		BaseColor? *BaseColor : colors::ConsoleColorToFarColor(F_BLACK | B_BLACK),
+		BaseColor != nullptr
 	};
-	auto ColorDlg = MakeDialogItemsEx(ColorDlgData);
-	int ExitCode;
-	FarColor CurColor=Color;
-	int ConsoleColor = colors::FarColorToConsoleColor(Color);
-	for (size_t i=2; i<18; i++)
+
+	if (Color.IsFg4Bit() || Color.IsBg4Bit())
 	{
-		if (((ColorIndex[i-2]&B_MASK)>>4) == (ConsoleColor&F_MASK))
-		{
-			ColorDlg[i].Selected=1;
-			ColorDlg[i].Flags|=DIF_FOCUS;
-			break;
-		}
-	}
+		const auto ConsoleColor = colors::FarColorToConsoleColor(Color);
 
-	for (size_t i=19; i<35; i++)
-	{
-		if ((ColorIndex[i-19]&B_MASK) == (ConsoleColor&B_MASK))
+		if (Color.IsFg4Bit())
 		{
-			ColorDlg[i].Selected=1;
-			break;
-		}
-	}
-
-	if (bAddTransparent)
-	{
-		ColorDlg[0].Y2++;
-
-		for (size_t i=37; i<=42; i++)
-		{
-			ColorDlg[i].Y1+=3;
-			ColorDlg[i].Y2+=3;
+			const auto ColorPart = ConsoleColor & F_MASK;
+			for (size_t i = cd_fg_color_first; i <= cd_fg_color_last; ++i)
+			{
+				if (((ColorIndex[i - cd_fg_color_first] & B_MASK) >> 4) == ColorPart)
+				{
+					ColorDlg[i].Selected = true;
+					ColorDlg[i].Flags |= DIF_FOCUS;
+					break;
+				}
+			}
 		}
 
-		ColorDlg[0].X2+=4;
-		ColorDlg[0].Y2+=2;
-		ColorDlg[1].X2+=2;
-		ColorDlg[1].Y2+=2;
-		ColorDlg[18].X1+=2;
-		ColorDlg[18].X2+=4;
-		ColorDlg[18].Y2+=2;
-
-		for (size_t i=2; i<=17; i++)
+		if (Color.IsBg4Bit())
 		{
-			ColorDlg[i].X1+=1;
-			ColorDlg[i].Y1+=1;
-			ColorDlg[i].Y2+=1;
+			const auto ColorPart = ConsoleColor & B_MASK;
+			for (size_t i = cd_bg_color_first; i <= cd_bg_color_last; ++i)
+			{
+				if ((ColorIndex[i - cd_bg_color_first] & B_MASK) == ColorPart)
+				{
+					ColorDlg[i].Selected = true;
+					break;
+				}
+			}
 		}
-
-		for (size_t i=19; i<=34; i++)
-		{
-			ColorDlg[i].X1+=3;
-			ColorDlg[i].Y1+=1;
-			ColorDlg[i].Y2+=1;
-		}
-
-		for (size_t i=37; i<=39; i++)
-		{
-			ColorDlg[i].X2+=4;
-		}
-
-		ColorDlg[35].Selected = colors::is_transparent(Color.ForegroundColor);
-		ColorDlg[36].Selected = colors::is_transparent(Color.BackgroundColor);
 	}
 	else
 	{
-		ColorDlg[35].Flags|=DIF_HIDDEN;
-		ColorDlg[36].Flags|=DIF_HIDDEN;
+		ColorDlg[cd_fg_colorcode].Flags |= DIF_FOCUS;
 	}
 
+	for (const auto& [Index, Flag]: StyleMapping)
 	{
-		const auto Dlg = Dialog::create(ColorDlg, GetColorDlgProc, &CurColor);
+		ColorDlg[Index].Selected = Color.Flags & Flag? BSTATE_CHECKED : BSTATE_UNCHECKED;
+	}
 
-		if (bCentered)
-			Dlg->SetPosition(-1,-1,39+(bAddTransparent?4:0),15+(bAddTransparent?3:0));
+	if (BaseColor)
+	{
+		ColorDlg[cd_fg_text].Flags |= DIF_HIDDEN;
+		ColorDlg[cd_bg_text].Flags |= DIF_HIDDEN;
+
+		if (colors::is_transparent(Color.ForegroundColor))
+		{
+			for (size_t i = cd_fg_color_first; i <= cd_fg_color_last; ++i)
+			{
+				ColorDlg[i].Flags |= DIF_DISABLE;
+			}
+
+			ColorDlg[cd_fg_colorcode].Flags |= DIF_DISABLE;
+			ColorDlg[cd_fg_advanced].Flags |= DIF_DISABLE;
+		}
 		else
-			Dlg->SetPosition(37,2,75+(bAddTransparent?4:0),16+(bAddTransparent?3:0));
+		{
+			ColorDlg[cd_fg_active].Selected = BSTATE_CHECKED;
+		}
 
-		Dlg->Process();
-		ExitCode=Dlg->GetExitCode();
+		if (colors::is_transparent(Color.BackgroundColor))
+		{
+			for (size_t i = cd_bg_color_first; i <= cd_bg_color_last; ++i)
+			{
+				ColorDlg[i].Flags |= DIF_DISABLE;
+			}
+
+			ColorDlg[cd_bg_colorcode].Flags |= DIF_DISABLE;
+			ColorDlg[cd_bg_advanced].Flags |= DIF_DISABLE;
+		}
+		else
+		{
+			ColorDlg[cd_bg_active].Selected = BSTATE_CHECKED;
+		}
+
 	}
-
-	if (ExitCode==41)
+	else
 	{
-		Color=CurColor;
-		ColorDlg[35].Selected? colors::make_transparent(Color.ForegroundColor) : colors::make_opaque(Color.ForegroundColor);
-		ColorDlg[36].Selected? colors::make_transparent(Color.BackgroundColor) : colors::make_opaque(Color.BackgroundColor);
-		return true;
+		ColorDlg[cd_fg_active].Flags|=DIF_HIDDEN;
+		ColorDlg[cd_bg_active].Flags|=DIF_HIDDEN;
 	}
 
-	return false;
+	const auto Dlg = Dialog::create(ColorDlg, GetColorDlgProc, &ColorState);
+
+	const auto
+		DlgWidth = static_cast<int>(ColorDlg[cd_border].X2) + 4,
+		DlgHeight = static_cast<int>(ColorDlg[cd_border].Y2) + 2;
+
+	if (bCentered)
+		Dlg->SetPosition({ -1, -1, DlgWidth, DlgHeight });
+	else
+	{
+		constexpr auto
+			DlgLeft = 37,
+			DlgTop = 2;
+
+		Dlg->SetPosition({DlgLeft, DlgTop, DlgLeft + DlgWidth - 1, DlgTop + DlgHeight - 1 });
+	}
+
+	Dlg->Process();
+	if (Dlg->GetExitCode() != cd_button_ok)
+		return false;
+
+	Color = ColorState.CurColor;
+	return true;
 }

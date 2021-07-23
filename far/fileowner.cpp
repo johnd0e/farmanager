@@ -31,80 +31,140 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "fileowner.hpp"
 
+// Internal:
 #include "pathmix.hpp"
 #include "elevation.hpp"
 
+// Platform:
 #include "platform.memory.hpp"
 #include "platform.fs.hpp"
 #include "platform.security.hpp"
 
-// эта часть - перспективная фигня, которая значительно ускоряет получение овнеров
+// Common:
+#include "common.hpp"
+#include "common/function_ref.hpp"
+#include "common/function_traits.hpp"
+#include "common/string_utils.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 static bool SidToName(PSID Sid, string& Name, const string& Computer)
 {
-	DWORD AccountLength = 0, DomainLength = 0;
+	auto AccountName = os::buffer<wchar_t>();
+	auto DomainName = os::buffer<wchar_t>();
+	auto AccountLength = static_cast<DWORD>(AccountName.size());
+	auto DomainLength = static_cast<DWORD>(DomainName.size());
 	SID_NAME_USE snu;
-	LookupAccountSid(Computer.c_str(), Sid, nullptr, &AccountLength, nullptr, &DomainLength, &snu);
-	if (AccountLength && DomainLength)
-	{
-		wchar_t_ptr_n<MAX_PATH> AccountName(AccountLength), DomainName(DomainLength);
-		if (!LookupAccountSid(Computer.c_str(), Sid, AccountName.get(), &AccountLength, DomainName.get(), &DomainLength, &snu))
-			return false;
 
-		Name.clear();
-		if (DomainLength)
+	for (;;)
+	{
+		if (LookupAccountSid(EmptyToNull(Computer), Sid, AccountName.data(), &AccountLength, DomainName.data(), &DomainLength, &snu))
+			break;
+
+		if (GetLastError() == ERROR_INSUFFICIENT_BUFFER)
 		{
-			Name = concat(string_view(DomainName.get(), DomainLength), L'\\');
+			AccountName.reset(AccountLength);
+			DomainName.reset(DomainLength);
 		}
-		Name.append(AccountName.get(), AccountLength);
-		return true;
+		else
+		{
+			os::memory::local::ptr<wchar_t> StrSid;
+			if (!ConvertSidToStringSid(Sid, &ptr_setter(StrSid)))
+				return false;
+
+			Name = StrSid.get();
+			return true;
+		}
 	}
 
-	os::memory::local::ptr<wchar_t> StrSid;
-	if (!ConvertSidToStringSid(Sid, &ptr_setter(StrSid)))
-		return false;
+	Name.clear();
 
-	Name = StrSid.get();
+	if (DomainLength)
+		append(Name, string_view(DomainName.data(), DomainLength), L'\\', string_view(AccountName.data(), AccountLength));
+	else
+		Name.assign(AccountName.data(), AccountLength);
+
 	return true;
 }
 
-static bool SidToNameCached(PSID Sid, string& Name, const string& Computer)
+namespace
 {
 	class sid
 	{
 	public:
 		NONCOPYABLE(sid);
-		MOVABLE(sid);
+		MOVE_CONSTRUCTIBLE(sid);
+
+		sid() noexcept = default;
+
+		sid(std::nullptr_t) noexcept
+		{
+		}
+
+		explicit sid(size_t Size)
+		{
+			reset(Size);
+		}
 
 		explicit sid(PSID rhs)
 		{
 			const auto Size = GetLengthSid(rhs);
 			m_Data.reset(Size);
-			CopySid(Size, m_Data.get(), rhs);
+			CopySid(Size, m_Data.data(), rhs);
 		}
 
 		bool operator==(const sid& rhs) const
 		{
-			return EqualSid(m_Data.get(), rhs.m_Data.get()) != FALSE;
+			return EqualSid(m_Data.data(), rhs.m_Data.data()) != FALSE;
+		}
+
+		explicit operator bool() const
+		{
+			return m_Data.operator bool();
+		}
+
+		auto get() const
+		{
+			return m_Data.data();
+		}
+
+		void reset(size_t Size)
+		{
+			m_Data.reset(Size);
+		}
+
+		auto size() const
+		{
+			return m_Data.size();
 		}
 
 		size_t get_hash() const
 		{
-			const auto Begin = reinterpret_cast<const char*>(m_Data.get());
-			const auto End = Begin + GetLengthSid(m_Data.get());
+			const auto Begin = m_Data.cbegin();
+			const auto End = Begin + GetLengthSid(m_Data.data());
 			return hash_range(Begin, End);
 		}
 
 	private:
-		block_ptr<SID> m_Data;
+		block_ptr<SID, os::default_buffer_size> m_Data;
 	};
+}
 
+static bool SidToNameCached(PSID Sid, string& Name, const string& Computer)
+{
 	struct sid_hash { size_t operator()(const sid& Sid) const { return Sid.get_hash(); } };
 
 	static std::unordered_map<sid, string, sid_hash> SIDCache;
 
+	// TODO: use transparent_key_equal once available
 	sid SidCopy(Sid);
 	const auto ItemIterator = SIDCache.find(SidCopy);
 
@@ -123,8 +183,7 @@ static bool SidToNameCached(PSID Sid, string& Name, const string& Computer)
 	return false;
 }
 
-// TODO: elevation
-bool GetFileOwner(const string& Computer,const string& Name, string &strOwner)
+static bool ProcessFileOwner(string_view const Name, function_ref<bool(PSID)> const Callable)
 {
 	const auto SecurityDescriptor = os::fs::get_file_security(Name, OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION);
 	if (!SecurityDescriptor)
@@ -132,33 +191,61 @@ bool GetFileOwner(const string& Computer,const string& Name, string &strOwner)
 
 	PSID pOwner;
 	BOOL OwnerDefaulted;
-	if (!GetSecurityDescriptorOwner(SecurityDescriptor.get(), &pOwner, &OwnerDefaulted))
+	if (!GetSecurityDescriptorOwner(SecurityDescriptor.data(), &pOwner, &OwnerDefaulted))
 		return false;
 
 	if (!IsValidSid(pOwner))
 		return false;
 
-	return SidToNameCached(pOwner, strOwner, Computer);
+	return Callable(pOwner);
 }
 
-static auto get_sid(const string& Name)
+static bool IsOwned(string_view const Name, PSID const Owner)
 {
-	os::memory::local::ptr<void> Sid;
-	if (ConvertStringSidToSid(Name.c_str(), &ptr_setter(Sid)))
-		return Sid;
+	return ProcessFileOwner(Name, [&](PSID const Sid)
+	{
+		return EqualSid(Sid, Owner);
+	});
+}
 
+
+// TODO: elevation
+bool GetFileOwner(const string& Computer, string_view const Object, string& Owner)
+{
+	return ProcessFileOwner(Object, [&](PSID const Sid)
+	{
+		return SidToNameCached(Sid, Owner, Computer);
+	});
+}
+
+static sid get_sid(const string& Name)
+{
+	os::memory::local::ptr<void> SidFromString;
+	if (ConvertStringSidToSid(Name.c_str(), &ptr_setter(SidFromString)))
+	{
+		return sid{ SidFromString.get() };
+	}
+
+	FN_RETURN_TYPE(get_sid) Sid(os::default_buffer_size);
+	auto ReferencedDomainName = os::buffer<wchar_t>();
+	auto SidSize = static_cast<DWORD>(Sid.size());
+	auto ReferencedDomainNameSize = static_cast<DWORD>(ReferencedDomainName.size());
 	SID_NAME_USE Use;
-	DWORD SidSize = 0, ReferencedDomainNameSize = 0;
-	LookupAccountName(nullptr, Name.c_str(), nullptr, &SidSize, nullptr, &ReferencedDomainNameSize, &Use);
-	if (!SidSize)
-		return Sid;
+	for (;;)
+	{
+		if (LookupAccountName(nullptr, Name.c_str(), Sid.get(), &SidSize, ReferencedDomainName.data(), &ReferencedDomainNameSize, &Use))
+			break;
 
-	Sid = os::memory::local::alloc<SID>(LMEM_FIXED, SidSize);
-	if (!Sid)
-		return Sid;
-
-	wchar_t_ptr_n<MAX_PATH> Buffer(ReferencedDomainNameSize);
-	LookupAccountName(nullptr, Name.c_str(), Sid.get(), &SidSize, Buffer.get(), &ReferencedDomainNameSize, &Use);
+		if (GetLastError() == ERROR_INSUFFICIENT_BUFFER)
+		{
+			Sid.reset(SidSize);
+			ReferencedDomainName.reset(ReferencedDomainNameSize);
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
 
 	return Sid;
 }
@@ -169,18 +256,17 @@ bool SetOwnerInternal(const string& Object, const string& Owner)
 	if (!Sid)
 		return false;
 
+	if (IsOwned(Object, Sid.get()))
+		return true;
+
 	SCOPED_ACTION(os::security::privilege){ SE_TAKE_OWNERSHIP_NAME, SE_RESTORE_NAME };
 
-	const auto Result = SetNamedSecurityInfo(const_cast<LPWSTR>(Object.c_str()), SE_FILE_OBJECT, OWNER_SECURITY_INFORMATION, Sid.get(), nullptr, nullptr, nullptr);
-	if(Result != ERROR_SUCCESS)
-	{
-		SetLastError(Result);
-		return false;
-	}
-	return true;
+	const auto Result = SetNamedSecurityInfo(const_cast<wchar_t*>(Object.c_str()), SE_FILE_OBJECT, OWNER_SECURITY_INFORMATION, Sid.get(), nullptr, nullptr, nullptr);
+	SetLastError(Result);
+	return Result == ERROR_SUCCESS;
 }
 
-bool SetFileOwner(const string& Object, const string& Owner)
+bool SetFileOwner(string_view const Object, const string& Owner)
 {
 	const NTPath NtObject(Object);
 

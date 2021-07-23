@@ -37,24 +37,33 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
+
+// Platform:
+
+// Common:
+#include "common/preprocessor.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
+
 //---------------------------------------------------------------
 // If this code works, it was written by Alexander Nazarenko.
 // If not, I don't know who wrote it.
 //---------------------------------------------------------------
 
-enum TVarType
-{
-	vtUnknown = 0,
-	vtInteger = 1,
-	vtString  = 2,
-	vtDouble  = 3,
-};
-
-using TVarFuncCmp = bool(TVarType vt, const void*, const void*);
-
 class TVar
 {
 public:
+	enum class Type
+	{
+		Unknown = 0,
+		Integer = 1,
+		String = 2,
+		Double = 3,
+	};
+
 	COPYABLE(TVar);
 	MOVABLE(TVar);
 
@@ -65,32 +74,22 @@ public:
 	explicit TVar(const wchar_t*);
 	explicit TVar(double);
 
-	COPY_AND_MOVE(TVar, long long);
-	COPY_AND_MOVE(TVar, string_view);
-	COPY_AND_MOVE(TVar, const wchar_t*);
-	COPY_AND_MOVE(TVar, int);
-	COPY_AND_MOVE(TVar, double);
+	COPY_AND_MOVE(TVar, long long)
+	COPY_AND_MOVE(TVar, string_view)
+	COPY_AND_MOVE(TVar, const wchar_t*)
+	COPY_AND_MOVE(TVar, int)
+	COPY_AND_MOVE(TVar, double)
 
 	bool operator<(const TVar&) const;
-	bool operator>(const TVar&) const;
-	bool operator==(const TVar&) const;
 
-	TVar& operator+=(const TVar& b) { return *this = *this + b; }
-	TVar operator-() const;
+	Type type() const { return vType; }
+	Type ParseType() const;
+	void SetType(Type newType) {vType=newType;}
 
-	TVar operator+(const TVar&) const;
-	TVar operator%(const TVar&) const;
-
-	TVar& AppendStr(wchar_t);
-	TVar& AppendStr(const TVar&);
-
-	TVarType type() const { return vType; }
-	void SetType(TVarType newType) {vType=newType;}
-
-	bool isString()   const { return vType == vtString;  }
-	bool isInteger()  const { return vType == vtInteger || vType == vtUnknown; }
-	bool isDouble()   const { return vType == vtDouble;  }
-	bool isUnknown()  const { return vType == vtUnknown;  }
+	bool isString()   const { return vType == Type::String; }
+	bool isInteger()  const { return vType == Type::Integer || vType == Type::Unknown; }
+	bool isDouble()   const { return vType == Type::Double; }
+	bool isUnknown()  const { return vType == Type::Unknown; }
 
 	bool isNumber()   const;
 
@@ -103,12 +102,13 @@ public:
 	long long asInteger() const;
 
 private:
-	friend bool CompAB(const TVar& a, const TVar& b, TVarFuncCmp fcmp);
-
-	long long inum;
-	double dnum;
+	union
+	{
+		long long inum{};
+		double dnum;
+	};
 	mutable string str;
-	TVarType vType;
+	Type vType;
 };
 
 #endif // TVAR_HPP_684F1D24_C3BA_43F6_9099_C617C30385EE

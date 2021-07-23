@@ -35,8 +35,17 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "panel.hpp"
 #include "notification.hpp"
+
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
 
 enum class lng : int;
 class DizViewer;
@@ -64,14 +73,14 @@ private:
 	Viewer* GetById(int ID) override;
 
 	bool ShowDirDescription(int YPos);
-	bool ShowPluginDescription(int YPos);
+	bool ShowPluginDescription(int YPos) const;
 	void PrintText(string_view Str) const;
 	void PrintText(lng MsgID) const;
-	void PrintInfo(const string& Str) const;
+	void PrintInfo(string_view Str) const;
 	void PrintInfo(lng MsgID) const;
 	void SelectShowMode();
-	void DrawTitle(string &strTitle, int Id, int &CurY);
-	bool OpenDizFile(const string& DizFile, int YPos);
+	void DrawTitle(string_view Title, int Id, int &CurY);
+	bool OpenDizFile(string_view DizFile, int YPos);
 	void DynamicUpdateKeyBar() const;
 
 	unique_ptr_with_ondestroy<DizViewer> DizView;

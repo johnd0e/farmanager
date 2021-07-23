@@ -1,4 +1,4 @@
-<header>
+ï»¿<header>
 tag=SMZ1
 ver=2.7
 </header>
@@ -104,7 +104,7 @@ lv=2
 dt=Text
 nm=Regular macros
 ctime=3580139016
-mtime=3678015120
+mtime=3785248441
 <article>
 #_<markdown>
 #_
@@ -112,16 +112,17 @@ mtime=3678015120
 #_
 #_```
 #_  Macro {
-#_    area         = "Shell Info Tree";                         -- string
-#_    key          = "CtrlF11 ShiftHome";                       -- string (optional field)
-#_    description  = "Macro example";                           -- string (optional field)
-#_    flags        = "NoPluginPanels EmptyCommandLine";         -- string (optional field)
-#_    filemask     = "*.txt,*.cpp";                             -- string (optional field)
-#_    priority     = 50;                                        -- number (optional field)
-#_    sortpriority = 50;                                        -- number (optional field)
-#_    condition    = function(key) return Far.Height>30 end;    -- function (optional field)
-#_    action       = function() msgbox("","Macro example") end; -- function
-#_    id           = "F0109446-AA63-4873-AEC3-17AEE993AA53";    -- string (optional field)
+#_    area         = "Shell Info Tree";                             -- string
+#_    key          = "CtrlF11 ShiftHome";                           -- string (optional field)
+#_    description  = "Macro example";                               -- string (optional field)
+#_    flags        = "NoPluginPanels EmptyCommandLine";             -- string (optional field)
+#_    filemask     = "*.txt,*.cpp";                                 -- string (optional field)
+#_    priority     = 50;                                            -- number (optional field)
+#_    sortpriority = 50;                                            -- number (optional field)
+#_    selected     = true;                                          -- boolean (optional field)
+#_    condition    = function(key,data) return Far.Height>30 end;   -- function (optional field)
+#_    action       = function(data) msgbox("","Macro example") end; -- function
+#_    id           = "F0109446-AA63-4873-AEC3-17AEE993AA53";        -- string (optional field)
 #_  }
 #_```
 #_
@@ -147,6 +148,9 @@ mtime=3678015120
 #_1. Optional field `sortpriority` - a number in the range 0 to 100. The default value = 50.<br>
 #_   This field affects the order of macros in the macro selection menu.
 #_
+#_1. Optional field `selected` - a boolean.<br>
+#_   This field assigns this macro to be initially selected in the macro selection menu.
+#_
 #_1. Optional field `filemask` - a string.<br>
 #_   It is applicable only for `Editor` and `Viewer` areas. It is processed according to
 #_   the same rules that Far Manager applies for file masks when searching from panels, etc.
@@ -154,15 +158,19 @@ mtime=3678015120
 #_   will not execute.
 #_
 #_1. Optional field `condition` - a function.
-#_   * It is called with one argument: the name of pressed key.
-#_     For auto-started macros it is called with no arguments.
+#_   * It is called with 2 arguments:
+#_     1. Name of the pressed key (`nil` for auto-started macros)
+#_     2. A copy of the table-argument received by function Macro.
+#_        The same copy is used until macros are reloaded.
 #_   * If the function returns `false`/`nil`/nothing, the macro will not execute.
 #_   * If it returns a number then this number is used instead of `priority`.
 #_   * In other cases of return value (e.g., `true`) `priority` is used.<br><br>
 #_
 #_1. Field `action` - a function.<br>
-#_   If the macro has passed successfully all preliminary checks (area, flags, file mask, priority)
-#_   then this functgion is called.
+#_   * If the macro has passed successfully all preliminary checks (area, flags, file mask, priority)
+#_     then this function is called.
+#_   * It is called with 1 argument: a copy of the table-argument received by function Macro.
+#_     It is the same table that is passed as 2-nd argument to function `condition`.<br><br>
 #_
 #_1. More than one macro for (`key`,`area`) combination is allowed. In this case a macro with highest priority is executed. If there are multiple macros having the same priority then the macro selection menu is displayed.<br>
 #_   The auto-starting macros are executed all, one by one, independently from priorities. The order of their execution is not defined.
@@ -229,11 +237,11 @@ lv=2
 dt=Text
 nm=Event handlers
 ctime=3580139337
-mtime=3734986328
+mtime=3777006667
 <article>
 #_<markdown>
 #_
-#_Like [regular macros][1], event handlers are loaded from Lua-files (extension `*.lua`), residing in the directory<br> `%FARPROFILE%\Macros\scripts` and its subdirectories. Each Lua-file may contain both macros and event handlers.
+#_Like [regular macros][1], event handlers are loaded from macrofiles (extensions `*.lua` and `*.moon`), residing in the directory<br> `%FARPROFILE%\Macros\scripts` and its subdirectories. Each macrofile may contain both macros and event handlers.
 #_
 #_Loading a handler occurs when the global function `Event` is called. It receives one argument - a table containing parameters of the event handler. On successful completion the function returns `true`.
 #_
@@ -483,6 +491,88 @@ mtime=3732100057
 </article>
 </node>
 <node>
+id=102
+lv=2
+dt=Text
+nm=Content columns
+ctime=3774010006
+mtime=3774015625
+<article>
+#_<markdown>
+#_
+#_To add support for content columns the function `ContentColumns` is used.
+#_It requires one argument - a table:
+#_
+#_```
+#_ContentColumns {
+#_  filemask         = "*.txt";                                 -- string (optional field)
+#_  GetContentFields = function(colnames) ...... end;           -- function
+#_  GetContentData   = function(filename, colnames) ...... end; -- function
+#_}
+#_```
+#_
+#_**Notes:**
+#_
+#_- The optional field `filemask` determines which files should be processed.
+#_Its default value is `"*"` (all files).
+#_- The meanings of `GetContentFields` and `GetContentData` fields are the same
+#_as for exported functions `export.GetContentFields` and `export.GetContentData`
+#_(see their descriptions in LuaFAR manual).
+#_
+#_
+</article>
+</node>
+<node>
+id=103
+lv=3
+dt=Text
+nm=Demo example
+ctime=3774010083
+mtime=3797418999
+<article>
+#_<markdown>
+#_```
+#_-- A content columns example.
+#_-- For this example to work a file panel mode should have a column type
+#_-- named either <text> or <c0>.
+#_
+#_if ({ far.AdvControl("ACTL_GETFARMANAGERVERSION", true) })[4] < 5442 then return end
+#_
+#_local col_set = { -- lower case keys
+#_  text=1, c0=1
+#_}
+#_
+#_ContentColumns {
+#_  filemask = "*.txt,*.lua,*.c,*.h,*.cpp";
+#_
+#_  GetContentFields = function(colnames)
+#_    for _,v in ipairs(colnames) do
+#_      if col_set[v:lower()] then return true end
+#_    end
+#_  end;
+#_
+#_  -- display text at the file beginning
+#_  GetContentData = function(filename, colnames)
+#_    local fp = io.open(filename)
+#_    if fp then
+#_      local s = fp:read(512)
+#_      fp:close()
+#_      if s then
+#_        local out = {}
+#_        s = string.gsub(s, "%s+", " ")
+#_        for k,v in ipairs(colnames) do
+#_          if col_set[v:lower()] then out[k]=s end
+#_        end
+#_        return out
+#_      end
+#_    end
+#_  end;
+#_}
+#_```
+#_
+</article>
+</node>
+<node>
 id=77
 lv=2
 dt=Text
@@ -679,7 +769,7 @@ mtime=3720944940
 #_1. `Menu.Info.Id -> Menu.Id`
 #_1. `MsX`, `MsY`, `MsButton`, `MsCtrlState`, `MsEventFlags` -- see table [`Mouse`][Mouse]
 #_1. `RCounter` does not exist anymore.
-#_1. `Macro.Const`, `Macro.Func`, `Macro.Keyword` è `Macro.Var` do not exist anymore.
+#_1. `Macro.Const`, `Macro.Func`, `Macro.Keyword` and `Macro.Var` do not exist anymore.
 #_1. Macro specification: flag `DisableOutput` does not exist; screen redraw is disabled by default;
 #_   added flag `EnableOutput` (apply it if screen redraw is needed during macro execution).
 #_1. Macro specification: flags `Selection` and `NoSelection` are no more applicable for
@@ -765,7 +855,7 @@ mtime=3659609142
 #_
 #_**Notes:**
 #_
-#_1. Functions *band*, *bnot*, *bor*, *bxor*, *lshift* è *rshift* (bitwise operations)
+#_1. Functions *band*, *bnot*, *bor*, *bxor*, *lshift* and *rshift* (bitwise operations)
 #_   are global aliases of the same-named functions of *bit64* library.
 #_   (see LuaFAR manual).
 #_
@@ -773,7 +863,7 @@ mtime=3659609142
 #_   return *false*.
 #_
 #_3. For uniformity sake, all the above functions (except the bitwise ones)
-#_   are duplicated in table `mf`, for example: *eval* è *mf.eval* reference
+#_   are duplicated in table `mf`, for example: *eval* and *mf.eval* reference
 #_   the same function.
 #_
 #_@@@
@@ -867,7 +957,7 @@ lv=2
 dt=Text
 nm=mf
 ctime=3553243522
-mtime=3732331643
+mtime=3778310252
 <article>
 #_**Properties:** none.
 #_
@@ -883,26 +973,28 @@ mtime=3732331643
 #_  chr                `msave`
 #_  clip               msgbox
 #_  date               `postmacro`
-#_  env                print
-#_  `eval`               prompt
-#_  `exit`               replace
-#_  fattr              rindex
-#_  fexist             size2str
-#_  float              sleep
-#_  flock              string
-#_  fmatch             strpad
-#_  fsplit             strwrap
-#_  `GetMacroCopy`       substr
-#_  iif                testfolder
-#_  index              trim
-#_  int                ucase
-#_  itoa               `usermenu`
-#_  key                waitkey
-#_  `Keys`               xlat
-#_  lcase
+#_  `deserialize`        print           
+#_  env                `printconsole`
+#_  `eval`               prompt        
+#_  `exit`               replace         
+#_  fattr              rindex          
+#_  fexist             `serialize`
+#_  float              size2str  
+#_  flock              sleep     
+#_  fmatch             string    
+#_  fsplit             strpad    
+#_  `GetMacroCopy`       strwrap   
+#_  iif                substr  
+#_  index              testfolder
+#_  int                trim      
+#_  itoa               ucase     
+#_  key                `usermenu`
+#_  `Keys`               waitkey   
+#_  lcase              xlat    
 #_
 #_@@@
 #_[acall]: 91.html
+#_[deserialize]: 104.html
 #_[eval]: 79.html
 #_[exit]: 61.html
 #_[GetMacroCopy]: 72.html
@@ -913,7 +1005,8 @@ mtime=3732331643
 #_[postmacro]: 85.html
 #_[usermenu]: 69.html
 #_[AddExitHandler]: 100.html
-#_
+#_[printconsole]: 101.html
+#_[serialize]: 105.html
 #_
 #_{abs}: http://api.farmanager.com/ru/macro/macrocmd/prop_func/general.html#abs
 #_{akey}: http://api.farmanager.com/ru/macro/macrocmd/prop_func/general.html#akey
@@ -1007,27 +1100,30 @@ lv=3
 dt=Text
 nm=AddExitHandler
 ctime=3732331676
-mtime=3732332270
+mtime=3770399831
 <article>
-#_mf.AddExitHandler (handler)
+#_mf.AddExitHandler (handler [, ...])
 #_
 #_**Parameters:**
 #_  handler:  function
+#_  ...    :  arbitrary number of sdditional values
 #_
 #_**Returns:**
-#_  nothing
+#_  values passed in ... (if any)
 #_
 #_**Description:**
 #_  1. This function adds a handler that will be called at the end
-#_     of the macro execution.
+#_     of the macro execution. All values specified in ... (if any)
+#_     will be passed as arguments to the handler.
 #_  2. The handler will be called both in the case of normal macro
 #_     completion and in the case of error completion.
 #_  3. If multiple handlers were added during macro execution then they
 #_     will be called in the order reverse to the order of their adding.
 #_
 #_**Usage example:**
-#_  local fp = assert(io.open("some file.txt"))
-#_  mf.AddExitHandler(function() fp:close() end)
+#_  local fp = mf.AddExitHandler(
+#_      function(p) if p then p:close() end; end,
+#_      io.open("some file.txt") )
 #_  -- *use fp; return from multiple places; do not care about closing fp*
 #_
 #_**See also:**
@@ -1035,6 +1131,38 @@ mtime=3732332270
 #_
 #_@@@
 #_[Restrictions in the use of some functions]: 62.html
+#_
+</article>
+</node>
+<node>
+id=104
+lv=3
+dt=Text
+nm=deserialize
+ctime=3778310150
+mtime=3778310982
+<article>
+#_value, errmsg = mf.deserialize (str)
+#_
+#_**Parameters:**
+#_  str:       string
+#_
+#_**Returns:**
+#_  value:     number, string, boolean, table, int64 or nil.
+#_  errmsg:    nil on success, string on failure.
+#_
+#_**Description:**
+#_  Function *deserialize* recreates a copy of a previously serialized value.
+#_  If the second return value is nil then the first return value is valid.
+#_
+#_**Note:**
+#_  int64 - a distinguished type of userdata, created by the bit64 library.
+#_
+#_**See also:**
+#_`serialize`
+#_
+#_@@@
+#_[serialize]: 105.html
 #_
 </article>
 </node>
@@ -1125,9 +1253,9 @@ lv=3
 dt=Text
 nm=mdelete
 ctime=3552066075
-mtime=3622999561
+mtime=3754137206
 <article>
-#_mf.mdelete (key, name [, location])
+#_ret = mf.mdelete (key, name [, location])
 #_
 #_**Parameters:**
 #_  key:       string
@@ -1135,7 +1263,7 @@ mtime=3622999561
 #_  location:  string ("roaming" or "local"; default: "roaming")
 #_
 #_**Returns:**
-#_  nothing
+#_  ret:       boolean
 #_
 #_**Description:**
 #_  Function *mdelete* deletes a value or key from the database.
@@ -1150,9 +1278,9 @@ lv=3
 dt=Text
 nm=mload
 ctime=3551993209
-mtime=3711104331
+mtime=3754161074
 <article>
-#_ret = mf.mload (key, name [, location])
+#_value, errmsg = mf.mload (key, name [, location])
 #_
 #_**Parameters:**
 #_  key:       string
@@ -1160,10 +1288,12 @@ mtime=3711104331
 #_  location:  string ("roaming" or "local"; default: "roaming")
 #_
 #_**Returns:**
-#_  ret:      number, string, boolean, table, int64 or nil.
+#_  value:     number, string, boolean, table, int64 or nil.
+#_  errmsg:    nil on success, string on failure.
 #_
 #_**Description:**
 #_  Function *mload* reads a value from the database.
+#_  If the second return value is nil then the first return value is valid.
 #_
 #_**Note:**
 #_  int64 - a distinguished type of userdata, created by the bit64 library.
@@ -1176,9 +1306,9 @@ lv=3
 dt=Text
 nm=msave
 ctime=3551993205
-mtime=3622999613
+mtime=3778311162
 <article>
-#_mf.msave (key, name, value [, location])
+#_ret = mf.msave (key, name, value [, location])
 #_
 #_**Parameters:**
 #_  key:       string
@@ -1187,12 +1317,12 @@ mtime=3622999613
 #_  location:  string ("roaming" or "local"; default: "roaming")
 #_
 #_**Returns:**
-#_  nothing
+#_  ret:       boolean
 #_
 #_**Description:**
 #_  Function *msave* saves the specified value into the database.
 #_
-#_  When you save the table the following will be preserved:
+#_  When you save a table the following will be preserved:
 #_     keys of types:    number, string, boolean, table.
 #_     values of types:  number, string, boolean, table, int64.
 #_
@@ -1225,6 +1355,68 @@ mtime=3600496919
 #_**Description:**
 #_  The function places a new macro in a queue for execution.
 #_  When the execution begins *func* is called with arguments *...*
+#_
+</article>
+</node>
+<node>
+id=101
+lv=3
+dt=Text
+nm=printconsole
+ctime=3773253055
+mtime=3773253639
+<article>
+#_mf.printconsole (...)
+#_
+#_**Parameters:**
+#_  ...:     0 or more Lua values
+#_
+#_**Returns:**
+#_  nothing
+#_
+#_**Description:**
+#_  - The function prints its arguments to the console.
+#_  - It inserts a tab character between the arguments.
+#_  - There is no need to call *panel.GetUserScreen()* / *panel.SetUserScreen()*
+#_    as that is done internally.
+#_
+</article>
+</node>
+<node>
+id=105
+lv=3
+dt=Text
+nm=serialize
+ctime=3778310164
+mtime=3778311146
+<article>
+#_ret = mf.serialize (value)
+#_
+#_**Parameters:**
+#_  value:     nil, boolean, number, string, table, int64
+#_
+#_**Returns:**
+#_  ret:       string
+#_
+#_**Description:**
+#_  Function *serialize* converts the passed value into a string.
+#_
+#_  When you serialize a table the following will be preserved:
+#_     keys of types:    number, string, boolean, table.
+#_     values of types:  number, string, boolean, table, int64.
+#_
+#_  Nested tables and recursive references are correctly processed.
+#_
+#_  The link between a table and its metatable is preserved.
+#_
+#_**Note:**
+#_  int64 - a distinguished type of userdata, created by the bit64 library.
+#_
+#_**See also:**
+#_`deserialize`
+#_
+#_@@@
+#_[deserialize]: 104.html
 #_
 </article>
 </node>
@@ -1478,12 +1670,12 @@ lv=3
 dt=Text
 nm=LoadCustomSortMode
 ctime=3585324926
-mtime=3666993887
+mtime=3807114389
 <article>
 #_Panel.LoadCustomSortMode (Mode, Settings)
 #_
 #_**Parameters:**
-#_  Mode:         sort mode; integer >=100 and <=0x7FFFFFFF
+#_  Mode:         sort mode; integer >=SM_USER and <=0x7FFFFFFF
 #_  Settings:     a table containing the following fields:
 #_      *Condition*:
 #_         Function. If it is specified it will be called with one argument - sort mode.
@@ -1531,7 +1723,7 @@ mtime=3666993887
 #_  result = Compare (Pi1, Pi2, FarOptions)
 #_
 #_  **Parameters:**
-#_    Pi1 è Pi2  - panel elements being compared, structures of `SortingPanelItem` type.
+#_    Pi1, Pi2   - panel elements being compared, structures of `SortingPanelItem` type.
 #_    FarOptions - a table containing the current Far Manager panel sort options
 #_                 (all values are boolean): *DirectoriesFirst, SelectedFirst,*
 #_                 *RevertSorting, SortGroups, NumericSort, CaseSensitiveSort*.
@@ -1560,7 +1752,8 @@ mtime=3666993887
 #_  *-- Load the sorting by file name length.*
 #_  local ffi = require "ffi"
 #_  local C = ffi.C
-#_  Panel.LoadCustomSortMode (100,
+#_  local F = far.Flags
+#_  Panel.LoadCustomSortMode (F.SM_USER+10,
 #_    { 
 #_      Compare = function(p1, p2, opt)
 #_        local l1, l2 = C.wcslen(p1.FileName), C.wcslen(p2.FileName)
@@ -1584,12 +1777,12 @@ lv=3
 dt=Text
 nm=SetCustomSortMode
 ctime=3585499487
-mtime=3676118654
+mtime=3807114048
 <article>
 #_Panel.SetCustomSortMode (Mode, whatpanel [, order])
 #_
 #_**Parameters:**
-#_  Mode:         sorting mode, an integer >=100 and <=0x7FFFFFFF
+#_  Mode:         sorting mode, an integer >=SM_USER and <=0x7FFFFFFF
 #_  whatpanel:    0=active panel, 1=passive panel
 #_  order:        "auto"    - standard choice of sort direction (default)
 #_                "current" - keep current sort direction in the panel
@@ -1608,7 +1801,7 @@ mtime=3676118654
 #_  Macro {
 #_    description="Sort files by their name lengths";
 #_    area="Shell"; key="CtrlShiftF1";
-#_    action=function() Panel.SetCustomSortMode(100,0) end;
+#_    action=function() Panel.SetCustomSortMode(F.SM_USER+10,0) end;
 #_  }
 #_
 #_@@@
@@ -2367,20 +2560,6 @@ mtime=3607111386
 </article>
 </node>
 <node>
-id=64
-lv=2
-dt=Text
-nm=unicode.utf8.cfind
-ctime=3559410790
-mtime=3600589290
-<article>
-#_<markdown>
-#_
-#_This function is similar to `unicode.utf8.find`, except that it treats the input offset and returns the output offset in characters rather than bytes. "Positional captures" are still returned in bytes.
-#_
-</article>
-</node>
-<node>
 id=84
 lv=2
 dt=Text
@@ -2671,7 +2850,7 @@ mtime=3607436842
 #_<markdown>
 #_## License
 #_
-#_Copyright © 2008 Lua.org, PUC-Rio.
+#_Copyright Â© 2008 Lua.org, PUC-Rio.
 #_
 #_Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 #_
@@ -2734,7 +2913,7 @@ mtime=3607111919
 #_<markdown>
 #_<font face="Tahoma">
 #_
-#_By **Gleb Varenov** ("Acerbic") » Tue 23 Apr, 2013 22:53<br>
+#_By **Gleb Varenov** ("Acerbic") Â» Tue 23 Apr, 2013 22:53<br>
 #_[Revision 1.1][article on forum]
 #_
 #_*Gather round, boys and girls, for I am about to tell you a story.*

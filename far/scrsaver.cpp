@@ -31,10 +31,14 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "scrsaver.hpp"
 
-#include "farcolor.hpp"
-#include "chgprior.hpp"
+// Internal:
+#include "palette.hpp"
 #include "savescr.hpp"
 #include "interf.hpp"
 #include "keyboard.hpp"
@@ -42,164 +46,284 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "colormix.hpp"
 #include "global.hpp"
 
-enum {STAR_NONE,STAR_NORMAL,STAR_PLANET};
+// Platform:
+#include "platform.chrono.hpp"
 
-struct star
+// Common:
+#include "common/scope_exit.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
+
+namespace
 {
-	int X;
-	int Y;
-	int Type;
-	int Color;
-	int Speed;
-};
-
-static std::array<star, 16> Star;
-
-static const wchar_t StarSymbol[]=
-{
-	L'\x25A0',
-	L'\x2219',
-	L'\x2219',
-	L'\x00B0',
-	L'\x00B7',
-};
-
-static void ShowSaver(int Step, const std::function<void(star&)>& Fill)
-{
-	std::for_each(RANGE(Star, i)
+	class starfield
 	{
-		if (i.Type!=STAR_NONE && !(Step % i.Speed))
-		{
-			SetColor(F_LIGHTCYAN|B_BLACK);
-			GotoXY(i.X/100, i.Y/100);
-			Text(L' ');
-			int dx = i.X/100 - ScrX/2;
-			i.X += dx*10+((dx<0) ? -1:1);
-			int dy = i.Y/100-ScrY/2;
-			i.Y+=dy*10+((dy<0) ? -1:1);
+		static const size_t StarsCount = 25;
 
-			if (i.X<0 || i.X/100>ScrX || i.Y<0 || i.Y/100>ScrY)
-				i.Type=STAR_NONE;
+		static const int
+			Horizon = 1000,
+			MaxSpeed = 25,
+			Steps = 200;
+
+		static const inline int Colours[]
+		{
+			F_BLUE,
+			F_CYAN,
+			F_RED,
+			F_MAGENTA,
+			F_BROWN
+		};
+
+		static const int DefaultColour = F_LIGHTGRAY;
+
+		static const int DefaultColorPercentage = 95;
+
+		static const int SteerPercentage = 33;
+
+		static const inline wchar_t StarSprites[]
+		{
+			L'·',
+			L'∙',
+			L'•',
+			L'●',
+		};
+
+	public:
+		NONCOPYABLE(starfield);
+
+		starfield()
+		{
+			std::generate(ALL_RANGE(m_Stars), [&] { return create_star(); });
+
+			SetScreen({ 0, 0, ScrX, ScrY }, L' ', colors::ConsoleColorToFarColor(F_LIGHTGRAY | B_BLACK));
+		}
+
+		void update()
+		{
+			if (m_Step != Steps)
+			{
+				++m_Step;
+				m_Speed = MaxSpeed * factor();
+			}
 			else
 			{
-				SetColor(i.Color|B_BLACK);
-				GotoXY(i.X/100, i.Y/100);
-
-				if (abs(dx)>3*ScrX/8 || abs(dy)>3*ScrY/8)
+				if (m_SteerDirection == steer_direction::none)
 				{
-					if (i.Type==STAR_PLANET)
+					if (m_SteerTime > 100)
 					{
-						SetColor(i.Color|FOREGROUND_INTENSITY|B_BLACK);
-						Text(StarSymbol[0]);
-					}
-					else
-					{
-						SetColor(F_WHITE|B_BLACK);
-						Text(StarSymbol[1]);
-					}
-				}
-				else if (abs(dx)>ScrX/7 || abs(dy)>ScrY/7)
-				{
-					if (i.Type==STAR_PLANET)
-					{
-						SetColor(i.Color|FOREGROUND_INTENSITY|B_BLACK);
-						Text(StarSymbol[1]);
-					}
-					else
-					{
-						if (abs(dx)>ScrX/4 || abs(dy)>ScrY/4)
-							SetColor(F_LIGHTCYAN|B_BLACK);
-						else
-							SetColor(F_CYAN|B_BLACK);
-
-						Text(StarSymbol[2]);
+						if (m_PercentageDist(m_Engine) < SteerPercentage)
+						{
+							m_SteerAxis = static_cast<steer_axis>(m_SteerAxisDist(m_Engine));
+							m_SteerDirection = static_cast<steer_direction>(m_SteerDirectionDist(m_Engine));
+						}
+						m_SteerTime = 0;
 					}
 				}
 				else
 				{
-					if (i.Type==STAR_PLANET)
+					if (m_SteerTime > 50)
 					{
-						SetColor(i.Color|B_BLACK);
-						Text(StarSymbol[3]);
-					}
-					else
-					{
-						SetColor(F_CYAN|B_BLACK);
-						Text(StarSymbol[4]);
+						m_SteerDirection = steer_direction::none;
+						m_SteerTime = 0;
 					}
 				}
+				++m_SteerTime;
+			}
+
+			for (auto& i: m_Stars)
+			{
+				const auto screen_position = [&]
+				{
+					const auto pos = [&](double const Value, int const Base)
+					{
+						return static_cast<int>((Value - Base / 2) * Horizon / i.Z + Base / 2);
+					};
+
+					return std::pair{ pos(i.X, ScrX), pos(i.Y, ScrY) };
+				};
+
+				SetColor(F_BLACK | B_BLACK);
+				auto [X, Y] = screen_position();
+				GotoXY(X, Y);
+				Text(L' ');
+
+				rotate(i);
+
+				i.Z = std::max(0.0, i.Z - m_Speed);
+				std::tie(X, Y) = screen_position();
+
+				if (!i.Z || !in_closed_range(0, X, ScrX) || !in_closed_range(0, Y, ScrY))
+				{
+					i = create_star();
+					std::tie(X, Y) = screen_position();
+				}
+
+				const size_t Size = (Horizon - i.Z) / static_cast<double>(Horizon * std::size(StarSprites));
+				assert(Size < std::size(StarSprites));
+
+				const auto Bright = Size >= std::size(StarSprites) / 2? FOREGROUND_INTENSITY : 0;
+				SetColor(i.Color | Bright | B_BLACK);
+
+				GotoXY(X, Y);
+				Text(StarSprites[Size]);
 			}
 		}
-	});
 
-	const auto NotStar = std::find_if(RANGE(Star, i) { return i.Type == STAR_NONE; });
-	if (NotStar != Star.end())
-	{
-		Fill(*NotStar);
-	}
+	private:
+		struct star
+		{
+			double X, Y, Z;
+			int Color;
+		};
+
+		star create_star()
+		{
+			return
+			{
+				m_XDist(m_Engine),
+				m_YDist(m_Engine),
+				Horizon,
+				m_PercentageDist(m_Engine) < DefaultColorPercentage? DefaultColour : Colours[m_ColorIndexDist(m_Engine)],
+			};
+		}
+
+		void rotate(star& Star) const
+		{
+			if (m_SteerDirection == steer_direction::none)
+				return;
+
+			const auto
+				XSteer = m_SteerAxis == steer_axis::X,
+				YSteer = m_SteerAxis == steer_axis::Y,
+				ZSteer = m_SteerAxis == steer_axis::Z;
+
+			const auto
+				LeftSteer = m_SteerDirection == steer_direction::left,
+				RightSteer = m_SteerDirection == steer_direction::right;
+
+			const auto AngleStep = ZSteer? 0.02 : 0.002;
+			const auto Angle = LeftSteer? -AngleStep : RightSteer? +AngleStep : 0;
+
+			const auto
+				s = sin(Angle),
+				c = cos(Angle);
+
+			const auto
+				Base1 = XSteer? 0 : ScrX / 2,
+				Base2 = YSteer? 0 : ScrY / 2;
+
+			auto
+				&Coord1 = XSteer? Star.Z : Star.X,
+				&Coord2 = YSteer? Star.Z : Star.Y;
+
+			Coord1 -= Base1;
+			Coord2 -= Base2;
+
+			const auto IsY = &Coord1 == &Star.Y || &Coord2 == &Star.Y;
+
+			if (IsY)
+				Star.Y *= 2;
+
+			auto
+				New1 = Coord1 * c - Coord2 * s,
+				New2 = Coord1 * s + Coord2 * c;
+
+			if (IsY)
+				(&Coord1 == &Star.Y? New1 : New2) /= 2;
+
+			Coord1 = New1 + Base1;
+			Coord2 = New2 + Base2;
+
+		}
+
+		double factor() const
+		{
+			// https://www.google.com/search?q=1%2F(1%2B(x%2F(1000-x))^-e)
+			return 1 / (1 + std::pow(static_cast<double>(m_Step) / (Steps - m_Step), -std::exp(1)));
+		}
+
+		star m_Stars[StarsCount];
+
+		std::uniform_real_distribution<>
+			m_XDist{ 0, static_cast<double>(ScrX) },
+			m_YDist{ 0, static_cast<double>(ScrY) };
+
+		std::uniform_int_distribution<>
+			m_PercentageDist{ 0, 99 },
+			m_SteerAxisDist{ 0, static_cast<int>(steer_axis::count) - 1 },
+			m_SteerDirectionDist{ 0, static_cast<int>(steer_direction::count) - 1 },
+			m_ColorIndexDist{ 0, static_cast<int>(std::size(Colours) - 1) };
+
+		std::mt19937 m_Engine{ static_cast<unsigned>(clock()) }; // std::random_device doesn't work in w2k
+
+		double m_Speed{};
+		int m_Step{};
+
+		enum class steer_axis
+		{
+			X,
+			Y,
+			Z,
+
+			count
+		};
+
+		enum class steer_direction
+		{
+			none,
+			left,
+			right,
+
+			count
+		};
+
+		steer_axis m_SteerAxis{};
+		steer_direction m_SteerDirection{};
+		size_t m_SteerTime{};
+	};
 }
 
-int ScreenSaver()
+void ScreenSaver()
 {
-	if (Global->ScreenSaverActive)
-		return 1;
+	static bool ScreenSaverActive = false;
 
-	SCOPED_ACTION(ChangePriority)(THREAD_PRIORITY_IDLE);
+	if (ScreenSaverActive)
+		return;
 
-	for (const auto WaitTime = std::chrono::steady_clock::now(); std::chrono::steady_clock::now() - WaitTime < 500ms;)
+	ScreenSaverActive = true;
+	++Global->SuppressClock;
+
+	SCOPE_EXIT
 	{
-		INPUT_RECORD rec;
-		if (PeekInputRecord(&rec))
-			return 1;
+		--Global->SuppressClock;
+		ScreenSaverActive = false;
+	};
 
-		Sleep(100);
-	}
+	// The whole point of a screen saver is to be visible
+	if (console.IsViewportShifted())
+		console.ResetPosition();
 
-	Global->ScreenSaverActive = true;
+	SCOPED_ACTION(SaveScreen);
+
 	CONSOLE_CURSOR_INFO CursorInfo;
 	console.GetCursorInfo(CursorInfo);
+	SetCursorType(false, 10);
+
+	SCOPE_EXIT
 	{
-		SCOPED_ACTION(SaveScreen);
-		SetCursorType(false, 10);
+		SetCursorType(CursorInfo.bVisible != FALSE, CursorInfo.dwSize);
+	};
 
-		SetScreen(0, 0, ScrX, ScrY, L' ', colors::ConsoleColorToFarColor(F_LIGHTGRAY | B_BLACK));
+	starfield Starfield;
 
-		std::for_each(RANGE(Star, i)
-		{
-			i.Type=STAR_NONE;
-			i.Color=0;
-		});
-
-		int Step=0;
-
-		std::mt19937 mt(clock()); // std::random_device doesn't work in w2k
-		std::uniform_int_distribution<int>
-			XDist(100 * ScrX / 4, 100 * ScrX * 3 / 4),
-			YDist(100 * ScrY / 4, 100 * ScrY * 3 / 4),
-			TypeDist(0, 77),
-			ColorDist(0, 2);
-
-		INPUT_RECORD rec;
-		while (!PeekInputRecord(&rec))
-		{
-			Sleep(50);
-			ShowSaver(Step++, [&](star& i)
-			{
-				static const int Colors[] = { F_MAGENTA, F_RED, F_BLUE };
-
-				i.Type = TypeDist(mt) < 3? STAR_PLANET : STAR_NORMAL;
-				i.X = XDist(mt);
-				i.Y = YDist(mt);
-				i.Color = Colors[ColorDist(mt)];
-				i.Speed = i.Type == STAR_PLANET? 1 : 2;
-			});
-		}
+	INPUT_RECORD rec;
+	while (!PeekInputRecord(&rec))
+	{
+		Starfield.update();
+		os::chrono::sleep_for(25ms);
 	}
-	SetCursorType(CursorInfo.bVisible!=FALSE, CursorInfo.dwSize);
-	Global->ScreenSaverActive = false;
+
 	FlushInputBuffer();
-	Global->StartIdleTime = std::chrono::steady_clock::now();
-	return 1;
 }
-
-

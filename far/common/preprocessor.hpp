@@ -34,6 +34,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "compiler.hpp"
 
+//----------------------------------------------------------------------------
+
 #define EXPAND(x) x
 
 #define DETAIL_CONCATENATE_IMPL(s1, s2) s1 ## s2
@@ -94,37 +96,92 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define FOR_REVERSE_RANGE(Object, i) DETAIL_FOR_RANGE_IMPL(Object, i, DETAIL_STD_REVERSE_MUTATOR)
 #define FOR_CONST_REVERSE_RANGE(Object, i) DETAIL_FOR_RANGE_IMPL(Object, i, DETAIL_STD_CONST_REVERSE_MUTATOR)
 
-#define NONCOPYABLE(Type) \
-Type(const Type&) = delete; \
-Type& operator=(const Type&) = delete
 
 #define COPY_AND_MOVE(Type, ...) \
-Type& operator=(__VA_ARGS__ rhs) { return *this = Type(rhs); }
+	Type& operator=(__VA_ARGS__ rhs) { return *this = Type(rhs); }
+
+#define COPY_CONSTRUCTIBLE(Type) \
+	Type(const Type&) = default
+
+#define NOT_COPY_CONSTRUCTIBLE(Type) \
+	Type(const Type&) = delete
+
+#define COPY_ASSIGNABLE_DEFAULT(Type) \
+	Type& operator=(const Type&) = default
+
+#define COPY_ASSIGNABLE_SWAP(Type) \
+	COPY_AND_MOVE(Type, const Type&)
+
+#define NOT_COPY_ASSIGNABLE(Type) \
+	Type& operator=(const Type&) = delete
 
 #define COPYABLE(Type) \
-COPY_AND_MOVE(Type, const Type&) \
-Type(const Type&) = default
+	COPY_ASSIGNABLE_SWAP(Type) \
+	COPY_CONSTRUCTIBLE(Type) \
 
-#define NONMOVABLE(Type) \
-Type(Type&&) = delete; \
-Type& operator=(Type&&) = delete
+#define NONCOPYABLE(Type) \
+	NOT_COPY_CONSTRUCTIBLE(Type); \
+	NOT_COPY_ASSIGNABLE(Type)
+
+#define MOVE_CONSTRUCTIBLE(Type) \
+	Type(Type&&) = default
+
+#define NOT_MOVE_CONSTRUCTIBLE(Type) \
+	Type(Type&&) = delete
+
+#define MOVE_ASSIGNABLE(Type) \
+	Type& operator=(Type&&) = default
+
+#define NOT_MOVE_ASSIGNABLE(Type) \
+	Type& operator=(Type&&) = delete
 
 #define MOVABLE(Type) \
-Type(Type&&) = default; \
-Type& operator=(Type&&) = default
+	MOVE_CONSTRUCTIBLE(Type); \
+	MOVE_ASSIGNABLE(Type)
+
+#define NONMOVABLE(Type) \
+	NOT_MOVE_CONSTRUCTIBLE(Type); \
+	NOT_MOVE_ASSIGNABLE(Type)
+
 
 #define SCOPED_ACTION(RAII_type) \
 const RAII_type ANONYMOUS_VARIABLE(scoped_object_)
 
-#define STR(x) #x
-#define WSTR(x) L###x
-#define WSTRVIEW(x) L###x##sv
+#define DETAIL_CHAR_IMPL(x, ...) x##__VA_ARGS__
+#define CHAR_S(x) DETAIL_CHAR_IMPL(x, s)
+#define CHAR_SV(x) DETAIL_CHAR_IMPL(x, sv)
 
-#define DETAIL_WIDE_IMPL(x) L##x
+#define DETAIL_WIDE_IMPL(x, ...) L##x##__VA_ARGS__
 #define WIDE(x) DETAIL_WIDE_IMPL(x)
+#define WIDE_S(x) DETAIL_WIDE_IMPL(x, s)
+#define WIDE_SV(x) DETAIL_WIDE_IMPL(x, sv)
+
+#define STR(x) #x
+#define WSTR(x) WIDE(STR(x))
+#define WSTRVIEW(x) WIDE_SV(STR(x))
+
+#define CURRENT_FUNCTION_NAME std::string_view{ __func__, std::size(__func__) - 1 }
+#define CURRENT_FILE_NAME CHAR_SV(__FILE__)
 
 #define REQUIRES(...) std::enable_if_t<__VA_ARGS__>* = nullptr
 
-#define FWD(x) std::forward<decltype(x)>(x)
+#define FWD(...) std::forward<decltype(__VA_ARGS__)>(__VA_ARGS__)
+
+#if COMPILER(CL) && _MSC_FULL_VER < 192428316
+// See MSVC bug #540185
+#define NOEXCEPT_NOEXCEPT(...)
+#else
+#define NOEXCEPT_NOEXCEPT(...) noexcept(noexcept(__VA_ARGS__))
+#endif
+
+#define LIFT(...) [](auto&&... Args) NOEXCEPT_NOEXCEPT(__VA_ARGS__(FWD(Args)...)) -> decltype(auto) \
+{ \
+	return __VA_ARGS__(FWD(Args)...); \
+}
+
+#define LIFT_MF(...) [](auto&& Self, auto&&... Args) NOEXCEPT_NOEXCEPT(FWD(Self).__VA_ARGS__(FWD(Args)...)) -> decltype(auto) \
+{ \
+	return FWD(Self).__VA_ARGS__(FWD(Args)...); \
+}
 
 #endif // PREPROCESSOR_HPP_35FF3F1D_40F4_4741_9366_6A0723C14CBB

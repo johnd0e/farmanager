@@ -1,4 +1,4 @@
-// CPidl - class to store one or more LPITEMIDLIST
+﻿// CPidl - class to store one or more LPITEMIDLIST
 
 #ifndef _PIDL_H_
 #define _PIDL_H_
@@ -8,7 +8,7 @@
 class CPidl
 {
 public:
-  CPidl();
+  CPidl() = default;
   ~CPidl();
   operator LPITEMIDLIST();
   LPCITEMIDLIST* GetArray();
@@ -22,9 +22,9 @@ public:
 protected:
   CPidl(const CPidl&);
   CPidl& operator =(const CPidl&);
-  LPITEMIDLIST* m_ppidl;
-  unsigned m_nSize;
-  unsigned m_nCount;
+  LPITEMIDLIST* m_ppidl{};
+  unsigned m_nSize{};
+  unsigned m_nCount{};
 };
 
 #endif

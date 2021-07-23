@@ -30,21 +30,30 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "filesystemwatcher.hpp"
 
+// Internal:
 #include "flink.hpp"
 #include "elevation.hpp"
-#include "farexcpt.hpp"
+#include "exception_handler.hpp"
 #include "pathmix.hpp"
+#include "exception.hpp"
+#include "log.hpp"
+#include "notification.hpp"
 
+// Platform:
 #include "platform.fs.hpp"
 
-FileSystemWatcher::FileSystemWatcher():
-	m_WatchSubtree(false),
-	m_Cancelled(os::event::type::manual, os::event::state::nonsignaled)
-{
-}
+// Common:
+#include "common/string_utils.hpp"
 
+// External:
+
+//----------------------------------------------------------------------------
 
 FileSystemWatcher::~FileSystemWatcher()
 {
@@ -54,21 +63,22 @@ FileSystemWatcher::~FileSystemWatcher()
 	}
 	catch (...)
 	{
-		// TODO: log
+		LOGERROR(L"Unknown exception"sv);
 	}
 }
 
-void FileSystemWatcher::Set(const string& Directory, bool WatchSubtree)
+void FileSystemWatcher::Set(string_view const EventId, string_view const Directory, bool const WatchSubtree)
 {
 	Release();
 
+	m_EventId = EventId;
 	m_Directory = NTPath(Directory);
 	m_WatchSubtree = WatchSubtree;
 
 	if (os::fs::GetFileTimeSimple(Directory, nullptr, nullptr, &m_PreviousLastWriteTime, nullptr))
 		m_CurrentLastWriteTime = m_PreviousLastWriteTime;
 
-	m_IsFatFilesystem = {};
+	m_IsFatFilesystem.reset();
 }
 
 void FileSystemWatcher::Watch(bool got_focus, bool check_time)
@@ -78,24 +88,24 @@ void FileSystemWatcher::Watch(bool got_focus, bool check_time)
 	SCOPED_ACTION(elevation::suppress);
 
 	if(!m_RegistrationThread)
-		m_RegistrationThread = os::thread(&os::thread::join, &FileSystemWatcher::Register, this);
+		m_RegistrationThread = os::thread(os::thread::mode::join, &FileSystemWatcher::Register, this);
 
 	if (got_focus)
 	{
-		if (!m_IsFatFilesystem.second)
+		if (!m_IsFatFilesystem.has_value())
 		{
+			m_IsFatFilesystem = false;
+
 			const auto strRoot = GetPathRoot(m_Directory);
 			if (!strRoot.empty())
 			{
 				string strFileSystem;
 				if (os::fs::GetVolumeInformation(strRoot, nullptr, nullptr, nullptr, nullptr, &strFileSystem))
-					m_IsFatFilesystem.first = starts_with(strFileSystem, L"FAT"sv);
+					m_IsFatFilesystem = starts_with(strFileSystem, L"FAT"sv);
 			}
-
-			m_IsFatFilesystem.second = true;
 		}
 
-		if (m_IsFatFilesystem.first)
+		if (*m_IsFatFilesystem)
 		{
 			// emulate FAT folder time change
 			// otherwise changes missed (FAT folder time is NOT modified)
@@ -122,45 +132,106 @@ void FileSystemWatcher::Release()
 	if (m_RegistrationThread)
 	{
 		m_Cancelled.set();
-		m_RegistrationThread.reset();
+		m_RegistrationThread = {};
 	}
 
 	m_Cancelled.reset();
-	m_Notification.reset();
 	m_PreviousLastWriteTime = m_CurrentLastWriteTime;
 }
 
-bool FileSystemWatcher::Signaled() const
+bool FileSystemWatcher::TimeChanged() const
 {
 	PropagateException();
 
-	return m_Notification.is_signaled() || m_PreviousLastWriteTime != m_CurrentLastWriteTime;
+	return m_PreviousLastWriteTime != m_CurrentLastWriteTime;
 }
 
 void FileSystemWatcher::Register()
 {
-	seh_invoke_thread(m_ExceptionPtr, [this]
+	os::debug::set_thread_name(L"FS watcher");
+
+	seh_try_thread(m_ExceptionPtr, [this]
 	{
-		try
+		cpp_try(
+		[&]
 		{
-			m_Notification = os::fs::FindFirstChangeNotification(m_Directory, m_WatchSubtree,
-				FILE_NOTIFY_CHANGE_FILE_NAME |
-				FILE_NOTIFY_CHANGE_DIR_NAME |
-				FILE_NOTIFY_CHANGE_ATTRIBUTES |
-				FILE_NOTIFY_CHANGE_SIZE |
-				FILE_NOTIFY_CHANGE_LAST_WRITE);
+			LOGDEBUG(L"Start monitoring {}"sv, m_Directory);
+			const auto Notification = os::fs::find_first_change_notification(
+				m_Directory,
+				m_WatchSubtree,
+					FILE_NOTIFY_CHANGE_FILE_NAME |
+					FILE_NOTIFY_CHANGE_DIR_NAME |
+					FILE_NOTIFY_CHANGE_ATTRIBUTES |
+					FILE_NOTIFY_CHANGE_SIZE |
+					FILE_NOTIFY_CHANGE_LAST_WRITE
+			);
 
-			if (!m_Notification)
+			if (!Notification)
+			{
+				LOGWARNING(L"find_first_change_notification({}): {}"sv, m_Directory, last_error());
 				return;
+			}
 
-			os::multi_waiter waiter;
-			waiter.add(m_Notification.native_handle());
-			waiter.add(m_Cancelled);
-			waiter.wait(os::multi_waiter::mode::any);
-			return;
-		}
-		CATCH_AND_SAVE_EXCEPTION_TO(m_ExceptionPtr)
-		m_IsRegularException = true;
+			for (;;)
+			{
+				try
+				{
+					switch (os::handle::wait_any({ Notification.native_handle(), m_Cancelled.native_handle() }))
+					{
+					case 0:
+						LOGDEBUG(L"Change event in {}"sv, m_Directory);
+
+						message_manager::instance().notify(m_EventId);
+
+						// FS changes can occur at a high rate.
+						// We don't want to DoS ourselves here, so notifications are throttled down to one per second at most:
+						if (m_Cancelled.is_signaled(1s))
+						{
+							LOGDEBUG(L"Stop monitoring {}"sv, m_Directory);
+							return;
+						}
+
+						// https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-findnextchangenotification
+						// If a change occurs after a call to FindFirstChangeNotification
+						// but before a call to FindNextChangeNotification, the operating system records the change.
+						// When FindNextChangeNotification is executed, the recorded change
+						// immediately satisfies a wait for the change notification.
+
+						// In other words, even with throttled notifications we shouldn't miss anything.
+						if (!os::fs::find_next_change_notification(Notification))
+						{
+							LOGWARNING(L"find_next_change_notification({}): {}"sv, m_Directory, last_error());
+							return;
+						}
+						break;
+
+					case 1:
+						LOGDEBUG(L"Stop monitoring {}"sv, m_Directory);
+						return;
+					}
+				}
+				catch(far_fatal_exception const& e)
+				{
+					if (e.Win32Error == ERROR_INVALID_HANDLE)
+					{
+						// https://docs.microsoft.com/en-us/windows/win32/api/handleapi/nf-handleapi-closehandle
+						// Some functions use ERROR_INVALID_HANDLE to indicate that the object itself is no longer valid.
+						// For example, a function that attempts to use a handle to a file on a network might fail
+						// with ERROR_INVALID_HANDLE if the network connection is severed, because the file object
+						// is no longer available. In this case, the application should close the handle.
+						LOGWARNING(L"Wait for change in {} failed: {}"sv, m_Directory, e);
+						return;
+					}
+
+					throw;
+				}
+			}
+		},
+		[&]
+		{
+			SAVE_EXCEPTION_TO(m_ExceptionPtr);
+			m_IsRegularException = true;
+		});
 	});
 }
 
@@ -171,5 +242,5 @@ void FileSystemWatcher::PropagateException() const
 		// You're someone else's problem
 		m_RegistrationThread.detach();
 	}
-	RethrowIfNeeded(m_ExceptionPtr);
+	rethrow_if(m_ExceptionPtr);
 }

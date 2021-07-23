@@ -5,28 +5,35 @@ THIS_MAKE = $(TOP_MAKEFILE)
 
 EXEDIR = $(DIRNAME).$(DIRBIT).gcc/
 OBJDIR = $(EXEDIR)obj/
-BOOTSTRAPDIR = bootstrap/
+export BOOTSTRAPDIR=$(OBJDIR)include/bootstrap/
 EXENAME = Far.exe
 EXEFULLNAME = $(EXEDIR)$(EXENAME)
 DEPFILE = $(BOOTSTRAPDIR)far.gcc.dep
 STATICDEPFILE = static.dep
 
-DEFINES += -D FAR_ALPHA_VERSION
-
 ifdef DEBUG
-DEFINES += -D SYSLOG -D SYSLOG_FARSYSLOG
+ENABLE_TESTS = 1
+endif
+
+CFLAGS += \
+	-D FAR_ALPHA_VERSION \
+
+ifdef ENABLE_TESTS
+CFLAGS += \
+	-D ENABLE_TESTS \
+
 endif
 
 SRCS = \
 	sqlite.c \
-	sqlite_unicode.c \
 	cache.cpp \
 	cddrv.cpp \
-	chgprior.cpp \
+	char_width.cpp \
 	clipboard.cpp \
 	cmdline.cpp \
 	codepage_selection.cpp \
 	colormix.cpp \
+	common.tests.cpp \
 	components.cpp \
 	config.cpp \
 	configdb.cpp \
@@ -55,10 +62,13 @@ SRCS = \
 	encoding.cpp \
 	eol.cpp \
 	exception.cpp \
+	exception_handler.cpp \
+	exception_handler_test.cpp \
 	execute.cpp \
 	FarDlgBuilder.cpp \
-	farexcpt.cpp \
 	farversion.cpp \
+	fastfind.cpp \
+	file_io.cpp \
 	fileattr.cpp \
 	fileedit.cpp \
 	filefilter.cpp \
@@ -90,9 +100,9 @@ SRCS = \
 	keybar.cpp \
 	keyboard.cpp \
 	language.cpp \
-	lasterror.cpp \
 	locale.cpp \
 	lockscrn.cpp \
+	log.cpp \
 	macro.cpp \
 	main.cpp \
 	manager.cpp \
@@ -114,12 +124,15 @@ SRCS = \
 	pipe.cpp \
 	platform.cpp \
 	platform.chrono.cpp \
+	platform.com.cpp \
 	platform.concurrency.cpp \
 	platform.env.cpp \
 	platform.fs.cpp \
 	platform.memory.cpp \
+	platform.process.cpp \
 	platform.reg.cpp \
 	platform.security.cpp \
+	platform.version.cpp \
 	plist.cpp \
 	plclass.cpp \
 	plugapi.cpp \
@@ -147,9 +160,9 @@ SRCS = \
 	string_sort.cpp \
 	string_utils.cpp \
 	strmix.cpp \
-	syslog.cpp \
 	tinyxml.cpp \
 	taskbar.cpp \
+	testing.cpp \
 	tracer.cpp \
 	treelist.cpp \
 	tvar.cpp \
@@ -166,29 +179,32 @@ ifeq ($(DIRBIT),32)
 endif
 
 OBJS = $(patsubst %.c,$(OBJDIR)%.o,$(filter %.c,$(SRCS))) $(patsubst %.cpp,$(OBJDIR)%.o,$(filter %.cpp,$(SRCS)))
-OBJS += $(OBJDIR)initguid.o $(OBJDIR)far.rc.o
+OBJS += $(OBJDIR)far.rc.o
 
 MAP = $(patsubst %.exe,%.map,$(EXEFULLNAME))
 
 TESTOBJS = $(OBJDIR)api_test_c.testobj $(OBJDIR)api_test_c++.testobj
 
-CFLAGS += -fexceptions
+ADDINCLUDE=-I$(BOOTSTRAPDIR).. 
+FORCEINCLUDE=-include headers.hpp -include memcheck.hpp
+
+CPPFLAGS += $(ADDINCLUDE) $(FORCEINCLUDE)
 
 .PHONY: all
-all: dirs lng depfile include docs $(TESTOBJS)
+all:
+	$(MAKE) -f $(THIS_MAKE) $(MK_FLAGS) dirs
+	$(MAKE) -f $(THIS_MAKE) $(MK_FLAGS) lng depfile include docs $(TESTOBJS)
 	$(MAKE) -f $(THIS_MAKE) $(MK_FLAGS) build
 
 .PHONY: lng
 lng: $(BOOTSTRAPDIR)farlang.templ
 	@echo Generating language files
-	$(LGEN) -nc -i $(BOOTSTRAPDIR)lang.ini -ol "$(EXEDIR)" $(BOOTSTRAPDIR)farlang.templ
+	$(LGEN) -nc -i "$(BOOTSTRAPDIR)lang.ini" -oh "$(BOOTSTRAPDIR)" -ol "$(EXEDIR)" "$(BOOTSTRAPDIR)farlang.templ"
 
 .PHONY: depfile
 depfile:
 	@echo Rebuilding dependencies...
-	$(LS) *.cpp *.hpp *.c *.rc > bootstrap/mkdep.list
-	$(GAWK) -f scripts/mkdep.awk -v compiler=gcc bootstrap/mkdep.list > $(DEPFILE)
-	$(RM) bootstrap/mkdep.list
+	$(LS) *.cpp *.hpp *.c *.rc | $(GAWK) -f scripts/mkdep.awk -v compiler=gcc - > $(DEPFILE)
 
 .PHONY: dirs
 dirs:
@@ -200,7 +216,6 @@ include: \
 	$(FARINCLUDE)FarColorW.pas \
 	$(FARINCLUDE)farcolor.hpp \
 	$(FARINCLUDE)plugin.hpp \
-	$(FARINCLUDE)DlgBuilder.hpp \
 	$(FARINCLUDE)vc_crt_fix_impl.cpp \
 	$(FARINCLUDE)vc_crt_fix.asm \
 	$(FARINCLUDE)vc_crt_fix_ulink.cpp
@@ -210,6 +225,11 @@ docs: \
 	$(EXEDIR)FarEng.hlf \
 	$(EXEDIR)FarRus.hlf \
 	$(EXEDIR)FarHun.hlf \
+	$(EXEDIR)FarPol.hlf \
+	$(EXEDIR)FarGer.hlf \
+	$(EXEDIR)FarUkr.hlf \
+	$(EXEDIR)FarCze.hlf \
+	$(EXEDIR)FarSky.hlf \
 	$(EXEDIR)File_id.diz \
 	$(EXEDIR)Far.exe.example.ini
 
@@ -219,114 +239,81 @@ build: $(EXEFULLNAME)
 $(EXEFULLNAME): $(BOOTSTRAPDIR)copyright.inc $(BOOTSTRAPDIR)farversion.inc $(OBJS)
 	@echo Linking $@
 	$(CXX) -o $@ $(OBJS) $(LNKFLAGS)
+ifdef USE_OBJDUMP_MAPS
+	@echo Generating map file
+	objdump --syms --demangle $(EXEFULLNAME) > $(MAP)
+ifndef DEBUG
+	strip $(EXEFULLNAME)
+endif
+endif
+ifdef ENABLE_TESTS
+	@echo Running unit tests
+	$@ /service:test
+endif
 
 $(OBJDIR)%.o: %.c
 	@echo $<
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(OBJDIR)hook_wow64.o: hook_wow64.cpp
-	@echo $<
-	$(CXX) $(CCFLAGS) -fomit-frame-pointer -c -o $@ $<
-
-$(OBJDIR)initguid.o: initguid.cpp
-	@echo $<
-	$(CXX) $(CCFLAGS) -c -o $@ $<
+ifndef NO_PCH
+CPPFLAGS_PCH = -include $(OBJDIR)headers
+endif
 
 $(OBJDIR)%.o: %.cpp
 	@echo $<
-	$(CXX) $(CCFLAGS) -c -include $(OBJDIR)headers -include headers.hpp -include memcheck.hpp -o $@ $<
+	$(CXX) -c $(CPPFLAGS_PCH) $(CPPFLAGS) -o $@ $<
 
 $(OBJDIR)headers.gch: headers.cpp headers.hpp
 	@echo Making precompiled headers
-	$(CXX) -x c++-header -c $(CCFLAGS) -o $@ $<
+	$(CXX) -x c++-header -c $(CPPFLAGS) -o $@ $<
 
+ifndef NO_PCH
 $(OBJS): $(OBJDIR)headers.gch
+endif
 
-$(OBJDIR)far.rc.o: far.rc $(BOOTSTRAPDIR)far.rc.inc Far.ico FarA.ico bootstrap/Far.exe.manifest
-	@echo Compiling resource file
-	$(WINDRES) -i $< -o $@
+$(OBJDIR)far.rc.o: far.rc $(BOOTSTRAPDIR)far.rc.inc $(BOOTSTRAPDIR)Far.exe.manifest Far.ico Far.red.ico Far.black.ico Far.hack.ico Far.mono.ico Far.msg.ico
+	@echo $<
+	$(WINDRES) $(ADDINCLUDE) -i $< -o $@
 
 $(OBJDIR)api_test_c.testobj: $(FARINCLUDE)plugin.hpp $(FARINCLUDE)farcolor.hpp api_test.c
 	@echo Testing C plugin API
 	$(CC) $(CFLAGS) -c -x c -o $@ api_test.c
 
-$(OBJDIR)api_test_c++.testobj: $(FARINCLUDE)plugin.hpp $(FARINCLUDE)farcolor.hpp $(FARINCLUDE)DlgBuilder.hpp api_test.c
+$(OBJDIR)api_test_c++.testobj: $(FARINCLUDE)plugin.hpp $(FARINCLUDE)farcolor.hpp api_test.c
 	@echo Testing C++ plugin API
-	$(CXX) $(CCFLAGS) -c -x c++ -o $@ api_test.c
+	$(CXX) $(CPPFLAGS) -c -x c++ -o $@ api_test.c
 
 MSG=@echo Generating $@
 
-$(BOOTSTRAPDIR)Far.exe.manifest: Far.exe.manifest.m4 farversion.m4 tools.m4 vbuild.m4
-	$(MSG)
-	$(M4) Far.exe.manifest.m4 > $@
+VERSION_DEPS=farversion.m4 tools.m4 vbuild.m4
 
-$(BOOTSTRAPDIR)far.rc.inc: far.rc.inc.m4 farversion.m4 tools.m4 vbuild.m4
+$(BOOTSTRAPDIR)%: %.m4 $(VERSION_DEPS)
 	$(MSG)
-	$(M4) far.rc.inc.m4 > $@
+	$(M4) $< > $@
 
-$(BOOTSTRAPDIR)copyright.inc: copyright.inc.m4 farversion.m4 tools.m4 vbuild.m4
+$(EXEDIR)%.hlf: %.hlf.m4 $(VERSION_DEPS)
 	$(MSG)
-	$(M4) copyright.inc.m4 > $@
+	$(GAWK) -f scripts/mkhlf.awk $< | $(M4) > $@
 
-$(BOOTSTRAPDIR)farversion.inc: farversion.inc.m4 farversion.m4 tools.m4 vbuild.m4
+$(EXEDIR)File_id.diz: File_id.diz.m4 $(VERSION_DEPS)
 	$(MSG)
-	$(M4) farversion.inc.m4 > $@
-
-$(BOOTSTRAPDIR)farlang.templ: farlang.templ.m4 farversion.m4 tools.m4 vbuild.m4
-	$(MSG)
-	$(M4) farlang.templ.m4 > $@
-
-$(EXEDIR)FarEng.hlf: FarEng.hlf.m4 farversion.m4 tools.m4 vbuild.m4
-	$(MSG)
-	$(GAWK) -f scripts/mkhlf.awk FarEng.hlf.m4 | $(M4) > $@
-
-$(EXEDIR)FarRus.hlf: FarRus.hlf.m4 farversion.m4 tools.m4 vbuild.m4
-	$(MSG)
-	$(GAWK) -f scripts/mkhlf.awk FarRus.hlf.m4 | $(M4) > $@
-
-$(EXEDIR)FarHun.hlf: FarHun.hlf.m4 farversion.m4 tools.m4 vbuild.m4
-	$(MSG)
-	$(GAWK) -f scripts/mkhlf.awk FarHun.hlf.m4 | $(M4) > $@
-
-$(EXEDIR)File_id.diz: File_id.diz.m4 farversion.m4 tools.m4 vbuild.m4
-	$(MSG)
-	$(M4) File_id.diz.m4 > $@
+	$(M4) $< > $@
 
 $(EXEDIR)Far.exe.example.ini: Far.exe.example.ini
 	$(MSG)
-	$(CP) Far.exe.example.ini $@
+	$(CP) $< $@
 
-$(FARINCLUDE)farcolor.hpp: farcolor.hpp farversion.m4 tools.m4 vbuild.m4
+$(FARINCLUDE)%: % headers.m4 $(VERSION_DEPS)
 	$(MSG)
-	$(M4) -DINPUT=farcolor.hpp headers.m4 > $@
-
-$(FARINCLUDE)plugin.hpp: plugin.hpp farversion.m4 tools.m4 vbuild.m4
-	$(MSG)
-	$(M4) -DINPUT=plugin.hpp headers.m4 > $@
-
-$(FARINCLUDE)DlgBuilder.hpp: DlgBuilder.hpp farversion.m4 tools.m4 vbuild.m4
-	$(MSG)
-	$(M4) -DINPUT=DlgBuilder.hpp headers.m4 > $@
-
-$(FARINCLUDE)PluginW.pas: PluginW.pas farversion.m4 tools.m4 vbuild.m4
-	$(MSG)
-	$(M4) -DINPUT=PluginW.pas headers.m4 > $@
-
-$(FARINCLUDE)FarColorW.pas: FarColorW.pas farversion.m4 tools.m4 vbuild.m4
-	$(MSG)
-	$(M4) -DINPUT=FarColorW.pas headers.m4 > $@
+	$(M4) -DINPUT=$< headers.m4 > $@
 
 $(FARINCLUDE)vc_crt_fix.asm: vc_crt_fix.asm
 	$(MSG)
-	$(CP) vc_crt_fix.asm $@
-
-$(FARINCLUDE)vc_crt_fix_impl.cpp: vc_crt_fix_impl.cpp
-	$(MSG)
-	$(M4) -DINPUT=vc_crt_fix_impl.cpp headers.m4 > $@
+	$(CP) $< $@
 
 $(FARINCLUDE)vc_crt_fix_ulink.cpp: vc_crt_fix_ulink.cpp
 	$(MSG)
-	$(CP) vc_crt_fix_ulink.cpp $@
+	$(CP) $< $@
 
 ifeq ($(MAKECMDGOALS),build)
  include $(DEPFILE)
@@ -338,5 +325,5 @@ clean:
 	@echo Cleaning
 	$(RM) $(OBJS) $(TESTOBJS) $(OBJDIR)headers.gch
 	$(RM) $(EXEFULLNAME) $(MAP)
-	$(RM) $(BOOTSTRAPDIR)*.*  $(FARINCLUDE)*.*
+	$(RM) $(BOOTSTRAPDIR)*.* $(FARINCLUDE)*.*
 	$(RM) $(EXEDIR)*.lng $(EXEDIR)*.hlf $(EXEDIR)File_id.diz $(EXEDIR)Far.exe.example.ini

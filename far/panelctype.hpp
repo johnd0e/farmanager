@@ -34,58 +34,73 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 
-enum PANEL_COLUMN_TYPE
+// Platform:
+
+// Common:
+#include "common/utility.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
+
+enum class column_type
 {
-	NAME_COLUMN,
-	SIZE_COLUMN,
-	PACKED_COLUMN,
-	DATE_COLUMN,
-	TIME_COLUMN,
-	WDATE_COLUMN,
-	CDATE_COLUMN,
-	ADATE_COLUMN,
-	CHDATE_COLUMN,
-	ATTR_COLUMN,
-	DIZ_COLUMN,
-	OWNER_COLUMN,
-	NUMLINK_COLUMN,
-	NUMSTREAMS_COLUMN,
-	STREAMSSIZE_COLUMN,
-	EXTENSION_COLUMN,
-	CUSTOM_COLUMN0,
+	name,
+	size,
+	size_compressed,
+	date,
+	time,
+	date_write,
+	date_creation,
+	date_access,
+	date_change,
+	attributes,
+	description,
+	owner,
+	links_number,
+	streams_number,
+	streams_size,
+	extension,
+	custom_0,
 
-	COLUMN_TYPES_COUNT
+	count,
+	custom_max = custom_0 + 99
 };
 
-#define CUSTOM_COLUMN_MAX (CUSTOM_COLUMN0 + 99)
 
-enum FILEPANEL_COLUMN_MODES: unsigned long long
+enum FILEPANEL_COLUMN_FLAGS: unsigned long long
 {
-	COLUMN_MARK                   = 0x8000000000000000LL,
-	COLUMN_NAMEONLY               = 0x4000000000000000LL,
-	COLUMN_RIGHTALIGN             = 0x2000000000000000LL,
-	COLUMN_GROUPDIGITS            = 0x0800000000000000LL, // Вставлять разделитель между тысячами
-	COLUMN_THOUSAND               = 0x0400000000000000LL, // Вместо делителя 1024 использовать делитель 1000
-	COLUMN_BRIEF                  = 0x0200000000000000LL,
-	COLUMN_MONTH                  = 0x0100000000000000LL,
-	COLUMN_FLOATSIZE              = 0x0080000000000000LL, // Показывать размер в виде десятичной дроби, используя наиболее подходящую единицу измерения, например 0,97 К, 1,44 М, 53,2 Г.
+	COLFLAGS_NONE                   = 0,
+	// First 3 bits are for the multipliers below
+	COLFLAGS_RESERVED_BIT_0         = 0_bit,
+	COLFLAGS_RESERVED_BIT_1         = 1_bit,
+	COLFLAGS_RESERVED_BIT_2         = 2_bit,
+	COLFLAGS_USE_MULTIPLIER         = 3_bit,
+	COLFLAGS_MULTIPLIER_K           = COLFLAGS_USE_MULTIPLIER + 0,
+	COLFLAGS_MULTIPLIER_M           = COLFLAGS_USE_MULTIPLIER + 1,
+	COLFLAGS_MULTIPLIER_G           = COLFLAGS_USE_MULTIPLIER + 2,
+	COLFLAGS_MULTIPLIER_T           = COLFLAGS_USE_MULTIPLIER + 3,
+	COLFLAGS_MULTIPLIER_P           = COLFLAGS_USE_MULTIPLIER + 4,
+	COLFLAGS_MULTIPLIER_E           = COLFLAGS_USE_MULTIPLIER + 5,
+	COLFLAGS_MULTIPLIER_Z           = COLFLAGS_USE_MULTIPLIER + 6,
+	COLFLAGS_MULTIPLIER_MASK        = 4_bit - 1,
+	COLFLAGS_SHOW_MULTIPLIER        = 4_bit, // Показывать суффиксы B,K,M,G,T,P,E
 
-	COLUMN_ECONOMIC               = 0x0040000000000000LL, // Экономичный режим, не показывать пробел перед суффиксом размера файла (т.е. 0.97K)
-	COLUMN_SHOWUNIT               = 0x0010000000000000LL, // Показывать суффиксы B,K,M,G,T,P,E
-	COLUMN_FULLOWNER              = 0x0008000000000000LL,
-	COLUMN_NOEXTENSION            = 0x0004000000000000LL,
-	COLUMN_RIGHTALIGNFORCE        = 0x0001000000000000LL,
-	COLUMN_MARK_DYNAMIC           = 0x0000800000000000LL,
-
-	COLUMN_USE_UNIT               = 0x0020000000000000LL, // Минимально допустимыая единица измерения при форматировании например, 1 - "размер как минимум в мегабайтах"
-	COLUMN_UNIT_K                 = COLUMN_USE_UNIT | 0,
-	COLUMN_UNIT_M                 = COLUMN_USE_UNIT | 1,
-	COLUMN_UNIT_G                 = COLUMN_USE_UNIT | 2,
-	COLUMN_UNIT_T                 = COLUMN_USE_UNIT | 3,
-	COLUMN_UNIT_P                 = COLUMN_USE_UNIT | 4,
-	COLUMN_UNIT_E                 = COLUMN_USE_UNIT | 5,
-	COLUMN_UNIT_MASK              = 0x000000000000000FLL
+	COLFLAGS_MARK                   = 5_bit,
+	COLFLAGS_NAMEONLY               = 6_bit,
+	COLFLAGS_RIGHTALIGN             = 7_bit,
+	COLFLAGS_GROUPDIGITS            = 8_bit, // Вставлять разделитель между тысячами
+	COLFLAGS_THOUSAND               = 9_bit, // Вместо делителя 1024 использовать делитель 1000
+	COLFLAGS_BRIEF                  = 10_bit,
+	COLFLAGS_MONTH                  = 11_bit,
+	COLFLAGS_FLOATSIZE              = 12_bit, // Показывать размер в виде десятичной дроби, используя наиболее подходящую единицу измерения, например 0,97 К, 1,44 М, 53,2 Г.
+	COLFLAGS_ECONOMIC               = 13_bit, // Экономичный режим, не показывать пробел перед суффиксом размера файла (т.е. 0.97K)
+	COLFLAGS_FULLOWNER              = 14_bit,
+	COLFLAGS_NOEXTENSION            = 15_bit,
+	COLFLAGS_RIGHTALIGNFORCE        = 16_bit,
+	COLFLAGS_MARK_DYNAMIC           = 17_bit,
 };
 
 enum col_width

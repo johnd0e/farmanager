@@ -35,24 +35,38 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "bitflags.hpp"
 #include "manager.hpp" //Manager::Key
+
+// Platform:
+
+// Common:
+#include "common/2d/rectangle.hpp"
+#include "common/utility.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 class SaveScreen;
 
 // можно использовать только младший байт (т.е. маска 0x000000FF), остальное отдается порожденным классам
 enum
 {
-	FSCROBJ_VISIBLE              = 0x00000001,
-	FSCROBJ_ENABLERESTORESCREEN  = 0x00000002,
-	FSCROBJ_SETPOSITIONDONE      = 0x00000004,
-	FSCROBJ_ISREDRAWING          = 0x00000008,   // идет процесс Show?
+	FSCROBJ_VISIBLE              = 0_bit,
+	FSCROBJ_ENABLERESTORESCREEN  = 1_bit,
+	FSCROBJ_SETPOSITIONDONE      = 2_bit,
+	FSCROBJ_ISREDRAWING          = 3_bit,   // идет процесс Show?
+	FSCROBJ_SPECIAL              = 4_bit,
 };
 
 class SimpleScreenObject
 {
 public:
 	NONCOPYABLE(SimpleScreenObject);
+	MOVE_CONSTRUCTIBLE(SimpleScreenObject);
+
 	virtual ~SimpleScreenObject() = default;
 
 	virtual bool ProcessKey(const Manager::Key& Key) { return false; }
@@ -61,19 +75,20 @@ public:
 	virtual void Hide();
 	virtual void Show();
 	virtual void ShowConsoleTitle() {}
-	virtual void SetPosition(int X1,int Y1,int X2,int Y2);
-	virtual void GetPosition(int& X1,int& Y1,int& X2,int& Y2) const;
+	virtual void SetPosition(rectangle Where);
+	virtual rectangle GetPosition() const;
 	virtual void SetScreenPosition();
 	virtual void ResizeConsole() {}
 	virtual long long VMProcess(int OpCode, void* vParam = nullptr, long long iParam=0) {return 0;}
 	virtual void Refresh();
 
-	int ObjWidth() const {return m_X2 - m_X1 + 1;}
-	int ObjHeight() const {return m_Y2 - m_Y1 + 1;}
+	int ObjWidth() const { return m_Where.width(); }
+	int ObjHeight() const { return m_Where.height(); }
 	void Redraw();
 	bool IsVisible() const {return m_Flags.Check(FSCROBJ_VISIBLE);}
 	void SetVisible(bool Visible) {m_Flags.Change(FSCROBJ_VISIBLE,Visible);}
 	void SetRestoreScreenMode(bool Mode) {m_Flags.Change(FSCROBJ_ENABLERESTORESCREEN,Mode);}
+	bool IsSpecial() const {return m_Flags.Check(FSCROBJ_SPECIAL);}
 	window_ptr GetOwner() const {return m_Owner.lock();}
 
 protected:
@@ -86,7 +101,7 @@ protected:
 	// KEEP ALIGNED!
 	std::weak_ptr<window> m_Owner;
 	BitFlags m_Flags;
-	SHORT m_X1, m_Y1, m_X2, m_Y2;
+	small_rectangle m_Where{};
 };
 
 class ScreenObject:public SimpleScreenObject
@@ -94,7 +109,7 @@ class ScreenObject:public SimpleScreenObject
 public:
 	NONCOPYABLE(ScreenObject);
 
-	void SetPosition(int X1, int Y1, int X2, int Y2) override;
+	void SetPosition(rectangle Where) override;
 	void Show() override;
 	void Hide() override;
 

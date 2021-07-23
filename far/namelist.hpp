@@ -35,6 +35,17 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
+
+// Platform:
+
+// Common:
+#include "common/preprocessor.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
+
 class NamesList
 {
 public:
@@ -43,12 +54,13 @@ public:
 
 	NamesList(): CurPos(Names.end()) {}
 
-	void AddName(const string& Name);
-	bool GetNextName(string& strName);
-	bool GetPrevName(string& strName);
-	bool SetCurName(const string& Name);
+	void AddName(string_view Name);
+	std::optional<string_view> GetNextName();
+	std::optional<string_view> GetPrevName();
+	bool SetCurName(string_view Name);
 
 	bool empty() const { return Names.empty(); }
+	auto size() const { return Names.size(); }
 
 private:
 	using names_list = std::vector<string>;

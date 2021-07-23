@@ -31,23 +31,43 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "nsUniversalDetectorEx.hpp"
 
+// Internal:
 #include "components.hpp"
+#include "encoding.hpp"
 #include "plugin.hpp"
+#include "locale.hpp"
+#include "log.hpp"
+
+// Platform:
+
+// Common:
+#include "common/preprocessor.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 namespace ucd
 {
 WARNING_PUSH(2)
 
+WARNING_DISABLE_MSC(5219) // implicit conversion from 'type1' to 'type2', possible loss of data
+
 WARNING_DISABLE_GCC("-Wcast-qual")
-WARNING_DISABLE_GCC("-Wzero-as-null-pointer-constant")
-WARNING_DISABLE_GCC("-Wnon-virtual-dtor")
-WARNING_DISABLE_GCC("-Wsuggest-override")
 WARNING_DISABLE_GCC("-Wdouble-promotion")
-WARNING_DISABLE_GCC("-Wuseless-cast")
+WARNING_DISABLE_GCC("-Wnon-virtual-dtor")
+WARNING_DISABLE_GCC("-Wold-style-cast")
+WARNING_DISABLE_GCC("-Wsuggest-override")
+WARNING_DISABLE_GCC("-Wzero-as-null-pointer-constant")
 
 WARNING_DISABLE_CLANG("-Weverything")
+WARNING_DISABLE_CLANG("-Wold-style-cast")
 
 #include "thirdparty/ucd/nscore.h"
 #include "thirdparty/ucd/nsError.h"
@@ -79,65 +99,68 @@ WARNING_DISABLE_CLANG("-Weverything")
 #include "thirdparty/ucd/nsUTF8Prober.cpp"
 
 WARNING_POP()
-};
+}
 
 namespace
 {
 	SCOPED_ACTION(components::component)([]
 	{
-		return components::component::info{ L"Mozilla Universal Charset Detector"s, {} }; // BUGBUG, version unknown
+		return components::info{ L"Mozilla Universal Charset Detector"sv, {} }; // BUGBUG, version unknown
 	});
 }
 
 static const auto& CpMap()
 {
-	static const std::unordered_map<std::string, uintptr_t> sCpMap =
+	static const std::unordered_map<std::string_view, uintptr_t> Map
 	{
-		{ "UTF16-LE", CP_UNICODE },
-		{ "UTF16-BE", CP_REVERSEBOM },
-		//{ "UTF-8", CP_UTF8 }, // unreliable
-		{ "windows-1250", 1250 },
-		{ "windows-1251", 1251 },
-		{ "windows-1252", 1252 },
-		{ "windows-1253", 1253 },
-		{ "windows-1255", 1255 },
-		{ "IBM855", 855 },
-		{ "IBM866", 866 },
-		{ "KOI8-R", 20866 },
-		{ "x-mac-hebrew", 10005 },
-		{ "x-mac-cyrillic", /*10007*/ 1251 }, //Оно слишком похоже на 1251 и детектор, бывает, путает
-		{ "ISO-8859-2", 28592 },
-		{ "ISO-8859-5", 28595 },
-		{ "ISO-8859-7", 28597 },
-		{ "ISO-8859-8", 28598 },
-		{ "ISO-8859-8-I", 38598 },
-
-		/*
-		and the rest:
-
-		"Shift_JIS"
-		"gb18030"
-		"x-euc-tw"
-		"EUC-KR"
-		"EUC-JP"
-		"Big5"
-		"X-ISO-10646-UCS-4-3412" - UCS-4, unusual octet order BOM (3412)
-		"X-ISO-10646-UCS-4-2143" - UCS-4, unusual octet order BOM (2143)
-		"UTF-32BE"
-		"UTF-32LE"
-		"ISO-2022-CN"
-		"ISO-2022-JP"
-		"ISO-2022-KR"
-		"TIS-620"
-		*/
+		{ "UTF-8"sv,          CP_UTF8 },
+		{ "UTF-16LE"sv,       CP_UNICODE },
+		{ "UTF-16BE"sv,       CP_REVERSEBOM },
+		{ "IBM855"sv,         855 },
+		{ "IBM866"sv,         866 },
+		{ "windows-874"sv,    874 },
+		{ "windows-1250"sv,   1250 },
+		{ "windows-1251"sv,   1251 },
+		{ "x-mac-cyrillic"sv, /*10007*/ 1251 }, //Оно слишком похоже на 1251 и детектор, бывает, путает
+		{ "windows-1252"sv,   1252 },
+		{ "windows-1253"sv,   1253 },
+		{ "windows-1255"sv,   1255 },
+		{ "KOI8-R"sv,         20866 },
+		{ "ISO-8859-2"sv,     28592 },
+		{ "ISO-8859-5"sv,     28595 },
+		{ "ISO-8859-7"sv,     28597 },
+		{ "ISO-8859-8"sv,     28598 },
 	};
-	return sCpMap;
+
+	return Map;
 }
 
-class nsUniversalDetectorEx : public ucd::nsUniversalDetector
+static const auto& CJKCpMap()
+{
+	static const std::unordered_map<std::string_view, uintptr_t> Map
+	{
+		{ "Shift_JIS"sv,      932 },
+		{ "Big5"sv,           950 },
+		{ "x-euc-tw"sv,       20000 },
+		{ "EUC-JP"sv,         20932 },
+		{ "ISO-2022-CN"sv,    50227 }, // or 50229?
+		{ "ISO-2022-KR"sv,    50225 },
+		{ "ISO-2022-JP"sv,    50220 }, // or 50221 / 50222?
+		{ "EUC-KR"sv,         51949 },
+		{ "gb18030"sv,        54936 },
+	};
+
+	return Map;
+}
+
+class nsUniversalDetectorEx: public ucd::nsUniversalDetector
 {
 public:
-	nsUniversalDetectorEx(): nsUniversalDetector(NS_FILTER_NON_CJK), m_codepage(-1) {}
+	nsUniversalDetectorEx():
+		nsUniversalDetector(locale.is_cjk()? NS_FILTER_ALL : NS_FILTER_NON_CJK)
+	{
+	}
+
 	bool GetCodePage(uintptr_t& Codepage) const
 	{
 		if (m_codepage == -1)
@@ -150,17 +173,33 @@ public:
 private:
 	void Report(const char* aCharset) override
 	{
-		const auto i = CpMap().find(aCharset);
-		m_codepage = i != CpMap().end()? i->second : -1;
+		if (const auto i = CpMap().find(aCharset); i != CpMap().end())
+		{
+			m_codepage = i->second;
+			return;
+		}
+
+		if (mLanguageFilter & NS_FILTER_CJK)
+		{
+			if (const auto i = CJKCpMap().find(aCharset); i != CJKCpMap().end())
+			{
+				m_codepage = i->second;
+				return;
+			}
+		}
+
+		LOGWARNING(L"UCD: unexpected charset {}"sv, encoding::utf8::get_chars(aCharset));
+
+		m_codepage = -1;
 	}
 
-	int m_codepage;
+	int m_codepage{-1};
 };
 
-bool GetCpUsingUniversalDetector(const void* data, size_t size, uintptr_t& Codepage)
+bool GetCpUsingUniversalDetector(std::string_view const Str, uintptr_t& Codepage)
 {
 	nsUniversalDetectorEx ns;
-	ns.HandleData(static_cast<const char*>(data), static_cast<uint32_t>(size));
+	ns.HandleData(Str.data(), static_cast<uint32_t>(Str.size()));
 	ns.DataEnd();
 	return ns.GetCodePage(Codepage);
 }

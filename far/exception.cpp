@@ -28,111 +28,125 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "exception.hpp"
 
+// Internal:
 #include "imports.hpp"
 #include "encoding.hpp"
-#include "tracer.hpp"
+#include "log.hpp"
 
+// Platform:
+
+// Common:
+#include "common/string_utils.hpp"
+
+// External:
 #include "format.hpp"
 
-error_state error_state::fetch()
-{
-	error_state State;
-	State.Win32Error = GetLastError();
-	State.NtError = imports.RtlGetLastNtStatus();
-	State.m_Engaged = true;
-	return State;
-}
+//----------------------------------------------------------------------------
 
-bool error_state::engaged() const
+error_state last_error()
 {
-	return m_Engaged;
-}
-
-detail::exception_impl::exception_impl(string_view const Message, const char* const Function, const char* const File, int const Line):
-	m_FullMessage(
-		format(
-			L"{0} (at {1}, {2}:{3})",
-			Message,
-			encoding::ansi::get_chars(Function),
-			encoding::ansi::get_chars(File),
-			Line)),
-	m_ErrorState(error_state::fetch(), Message)
-{
-}
-
-far_exception::far_exception(string_view const Message, const char* const Function, const char* const File, int const Line):
-	exception_impl(Message, Function, File, Line),
-	std::runtime_error(encoding::utf8::get_bytes(get_full_message()))
-{
-}
-
-far_exception::far_exception(string_view const Message, std::vector<string>&& Stack, const char* const Function, const char* const File, int const Line):
-	exception_impl(Message, Function, File, Line),
-	std::runtime_error(encoding::utf8::get_bytes(get_full_message())),
-	m_Stack(std::move(Stack))
-{
-}
-
-const std::vector<string>& far_exception::get_stack() const
-{
-	return m_Stack;
-}
-
-
-exception_context::exception_context(DWORD Code, const EXCEPTION_POINTERS* Pointers, bool ResumeThread):
-	m_Code(Code),
-	m_ExceptionRecord(),
-	m_ContextRecord(),
-	m_Pointers{ &m_ExceptionRecord, &m_ContextRecord },
-	m_ThreadHandle(os::OpenCurrentThread()),
-	m_ThreadId(GetCurrentThreadId()),
-	m_ResumeThread(ResumeThread)
-{
-	if (Pointers)
+	return
 	{
-		m_ExceptionRecord = *Pointers->ExceptionRecord;
-		m_ContextRecord = *Pointers->ContextRecord;
+		errno,
+		GetLastError(),
+		os::get_last_nt_status(),
+	};
+}
+
+string error_state::ErrnoStr() const
+{
+	return os::format_errno(Errno);
+}
+
+string error_state::Win32ErrorStr() const
+{
+	return os::format_error(Win32Error);
+}
+
+string error_state::NtErrorStr() const
+{
+	return os::format_ntstatus(NtError);
+}
+
+std::array<string, 3> error_state::format_errors() const
+{
+	return
+	{
+		ErrnoStr(),
+		Win32ErrorStr(),
+		NtErrorStr()
+	};
+}
+
+string error_state::to_string() const
+{
+	const auto Errors = format_errors();
+	return format(FSTR(L"Errno: {}, Win32 error: {}, NT error: {}"sv), Errors[0], Errors[1], Errors[2]);
+}
+
+namespace detail
+{
+	far_base_exception::far_base_exception(bool const CaptureErrors, string_view const Message, std::string_view const Function, std::string_view const File, int const Line):
+		error_state_ex(CaptureErrors? last_error(): error_state{}, Message),
+		m_Function(Function),
+		m_Location(format(FSTR(L"{}({})"sv), encoding::utf8::get_chars(File), Line)),
+		m_FullMessage(format(FSTR(L"{} ({}, {})"sv), Message, encoding::utf8::get_chars(m_Function), m_Location))
+	{
+		LOGTRACE(L"far_base_exception: {}"sv, *this);
 	}
 
-	auto Previous = &m_ExceptionRecord;
-	for (auto Iterator = m_ExceptionRecord.ExceptionRecord; Iterator; Iterator = Iterator->ExceptionRecord)
+	std::string far_std_exception::convert_message() const
 	{
-		m_ExceptionRecords.emplace_back(*Iterator);
-		Previous->ExceptionRecord = &m_ExceptionRecords.back();
-		Previous = Iterator;
+		return encoding::utf8::get_bytes(full_message());
+	}
+
+	break_into_debugger::break_into_debugger()
+	{
+		os::debug::breakpoint(false);
 	}
 }
 
-exception_context::~exception_context()
+string error_state_ex::format_error() const
 {
-	if (m_ResumeThread)
-		ResumeThread(m_ThreadHandle.native_handle());
+	if (!any())
+		return What;
+
+	auto Str = What;
+
+	if (!Str.empty())
+		append(Str, L": "sv);
+
+	constexpr auto UseNtMessages = false;
+
+	return Str + (UseNtMessages? NtErrorStr() : Win32ErrorStr());
 }
 
-
-std::exception_ptr CurrentException()
+std::wostream& operator<<(std::wostream& Stream, error_state const& e)
 {
-	return std::current_exception();
+	Stream << e.to_string();
+	return Stream;
 }
 
-std::exception_ptr CurrentException(const std::exception& e)
+std::wostream& operator<<(std::wostream& Stream, error_state_ex const& e)
 {
-	try
-	{
-		std::throw_with_nested(MAKE_FAR_EXCEPTION(L"->"sv, tracer::get(&e)));
-	}
-	catch (...)
-	{
-		return CurrentException();
-	}
+	Stream << format(FSTR(L"Message: {}, {}"sv), e.What, e.to_string());
+	return Stream;
 }
 
-void RethrowIfNeeded(std::exception_ptr& Ptr)
+std::wostream& operator<<(std::wostream& Stream, detail::far_base_exception const& e)
 {
-	if (Ptr)
-	{
-		std::rethrow_exception(std::exchange(Ptr, {}));
-	}
+	Stream << format(FSTR(L"far_base_exception: {}"sv), e.full_message());
+	return Stream;
+}
+
+std::wostream& operator<<(std::wostream& Stream, far_exception const& e)
+{
+	Stream << format(FSTR(L"far_exception: {}"sv), e.full_message());
+	return Stream;
 }

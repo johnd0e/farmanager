@@ -36,10 +36,18 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "common/compiler.hpp"
-#include "common/preprocessor.hpp"
 
-#if COMPILER == C_GCC
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
+
+#if COMPILER(GCC)
 // These inline implementations in gcc/cwchar are wrong and non-compilable if _CONST_RETURN is defined.
 namespace std
 {
@@ -77,91 +85,90 @@ using std::wmemchr;
 
 #endif
 
-#if VS_OLDER_THAN(1910)
+#if COMPILER(GCC) && !defined(_GLIBCXX_HAS_GTHREADS)
+namespace std::this_thread
+{
+	inline void yield() noexcept
+	{
+		Sleep(0);
+	}
+}
+#endif
+
+
+#ifndef __cpp_lib_erase_if
 namespace std
 {
 	namespace detail
 	{
-		template <class F, class Tuple, size_t... I>
-		constexpr decltype(auto) apply_impl(F&& f, Tuple&& t, std::index_sequence<I...>)
+		template<typename container, typename predicate>
+		void associative_erase_if(container& Container, const predicate& Predicate)
 		{
-			return std::invoke(FWD(f), std::get<I>(FWD(t))...);
+			for (auto i = Container.begin(), End = Container.end(); i != End; )
+			{
+				if (Predicate(*i))
+				{
+					i = Container.erase(i);
+				}
+				else
+				{
+					++i;
+				}
+			}
 		}
 	}
 
-	template <class F, class Tuple>
-	constexpr decltype(auto) apply(F&& f, Tuple&& t)
-	{
-		return detail::apply_impl(FWD(f), FWD(t), std::make_index_sequence<std::tuple_size_v<std::decay_t<Tuple>>>{});
-	}
+	template <typename predicate, typename... traits>
+	void erase_if(std::set<traits...>& Container, predicate Predicate) { detail::associative_erase_if(Container, Predicate); }
+
+	template <typename predicate, typename... traits>
+	void erase_if(std::multiset<traits...>& Container, predicate Predicate) { detail::associative_erase_if(Container, Predicate); }
+
+	template <typename predicate, typename... traits>
+	void erase_if(std::map<traits...>& Container, predicate Predicate) { detail::associative_erase_if(Container, Predicate); }
+
+	template <typename predicate, typename... traits>
+	void erase_if(std::multimap<traits...>& Container, predicate Predicate) { detail::associative_erase_if(Container, Predicate); }
+
+	template <typename predicate, typename... traits>
+	void erase_if(std::unordered_set<traits...>& Container, predicate Predicate) { detail::associative_erase_if(Container, Predicate); }
+
+	template <typename predicate, typename... traits>
+	void erase_if(std::unordered_multiset<traits...>& Container, predicate Predicate) { detail::associative_erase_if(Container, Predicate); }
+
+	template <typename predicate, typename... traits>
+	void erase_if(std::unordered_map<traits...>& Container, predicate Predicate) { detail::associative_erase_if(Container, Predicate); }
+
+	template <typename predicate, typename... traits>
+	void erase_if(std::unordered_multimap<traits...>& Container, predicate Predicate) { detail::associative_erase_if(Container, Predicate); }
 }
 #endif
 
-
-#if COMPILER == C_CL && _MSC_VER < 1910
-#define DETAIL_STATIC_ASSERT_2(expression, message) static_assert(expression, message)
-#define DETAIL_STATIC_ASSERT_1(expression) DETAIL_STATIC_ASSERT_2(expression, #expression)
-#define DETAIL_STATIC_ASSERT_GET_MACRO(_1, _2, NAME, ...) NAME
-#define static_assert(...) EXPAND(DETAIL_STATIC_ASSERT_GET_MACRO(__VA_ARGS__, DETAIL_STATIC_ASSERT_2, DETAIL_STATIC_ASSERT_1)(__VA_ARGS__))
-#endif
-
-
-#if VS_OLDER_THAN(1911)
+#if COMPILER(CLANG) && IS_MICROSOFT_SDK() && defined __cpp_char8_t && !defined __cpp_lib_char8_t
 namespace std
 {
-	namespace detail
-	{
-		template <typename void_type, typename, typename...>
-		struct invoke_result {};
-
-		template <typename callable, typename... args>
-		struct invoke_result<decltype(void(std::invoke(std::declval<callable>(), std::declval<args>()...))), callable, args...>
-		{
-			using type = decltype(std::invoke(std::declval<callable>(), std::declval<args>()...));
-		};
-	}
-
-	template <typename callable, typename... args>
-	struct invoke_result: detail::invoke_result<void, callable, args...> {};
-
-	template <typename callable, typename... args>
-	using invoke_result_t = typename invoke_result<callable, args...>::type;
-}
-#endif
-
-
-#if VS_OLDER_THAN(1910)
-#include "common/any.hpp"
-
-namespace std
-{
-	using ::any_impl::any;
-	using ::any_impl::any_cast;
-	using ::any_impl::bad_any_cast;
-}
-#else
-#include <any>
-#endif
-
-#if VS_OLDER_THAN(1910)
-#include "common/string_view.hpp"
-
-namespace std
-{
-	using ::string_view_impl::basic_string_view;
-	using ::string_view_impl::string_view;
-	using ::string_view_impl::wstring_view;
-
 	inline namespace literals
 	{
 		inline namespace string_view_literals
 		{
-			using namespace ::string_view_impl::string_view_literals;
+WARNING_PUSH()
+WARNING_DISABLE_CLANG("-Wuser-defined-literals")
+			[[nodiscard]]
+			constexpr basic_string_view<char8_t> operator"" sv(const char8_t* const Str, size_t const Size) noexcept
+			{
+				return { Str, Size };
+			}
+WARNING_POP()
 		}
 	}
 }
-#else
-#include <string_view>
+#endif
+
+#if (IS_MICROSOFT_SDK() && __cplusplus < 202004) || !defined __cpp_lib_bitops // Not related, just no better way to check
+namespace std::chrono
+{
+	using days = duration<int, ratio_multiply<ratio<24>, hours::period>>;
+}
 #endif
 
 #endif // CPP_HPP_95E41B70_5DB2_4E5B_A468_95343C6438AD

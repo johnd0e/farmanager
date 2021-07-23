@@ -1,4 +1,4 @@
-<header>
+﻿<header>
 tag=SMZ1
 ver=2.7
 </header>
@@ -92,7 +92,7 @@ lv=1
 dt=Text
 nm=Unicode support
 ctime=3480525243
-mtime=3631634304
+mtime=3776336770
 <article>
 #_<markdown>
 #_
@@ -106,9 +106,9 @@ mtime=3631634304
 #_### Calling functions on strings with colon syntax
 #_
 #_LuaFAR modifies the `__index` field of the strings metatable
-#_to point to `unicode.utf8` table of [Selene Unicode](250.html)
+#_to point to `utf8` table of [utf8](537.html)
 #_library, rather than to `string` table.<br>
-#_That means `("abc"):match("b")` is equivalent to `unicode.utf8.match("abc", "b")`
+#_That means `("abc"):match("b")` is equivalent to `utf8.match("abc", "b")`
 #_rather than to `string.match("abc", "b")`.<br>
 #_Operator # is not affected by this change.
 #_
@@ -140,6 +140,7 @@ mtime=3631634304
 #_* [`win.ShellExecute`](428.html)
 #_* [`win.SHGetFolderPath`](440.html)
 #_* [`win.system`](508.html)
+#_* [`win.WriteConsole`](534.html)
 #_
 </article>
 </node>
@@ -1885,7 +1886,7 @@ id=104
 lv=2
 dt=Text
 nm=export.GetOpenPanelInfo
-mtime=3730308165
+mtime=3754053574
 <article>
 #_OPInfo = export.GetOpenPanelInfo (object, handle)
 #_
@@ -1907,7 +1908,7 @@ mtime=3730308165
 #_      PanelModesArray:  table (array of `tPanelMode` tables)
 #_      PanelModesNumber: integer
 #_      StartPanelMode:   integer
-#_      StartSortMode:    integer
+#_      StartSortMode:    flag
 #_      StartSortOrder:   integer
 #_      KeyBar:           table (array of `tKeyBarLabel` tables)
 #_      ShortcutData:     string
@@ -1931,7 +1932,7 @@ id=107
 lv=2
 dt=Text
 nm=export.MakeDirectory
-mtime=3602340977
+mtime=3786803761
 <article>
 #_Status [, NewName] = export.MakeDirectory (object, handle, Name, OpMode)
 #_
@@ -1944,6 +1945,10 @@ mtime=3602340977
 #_**Returns:**
 #_  Status:  integer (in accordance with FAR API)
 #_  NewName: string
+#_
+#_**Note:**
+#_  The 3-rd parameter (*"Name"*) should be ignored.
+#_  It is not removed in order to preserve backward compatibility.
 #_
 #_**Far API used:**
 #_  MakeDirectoryW, MakeDirectoryInfo
@@ -2352,7 +2357,7 @@ mtime=3666088780
 id=151
 lv=1
 dt=Text
-nm=Other functions
+nm=Other export functions
 <article>
 </article>
 </node>
@@ -2525,6 +2530,30 @@ mtime=3618304216
 </article>
 </node>
 <node>
+id=546
+lv=2
+dt=Text
+nm=far.FreeScreen
+ctime=3790273990
+mtime=3790274065
+<article>
+#_far.FreeScreen (handle)
+#_
+#_**Parameters:**
+#_  handle: userdata
+#_
+#_**Returns:**
+#_  nothing
+#_
+#_**Far API used:**
+#_  FreeScreen
+#_
+#_@@@
+#_{freescreen}: http://api.farmanager.com/ru/service_functions/freescreen.html
+#_
+</article>
+</node>
+<node>
 id=53
 lv=2
 dt=Text
@@ -2556,12 +2585,13 @@ id=58
 lv=2
 dt=Text
 nm=far.GetMsg
-mtime=3602446551
+mtime=3784644026
 <article>
-#_msg = far.GetMsg (MsgId)
+#_msg = far.GetMsg (MsgId [, PluginId])
 #_
 #_**Parameters:**
-#_  MsgId: integer
+#_  MsgId:    integer
+#_  PluginId: string (binary GUID; default: calling plugin's GUID)
 #_
 #_**Returns:**
 #_  msg:   string
@@ -3122,7 +3152,7 @@ id=71
 lv=2
 dt=Text
 nm=far.SendDlgMessage
-mtime=3735644846
+mtime=3835879532
 <article>
 #_Result = far.SendDlgMessage (hDlg, Msg, Param1, Param2)
 #_    or
@@ -3145,7 +3175,6 @@ mtime=3735644846
 #_DM_ENABLEREDRAW,
 #_DM_GETCHECK,
 #_DM_GETCURSORSIZE,
-#_DM_GETDLGDATA,
 #_DM_GETDROPDOWNOPENED,
 #_DM_GETFOCUS,
 #_DM_GETITEMDATA,
@@ -3154,7 +3183,6 @@ mtime=3735644846
 #_DM_REDRAW,
 #_DM_SET3STATE,
 #_DM_SETCURSORSIZE,
-#_DM_SETDLGDATA,
 #_DM_SETDROPDOWNOPENED,
 #_DM_SETFOCUS,
 #_DM_SETINPUTNOTIFY,
@@ -3330,6 +3358,22 @@ mtime=3735644846
 #_      res = far.SendDlgMessage(hDlg, "DM_SETEDITPOSITION", id,
 #_        { CurPos=3, Overtype=0 })
 #_
+#_DN_BTNCLICK,
+#_DN_DRAGGED,
+#_DN_DRAWDIALOG,
+#_DN_DRAWDIALOGDONE,
+#_DN_DROPDOWNOPENED:
+#_    Param2:  integer
+#_    Result:  integer
+#_
+#_DN_CONTROLINPUT:
+#_    Param2:  `tInputRecord` or string
+#_    Result:  integer
+#_
+#_DM_GETDLGDATA,
+#_DM_SETDLGDATA:
+#_  These operations are not implemented as they are used internally by LuaFAR.
+#_  Param1 and Param2 are ignored; nil is returned.
 #_
 #_**Far API used:**
 #_  SendDlgMessage
@@ -3405,6 +3449,12 @@ mtime=3735644846
 #_{dm_showitem}: http://api.farmanager.com/ru/dialogapi/dmsg/dm_showitem.html
 #_{dm_user}: http://api.farmanager.com/ru/dialogapi/dmsg/dm_user.html
 #_{senddlgmessage}: http://api.farmanager.com/ru/service_functions/senddlgmessage.html
+#_{dn_btnclick}: http://api.farmanager.com/ru/dialogapi/dmsg/dn_btnclick.html
+#_{dn_dragged}: http://api.farmanager.com/ru/dialogapi/dmsg/dn_dragged.html
+#_{dn_drawdialog}: http://api.farmanager.com/ru/dialogapi/dmsg/dn_drawdialog.html
+#_{dn_drawdialogdone}: http://api.farmanager.com/ru/dialogapi/dmsg/dn_drawdialogdone.html
+#_{dn_dropdownopened}: http://api.farmanager.com/ru/dialogapi/dmsg/dn_dropdownopened.html
+#_{dn_controlinput}: http://api.farmanager.com/ru/dialogapi/dmsg/dn_controlinput.html
 #_
 </article>
 </node>
@@ -3919,34 +3969,6 @@ mtime=3602352502
 #_
 #_{dlgproc}: http://api.farmanager.com/ru/defs/dlgproc.html
 #_{dn_editchange}: http://api.farmanager.com/ru/dialogapi/dmsg/dn_editchange.html
-#_
-</article>
-</node>
-<node>
-id=304
-lv=2
-dt=Text
-nm=DN_ENTERIDLE
-ctime=3477111575
-mtime=3602352513
-<article>
-#_**Param1**
-#_    integer; according to Far API 
-#_
-#_**Param2**
-#_    integer; according to Far API 
-#_
-#_**Return**
-#_    default processing of the return value, see `description`.
-#_
-#_**Far API used:**
-#_  DlgProc, DN_ENTERIDLE
-#_
-#_@@@
-#_[description]: 285.html
-#_
-#_{dlgproc}: http://api.farmanager.com/ru/defs/dlgproc.html
-#_{dn_enteridle}: http://api.farmanager.com/ru/dialogapi/dmsg/dn_enteridle.html
 #_
 </article>
 </node>
@@ -5385,6 +5407,32 @@ mtime=3615036414
 </article>
 </node>
 <node>
+id=535
+lv=2
+dt=Text
+nm=panel.BeginSelection
+ctime=3774941211
+mtime=3774941407
+<article>
+#_result = panel.BeginSelection (handle, whatpanel)
+#_
+#_**Parameters:**
+#_  handle:       panel handle, or nil
+#_  whatpanel:    1=active_panel, 0=inactive_panel
+#_
+#_**Returns:**
+#_  result: boolean
+#_
+#_**Far API used:**
+#_  PanelControl, FCTL_BEGINSELECTION
+#_
+#_@@@
+#_{fctl_beginselection}: http://api.farmanager.com/ru/service_functions/panelcontrol.html#FCTL_BEGINSELECTION
+#_{panelcontrol}: http://api.farmanager.com/ru/service_functions/panelcontrol.html
+#_
+</article>
+</node>
+<node>
 id=145
 lv=2
 dt=Text
@@ -5414,7 +5462,7 @@ lv=2
 dt=Text
 nm=panel.ClearSelection
 ctime=3480322277
-mtime=3571802936
+mtime=3787492154
 <article>
 #_result = panel.ClearSelection (handle, whatpanel, items)
 #_
@@ -5428,15 +5476,12 @@ mtime=3571802936
 #_  result: boolean
 #_
 #_**Far API used:**
-#_  PanelControl, FCTL_GETPANELINFO, FCTL_BEGINSELECTION,
-#_  FCTL_CLEARSELECTION, FCTL_ENDSELECTION
+#_  PanelControl, FCTL_GETPANELINFO, FCTL_CLEARSELECTION
 #_
 #_@@@
-#_{fctl_beginselection}: http://api.farmanager.com/ru/service_functions/panelcontrol.html#FCTL_BEGINSELECTION
-#_{fctl_clearselection}: http://api.farmanager.com/ru/service_functions/panelcontrol.html#FCTL_CLEARSELECTION
-#_{fctl_endselection}: http://api.farmanager.com/ru/service_functions/panelcontrol.html#FCTL_ENDSELECTION
-#_{fctl_getpanelinfo}: http://api.farmanager.com/ru/service_functions/panelcontrol.html#FCTL_GETPANELINFO
 #_{panelcontrol}: http://api.farmanager.com/ru/service_functions/panelcontrol.html
+#_{fctl_getpanelinfo}: http://api.farmanager.com/ru/service_functions/panelcontrol.html#FCTL_GETPANELINFO
+#_{fctl_clearselection}: http://api.farmanager.com/ru/service_functions/panelcontrol.html#FCTL_CLEARSELECTION
 #_
 </article>
 </node>
@@ -5462,6 +5507,32 @@ mtime=3571802942
 #_
 #_@@@
 #_{fctl_closepanel}: http://api.farmanager.com/ru/service_functions/panelcontrol.html#FCTL_CLOSEPANEL
+#_{panelcontrol}: http://api.farmanager.com/ru/service_functions/panelcontrol.html
+#_
+</article>
+</node>
+<node>
+id=536
+lv=2
+dt=Text
+nm=panel.EndSelection
+ctime=3774941226
+mtime=3774941499
+<article>
+#_result = panel.EndSelection (handle, whatpanel)
+#_
+#_**Parameters:**
+#_  handle:       panel handle, or nil
+#_  whatpanel:    1=active_panel, 0=inactive_panel
+#_
+#_**Returns:**
+#_  result: boolean
+#_
+#_**Far API used:**
+#_  PanelControl, FCTL_ENDSELECTION
+#_
+#_@@@
+#_{fctl_endselection}: http://api.farmanager.com/ru/service_functions/panelcontrol.html#FCTL_ENDSELECTION
 #_{panelcontrol}: http://api.farmanager.com/ru/service_functions/panelcontrol.html
 #_
 </article>
@@ -5701,7 +5772,7 @@ id=7
 lv=2
 dt=Text
 nm=panel.GetPanelInfo
-mtime=3741446297
+mtime=3827227504
 <article>
 #_tPanelInfo = panel.GetPanelInfo (handle, whatpanel)
 #_
@@ -5713,7 +5784,7 @@ mtime=3741446297
 #_  tPanelInfo: table, or nil
 #_    fields of tPanelInfo:
 #_      OwnerGuid:           string
-#_      PluginHandle:        userdata, or nil
+#_      PluginHandle:        light userdata, or nil
 #_      PanelType:           integer
 #_      PanelRect:           table (fields: left, top, right, bottom)
 #_      ItemsNumber:         integer
@@ -5725,7 +5796,7 @@ mtime=3741446297
 #_      Flags:               flags
 #_      PluginObject:        non-false Lua value
 #_
-#_**Note:**
+#_**Note 1:**
 #_  The *PluginObject* field is LuaFAR-specific. It is only present if OwnerGuid==PluginGuid,
 #_  i.e. when *panel.GetPanelInfo* was called from the same plugin that created the panel.
 #_  The intended use of this field is when a panel plugin processes macro calls for operations
@@ -6099,7 +6170,7 @@ id=14
 lv=2
 dt=Text
 nm=panel.SetSelection
-mtime=3571803052
+mtime=3787492126
 <article>
 #_result = panel.SetSelection (handle, whatpanel, items, selection)
 #_
@@ -6114,15 +6185,12 @@ mtime=3571803052
 #_  result: boolean
 #_
 #_**Far API used:**
-#_  PanelControl, FCTL_GETPANELINFO, FCTL_BEGINSELECTION,
-#_  FCTL_SETSELECTION, FCTL_ENDSELECTION
+#_  PanelControl, FCTL_GETPANELINFO, FCTL_SETSELECTION
 #_
 #_@@@
-#_{fctl_beginselection}: http://api.farmanager.com/ru/service_functions/panelcontrol.html#FCTL_BEGINSELECTION
-#_{fctl_endselection}: http://api.farmanager.com/ru/service_functions/panelcontrol.html#FCTL_ENDSELECTION
+#_{panelcontrol}: http://api.farmanager.com/ru/service_functions/panelcontrol.html
 #_{fctl_getpanelinfo}: http://api.farmanager.com/ru/service_functions/panelcontrol.html#FCTL_GETPANELINFO
 #_{fctl_setselection}: http://api.farmanager.com/ru/service_functions/panelcontrol.html#FCTL_SETSELECTION
-#_{panelcontrol}: http://api.farmanager.com/ru/service_functions/panelcontrol.html
 #_
 </article>
 </node>
@@ -7308,7 +7376,7 @@ lv=2
 dt=Text
 nm=far.FreeSettings
 ctime=3513437113
-mtime=3576062233
+mtime=3750618583
 <article>
 #_far.FreeSettings ()
 #_
@@ -7325,8 +7393,13 @@ mtime=3576062233
 #_**Far API used:**
 #_  SettingsControl
 #_
+#_**WARNING:**
+#_ For debug purposes only!
+#_ Normally you should use method `Free` to free each settings handle individually.
+#_
 #_@@@
 #_[far.CreateSettings]: 416.html
+#_[Free]: 419.html
 #_
 #_{settingscontrol}: http://api.farmanager.com/ru/service_functions/settingscontrol.html
 #_
@@ -7338,12 +7411,12 @@ lv=2
 dt=Text
 nm=obj:CreateSubkey
 ctime=3507637684
-mtime=3513280434
+mtime=3754138477
 <article>
 #_subkey = obj:CreateSubkey (Root, Name [, Description])
 #_
 #_**Parameters:**
-#_  Root:        integer
+#_  Root:        flag
 #_  Name:        string
 #_  Description: string, or nil
 #_
@@ -7369,12 +7442,12 @@ lv=2
 dt=Text
 nm=obj:Delete
 ctime=3507637642
-mtime=3576228671
+mtime=3754138488
 <article>
 #_result = obj:Delete (Root, Name)
 #_
 #_**Parameters:**
-#_  Root:   integer
+#_  Root:   flag
 #_  Name:   string, or nil
 #_
 #_**Returns:**
@@ -7397,12 +7470,12 @@ lv=2
 dt=Text
 nm=obj:Enum
 ctime=3507637655
-mtime=3534075889
+mtime=3754138496
 <article>
 #_items = obj:Enum (Root[, from[, to]])
 #_
 #_**Parameters:**
-#_  Root:   integer
+#_  Root:   flag
 #_  from:   integer; 1-based; negative values count from the end; default=1;
 #_  to:     integer; 1-based; negative values count from the end; default=-1;
 #_
@@ -7419,7 +7492,7 @@ mtime=3534075889
 #_        Param:    string
 #_        PluginId: string (GUID)
 #_        File:     string
-#_        Time:     number (number of milliseconds elapsed since January 1, 1601)
+#_        Time:     number (number of time ticks elapsed since January 1, 1601)
 #_        Lock:     boolean
 #_
 #_**Far API used:**
@@ -7465,12 +7538,12 @@ lv=2
 dt=Text
 nm=obj:Get
 ctime=3507637674
-mtime=3513106776
+mtime=3754138504
 <article>
 #_result = obj:Get (Root, Name, Type)
 #_
 #_**Parameters:**
-#_  Root:   integer
+#_  Root:   flag
 #_  Name:   string
 #_  Type:   flags
 #_
@@ -7497,12 +7570,12 @@ lv=2
 dt=Text
 nm=obj:OpenSubkey
 ctime=3513150721
-mtime=3513280638
+mtime=3754138512
 <article>
 #_subkey = obj:OpenSubkey (Root, Name)
 #_
 #_**Parameters:**
-#_  Root:        integer
+#_  Root:        flag
 #_  Name:        string
 #_
 #_**Returns:**
@@ -7525,12 +7598,12 @@ lv=2
 dt=Text
 nm=obj:Set
 ctime=3507637679
-mtime=3513143858
+mtime=3754138519
 <article>
 #_result = obj:Set (Root, Name, Type, Data)
 #_
 #_**Parameters:**
-#_  Root:   integer
+#_  Root:   flag
 #_  Name:   string, or nil
 #_  Type:   flags
 #_  Data:   flags,   for Type == FST_QWORD
@@ -8146,13 +8219,13 @@ id=211
 lv=2
 dt=Text
 nm=far.RecursiveSearch
-mtime=3617913893
+mtime=3783699265
 <article>
 #_far.RecursiveSearch (InitDir, Mask, UserFunc [, Flags [, ...]])
 #_
 #_**Parameters:**
 #_  InitDir:  string
-#_  Mask:     string
+#_  Mask:     string (can include attributes - see note below)
 #_  UserFunc: function
 #_  Flags:    flags
 #_  ...:      additional arguments, any Lua values
@@ -8171,11 +8244,19 @@ mtime=3617913893
 #_  If the 1-st return value of *UserFunc* is neither *false* nor *nil* then the search
 #_  is stopped.
 #_
+#_**Note:**
+#_  The 2-nd parameter (Mask) can include file attributes following the mask itself
+#_  after a >> delimiter. The attribute characters are described in `this` article.
+#_  - A small letter means the attribute must be present.
+#_  - A large letter means the attribute must not be present.
+#_  **Example:** `*`|`*`.txt>>rA
+#_
 #_**Far API used:**
 #_  FarRecursiveSearch
 #_
 #_@@@
 #_[tPluginPanelItem]: 85.html
+#_[this]: 85.html
 #_
 #_{farrecursivesearch}: http://api.farmanager.com/ru/fsf/farrecursivesearch.html
 #_
@@ -8262,6 +8343,43 @@ lv=1
 dt=Text
 nm=Regular expression functions
 <article>
+</article>
+</node>
+<node>
+id=528
+lv=2
+dt=Text
+nm=regex.exec, regex.execW
+ctime=3748474620
+mtime=3748474986
+<article>
+#_from, to, offsets = regex.exec (s, pattern, [init], [cflags])
+#_
+#_**Parameters:**
+#_  s       :  string
+#_  pattern :  string
+#_  init    :  integer (default=1; can be negative)
+#_  cflags  :  string (any combination of 'i','m','o','s' and 'x')
+#_
+#_**Returns:**
+#_  from    : integer
+#_  to      : integer
+#_  offsets : table - array of captures' offsets (there can be *false*
+#_                    in place of captures not participated in the match)
+#_
+#_**Example:**
+#_  If the whole match is at offsets 10,20 and substring matches are
+#_  at offsets 12,14 and 16,19 then the function returns the following:
+#_  10, 20, { 12,14,16,19 }.
+#_
+#_**Note:**
+#_*regex.execW* receives its 1-st argument in UTF-16LE encoding.
+#_
+#_**Far API used:**
+#_  RegExpControl
+#_
+#_@@@
+#_{regexpcontrol}: http://api.farmanager.com/ru/service_functions/regexpcontrol.html
 </article>
 </node>
 <node>
@@ -8480,6 +8598,41 @@ mtime=3489990041
 </article>
 </node>
 <node>
+id=529
+lv=3
+dt=Text
+nm=method exec, execW
+ctime=3748475041
+mtime=3748475255
+<article>
+#_from, to, offsets = regex_object:exec (subj [, init])
+#_
+#_**Parameters:**
+#_  subj   :  string
+#_  init   :  integer (default=1; can be negative)
+#_
+#_**Returns:**
+#_  from    : integer
+#_  to      : integer
+#_  offsets : table - array of captures' offsets (there can be *false*
+#_                    in place of captures not participated in the match)
+#_
+#_**Example:**
+#_  If the whole match is at offsets 10,20 and substring matches are
+#_  at offsets 12,14 and 16,19 then the method returns the following:
+#_  10, 20, { 12,14,16,19 }.
+#_
+#_**Note:**
+#_*regex_object:execW* receives its 1-st argument in UTF-16LE encoding.
+#_
+#_**Far API used:**
+#_  RegExpControl
+#_
+#_@@@
+#_{regexpcontrol}: http://api.farmanager.com/ru/service_functions/regexpcontrol.html
+</article>
+</node>
+<node>
 id=267
 lv=3
 dt=Text
@@ -8572,6 +8725,136 @@ mtime=3524034111
 </article>
 </node>
 <node>
+id=552
+lv=1
+dt=Text
+nm=far.Host
+ctime=3808843787
+mtime=3808848179
+<article>
+#_<markdown>
+#_`far.Host` is a table containing functions for direct communication
+#_with panel plugins. That means that internally these functions call
+#_exported functions of plugins.
+</article>
+</node>
+<node>
+id=553
+lv=2
+dt=Text
+nm=far.Host.FreeUserData
+ctime=3808843886
+mtime=3808845384
+<article>
+#_far.Host.FreeUserData (Handle, Items)
+#_
+#_**Parameters:**
+#_  Handle:  userdata (panel handle)
+#_  Items:   table (array of `tPluginPanelItem`)
+#_
+#_**Returns:**
+#_  nothing
+#_
+#_@@@
+#_[tPluginPanelItem]: 85.html
+#_
+</article>
+</node>
+<node>
+id=554
+lv=2
+dt=Text
+nm=far.Host.GetFiles
+ctime=3808843892
+mtime=3808848450
+<article>
+#_result = far.Host.GetFiles (handle, Items, Move, DestPath [, OpMode])
+#_
+#_**Parameters:**
+#_  handle:    panel handle
+#_  Items:     table (array of `tPluginPanelItem`)
+#_  Move:      boolean
+#_  DestPath:  string
+#_  OpMode:    flags (default = OPM_FIND|OPM_SILENT)
+#_
+#_**Returns:**
+#_  result:    integer
+#_
+#_@@@
+#_[tPluginPanelItem]: 85.html
+#_
+</article>
+</node>
+<node>
+id=555
+lv=2
+dt=Text
+nm=far.Host.GetFindData
+ctime=3808843910
+mtime=3808846173
+<article>
+#_Items = far.Host.GetFindData (handle [, OpMode])
+#_
+#_**Parameters:**
+#_  handle:  panel handle
+#_  OpMode:  flags (default = OPM_FIND|OPM_SILENT)
+#_
+#_**Returns:**
+#_  Items:   table (array of `tPluginPanelItem`), or nil
+#_
+#_@@@
+#_[tPluginPanelItem]: 85.html
+#_
+</article>
+</node>
+<node>
+id=556
+lv=2
+dt=Text
+nm=far.Host.PutFiles
+ctime=3808843927
+mtime=3808848467
+<article>
+#_result = far.Host.PutFiles (handle, Items, Move, SrcPath [, OpMode])
+#_
+#_**Parameters:**
+#_  handle:    panel handle
+#_  Items:     table (array of `tPluginPanelItem`)
+#_  Move:      boolean
+#_  SrcPath:   string
+#_  OpMode:    flags (default = OPM_SILENT)
+#_
+#_**Returns:**
+#_  result:    integer
+#_
+#_@@@
+#_[tPluginPanelItem]: 85.html
+#_
+</article>
+</node>
+<node>
+id=557
+lv=2
+dt=Text
+nm=far.Host.SetDirectory
+ctime=3808843933
+mtime=3808848103
+<article>
+#_result = far.Host.SetDirectory (handle, Dir [, OpMode])
+#_
+#_**Parameters:**
+#_  handle:    panel handle
+#_  Dir:       string
+#_  OpMode:    flags (default = OPM_FIND|OPM_SILENT)
+#_
+#_**Returns:**
+#_  result:    boolean
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
 id=83
 lv=1
 dt=Text
@@ -8600,6 +8883,67 @@ mtime=3526661259
 #_
 #_@@@
 #_{pluginstartupinfo}: http://api.farmanager.com/ru/structures/pluginstartupinfo.html
+#_
+</article>
+</node>
+<node>
+id=544
+lv=2
+dt=Text
+nm=far.FileTimeResolution
+ctime=3776673964
+mtime=3789189767
+<article>
+#_result = far.FileTimeResolution ([operation])
+#_
+#_**Parameters:**
+#_  operation: 0=query resolution; 1=set 1ms resolution; 2=set 100ns resolution;
+#_             The default is 0.
+#_
+#_**Returns:**
+#_  result: previous value of resolution (1 for 1ms resolution; 2 for 100ns resolution)
+#_
+#_**Description:**
+#_  There are 2 file time resolutions in a LuaFAR plugin: 1ms and 100ns.
+#_  At any given moment one of those resolutions is current.
+#_  The current resolution affects functions that get or set file times:
+#_    - all functions dealing with `tPluginPanelItem`
+#_      (fields: LastWriteTime, LastAccessTime, CreationTime, ChangeTime)
+#_    - `win.FileTimeToLocalFileTime`
+#_    - `win.FileTimeToSystemTime`
+#_    - `win.GetSystemTimeAsFileTime`
+#_    - `win.SystemTimeToFileTime`
+#_    - `obj:Enum` (field: Time) in settings control
+#_
+#_@@@
+#_[tPluginPanelItem]:              85.html
+#_[win.FileTimeToLocalFileTime]:  462.html
+#_[win.FileTimeToSystemTime]:     215.html
+#_[win.GetSystemTimeAsFileTime]:  217.html
+#_[win.SystemTimeToFileTime]:     216.html
+#_[obj:Enum]:                     418.html
+#_
+#_
+</article>
+</node>
+<node>
+id=549
+lv=2
+dt=Text
+nm=far.GetLuafarVersion
+ctime=3792338906
+mtime=3792339365
+<article>
+#_strVersion = far.GetLuafarVersion()
+#_  or
+#_major,minor,revision,build = far.LuafarVersion(true)
+#_
+#_**Returns:**
+#_  strVersion: string
+#_    or
+#_  major,minor,revision,build: numbers
+#_
+#_@@@
 #_
 </article>
 </node>
@@ -8737,7 +9081,7 @@ lv=2
 dt=Text
 nm=far.Timer
 ctime=3482124061
-mtime=3630782697
+mtime=3756386205
 <article>
 #_timer = far.Timer (interval, handler [, ...])
 #_
@@ -8773,7 +9117,7 @@ mtime=3630782697
 #_  AdvControl (ACTL_SYNCHRO), ProcessSynchroEventW.
 #_
 #_**Windows API used:**
-#_  CreateThread
+#_  CreateTimerQueueTimer, CreateTimerQueue, ChangeTimerQueueTimer, DeleteTimerQueueEx
 #_
 #_@@@
 #_[export.ProcessSynchroEvent]: 319.html
@@ -9286,15 +9630,15 @@ id=85
 lv=2
 dt=Text
 nm=tPluginPanelItem
-mtime=3602278950
+mtime=3776679713
 <article>
 #_<markdown>
 #_**`tPluginPanelItem`** is a table with the following predefined fields:
 #_
-#_      LastWriteTime:      number
-#_      LastAccessTime:     number
-#_      CreationTime:       number
-#_      ChangeTime:         number
+#_      LastWriteTime:      number or bit64-userdata
+#_      LastAccessTime:     number or bit64-userdata
+#_      CreationTime:       number or bit64-userdata
+#_      ChangeTime:         number or bit64-userdata
 #_
 #_      FileSize:           number
 #_      AllocationSize:     number
@@ -9323,14 +9667,18 @@ mtime=3602278950
 #_          d - directory
 #_          e - reparse point
 #_          h - hidden
+#_          i - not content indexed
+#_          n - encrypted
 #_          o - offline
 #_          p - sparse file
 #_          r - read only
 #_          s - system file
 #_          t - temporary
+#_          u - no scrub data
+#_          v - virtual
 #_
 #_1. **`LastWriteTime`**, **`LastAccessTime`**, **`CreationTime`**
-#_and **`ChangeTime`** are values measured in number of milliseconds
+#_and **`ChangeTime`** are values measured in number of time ticks
 #_elapsed since January 1, 1601.
 #_
 #_
@@ -9390,15 +9738,15 @@ lv=1
 dt=Text
 nm=bit64
 ctime=3507278228
-mtime=3602448570
+mtime=3790945395
 <article>
 #_<markdown>
 #_As Far 3.0 started to use 64-bit integer values ("flags") in its API, arose the need to represent and handle them from Lua. This is the role of **bit64** library.
 #_
 #_The library represents and accepts flags as either numbers or "64 bit integer" userdata. Values that fit in 53 bits can be represented in both ways. Greater values are always represented as userdata.
 #_
-#_Userdata values created by the library support the following operations:<br>
-#_`+`, `-`, `*`, `/`, `%`, `==`, `<`, `<=`, unary minus.
+#_Userdata values created by the library support the following operations (metamethods):<br>
+#_`+`, `-`, `*`, `/`, `%`, `==`, `<`, `<=`, unary minus, `tonumber`.
 #_
 #_`__tostring` metamethod of "64-bit type" userdata returns an acceptable string representation that when passed to [`new`][new] will produce a value equal to the original one.
 #_
@@ -9708,6 +10056,37 @@ mtime=3705999657
 </article>
 </node>
 <node>
+id=547
+lv=3
+dt=Text
+nm=win.GetFileTimes
+ctime=3790916234
+mtime=3790917671
+<article>
+#_times = win.GetFileTimes (FileName)
+#_
+#_**Parameters:**
+#_  FileName: string
+#_
+#_**Returns:**
+#_  times:    table (success), or nil (failure)
+#_    Fields of *times*:
+#_      LastWriteTime:      `bit64-userdata`
+#_      LastAccessTime:     `bit64-userdata`
+#_      CreationTime:       `bit64-userdata`
+#_
+#_**Note:**
+#_  All time values are expressed in 100-ns intervals elapsed since 1601-01-01,00:00:00.
+#_
+#_**Windows API used:**
+#_  CreateFile, GetFileTime
+#_
+#_@@@
+#_[bit64-userdata]: 405.html
+#_
+</article>
+</node>
+<node>
 id=397
 lv=3
 dt=Text
@@ -9856,6 +10235,38 @@ mtime=3602278974
 #_
 #_@@@
 #_[tPluginPanelItem]: 85.html
+#_
+</article>
+</node>
+<node>
+id=548
+lv=3
+dt=Text
+nm=win.SetFileTimes
+ctime=3790916254
+mtime=3790917726
+<article>
+#_result = win.SetFileTimes (FileName, times)
+#_
+#_**Parameters:**
+#_  FileName: string
+#_  times:    table
+#_    Fields of *times* (each one is optional):
+#_      LastWriteTime:      `bit64-userdata` or number
+#_      LastAccessTime:     `bit64-userdata` or number
+#_      CreationTime:       `bit64-userdata` or number
+#_
+#_**Returns:**
+#_  result:   boolean
+#_
+#_**Note:**
+#_  All time values are expressed in 100-ns intervals elapsed since 1601-01-01,00:00:00.
+#_
+#_**Windows API used:**
+#_  CreateFile, SetFileTime
+#_
+#_@@@
+#_[bit64-userdata]: 405.html
 #_
 </article>
 </node>
@@ -10021,9 +10432,9 @@ id=73
 lv=3
 dt=Text
 nm=win.SetRegKey
-mtime=3664130941
+mtime=3747147972
 <article>
-#_win.SetRegKey (RootKey, Key, ValueName, DataType, ValueData, [AccessMask])
+#_result = win.SetRegKey (RootKey, Key, ValueName, DataType, ValueData, [AccessMask])
 #_
 #_**Parameters:**
 #_  RootKey:     string (one of: "HKLM", "HKCC", "HKCR", "HKCU", "HKU")
@@ -10034,7 +10445,7 @@ mtime=3664130941
 #_  AccessMask:  flag ("KEY_WOW64_32KEY" or "KEY_WOW64_64KEY"; the default is 0)
 #_
 #_**Returns:**
-#_  nothing
+#_  result:      boolean (true on success)
 #_
 #_**Description:**
 #_  This function sets a value in a registry key.
@@ -10133,6 +10544,48 @@ mtime=3500653738
 </article>
 </node>
 <node>
+id=530
+lv=3
+dt=Text
+nm=win.GetConsoleCP
+ctime=3752084597
+mtime=3752085213
+<article>
+#_codepage = win.GetConsoleCP()
+#_
+#_**Parameters:**
+#_  none
+#_
+#_**Returns:**
+#_  codepage: integer
+#_
+#_**Windows API used:**
+#_  GetConsoleCP
+#_
+</article>
+</node>
+<node>
+id=533
+lv=3
+dt=Text
+nm=win.GetConsoleOutputCP
+ctime=3752084648
+mtime=3752085217
+<article>
+#_codepage = win.GetConsoleOutputCP()
+#_
+#_**Parameters:**
+#_  none
+#_
+#_**Returns:**
+#_  codepage: integer
+#_
+#_**Windows API used:**
+#_  GetConsoleOutputCP
+#_
+</article>
+</node>
+<node>
 id=392
 lv=3
 dt=Text
@@ -10216,6 +10669,49 @@ nm=win.OemToUtf8
 #_
 #_**Returns:**
 #_  str_out : string in UTF-8 encoding
+#_
+</article>
+</node>
+<node>
+id=531
+lv=3
+dt=Text
+nm=win.SetConsoleCP
+ctime=3752084616
+mtime=3752085222
+<article>
+#_result = win.SetConsoleCP(codepage)
+#_
+#_**Parameters:**
+#_  codepage: integer
+#_
+#_**Returns:**
+#_  result: true (on success) or nil + error message
+#_
+#_**Windows API used:**
+#_  SetConsoleCP
+#_
+#_
+</article>
+</node>
+<node>
+id=532
+lv=3
+dt=Text
+nm=win.SetConsoleOutputCP
+ctime=3752084634
+mtime=3752085226
+<article>
+#_result = win.SetConsoleOutputCP(codepage)
+#_
+#_**Parameters:**
+#_  codepage: integer
+#_
+#_**Returns:**
+#_  result: true (on success) or nil + error message
+#_
+#_**Windows API used:**
+#_  SetConsoleOutputCP
 #_
 </article>
 </node>
@@ -10343,6 +10839,40 @@ mtime=3528778037
 </article>
 </node>
 <node>
+id=534
+lv=3
+dt=Text
+nm=win.WriteConsole
+ctime=3773163263
+mtime=3773238203
+<article>
+#_result = win.WriteConsole (...)
+#_
+#_**Parameters:**
+#_  ...   : arbitrary number of arguments of any Lua type;
+#_          strings must be in UTF-8 encoding;
+#_
+#_**Returns:**
+#_  result  : either *true* (success)
+#_            or *nil* [, <error_message>]
+#_
+#_**Description:**
+#_  1. The function writes its arguments to the console.
+#_  2. No delimiter is inserted between the arguments (do it yourself).
+#_  3. When using this function in LuaFAR plugins and macros place its calls
+#_     in a code block wrapped in
+#_     `panel.GetUserScreen`() ... `panel.SetUserScreen`().
+#_
+#_**Windows API used:**
+#_  GetStdHandle, WriteConsoleW
+#_
+#_@@@
+#_[panel.GetUserScreen]: 228.html
+#_[panel.SetUserScreen]: 15.html
+#_
+</article>
+</node>
+<node>
 id=520
 lv=2
 dt=Text
@@ -10363,10 +10893,10 @@ mtime=3602448763
 #_local_ftime = win.FileTimeToLocalFileTime (ftime)
 #_
 #_**Parameters:**
-#_  ftime       : number (number of milliseconds since January 1, 1601)
+#_  ftime       : number (number of time ticks since January 1, 1601)
 #_
 #_**Returns:**
-#_  local_ftime : number (number of milliseconds since January 1, 1601)
+#_  local_ftime : number (number of time ticks since January 1, 1601)
 #_
 #_**Windows API used:**
 #_  FileTimeToLocalFileTime
@@ -10384,7 +10914,7 @@ mtime=3602448840
 #_result = win.FileTimeToSystemTime (ftime)
 #_
 #_**Parameters:**
-#_  ftime :  number (number of milliseconds since January 1, 1601)
+#_  ftime :  number (number of time ticks since January 1, 1601)
 #_
 #_**Returns:**
 #_  result : table `tSystemTime`, or nil
@@ -10413,7 +10943,7 @@ mtime=3602279052
 #_  result: number
 #_
 #_**Description:**
-#_  The system time is expressed as number of milliseconds since January 1, 1601.
+#_  The system time is expressed as number of time ticks since January 1, 1601.
 #_
 #_**Windows API used:**
 #_  GetSystemTimeAsFileTime
@@ -10435,7 +10965,7 @@ mtime=3602449161
 #_
 #_**Returns:**
 #_  result  : number, or nil
-#_            (number of milliseconds since January 1, 1601)
+#_            (number of time ticks since January 1, 1601)
 #_
 #_**Windows API used:**
 #_  SystemTimeToFileTime
@@ -10705,6 +11235,37 @@ mtime=3710673277
 </article>
 </node>
 <node>
+id=545
+lv=3
+dt=Text
+nm=win.IsWinVersion
+ctime=3781269609
+mtime=3781270633
+<article>
+#_result = win.IsWinVersion (strVersion)
+#_  or
+#_result = win.IsWinVersion (major, minor, servpack)
+#_
+#_**Parameters:**
+#_  strVersion: either of "XP", "XPSP1", "XPSP2", "XPSP3", "Vista", "VistaSP1",
+#_              "VistaSP2", "W7", "W7SP1", "W8", "W8.1", "W10", "Server".
+#_              This parameter is case insensitive.
+#_
+#_  major:      integer
+#_  minor:      integer
+#_  servpack:   integer
+#_
+#_**Returns:**
+#_  result: boolean
+#_
+#_**Description:**
+#_  This function checks the current Windows version and returns true
+#_  if it is equal or greater than the version specified by the given argument(s).
+#_  If the argument is "Server" then the version is not checked.
+#_
+</article>
+</node>
+<node>
 id=507
 lv=3
 dt=Text
@@ -10872,95 +11433,239 @@ mtime=3508317882
 </article>
 </node>
 <node>
-id=250
+id=537
 lv=1
 dt=Text
-nm=Selene Unicode
-mtime=3602449302
+nm=luautf8
+ctime=3776336119
+mtime=3795716600
 <article>
 #_<markdown>
-#_There are four string-like ctype closures: **`unicode.ascii`**,
-#_**`latin1`**, **`utf8`** and **`grapheme`**.
 #_
-#_**`ascii`** and **`latin1`** are single-byte like `string`,
-#_but use the unicode table for upper/lower and character classes.
-#_`ascii` does not touch bytes `> 127` on `upper`/`lower`.
+#_UTF-8 module for Lua 5.x
+#_========================
+#_This module adds UTF-8 support to Lua.
 #_
-#_**`ascii`** or **`latin1`** can be used as locale-independent
-#_string replacement. (There is a compile switch to do this
-#_automatically for `ascii`).
+#_It use data extracted from
+#_[Unicode Character Database](http://www.unicode.org/reports/tr44/),
+#_and tested on Lua 5.2.3, Lua 5.3.0 and LuaJIT.
 #_
-#_**`utf8`** operates on UTF-8 sequences as of RFC 3629:
-#_1 byte `0-7F`, 2 byte `80-7FF`, 3 byte `800-FFFF`,
-#_4 byte `1000-10FFFF` (not exclusing UTF-16 surrogate characters).
-#_Any byte not part of such a sequence is treated as it's (Latin-1)
-#_value.
+#_parseucd.lua is a pure Lua script generate unidata.h, to support convert
+#_characters and check characters' category.
 #_
-#_**`grapheme`** takes care of grapheme clusters, which are characters
-#_followed by "grapheme extension" characters (`Mn+Me`) like combining diacritical marks.
+#_It mainly used to compatible with Lua's own string module, it passed all
+#_string and pattern matching test in lua test suite[2].
 #_
-#_**Calls are:**
+#_It also add some useful routines against UTF-8 features, some like:
+#_- a convenient interface to escape Unicode sequence in string. 
+#_- string insert/remove, since UTF-8 substring extract may expensive.
+#_- calculate Unicode width, useful when implement e.g. console emulator.
+#_- a useful interface to translate Unicode offset and byte offset.
 #_
-#_      len(str)
-#_      sub(str, start [,end=-1])
-#_      byte(str, start [,end=-1])
-#_      lower(str)
-#_      upper(str)
-#_      char(i [,j...])
-#_      reverse(str)
+#_Note that to avoid conflict with the Lua5.3's buitin library 'utf8',
+#_this library produce a file like lua-utf8.dll or lua-utf8.so. so use
+#_it like this:
 #_
-#_Same as in `string`: `rep`, `format`, `dump`
+#_```lua
+#_local utf8 = require 'lua-utf8'
+#_```
 #_
-#_TODO: use char count with `%s` in `format`? (`sub` does the job)
+#_in your codes :-(
 #_
-#_TODO: `grapheme.byte`: only first code of any cluster?
+#_[2]: http://www.lua.org/tests/5.2/
 #_
-#_* `find`, `gfind`, `gsub`: done, but need thorough testing ...:
-#_  `ascii` does not match them on any `%class` (but on `.`,
-#_  literals and ranges).
-#_* Behaviour of `%class` with class not ASCII is undefined.
-#_* Frontier `%f` currently disabled -- should we?
 #_
-#_**Character classes are:**
+#_LuaRocks Installation
+#_---------------------
+#_`luarocks install luautf8`
 #_
-#_      %a L* (Lu+Ll+Lt+Lm+Lo)
-#_      %c Cc
-#_      %d 0-9
-#_      %l Ll
-#_      %n N* (Nd+Nl+No, new)
-#_      %p P* (Pc+Pd+Ps+Pe+Pi+Pf+Po)
-#_      %s Z* (Zs+Zl+Zp) plus the controls 9-13 (HT,LF,VT,FF,CR)
-#_      %u Lu (also Lt ?)
-#_      %w %a+%n+Pc (e.g. '_')
-#_      %x 0-9A-Za-z
-#_      %z the 0 byte
+#_It's now full-compatible with Lua5.3's utf8 library, so replace this
+#_file (and headers) with lua5.3 source's lutf8lib.c is also okay.
 #_
-#_c.f.<br>
-#_[http://www.unicode.org/reports/tr44/tr44-6.html#Property_Values](http://www.unicode.org/reports/tr44/tr44-6.html#Property_Values)<br>
-#_[http://unicode.org/Public/UNIDATA/UnicodeData.txt](http://unicode.org/Public/UNIDATA/UnicodeData.txt)
+#_Usage
+#_-----
 #_
-#_**NOTE:**
+#_Many routines are same as Lua's string module:
+#_- `utf8.byte`
+#_- `utf8.char`
+#_- `utf8.find`
+#_- `utf8.gmatch`
+#_- `utf8.gsub`
+#_- `utf8.len`
+#_- `utf8.lower`
+#_- `utf8.match`
+#_- `utf8.reverse`
+#_- `utf8.sub`
+#_- `utf8.upper`
 #_
-#_* `find` positions are in bytes for all ctypes!
-#_* use `ascii.sub` to cut found ranges! This is a) faster,
-#_  b) more reliable
+#_The document of these functions can be find in Lua manual[3].
 #_
-#_**`utf8`** behaviour:
+#_[3]: http://www.lua.org/manual/5.2/manual.html#6.4
 #_
-#_* `match` is by codes, code ranges are supported
 #_
-#_**`grapheme`** behaviour:
+#_Some routines in string module needn't support Unicode:
+#_- `string.dump`
+#_- `string.format`
+#_- `string.rep`
 #_
-#_* any `%class`, '`.`' and range match includes any following grapheme
-#_  extensions.
-#_* Ranges apply to single code points only.
-#_* If a `[]` enumeration contains a grapheme cluster, this matches
-#_  only the exact same cluster.
-#_* However, a literal single '`o`' standalone or in an `[]`
-#_  enumeration will match just that '`o`', even if it has a
-#_  extension in the string. Consequently, grapheme match positions
-#_  are not always cluster positions.
+#_They are NOT in utf8 module.
 #_
+#_Some routines are the compatible for Lua 5.3's basic UTF-8 support
+#_library:
+#_- `utf8.offset`
+#_- `utf8.codepoint`
+#_- `utf8.codes`
+#_
+#_See Lua5.3's manual to get usage.
+#_
+#_Some routines are new, with some Unicode-spec functions:
+#_
+#_### utf8.escape(str) -> utf8 string
+#_escape a str to UTF-8 format string. It support several escape format:
+#_
+#_ * `%ddd` - which ddd is a decimal number at any length:
+#_   change Unicode code point to UTF-8 format.
+#_ * `%{ddd}` - same as `%nnn` but has bracket around.
+#_ * `%uddd` - same as `%ddd`, u stands Unicode
+#_ * `%u{ddd}` - same as `%{ddd}`
+#_ * `%xhhh` - hexadigit version of `%ddd`
+#_ * `%x{hhh}` same as `%xhhh`.
+#_ * `%?` - '?' stands for any other character: escape this character.
+#_
+#_#### Examples:
+#_```lua
+#_local u = utf8.escape
+#_print(u"%123%u123%{123}%u{123}%xABC%x{ABC}")
+#_print(u"%%123%?%d%%u")
+#_```
+#_
+#_### utf8.charpos(s[[, charpos], index]) -> charpos, code point
+#_convert UTF-8 position to byte offset.
+#_if only `index` is given, return byte offset of this UTF-8 char index.
+#_if both `charpos` and `index` is given, a new `charpos` will be
+#_calculated, by add/subtract UTF-8 char `index` to current `charpos`.
+#_in all cases, it returns a new char position, and code point (a
+#_number) at this position.
+#_
+#_### utf8.next(s[, charpos[, index]]) -> charpos, code point
+#_iterate though the UTF-8 string s.
+#_If only s is given, it can used as a iterator:
+#_```lua
+#_for pos, code in utf8.next, "utf8-string" do
+#_   -- ...
+#_end
+#_```
+#_if only `charpos` is given, return the next byte offset of in string.
+#_if `charpos` and `index` is given, a new `charpos` will be calculated, by
+#_add/subtract UTF-8 char offset to current charpos.
+#_in all case, it return a new char position (in bytes), and code point
+#_(a number) at this position.
+#_
+#_### utf8.insert(s[, idx], substring) -> new_string
+#_insert a substring to s. If idx is given, insert substring before char at
+#_this index, otherwise substring will concat to s. idx can be negative.
+#_
+#_
+#_### utf8.remove(s[, start[, stop]]) -> new_string
+#_delete a substring in s. If neither start nor stop is given, delete the
+#_last UTF-8 char in s, otherwise delete char from start to end of s. if
+#_stop is given, delete char from start to stop (include start and stop).
+#_start and stop can be negative.
+#_
+#_
+#_### utf8.width(s[, ambi_is_double[, default_width]]) -> width
+#_calculate the width of UTF-8 string s. if ambi_is_double is given, the
+#_ambiguous width character's width is 2, otherwise it's 1.
+#_fullwidth/doublewidth character's width is 2, and other character's width
+#_is 1.
+#_if default_width is given, it will be the width of unprintable character,
+#_used display a non-character mark for these characters.
+#_if s is a code point, return the width of this code point.
+#_
+#_
+#_### utf8.widthindex(s, location[, ambi_is_double[, default_width]]) -> idx, offset, width
+#_return the character index at given location in string s. this is a
+#_reverse operation of utf8.width().
+#_this function return a index of location, and a offset in in UTF-8
+#_encoding. e.g. if cursor is at the second column (middle) of the wide
+#_char, offset will be 2. the width of character at idx is returned, also.
+#_
+#_
+#_### utf8.title(s) -> new_string
+#_### utf8.fold(s) -> new_string
+#_convert UTF-8 string s to title-case, or folded case used to compare by
+#_ignore case.
+#_if s is a number, it's treat as a code point and return a convert code
+#_point (number). utf8.lower/utf8.upper has the same extension.
+#_
+#_
+#_### utf8.ncasecmp(a, b) -> [-1,0,1]
+#_compare a and b without case, -1 means a < b, 0 means a == b and 1 means a > b.
+#_
+#_
+#_Improvement needed
+#_------------------
+#_
+#_- add Lua 5.3 spec test-suite.
+#_- more test case.
+#_- grapheme-compose support, and affect in utf8.reverse and utf8.width
+#_- Unicode normalize algorithm implement.
+#_
+#_
+#_License
+#_-------
+#_It use same license with Lua: http://www.lua.org/license.html
+#_
+</article>
+</node>
+<node>
+id=539
+lv=2
+dt=Text
+nm=utf8.dump
+ctime=3776451293
+mtime=3776486873
+<article>
+#_**Note:**
+#_  This is an added function, not present in the original luautf8 library.
+#_  See `string.dump` for reference.
+#_
+#_@@@
+#_[string.dump]: http://www.lua.org/manual/5.1/manual.html#pdf-string.dump
+#_
+</article>
+</node>
+<node>
+id=541
+lv=2
+dt=Text
+nm=utf8.format
+ctime=3776451312
+mtime=3776486954
+<article>
+#_**Note:**
+#_  This is an added function, not present in the original luautf8 library.
+#_  See `string.format` for reference.
+#_
+#_@@@
+#_[string.format]: http://www.lua.org/manual/5.1/manual.html#pdf-string.format
+#_
+</article>
+</node>
+<node>
+id=540
+lv=2
+dt=Text
+nm=utf8.rep
+ctime=3776451304
+mtime=3776487967
+<article>
+#_**Note:**
+#_  This is an added function, not present in the original luautf8 library.
+#_  See `string.rep` for reference.
+#_
+#_@@@
+#_[string.rep]: http://www.lua.org/manual/5.1/manual.html#pdf-string.rep
 #_
 </article>
 </node>
@@ -10968,11 +11673,11 @@ mtime=3602449302
 id=487
 lv=2
 dt=Text
-nm=unicode.utf8.utf8valid
+nm=utf8.utf8valid
 ctime=3579943896
-mtime=3579944916
+mtime=3776451338
 <article>
-#_result, len = unicode.utf8.utf8valid (str)
+#_result, len = utf8.utf8valid (str)
 #_    or
 #_result, len = str:utf8valid ()
 #_
@@ -10990,8 +11695,7 @@ mtime=3579944916
 #_  characters preceded the first invalid one.
 #_
 #_**Note:**
-#_  This is added function, not present in the original **Selene Unicode** library.
-#_
+#_  This is an added function, not present in the original **luautf8** library.
 </article>
 </node>
 <node>
@@ -11029,6 +11733,23 @@ mtime=3744087293
 #_  This is to prevent a crash caused by incompatible runtime libraries.
 #_
 #_@@@
+#_
+</article>
+</node>
+<node>
+id=551
+lv=1
+dt=Text
+nm=file:read("*b")
+ctime=3794741921
+mtime=3794742737
+<article>
+#_<markdown>
+#_This is the same as `file:read("*l")` but it treats the `'\0'`
+#_character like any other non-newline character which makes it
+#_possible to read "lines" from binary files.
+#_
+#_**Note:** `"*b"` stands for "binary line".
 #_
 </article>
 </node>
@@ -12138,14 +12859,13 @@ id=194
 lv=0
 dt=Text
 nm=Third party software used
-mtime=3520022380
+mtime=3776452169
 <article>
 #_<markdown>
 #_The following third party software is used as part of LuaFAR:
 #_
-#_1. [FAR 3.0 Plugin SDK](195.html)
 #_1. [Lua 5.1](196.html)
-#_1. [Selene Unicode](251.html)
+#_1. [luautf8](538.html)
 #_
 #_Many thanks to the authors for making their great software available!
 #_
@@ -12191,117 +12911,67 @@ nm=Lua 5.1
 </article>
 </node>
 <node>
-id=251
+id=538
 lv=1
 dt=Text
-nm=Selene Unicode
-mtime=3607435737
+nm=luautf8
+ctime=3776336382
+mtime=3776336416
+<article>
+#_MIT License
+#_
+#_Copyright (c) 2018 Xavier Wang
+#_
+#_Permission is hereby granted, free of charge, to any person obtaining a copy
+#_of this software and associated documentation files (the "Software"), to deal
+#_in the Software without restriction, including without limitation the rights
+#_to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#_copies of the Software, and to permit persons to whom the Software is
+#_furnished to do so, subject to the following conditions:
+#_
+#_The above copyright notice and this permission notice shall be included in all
+#_copies or substantial portions of the Software.
+#_
+#_THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#_IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#_FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#_AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#_LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#_OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#_SOFTWARE.
+</article>
+</node>
+<node>
+id=550
+lv=0
+dt=Text
+nm=Usage without Far Manager
+ctime=3792399244
+mtime=3792403649
 <article>
 #_<markdown>
-#_    /*
-#_      Porting to Lua 5.2 and bug fixes: (C) Shmuel Zeigerman, 2010-2014.
-#_      MIT license.
-#_    */
+#_`luafar3.dll` can be used in Lua scripts independently of Far Manager. Only part of its functionality is available in this case.
 #_
-#_    /*
-#_    *	Selene Unicode/UTF-8
-#_    *	This additions
-#_    *	Copyright (c) 2005 Malete Partner, Berlin, partner@malete.org
-#_    *	Available under "Lua 5.0 license", see http://www.lua.org/license.html#5
-#_    *	$Id: slnunico.c,v 1.5 2006/07/26 17:20:04 paul Exp $
-#_    *
-#_    *	contains code from
-#_    ** lstrlib.c,v 1.109 2004/12/01 15:46:06 roberto Exp
-#_    ** Standard library for string operations and pattern-matching
-#_    ** See Copyright Notice in lua.h
-#_    *
-#_    *	uses the udata table and a couple of expressions from Tcl 8.4.x UTF-8
-#_    * which comes with the following license.terms:
+#_It should be invoked as *require "luafar3"*.
 #_
-#_    This software is copyrighted by the Regents of the University of
-#_    California, Sun Microsystems, Inc., Scriptics Corporation, ActiveState
-#_    Corporation and other parties.  The following terms apply to all files
-#_    associated with the software unless explicitly disclaimed in
-#_    individual files.
+#_When the library is `require()`'d the following global variables are set:
 #_
-#_    The authors hereby grant permission to use, copy, modify, distribute,
-#_    and license this software and its documentation for any purpose, provided
-#_    that existing copyright notices are retained in all copies and that this
-#_    notice is included verbatim in any distributions. No written agreement,
-#_    license, or royalty fee is required for any of the authorized uses.
-#_    Modifications to this software may be copyrighted by their authors
-#_    and need not follow the licensing terms described here, provided that
-#_    the new terms are clearly indicated on the first page of each file where
-#_    they apply.
+#_  - [`bit64`](405.html)
+#_  - [`utf8`](537.html)
+#_  - [`win`](430.html)
+#_  - `luafar`
 #_
-#_    IN NO EVENT SHALL THE AUTHORS OR DISTRIBUTORS BE LIABLE TO ANY PARTY
-#_    FOR DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
-#_    ARISING OUT OF THE USE OF THIS SOFTWARE, ITS DOCUMENTATION, OR ANY
-#_    DERIVATIVES THEREOF, EVEN IF THE AUTHORS HAVE BEEN ADVISED OF THE
-#_    POSSIBILITY OF SUCH DAMAGE.
+#_`luafar` namespace contains the following functions:
 #_
-#_    THE AUTHORS AND DISTRIBUTORS SPECIFICALLY DISCLAIM ANY WARRANTIES,
-#_    INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY,
-#_    FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.  THIS SOFTWARE
-#_    IS PROVIDED ON AN "AS IS" BASIS, AND THE AUTHORS AND DISTRIBUTORS HAVE
-#_    NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR
-#_    MODIFICATIONS.
+#_  - `FileTimeResolution` (same as [`far.FileTimeResolution`](544.html))
+#_  - `GetLuafarVersion` (same as [`far.GetLuafarVersion`](549.html))
 #_
-#_    GOVERNMENT USE: If you are acquiring this software on behalf of the
-#_    U.S. government, the Government shall have only "Restricted Rights"
-#_    in the software and related documentation as defined in the Federal
-#_    Acquisition Regulations (FARs) in Clause 52.227.19 (c) (2).  If you
-#_    are acquiring the software on behalf of the Department of Defense, the
-#_    software shall be classified as "Commercial Computer Software" and the
-#_    Government shall have only "Restricted Rights" as defined in Clause
-#_    252.227-7013 (c) (1) of DFARs.  Notwithstanding the foregoing, the
-#_    authors grant the U.S. Government and others acting in its behalf
-#_    permission to use and distribute the software in accordance with the
-#_    terms specified in this license.
+#_Also: the `__index` field of the strings metatable is modified to point to [`utf8`](537.html) table, rather than to `string` table.<br>
+#_That means `("abc"):match("b")` is equivalent to `utf8.match("abc", "b")`
+#_rather than to `string.match("abc", "b")`.<br>
 #_
-#_    (end of Tcl license terms)
-#_    */
 #_
-#_    /*
-#_    According to http://ietf.org/rfc/rfc3629.txt we support up to 4-byte
-#_    (21 bit) sequences encoding the UTF-16 reachable 0-0x10FFFF.
-#_    Any byte not part of a 2-4 byte sequence in that range decodes to itself.
-#_    Ill formed (non-shortest) "C0 80" will be decoded as two code points C0 and 80,
-#_    not code point 0; see security considerations in the RFC.
-#_    However, UTF-16 surrogates (D800-DFFF) are accepted.
-#_
-#_    See http://www.unicode.org/reports/tr29/#Grapheme_Cluster_Boundaries
-#_    for default grapheme clusters.
-#_    Lazy westerners we are (and lacking the Hangul_Syllable_Type data),
-#_    we care for base char + Grapheme_Extend, but not for Hangul syllable sequences.
-#_
-#_    For http://unicode.org/Public/UNIDATA/UCD.html#Grapheme_Extend
-#_    we use Mn (NON_SPACING_MARK) + Me (ENCLOSING_MARK),
-#_    ignoring the 18 mostly south asian Other_Grapheme_Extend (16 Mc, 2 Cf) from
-#_    http://www.unicode.org/Public/UNIDATA/PropList.txt
-#_    */
-#_
-#_    /* Contains code from:
-#_    Quylthulg Copyright (C) 2009 Kein-Hong Man <keinhong@gmail.com>
-#_
-#_    Permission is hereby granted, free of charge, to any person obtaining a copy
-#_    of this software and associated documentation files (the "Software"), to deal
-#_    in the Software without restriction, including without limitation the rights
-#_    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-#_    copies of the Software, and to permit persons to whom the Software is
-#_    furnished to do so, subject to the following conditions:
-#_
-#_    The above copyright notice and this permission notice shall be included in
-#_    all copies or substantial portions of the Software.
-#_
-#_    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-#_    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-#_    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
-#_    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-#_    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-#_    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-#_    THE SOFTWARE.
-#_    */
+#_@@@
 #_
 </article>
 </node>

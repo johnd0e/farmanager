@@ -29,27 +29,41 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "new_handler.hpp"
 
-#include "global.hpp"
+// Internal:
+#include "farversion.hpp"
 
+// Platform:
+
+// Common:
 #include "common/scope_exit.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 static new_handler* NewHandler;
 
-new_handler::new_handler():
-	m_BufferSize{ 80, 25 },
-	m_Screen(CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, CONSOLE_TEXTMODE_BUFFER, nullptr)),
-	m_OldHandler()
+namespace
 {
-	if (!m_Screen)
-		return;
-
-	enum
+	enum size
 	{
 		X = 80,
 		Y = 25
 	};
+}
+
+new_handler::new_handler():
+	m_BufferSize{ X, Y },
+	m_Screen(CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, CONSOLE_TEXTMODE_BUFFER, nullptr))
+{
+	if (!m_Screen)
+		return;
 
 	const COORD BufferSize{ X, Y };
 
@@ -72,15 +86,15 @@ new_handler::new_handler():
 	if (!SetConsoleCursorInfo(m_Screen.native_handle(), &cci))
 		return;
 
-	const string_view Strings[] =
+	const string_view Strings[]
 	{
-		global::Version(),
-		L""sv,
+		build::version_string(),
+		{},
 		L"Not enough memory is available to complete this operation."sv,
 		L"Press Enter to retry or Esc to continue..."sv
 	};
 
-	const auto& Write = [this](const string_view Str, size_t Y)
+	const auto Write = [this](const string_view Str, size_t Y)
 	{
 		SetConsoleCursorPosition(m_Screen.native_handle(), { static_cast<short>((m_BufferSize.X - Str.size()) / 2), static_cast<short>(Y) });
 		DWORD CharWritten;

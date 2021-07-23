@@ -1,9 +1,9 @@
-#include <all_far.h>
+﻿#include <all_far.h>
 #pragma hdrstop
 
 #include "fstdlib.h"
 
-const char *_cdecl __WINError(void)
+const char *__cdecl __WINError(void)
 {
 	static char *WinEBuff = NULL;
 	DWORD err = GetLastError();

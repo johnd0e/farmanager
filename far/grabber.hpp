@@ -35,9 +35,17 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "modal.hpp"
 
+// Platform:
+
+// Common:
 #include "common/monitored.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 class Grabber: public SimpleModal
 {
@@ -60,20 +68,25 @@ private:
 	string GetTitle() const override { return {}; }
 
 	void init();
-	std::tuple<COORD&, COORD&> GetSelection();
+	// (begin, end)
+	std::tuple<point&, point&> GetSelection();
+	std::tuple<point&, point&> GetSelectionXWise();
 	void CopyGrabbedArea(bool Append, bool VerticalBlock);
 	void Reset();
 
+	bool empty() const;
+	void clear();
+
 	struct
 	{
-		COORD Begin;
-		COORD End;
-		COORD Current;
+		point Begin;
+		point End;
+		point Current;
 	}
 	GArea;
-	bool ResetArea;
-	bool m_VerticalBlock;
-	static monitored<bool> m_StreamSelection;
+	bool ResetArea{true};
+	bool m_VerticalBlock{};
+	static inline monitored<bool> m_StreamSelection;
 };
 
 bool RunGraber();

@@ -29,7 +29,24 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "platform.memory.hpp"
+
+// Internal:
+#include "imports.hpp"
+
+// Platform:
+
+// Common:
+#include "common/algorithm.hpp"
+#include "common/string_utils.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 namespace os::memory
 {
@@ -37,25 +54,39 @@ namespace os::memory
 	{
 		namespace detail
 		{
-			void deleter::operator()(HGLOBAL MemoryBlock) const
+			void deleter::operator()(HGLOBAL MemoryBlock) const noexcept
 			{
 				GlobalFree(MemoryBlock);
 			}
 
-			void unlocker::operator()(const void* MemoryBlock) const
+			void unlocker::operator()(const void* MemoryBlock) const noexcept
 			{
 				GlobalUnlock(const_cast<HGLOBAL>(MemoryBlock));
 			}
 		}
 
-		ptr alloc(UINT Flags, size_t size)
+		ptr alloc(unsigned const Flags, size_t const Size)
 		{
-			return ptr(GlobalAlloc(Flags, size));
+			return ptr(GlobalAlloc(Flags, Size));
 		}
 
-		ptr copy(const wchar_t* Data, size_t Size)
+		ptr copy(HGLOBAL const Ptr)
 		{
-			auto Memory = alloc(GMEM_MOVEABLE, (Size + 1) * sizeof(wchar_t));
+			const auto Size = GlobalSize(Ptr);
+			auto Memory = alloc(GMEM_MOVEABLE, Size);
+			if (!Memory)
+				return nullptr;
+
+			const auto From = lock<std::byte const*>(Ptr);
+			const auto To = lock<std::byte*>(Memory);
+			std::copy(From.get(), From.get() + Size, To.get());
+
+			return Memory;
+		}
+
+		ptr copy(string_view const Str)
+		{
+			auto Memory = alloc(GMEM_MOVEABLE, (Str.size() + 1) * sizeof(wchar_t));
 			if (!Memory)
 				return nullptr;
 
@@ -63,7 +94,7 @@ namespace os::memory
 			if (!Copy)
 				return nullptr;
 
-			*std::copy_n(Data, Size, Copy.get()) = L'\0';
+			*copy_string(Str, Copy.get()) = {};
 			return Memory;
 		}
 
@@ -73,7 +104,7 @@ namespace os::memory
 	{
 		namespace detail
 		{
-			void deleter::operator()(const void* MemoryBlock) const
+			void deleter::operator()(const void* MemoryBlock) const noexcept
 			{
 				LocalFree(const_cast<HLOCAL>(MemoryBlock));
 			}
@@ -89,10 +120,49 @@ namespace os::memory
 			return Info;
 		}();
 
-		return InRange(
+		return in_closed_range(
 			reinterpret_cast<uintptr_t>(info.lpMinimumApplicationAddress),
 			reinterpret_cast<uintptr_t>(Address),
 			reinterpret_cast<uintptr_t>(info.lpMaximumApplicationAddress)
 		);
 	}
+
+	void enable_low_fragmentation_heap()
+	{
+		// Starting with Windows Vista, the system uses the low-fragmentation heap (LFH) as needed to service memory allocation requests.
+		// Applications do not need to enable the LFH for their heaps.
+		if (IsWindowsVistaOrGreater())
+			return;
+
+		if (!imports.HeapSetInformation)
+			return;
+
+		std::vector<HANDLE> Heaps(10);
+		for (;;)
+		{
+			const auto NumberOfHeaps = GetProcessHeaps(static_cast<DWORD>(Heaps.size()), Heaps.data());
+			const auto Received = NumberOfHeaps <= Heaps.size();
+			Heaps.resize(NumberOfHeaps);
+			if (Received)
+				break;
+		}
+
+		for (const auto i: Heaps)
+		{
+			ULONG HeapFragValue = 2;
+			imports.HeapSetInformation(i, HeapCompatibilityInformation, &HeapFragValue, sizeof(HeapFragValue));
+		}
+	}
 }
+
+#ifdef ENABLE_TESTS
+
+#include "testing.hpp"
+
+TEST_CASE("os.memory.is_pointer")
+{
+	REQUIRE(!os::memory::is_pointer(nullptr));
+	REQUIRE(!os::memory::is_pointer(reinterpret_cast<void*>(42)));
+	REQUIRE(os::memory::is_pointer("42"));
+}
+#endif

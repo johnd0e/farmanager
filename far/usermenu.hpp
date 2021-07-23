@@ -35,35 +35,17 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 
-class Dialog;
+// Platform:
 
-class UserMenu: noncopyable
-{
-	struct UserMenuItem;
+// Common:
 
-public:
-	explicit UserMenu(bool ChooseMenuType); //	true - выбор типа меню (основное или локальное), false - зависит от наличия FarMenu.Ini в текущем каталоге
-	explicit UserMenu(const string& MenuFileName);
-	~UserMenu();
+// External:
 
-	using menu_container = std::list<UserMenuItem>;
+//----------------------------------------------------------------------------
 
-private:
-	void ProcessUserMenu(bool ChooseMenuType, const string& MenuFileName);
-	bool DeleteMenuRecord(menu_container& Menu, const menu_container::iterator& MenuItem);
-	bool EditMenu(menu_container& Menu, menu_container::iterator* MenuItem, bool Create);
-	int ProcessSingleMenu(menu_container& Menu, int MenuPos, menu_container& MenuRoot, const string& MenuFileName, const string& Title);
-	void SaveMenu(const string& MenuFileName) const;
-	intptr_t EditMenuDlgProc(Dialog* Dlg,intptr_t Msg,intptr_t Param1,void* Param2);
-
-	enum class menu_mode: int;
-
-	menu_mode m_MenuMode;
-	bool m_MenuModified;
-	bool m_ItemChanged;
-	uintptr_t m_MenuCP;
-	menu_container m_Menu;
-};
+void user_menu(bool ChooseMenuType); // true - выбор типа меню (основное или локальное), false - зависит от наличия FarMenu.Ini в текущем каталоге
+void user_menu(string_view MenuFileName);
 
 #endif // USERMENU_HPP_E234A9E0_BB8F_49CD_9C80_A1004107088D

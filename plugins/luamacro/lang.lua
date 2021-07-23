@@ -1,9 +1,12 @@
 local list = {
   "MOk",
   "MMacroParseErrorTitle",
+  "MReloadMacros",
 
   "UtExecuteMacroTitle",
   "UtExecuteMacroBottom",
+  "UtNoDescription_Index",
+  "UtLowPriority",
 
   -- macro browser help window
   "MBHelpLine1",
@@ -16,6 +19,7 @@ local list = {
   "MBHelpLine8",
   "MBHelpLine9",
   "MBHelpLine10",
+  "MBHelpLine11",
 
   -- macro browser separators
   "MBSepMacros",

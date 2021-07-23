@@ -32,16 +32,27 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
+
+// Platform:
+
+// Common:
+#include "common/smart_ptr.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
+
 class transactional
 {
 public:
 	virtual ~transactional() = default;
 
-	virtual bool BeginTransaction() = 0;
-	virtual bool EndTransaction() = 0;
-	virtual bool RollbackTransaction() = 0;
+	virtual void BeginTransaction() = 0;
+	virtual void EndTransaction() = 0;
 
-	auto ScopedTransaction() { return make_raii_wrapper(this, &transactional::BeginTransaction, &transactional::EndTransaction); }
+	[[nodiscard]]
+	auto ScopedTransaction() { return make_raii_wrapper<&transactional::BeginTransaction, &transactional::EndTransaction>(this); }
 };
 
 

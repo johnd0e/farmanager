@@ -1,9 +1,10 @@
 NAME = FileCase
-SRCS = FileCase.cpp filecvt.cpp FileMix.cpp ProcessName.cpp
-DOCS = CaseEng.hlf CaseRus.hlf CaseEng.lng CaseRus.lng CaseSky.lng CaseSpa.lng
 
-include ../../far/makefile_gcc_common
+SRCS = \
+	FileCase.cpp \
+	filecvt.cpp \
+	FileMix.cpp \
+	ProcessName.cpp
 
 include ../makefile_gcc_def_inc
-
 include ../makefile_gcc_target_inc

@@ -1,4 +1,4 @@
-#include "OleThread.h"
+ï»¿#include "OleThread.h"
 #include <strsafe.h>
 #include <windows.h>
 #include <comdef.h>
@@ -8,33 +8,33 @@
 
 namespace OleThread
 {
-  CHandle *hNeedInvoke=NULL;
-  CHandle *hInvokeDone=NULL;
-  CHandle *hStop=NULL;
-  CHandle *hShowMenu=NULL;
-  CHandle *hMenuDone=NULL;
-  CThreadTerminator *hTerminator;
+  static CHandle *hNeedInvoke{};
+  static CHandle *hInvokeDone{};
+  static CHandle *hStop{};
+  static CHandle *hShowMenu{};
+  static CHandle *hMenuDone{};
+  static CThreadTerminator *hTerminator;
 
   namespace OpenPluginArgs
   {
-    int nOpenFrom;
-    INT_PTR nItem;
-    CPlugin::EDoMenu enRes;
+    static int nOpenFrom;
+    static INT_PTR nItem;
+    static CPlugin::EDoMenu enRes;
   }
 
   namespace ShowMenuArgs
   {
-    CFarMenu *Menu;
-    LPCWSTR szTitle;
-    int nSelItem;
-    bool bAtCursorPos;
-    int Res;
+    static CFarMenu *Menu;
+    static LPCWSTR szTitle;
+    static int nSelItem;
+    static bool bAtCursorPos;
+    static int Res;
   }
 
-  DWORD WINAPI ThreadProc(LPVOID)
+  static DWORD WINAPI ThreadProc(LPVOID)
   {
     //HRESULT hr=CoInitializeEx(0, COINIT_MULTITHREADED);//! COINIT_APARTMENTTHREADED
-    if (FAILED(OleInitialize(NULL)))
+    if (FAILED(OleInitialize({})))
     {
       assert(0);
     }
@@ -54,16 +54,16 @@ namespace OleThread
 //break;//!
       }
 
-      // * Îáúÿñíÿþ çà÷åì  çäåñü ëîâèòü ñîáùåíèÿ *
-      // Åñëè â Build950, OSR2 èëè â ME ñêîïèðîâàòü/âûðåçàòü ôàéë
-      // â áóôåð. à ïîòîì íå âûõîäÿ èç FARà ïîïðîáîâàòü âûçâàòü
-      // êîíòåêñòíîå ìåíþ äëÿ êàêîé-íèáóäü ïàïêè â ýêñïëîðåðå
-      // , òî FARó áåäåò ïîñëàíî ñîîáùåíèå è äî òåõ ïîð ïîêà îíî
-      // íå îáðàáîòàåòñÿ ìåíþ íå ïîêàæåòñÿ.
+      // * ÐžÐ±ÑŠÑÑÐ½ÑÑŽ Ð·Ð°Ñ‡ÐµÐ¼  Ð·Ð´ÐµÑÑŒ Ð»Ð¾Ð²Ð¸Ñ‚ÑŒ ÑÐ¾Ð±Ñ‰ÐµÐ½Ð¸Ñ *
+      // Ð•ÑÐ»Ð¸ Ð² Build950, OSR2 Ð¸Ð»Ð¸ Ð² ME ÑÐºÐ¾Ð¿Ð¸Ñ€Ð¾Ð²Ð°Ñ‚ÑŒ/Ð²Ñ‹Ñ€ÐµÐ·Ð°Ñ‚ÑŒ Ñ„Ð°Ð¹Ð»
+      // Ð² Ð±ÑƒÑ„ÐµÑ€. Ð° Ð¿Ð¾Ñ‚Ð¾Ð¼ Ð½Ðµ Ð²Ñ‹Ñ…Ð¾Ð´Ñ Ð¸Ð· FARÐ° Ð¿Ð¾Ð¿Ñ€Ð¾Ð±Ð¾Ð²Ð°Ñ‚ÑŒ Ð²Ñ‹Ð·Ð²Ð°Ñ‚ÑŒ
+      // ÐºÐ¾Ð½Ñ‚ÐµÐºÑÑ‚Ð½Ð¾Ðµ Ð¼ÐµÐ½ÑŽ Ð´Ð»Ñ ÐºÐ°ÐºÐ¾Ð¹-Ð½Ð¸Ð±ÑƒÐ´ÑŒ Ð¿Ð°Ð¿ÐºÐ¸ Ð² ÑÐºÑÐ¿Ð»Ð¾Ñ€ÐµÑ€Ðµ
+      // , Ñ‚Ð¾ FARÑƒ Ð±ÐµÐ´ÐµÑ‚ Ð¿Ð¾ÑÐ»Ð°Ð½Ð¾ ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ðµ Ð¸ Ð´Ð¾ Ñ‚ÐµÑ… Ð¿Ð¾Ñ€ Ð¿Ð¾ÐºÐ° Ð¾Ð½Ð¾
+      // Ð½Ðµ Ð¾Ð±Ñ€Ð°Ð±Ð¾Ñ‚Ð°ÐµÑ‚ÑÑ Ð¼ÐµÐ½ÑŽ Ð½Ðµ Ð¿Ð¾ÐºÐ°Ð¶ÐµÑ‚ÑÑ.
       MSG msg;
-      if (PeekMessage(&msg, (HWND)NULL, 0, 0, PM_NOREMOVE))
+      if (PeekMessage(&msg, {}, 0, 0, PM_NOREMOVE))
       {
-        GetMessage(&msg, (HWND)NULL, 0, 0);
+        GetMessage(&msg, {}, 0, 0);
         if (msg.message>=WM_USER)
         {
           DispatchMessage(&msg);
@@ -79,20 +79,20 @@ namespace OleThread
         if (nWaitTime<100) nWaitTime+=1;
       }
     }
-//    Â Build950 âûçûâàåò ïàäåíèå
+//    Ð’ Build950 Ð²Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ Ð¿Ð°Ð´ÐµÐ½Ð¸Ðµ
 //    OleUninitialize();
     return 0;
   }
 
-  HANDLE hThread=NULL;
+  static HANDLE hThread{};
 
-  bool EnsureThreadStarted()
+  static bool EnsureThreadStarted()
   {
-    if (!*hNeedInvoke) *hNeedInvoke=CreateEvent(NULL, FALSE, FALSE, NULL);
-    if (!*hInvokeDone) *hInvokeDone=CreateEvent(NULL, FALSE, FALSE, NULL);
-    if (!*hStop) *hStop=CreateEvent(NULL, FALSE, FALSE, NULL);
-    if (!*hShowMenu) *hShowMenu=CreateEvent(NULL, FALSE, FALSE, NULL);
-    if (!*hMenuDone) *hMenuDone=CreateEvent(NULL, FALSE, FALSE, NULL);
+    if (!*hNeedInvoke) *hNeedInvoke=CreateEvent({}, FALSE, FALSE, {});
+    if (!*hInvokeDone) *hInvokeDone=CreateEvent({}, FALSE, FALSE, {});
+    if (!*hStop) *hStop=CreateEvent({}, FALSE, FALSE, {});
+    if (!*hShowMenu) *hShowMenu=CreateEvent({}, FALSE, FALSE, {});
+    if (!*hMenuDone) *hMenuDone=CreateEvent({}, FALSE, FALSE, {});
     if (!*hNeedInvoke || !*hInvokeDone || !*hStop || !*hShowMenu || !*hMenuDone)
     {
       assert(0);
@@ -104,8 +104,8 @@ namespace OleThread
       if (STILL_ACTIVE==nStatus) return true;
     }
     DWORD nId;
-    hThread=CreateThread(NULL, 0, ThreadProc, 0, 0, &nId);
-    return (NULL!=hThread);
+    hThread=CreateThread({}, 0, ThreadProc, {}, 0, &nId);
+    return (hThread != nullptr);
   }
 
   CPlugin::EDoMenu OpenPlugin(int nOpenFrom, INT_PTR nItem)

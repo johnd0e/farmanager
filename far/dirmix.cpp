@@ -31,8 +31,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "dirmix.hpp"
 
+// Internal:
 #include "cvtname.hpp"
 #include "message.hpp"
 #include "lang.hpp"
@@ -45,14 +50,20 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "network.hpp"
 #include "string_utils.hpp"
 
+// Platform:
 #include "platform.env.hpp"
 #include "platform.fs.hpp"
 
+// Common:
+
+// External:
 #include "format.hpp"
+
+//----------------------------------------------------------------------------
 
 static auto make_curdir_name(wchar_t Drive)
 {
-	return format(L"={0}:", upper(Drive));
+	return format(FSTR(L"={}:"sv), upper(Drive));
 }
 
 static auto env_get_current_dir(wchar_t Drive)
@@ -65,67 +76,75 @@ static auto env_set_current_dir(wchar_t Drive, const string_view Value)
 	return os::env::set(make_curdir_name(Drive), Value);
 }
 
-bool FarChDir(string_view const NewDir, bool ChangeDir)
+void set_drive_env_curdir(string_view const Directory)
+{
+	if (Directory.size() > 1 && Directory[1] == L':')
+		env_set_current_dir(Directory[0], Directory);
+}
+
+bool FarChDir(string_view const NewDir)
 {
 	if (NewDir.empty())
 		return false;
 
-	bool rc = false;
-	string strCurDir;
-
-	bool IsNetworkDrive = false;
+	string Directory;
 
 	// если указана только буква диска, то путь возьмем из переменной
-	if (NewDir.size() == 2 && NewDir[1]==L':')
+	if (NewDir.size() == 2 && NewDir[1] == L':')
 	{
-		strCurDir = env_get_current_dir(NewDir[0]);
-		if (strCurDir.empty())
-		{
-			assign(strCurDir, NewDir);
-			AddEndSlash(strCurDir);
-			ReplaceSlashToBackslash(strCurDir);
-		}
-
-		if (ChangeDir)
-		{
-			rc=os::fs::SetCurrentDirectory(strCurDir);
-		}
-
-		if (!rc && GetLastError() == ERROR_PATH_NOT_FOUND)
-		{
-			IsNetworkDrive = os::fs::is_standard_drive_letter(NewDir[0]) && GetSavedNetworkDrives()[os::fs::get_drive_number(NewDir[0])];
-		}
+		Directory = env_get_current_dir(NewDir[0]);
+		if (Directory.empty())
+			Directory = NewDir;
 	}
 	else
 	{
-		if (ChangeDir)
-		{
-			strCurDir = ConvertNameToFull(NewDir);
-			ReplaceSlashToBackslash(strCurDir);
-			AddEndSlash(strCurDir);
-			PrepareDiskPath(strCurDir,false); // resolving not needed, very slow
-			rc=os::fs::SetCurrentDirectory(strCurDir);
-		}
+		Directory = ConvertNameToFull(NewDir);
 	}
 
-	if (!rc && (IsNetworkDrive || GetLastError() == ERROR_LOGON_FAILURE))
+	AddEndSlash(Directory);
+	ReplaceSlashToBackslash(Directory);
+	PrepareDiskPath(Directory, false); // resolving not needed, very slow
+
+	const auto PathType = ParsePath(Directory);
+
+	const auto IsNetworkPath = PathType == root_type::remote || PathType == root_type::unc_remote;
+
+	std::optional<elevation::suppress> NoElevation;
+
+	// It's usually useless over the network anyway
+	// TODO: a more generic/common way
+	if (IsNetworkPath)
+		NoElevation.emplace();
+
+	if (os::fs::SetCurrentDirectory(Directory))
 	{
-		ConnectToNetworkResource(strCurDir);
-		rc = os::fs::SetCurrentDirectory(strCurDir);
+		set_drive_env_curdir(Directory);
+		return true;
 	}
 
-	if (rc || !ChangeDir)
+	const auto LastError = GetLastError();
+	if (LastError != ERROR_PATH_NOT_FOUND && LastError != ERROR_ACCESS_DENIED && LastError != ERROR_LOGON_FAILURE)
+		return false;
+
 	{
-		if (ChangeDir)
-			strCurDir = os::fs::GetCurrentDirectory();
+		SCOPED_ACTION(os::last_error_guard);
 
-		if (strCurDir.size() > 1 && strCurDir[1]==L':')
-		{
-			env_set_current_dir(strCurDir[0], strCurDir);
-		}
+		const auto IsDrive = PathType == root_type::drive_letter || PathType == root_type::win32nt_drive_letter;
+		const auto IsNetworkDrive = IsDrive && os::fs::drive::is_standard_letter(Directory[0]) && GetSavedNetworkDrives()[os::fs::drive::get_number(Directory[0])];
+
+		if (!IsNetworkDrive && !IsNetworkPath)
+			return false;
 	}
 
-	return rc;
+	ConnectToNetworkResource(Directory);
+
+	if (os::fs::SetCurrentDirectory(Directory))
+	{
+		set_drive_env_curdir(Directory);
+		return true;
+	}
+
+	return false;
 }
 
 /*
@@ -137,19 +156,16 @@ bool FarChDir(string_view const NewDir, bool ChangeDir)
     TSTFLD_NOTACCESS (-1) - нет доступа
     TSTFLD_ERROR     (-2) - ошибка (кривые параметры или не хватило памяти для выделения промежуточных буферов)
 */
-int TestFolder(const string& Path)
+int TestFolder(string_view const Path)
 {
 	if (Path.empty())
 		return TSTFLD_ERROR;
 
 	// первая проверка - че-нить считать можем?
-	const auto Find = os::fs::enum_files(path::join(Path, L'*'));
-	if (Find.begin() != Find.end())
-	{
+	if (os::fs::is_not_empty_directory(Path))
 		return TSTFLD_NOTEMPTY;
-	}
 
-	const auto ErrorState = error_state::fetch();
+	const auto ErrorState = last_error();
 	const auto LastError = ErrorState.Win32Error;
 	if (LastError == ERROR_FILE_NOT_FOUND || LastError == ERROR_NO_MORE_FILES)
 		return TSTFLD_EMPTY;
@@ -197,10 +213,9 @@ bool CheckShortcutFolder(string& TestPath, bool TryClosest, bool Silent)
 		return true;
 
 	SetLastError(ERROR_PATH_NOT_FOUND);
-	const auto ErrorState = error_state::fetch();
+	const auto ErrorState = last_error();
 
-	auto Target = TestPath;
-	TruncPathStr(Target, ScrX - 16);
+	const auto Target = truncate_path(TestPath, ScrX - 16);
 
 	if (!TryClosest)
 	{
@@ -242,23 +257,29 @@ bool CheckShortcutFolder(string& TestPath, bool TryClosest, bool Silent)
 	return false;
 }
 
-void CreatePath(const string &InputPath, bool Simple)
+bool CreatePath(string_view const InputPath, bool const AddToTreeCache)
 {
 	const auto Path = ConvertNameToFull(InputPath);
+
 	size_t DirOffset = 0;
 	ParsePath(Path, &DirOffset);
-	string Part;
-	Part.reserve(Path.size());
+
 	for (size_t i = DirOffset; i <= Path.size(); ++i)
 	{
-		if (i == Path.size() || IsSlash(Path[i]))
-		{
-			Part.assign(Path, 0, i);
-			if (!os::fs::exists(Part))
-			{
-				if(os::fs::create_directory(Part) && !Simple)
-					TreeList::AddTreeName(Part);
-			}
-		}
+		if (i != Path.size() && !path::is_separator(Path[i]))
+			continue;
+
+		const auto Part = string_view(Path).substr(0, i);
+
+		if (os::fs::is_directory(Part))
+			continue;
+
+		if (!os::fs::create_directory(Part))
+			return false;
+
+		if (AddToTreeCache)
+			TreeList::AddTreeName(Part);
 	}
+
+	return true;
 }

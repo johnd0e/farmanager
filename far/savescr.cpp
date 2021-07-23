@@ -31,13 +31,26 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "savescr.hpp"
 
+// Internal:
 #include "farcolor.hpp"
-#include "syslog.hpp"
 #include "interf.hpp"
 #include "console.hpp"
 #include "colormix.hpp"
+
+// Platform:
+
+// Common:
+#include "common/utility.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 static void CleanupBuffer(FAR_CHAR_INFO* Buffer, size_t BufSize)
 {
@@ -47,21 +60,18 @@ static void CleanupBuffer(FAR_CHAR_INFO* Buffer, size_t BufSize)
 
 SaveScreen::SaveScreen()
 {
-	_OT(SysLog(L"[%p] SaveScreen::SaveScreen()", this));
-	SaveArea(0,0,ScrX,ScrY);
+	SaveArea({ 0, 0, ScrX, ScrY });
 }
 
-SaveScreen::SaveScreen(int X1,int Y1,int X2,int Y2)
+SaveScreen::SaveScreen(rectangle Where)
 {
-	fix_coordinates(X1, Y1, X2, Y2);
-	_OT(SysLog(L"[%p] SaveScreen::SaveScreen(X1=%i,Y1=%i,X2=%i,Y2=%i)",this,X1,Y1,X2,Y2));
-	SaveArea(X1,Y1,X2,Y2);
+	fix_coordinates(Where);
+	SaveArea(Where);
 }
 
 
 SaveScreen::~SaveScreen()
 {
-	_OT(SysLog(L"[%p] SaveScreen::~SaveScreen()", this));
 	RestoreArea();
 }
 
@@ -78,24 +88,21 @@ void SaveScreen::RestoreArea(int RestoreCursor)
 	if (ScreenBuf.empty())
 		return;
 
-	PutText(m_X1, m_Y1, m_X2, m_Y2, ScreenBuf.data());
+	PutText(m_Where, ScreenBuf.data());
 
 	if (RestoreCursor)
 	{
 		SetCursorType(CurVisible,CurSize);
-		MoveCursor(CurPosX,CurPosY);
+		MoveCursor(m_Cursor);
 	}
 }
 
 
-void SaveScreen::SaveArea(int X1,int Y1,int X2,int Y2)
+void SaveScreen::SaveArea(rectangle Where)
 {
-	fix_coordinates(X1, Y1, X2, Y2);
+	fix_coordinates(Where);
 
-	m_X1=X1;
-	m_Y1=Y1;
-	m_X2=X2;
-	m_Y2=Y2;
+	m_Where = Where;
 
 	ScreenBuf.allocate(height(), width());
 	SaveArea();
@@ -106,22 +113,22 @@ void SaveScreen::SaveArea()
 	if (ScreenBuf.empty())
 		return;
 
-	GetText(m_X1, m_Y1, m_X2, m_Y2, ScreenBuf);
-	GetCursorPos(CurPosX,CurPosY);
+	GetText(m_Where, ScreenBuf);
+	m_Cursor = GetCursorPos();
 	GetCursorType(CurVisible,CurSize);
 }
 
 void SaveScreen::AppendArea(const SaveScreen *NewArea)
 {
-	const auto& Offset = [](const SaveScreen* Ptr, int X, int Y)
+	const auto Offset = [](const SaveScreen* Ptr, int X, int Y)
 	{
-		return X - Ptr->m_X1 + Ptr->width() * (Y - Ptr->m_Y1);
+		return X - Ptr->m_Where.left + Ptr->width() * (Y - Ptr->m_Where.top);
 	};
 
-	for (int X = m_X1; X <= m_X2; X++)
-		if (X >= NewArea->m_X1 && X <= NewArea->m_X2)
-			for (int Y = m_Y1; Y <= m_Y2; Y++)
-				if (Y >= NewArea->m_Y1 && Y <= NewArea->m_Y2)
+	for (int X = m_Where.left; X <= m_Where.right; ++X)
+		if (X >= NewArea->m_Where.left && X <= NewArea->m_Where.right)
+			for (int Y = m_Where.top; Y <= m_Where.bottom; ++Y)
+				if (Y >= NewArea->m_Where.top && Y <= NewArea->m_Where.bottom)
 					ScreenBuf.vector()[Offset(this, X, Y)] = NewArea->ScreenBuf.vector()[Offset(NewArea, X, Y)];
 }
 
@@ -138,10 +145,7 @@ void SaveScreen::Resize(int DesiredWidth, int DesiredHeight, bool SyncWithConsol
 	matrix<FAR_CHAR_INFO> NewBuf(DesiredHeight, DesiredWidth);
 	CleanupBuffer(NewBuf.data(), NewBuf.size());
 
-	const auto NewX1 = m_X1;
-	const auto NewX2 = m_X1 + DesiredWidth - 1;
-	const auto NewY1 = m_Y1;
-	const auto NewY2 = m_Y1 + DesiredHeight - 1;
+	const rectangle NewWhere = { m_Where.left, m_Where.top, m_Where.left + DesiredWidth - 1, m_Where.top + DesiredHeight - 1 };
 
 	const auto DeltaY = abs(DesiredHeight - OriginalHeight);
 	const size_t CopyWidth = std::min(OriginalWidth, DesiredWidth);
@@ -169,12 +173,11 @@ void SaveScreen::Resize(int DesiredWidth, int DesiredHeight, bool SyncWithConsol
 	// achtung, experimental
 	if (SyncWithConsole)
 	{
-		std::pair<SMALL_RECT, bool> WindowRect;
+		std::pair<rectangle, bool> WindowRect;
 		WindowRect.second = console.GetWindowRect(WindowRect.first);
-		const auto IsExtraTop = WindowRect.second && !(WindowRect.first.Top == 0 && WindowRect.first.Bottom == ScrY);
-		const auto IsExtraRight = WindowRect.second && !(WindowRect.first.Left == 0 && WindowRect.first.Right == ScrX);
+		const auto IsExtraTop = WindowRect.second && !(WindowRect.first.top == 0 && WindowRect.first.bottom == OriginalHeight);
+		const auto IsExtraRight = WindowRect.second && !(WindowRect.first.left == 0 && WindowRect.first.right == OriginalWidth);
 
-		console.ResetPosition();
 		if (DesiredHeight != OriginalHeight)
 		{
 			matrix<FAR_CHAR_INFO> Tmp(abs(OriginalHeight - DesiredHeight), std::max(DesiredWidth, OriginalWidth));
@@ -182,7 +185,7 @@ void SaveScreen::Resize(int DesiredWidth, int DesiredHeight, bool SyncWithConsol
 			{
 				if (IsExtraTop)
 				{
-					SMALL_RECT ReadRegion = { 0, 0, static_cast<SHORT>(DesiredWidth - 1), static_cast<SHORT>(DesiredHeight - OriginalHeight - 1) };
+					rectangle const ReadRegion{ 0, 0, DesiredWidth - 1, DesiredHeight - OriginalHeight - 1 };
 					if (console.ReadOutput(Tmp, ReadRegion))
 					{
 						for (size_t i = 0; i != Tmp.height(); ++i)
@@ -194,7 +197,7 @@ void SaveScreen::Resize(int DesiredWidth, int DesiredHeight, bool SyncWithConsol
 			}
 			else
 			{
-				SMALL_RECT WriteRegion = { 0, static_cast<SHORT>(DesiredHeight - OriginalHeight), static_cast<SHORT>(DesiredWidth - 1), -1 };
+				rectangle const WriteRegion{ 0, DesiredHeight - OriginalHeight, DesiredWidth - 1, -1 };
 				for (size_t i = 0; i != Tmp.height(); ++i)
 				{
 					std::copy_n(ScreenBuf[i].data(), Tmp.width(), Tmp[i].data());
@@ -211,7 +214,7 @@ void SaveScreen::Resize(int DesiredWidth, int DesiredHeight, bool SyncWithConsol
 			{
 				if (IsExtraRight)
 				{
-					SMALL_RECT ReadRegion = { static_cast<SHORT>(OriginalWidth), 0, static_cast<SHORT>(DesiredWidth - 1), static_cast<SHORT>(DesiredHeight - 1) };
+					rectangle const ReadRegion{ OriginalWidth, 0, DesiredWidth - 1, DesiredHeight - 1 };
 					console.ReadOutput(Tmp, ReadRegion);
 					for (size_t i = 0; i != NewBuf.height(); ++i)
 					{
@@ -221,7 +224,7 @@ void SaveScreen::Resize(int DesiredWidth, int DesiredHeight, bool SyncWithConsol
 			}
 			else
 			{
-				SMALL_RECT WriteRegion = { static_cast<SHORT>(DesiredWidth), static_cast<SHORT>(DesiredHeight - OriginalHeight), static_cast<SHORT>(OriginalWidth - 1), static_cast<SHORT>(DesiredHeight - 1) };
+				rectangle const WriteRegion{ DesiredWidth, DesiredHeight - OriginalHeight, OriginalWidth - 1, DesiredHeight - 1 };
 				for (size_t i = 0; i != Tmp.height(); ++i)
 				{
 					if (static_cast<int>(i) < OriginalHeight)
@@ -237,10 +240,5 @@ void SaveScreen::Resize(int DesiredWidth, int DesiredHeight, bool SyncWithConsol
 
 	using std::swap;
 	swap(ScreenBuf, NewBuf);
-	m_X1 = NewX1; m_Y1 = NewY1; m_X2 = NewX2; m_Y2 = NewY2;
-}
-
-void SaveScreen::DumpBuffer(const wchar_t *Title)
-{
-	SaveScreenDumpBuffer(Title, ScreenBuf.data(), m_X1, m_Y1, m_X2, m_Y2, nullptr);
+	m_Where = NewWhere;
 }

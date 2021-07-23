@@ -31,75 +31,54 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "global.hpp"
 
+// Internal:
 #include "scrbuf.hpp"
 #include "config.hpp"
 #include "configdb.hpp"
-#include "ctrlobj.hpp"
 #include "manager.hpp"
 
-global::global():
-	OnlyEditorViewerUsed(),
+// Platform:
+#include "platform.fs.hpp"
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
+
+global::global() :
+	g_strFarModuleName(os::fs::get_current_process_file_name()),
+	ErrorMode(SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX),
 	m_MainThreadId(GetCurrentThreadId()),
 	m_MainThreadHandle(os::OpenCurrentThread()),
-	m_SearchHex(),
-	m_ConfigProvider(),
+	m_FarStartTime(std::chrono::steady_clock::now()),
 	Opt(std::make_unique<Options>()),
 	ScrBuf(std::make_unique<ScreenBuf>()),
-	WindowManager(std::make_unique<Manager>()),
-	CtrlObject(nullptr)
+	WindowManager(std::make_unique<Manager>())
 {
 	Global = this;
-
-	// BUGBUG
-
-	// идет процесс назначения клавиши в макросе?
-	IsProcessAssignMacroKey = 0;
-	PluginPanelsCount = 0;
-	GlobalSearchCase=false;
-	GlobalSearchWholeWords=false; // значение "Whole words" для поиска
-	GlobalSearchReverse=false;
-	ScreenSaverActive = false;
-	CloseFAR = false;
-	CloseFARMenu = false;
-	AllowCancelExit = true;
-	DisablePluginsOutput = false;
-	ProcessException = false;
-	HelpFileMask = L"*.hlf"sv;
-#if defined(SYSLOG)
-	StartSysLog = false;
-#endif
-#ifdef DIRECT_RT
-	DirectRT = false;
-#endif
-	GlobalSaveScrPtr=nullptr;
-	CriticalInternalError = false;
-	KeepUserScreen = 0;
-	Macro_DskShowPosType=0; // для какой панели вызывали меню выбора дисков (0 - ничерта не вызывали, 1 - левая (AltF1), 2 - правая (AltF2))
-	ErrorMode = SEM_FAILCRITICALERRORS|SEM_NOOPENFILEERRORBOX;
-
-	// BUGBUG end
 }
 
 global::~global()
 {
-	delete CtrlObject;
-	CtrlObject = nullptr;
-	delete m_ConfigProvider;
-	m_ConfigProvider = nullptr;
 	Global = nullptr;
 }
 
-void global::StoreSearchString(const string& Str, bool Hex)
+std::chrono::steady_clock::duration global::FarUpTime() const
+{
+	return std::chrono::steady_clock::now() - m_FarStartTime;
+}
+
+void global::StoreSearchString(string_view const Str, bool Hex)
 {
 	m_SearchHex = Hex;
 	m_SearchString = Str;
-}
-
-bool global::IsPanelsActive() const
-{
-	return Global->WindowManager && Global->WindowManager->IsPanelsActive(true, true);
 }
 
 global::far_clock::far_clock()
@@ -117,10 +96,14 @@ size_t global::far_clock::size() const
 	return m_CurrentTime.size();
 }
 
-void global::far_clock::update()
+void global::far_clock::update(bool const Force)
 {
-	m_CurrentTime = os::chrono::format_time();
+	const auto Now = os::chrono::nt_clock::now();
+	const auto Value = Now.time_since_epoch() / 1min;
+
+	if (!Force && Value == m_LastValue)
+		return;
+
+	m_CurrentTime = os::chrono::format_time(Now);
+	m_LastValue = Value;
 }
-
-
-#include "bootstrap/copyright.inc"

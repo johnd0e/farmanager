@@ -33,10 +33,18 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
+
+// Platform:
 #include "platform.concurrency.hpp"
 
+// Common:
 #include "common/singleton.hpp"
 #include "common/type_traits.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 enum event_id
 {
@@ -45,15 +53,14 @@ enum event_id
 	update_devices,
 	update_environment,
 
-	plugin_synchro,
-
 	event_id_count
 };
 
 struct update_devices_message
 {
-	bool Arrival;
 	unsigned Drives;
+	bool Arrival;
+	bool Media;
 };
 
 class wm_listener;
@@ -69,13 +76,13 @@ namespace detail
 		using without_payload = decltype(std::declval<T&>()());
 
 	public:
-		template<typename callable_type, REQUIRES(is_valid_v<callable_type, with_payload>)>
+		template<typename callable_type, REQUIRES(is_detected_v<with_payload, callable_type>)>
 		explicit event_handler(callable_type&& Handler):
 			function(FWD(Handler))
 		{
 		}
 
-		template<typename callable_type, REQUIRES(is_valid_v<callable_type, without_payload>)>
+		template<typename callable_type, REQUIRES(is_detected_v<without_payload, callable_type>)>
 		explicit event_handler(callable_type&& Handler):
 			function([Handler = FWD(Handler)](const std::any&) { Handler(); })
 		{
@@ -85,26 +92,19 @@ namespace detail
 
 class message_manager: public singleton<message_manager>
 {
-	IMPLEMENTS_SINGLETON(message_manager);
+	IMPLEMENTS_SINGLETON;
 
 public:
-	using handlers_map = std::multimap<string, const detail::event_handler*>;
+	using handlers_map = std::unordered_multimap<string, const detail::event_handler*>;
 
+	handlers_map::iterator subscribe(UUID const& EventId, const detail::event_handler& EventHandler);
 	handlers_map::iterator subscribe(event_id EventId, const detail::event_handler& EventHandler);
-	handlers_map::iterator subscribe(const string& EventName, const detail::event_handler& EventHandler);
+	handlers_map::iterator subscribe(string_view EventName, const detail::event_handler& EventHandler);
 	void unsubscribe(handlers_map::iterator HandlerIterator);
+	void notify(UUID const& EventId, std::any&& Payload = {});
 	void notify(event_id EventId, std::any&& Payload = {});
-	void notify(const string& EventName, std::any&& Payload = {});
+	void notify(string_view EventId, std::any&& Payload = {});
 	bool dispatch();
-
-	auto suppress()
-	{
-		return make_raii_wrapper(
-			this,
-			[](message_manager* Owner){ ++Owner->m_suppressions; },
-			[](message_manager* Owner){ --Owner->m_suppressions; }
-		);
-	}
 
 private:
 	using message_queue = os::synced_queue<std::pair<string, std::any>>;
@@ -112,52 +112,55 @@ private:
 	message_manager();
 	~message_manager();
 
-	// Note: non-std - std is incompatible with Win2k
-	using mutex_type = os::concurrency::shared_mutex;
-	mutex_type m_RWLock;
+	void commit_add();
+	void commit_remove();
+
+	os::concurrency::critical_section
+		m_PendingLock,
+		m_ActiveLock;
+
 	message_queue m_Messages;
-	handlers_map m_Handlers;
+
+	handlers_map
+		m_PendingHandlers,
+		m_ActiveHandlers;
+
 	std::unique_ptr<wm_listener> m_Window;
-	std::atomic_ulong m_suppressions{};
+
+	std::atomic_size_t m_DispatchInProgress{};
 };
 
-namespace detail
+class listener: noncopyable
 {
-	string CreateEventName();
-
-	template<class T>
-	class listener_t: noncopyable
+public:
+	template<class id_type, typename callable_type>
+	listener(const id_type& EventId, const callable_type& EventHandler):
+		m_Handler(EventHandler),
+		m_Iterator(message_manager::instance().subscribe(EventId, m_Handler))
 	{
-	public:
-		template<class id_type, typename callable_type>
-		listener_t(const id_type& EventId, const callable_type& EventHandler):
-			m_Handler(EventHandler),
-			m_Iterator(message_manager::instance().subscribe(EventId, m_Handler))
-		{
-		}
+	}
 
-		template<typename callable_type>
-		explicit listener_t(const callable_type& EventHandler):
-			listener_t(CreateEventName(), EventHandler)
-		{
-		}
+	template<typename callable_type>
+	explicit listener(const callable_type& EventHandler):
+		listener(CreateEventName(), EventHandler)
+	{
+	}
 
-		~listener_t()
-		{
-			message_manager::instance().unsubscribe(m_Iterator);
-		}
+	~listener()
+	{
+		message_manager::instance().unsubscribe(m_Iterator);
+	}
 
-		const string& GetEventName() const
-		{
-			return m_Iterator->first;
-		}
+	const string& GetEventName() const
+	{
+		return m_Iterator->first;
+	}
 
-	private:
-		T m_Handler;
-		message_manager::handlers_map::iterator m_Iterator;
-	};
-}
+private:
+	static string CreateEventName();
 
-using listener = detail::listener_t<detail::event_handler>;
+	detail::event_handler m_Handler;
+	message_manager::handlers_map::iterator m_Iterator;
+};
 
 #endif // NOTIFICATION_HPP_B0BB0D31_61E8_49C3_AA4F_E8C1D7D71A25

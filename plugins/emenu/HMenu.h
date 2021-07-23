@@ -1,4 +1,4 @@
-#ifndef _HMENU_H_
+﻿#ifndef _HMENU_H_
 #define _HMENU_H_
 
 #include <windows.h>
@@ -15,7 +15,7 @@ public:
     {
       assert(0);
     }
-    m_hMenu=NULL;
+    m_hMenu={};
   }
 
   void Clear()
@@ -30,7 +30,7 @@ public:
   }
 
   int GetMenuItemCount() {return ::GetMenuItemCount(m_hMenu);}
-  bool operator !() {return (NULL==m_hMenu);}
+  bool operator !() {return !m_hMenu;}
   operator HMENU() {return m_hMenu;}
 protected:
   HMENU m_hMenu;

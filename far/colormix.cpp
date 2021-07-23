@@ -30,46 +30,90 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "colormix.hpp"
 
+// Internal:
 #include "config.hpp"
-#include "string_utils.hpp"
+#include "console.hpp"
 #include "global.hpp"
+
+// Platform:
+
+// Common:
+#include "common/from_string.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 enum
 {
-	DefaultColor=0xf,
-	ConsoleMask=0xf,
 	ConsoleBgShift=4,
 	ConsoleFgShift=0,
-	ConsoleExtraMask = 0xff00
 };
+
+static auto to_rgba(COLORREF const Color)
+{
+	rgba Rgba;
+	static_assert(sizeof(Rgba) == sizeof(Color));
+
+	std::memcpy(&Rgba, &Color, sizeof(Color));
+	return Rgba;
+}
+
+static auto to_color(rgba const Rgba)
+{
+	COLORREF Color;
+	static_assert(sizeof(Color) == sizeof(Rgba));
+
+	std::memcpy(&Color, &Rgba, sizeof(Rgba));
+	return Color;
+}
 
 namespace colors
 {
-	COLORREF index_value(COLORREF const Colour)
+	COLORREF index_bits(COLORREF const Colour)
 	{
 		return Colour & INDEXMASK;
 	}
 
-	COLORREF color_value(COLORREF const Colour)
+	COLORREF color_bits(COLORREF const Colour)
 	{
 		return Colour & COLORMASK;
 	}
 
-	COLORREF alpha_value(COLORREF const Colour)
+	COLORREF alpha_bits(COLORREF const Colour)
 	{
 		return Colour & ALPHAMASK;
 	}
 
+	COLORREF index_value(COLORREF const Colour)
+	{
+		return index_bits(Colour) >> 0;
+	}
+
+	COLORREF color_value(COLORREF const Colour)
+	{
+		return color_bits(Colour) >> 0;
+	}
+
+	COLORREF alpha_value(COLORREF const Colour)
+	{
+		return alpha_bits(Colour) >> 24;
+	}
+
 	bool is_opaque(COLORREF const Colour)
 	{
-		return alpha_value(Colour) == ALPHAMASK;
+		return alpha_bits(Colour) == ALPHAMASK;
 	}
 
 	bool is_transparent(COLORREF const Colour)
 	{
-		return !alpha_value(Colour);
+		return !alpha_bits(Colour);
 	}
 
 	COLORREF opaque(COLORREF const Colour)
@@ -92,155 +136,270 @@ namespace colors
 		Colour = transparent(Colour);
 	}
 
-	size_t color_hash::operator()(const FarColor& Value) const
+	COLORREF invert(COLORREF Colour, bool const IsIndex)
 	{
-		size_t Seed = 0;
+		return alpha_bits(Colour) | (
+			IsIndex?
+			index_bits(~index_bits(Colour)) :
+			color_bits(~color_bits(Colour))
+		);
+	}
 
-		hash_combine(Seed, Value.Flags);
-		hash_combine(Seed, Value.BackgroundColor);
-		hash_combine(Seed, Value.ForegroundColor);
-		hash_combine(Seed, Value.Reserved);
+	void make_invert(COLORREF& Colour, bool const IsIndex)
+	{
+		Colour = invert(Colour, IsIndex);
+	}
 
-		return Seed;
+	size_t color_hash(const FarColor& Value)
+	{
+		return hash_combine_all(
+			Value.Flags,
+			Value.BackgroundColor,
+			Value.ForegroundColor);
 	}
 
 	FarColor merge(const FarColor& Bottom, const FarColor& Top)
 	{
-		FarColor Result = Bottom;
+		static FarColor LastResult, LastBottom, LastTop;
 
-		const auto& ApplyColorPart = [&](COLORREF FarColor::*ColorAccessor, const FARCOLORFLAGS Flag)
+		if (Bottom == LastBottom && Top == LastTop)
 		{
-			const auto TopPart = std::invoke(ColorAccessor, Top);
-			if (is_opaque(TopPart))
+			LastResult.Reserved[0] = Bottom.Reserved[0];
+			LastResult.Reserved[1] = Bottom.Reserved[1];
+			return LastResult;
+		}
+
+		auto Result = Bottom;
+
+		const auto merge_part = [&](COLORREF FarColor::*ColorAccessor, const FARCOLORFLAGS Flag)
+		{
+			const auto TopValue = std::invoke(ColorAccessor, Top);
+
+			// Nothing to apply
+			if (is_transparent(TopValue))
+				return;
+
+			auto& ResultValue = std::invoke(ColorAccessor, Result);
+
+			// Simple case
+			if (is_opaque(TopValue))
 			{
-				std::invoke(ColorAccessor, Result) = TopPart;
-				(Top.Flags & Flag)? (Result.Flags |= Flag) : (Result.Flags &= ~Flag);
+				ResultValue = TopValue;
+				flags::copy(Result.Flags, Flag, Top.Flags);
+				return;
 			}
+
+			// Alpha blending
+			const auto BottomValue = std::invoke(ColorAccessor, Bottom);
+
+			if (
+				TopValue == std::invoke(ColorAccessor, LastTop) && (Top.Flags & Flag) == (LastTop.Flags & Flag) &&
+				BottomValue == std::invoke(ColorAccessor, LastBottom) && (Bottom.Flags & Flag) == (LastBottom.Flags & Flag)
+			)
+			{
+				ResultValue = std::invoke(ColorAccessor, LastResult);
+				flags::clear(Result.Flags, Flag);
+				return;
+			}
+
+			const auto to_rgba = [](COLORREF const Color, bool const Is4Bit)
+			{
+				return ::to_rgba(Is4Bit ? ConsoleIndexToTrueColor(Color) : Color);
+			};
+
+			const auto TopRGBA = to_rgba(TopValue, (Top.Flags & Flag) != 0);
+			const auto BottomRGBA = to_rgba(BottomValue, (Bottom.Flags & Flag) != 0);
+
+			const auto calc_channel = [&](unsigned char rgba::*Accessor)
+			{
+				return static_cast<unsigned char>((std::invoke(Accessor, TopRGBA) * TopRGBA.a + (0xFF - TopRGBA.a) * std::invoke(Accessor, BottomRGBA)) / 0xFF);
+			};
+
+			rgba const MergedRGBA
+			{
+				calc_channel(&rgba::r),
+				calc_channel(&rgba::g),
+				calc_channel(&rgba::b),
+				static_cast<unsigned char>(BottomRGBA.a | ((0xFF - BottomRGBA.a) * TopRGBA.a / 0xFF))
+			};
+
+			ResultValue = to_color(MergedRGBA);
+			flags::clear(Result.Flags, Flag);
 		};
 
-		ApplyColorPart(&FarColor::BackgroundColor, FCF_BG_4BIT);
-		ApplyColorPart(&FarColor::ForegroundColor, FCF_FG_4BIT);
+		merge_part(&FarColor::BackgroundColor, FCF_BG_4BIT);
+		merge_part(&FarColor::ForegroundColor, FCF_FG_4BIT);
 
-		Result.Flags |= Top.Flags & FCF_EXTENDEDFLAGS;
+		if (Top.Flags & FCF_INHERIT_STYLE)
+		{
+			flags::set(Result.Flags, Top.Flags & FCF_STYLEMASK);
+		}
+		else
+		{
+			flags::copy(Result.Flags, FCF_STYLEMASK, Top.Flags);
+			flags::clear(Result.Flags, FCF_INHERIT_STYLE);
+		}
+
+		LastTop = Top;
+		LastBottom = Bottom;
+		LastResult = Result;
 
 		return Result;
 	}
+
+	static auto console_palette()
+	{
+		std::array<COLORREF, 16> Palette;
+		if (console.GetPalette(Palette))
+			return Palette;
+
+		return std::array
+		{
+			RGB(  0,   0,   0), // black
+			RGB(  0,   0, 128), // blue
+			RGB(  0, 128,   0), // green
+			RGB(  0, 128, 128), // cyan
+			RGB(128,   0,   0), // red
+			RGB(128,   0, 128), // magenta
+			RGB(128, 128,   0), // yellow
+			RGB(192, 192, 192), // white
+
+			RGB(128, 128, 128), // bright black
+			RGB(  0,   0, 255), // bright blue
+			RGB(  0, 255,   0), // bright green
+			RGB(  0, 255, 255), // bright cyan
+			RGB(255,   0,   0), // bright red
+			RGB(255,   0, 255), // bright magenta
+			RGB(255, 255,   0), // bright yellow
+			RGB(255, 255, 255)  // bright white
+		};
+	}
+
+	static WORD get_closest_palette_index(COLORREF const Color)
+	{
+		static const auto Palette = console_palette();
+
+		static std::unordered_map<COLORREF, WORD> Map;
+
+		if (const auto Iterator = Map.find(Color); Iterator != Map.cend())
+			return Iterator->second;
+
+		const auto PointRGBA = to_rgba(Color);
+
+		const auto distance = [&](COLORREF const PaletteColor)
+		{
+			const auto PaletteRGBA = to_rgba(PaletteColor);
+
+			const auto distance_part = [&](unsigned char rgba::* const Getter)
+			{
+				return std::abs(
+					int{ std::invoke(Getter, PointRGBA) } -
+					int{ std::invoke(Getter, PaletteRGBA) }
+				);
+			};
+
+			return std::sqrt(
+				std::pow(distance_part(&rgba::r), 2) +
+				std::pow(distance_part(&rgba::g), 2) +
+				std::pow(distance_part(&rgba::b), 2)
+			);
+		};
+
+		const auto ClosestPointIterator = std::min_element(ALL_CONST_RANGE(Palette), [&](COLORREF const Item1, COLORREF const Item2)
+		{
+			return distance(Item1) < distance(Item2);
+		});
+
+		const auto ClosestIndex = ClosestPointIterator - Palette.cbegin();
+
+		Map.emplace(Color, ClosestIndex);
+
+		return ClosestIndex;
+	}
+
 
 WORD FarColorToConsoleColor(const FarColor& Color)
 {
-	static COLORREF LastTrueColors[2] = {};
-	static FARCOLORFLAGS LastFlags = 0;
+	static FarColor LastColor{};
 	static WORD Result = 0;
 
-	if (Color.BackgroundColor == LastTrueColors[0] && Color.ForegroundColor == LastTrueColors[1] && (Color.Flags & FCF_4BITMASK) == (LastFlags & FCF_4BITMASK))
-		return Result;
+	const auto NonColorAttributes =
+		(Color.Flags & FCF_RAWATTR_MASK) |
+		(Color.Flags & FCF_FG_UNDERLINE? COMMON_LVB_UNDERSCORE : 0) |
+		(Color.Flags & FCF_FG_OVERLINE? COMMON_LVB_GRID_HORIZONTAL : 0);
 
-	LastFlags = Color.Flags;
+	if (
+		Color.BackgroundColor == LastColor.BackgroundColor &&
+		Color.ForegroundColor == LastColor.ForegroundColor &&
+		(Color.Flags & FCF_4BITMASK) == (LastColor.Flags & FCF_4BITMASK)
+	)
+		return Result | NonColorAttributes;
 
-	static BYTE IndexColors[2] = {};
-
-	const struct
+	const auto convert_and_save = [&](COLORREF FarColor::* const Getter, FARCOLORFLAGS const Flag, BYTE& IndexColor)
 	{
-		const COLORREF Color;
-		const rgba RGBA;
-		FARCOLORFLAGS Flags;
-		COLORREF* LastColor;
-		BYTE* IndexColor;
-	}
-	data[] =
-	{
-		{Color.BackgroundColor, Color.BackgroundRGBA, FCF_BG_4BIT, &LastTrueColors[0], &IndexColors[0]},
-		{Color.ForegroundColor, Color.ForegroundRGBA, FCF_FG_4BIT, &LastTrueColors[1], &IndexColors[1]}
+		const auto Current = std::invoke(Getter, Color);
+		auto& Last = std::invoke(Getter, LastColor);
+
+		if (Current == Last)
+			return;
+
+		Last = Current;
+
+		if (Color.Flags & Flag)
+		{
+			IndexColor = index_value(Current);
+			return;
+		}
+
+		IndexColor = get_closest_palette_index(color_value(Current));
 	};
 
-	enum console_mask
+	static struct
 	{
-		BlueMask      = bit(0),
-		GreenMask     = bit(1),
-		RedMask       = bit(2),
-		IntensityMask = bit(3),
-	};
-
-	for (auto& i: data)
-	{
-		if (i.Color == *i.LastColor)
-			continue;
-
-		*i.LastColor = i.Color;
-		if(Color.Flags & i.Flags)
-		{
-			*i.IndexColor = i.Color & ConsoleMask;
-			continue;
-		}
-
-		int R = i.RGBA.r;
-		int G = i.RGBA.g;
-		int B = i.RGBA.b;
-
-		// special case, silver color:
-		if (InRange(160, R, 223) && InRange(160, G, 223) && InRange(160, B, 223))
-		{
-			*i.IndexColor = RedMask | GreenMask | BlueMask;
-			continue;
-		}
-
-		int* p[] = { &R, &G, &B };
-		size_t IntenseCount = 0;
-		for (auto& component : p)
-		{
-			if(InRange(0, *component, 63))
-			{
-				*component = 0;
-			}
-			else if(InRange(64, *component, 191))
-			{
-				*component = 128;
-			}
-			else if(InRange(192, *component, 255))
-			{
-				*component = 255;
-				++IntenseCount;
-			}
-		}
-
-		// eliminate mixed intensity
-		if(IntenseCount > 0 && IntenseCount < 3)
-		{
-			for(auto& component: p)
-			{
-				if(*component == 128)
-				{
-					*component = IntenseCount == 1? 0 : 255;
-				}
-			}
-		}
-
-		const auto& ToMask = [](size_t component, console_mask mask) { return component? mask : 0; };
-		*i.IndexColor = ToMask(R, RedMask) | ToMask(G, GreenMask) | ToMask(B, BlueMask) | ToMask(IntenseCount, IntensityMask);
+		uint8_t
+			Foreground,
+			Background;
 	}
+	Index{};
 
-	if (color_value(data[0].Color) != color_value(data[1].Color) && IndexColors[0] == IndexColors[1])
+	convert_and_save(&FarColor::ForegroundColor, FCF_FG_4BIT, Index.Foreground);
+	convert_and_save(&FarColor::BackgroundColor, FCF_BG_4BIT, Index.Background);
+
+	LastColor.Flags = Color.Flags;
+
+	auto FinalIndex = Index;
+
+	if (
+		FinalIndex.Foreground == FinalIndex.Background &&
+		color_bits(Color.ForegroundColor) != color_bits(Color.BackgroundColor)
+	)
 	{
 		// oops, unreadable
-		IndexColors[0] & IntensityMask? IndexColors[0] &= ~IntensityMask : IndexColors[1] |= IntensityMask;
+		// since background is more pronounced we adjust the foreground only
+		flags::invert(FinalIndex.Foreground, FOREGROUND_INTENSITY);
 	}
 
-	Result = (IndexColors[0] << ConsoleBgShift) | (IndexColors[1] << ConsoleFgShift) | (Color.Flags & ConsoleExtraMask);
+	Result =
+		(FinalIndex.Foreground << ConsoleFgShift) |
+		(FinalIndex.Background << ConsoleBgShift);
 
-	return Result;
+	return Result | NonColorAttributes;
 }
 
 FarColor ConsoleColorToFarColor(WORD Color)
 {
-	FarColor NewColor;
-	static_assert(FCF_RAWATTR_MASK == ConsoleExtraMask);
-	NewColor.Flags = FCF_FG_4BIT | FCF_BG_4BIT | (Color & ConsoleExtraMask);
-	NewColor.ForegroundColor = opaque((Color >> ConsoleFgShift) & ConsoleMask);
-	NewColor.BackgroundColor = opaque((Color >> ConsoleBgShift) & ConsoleMask);
-	NewColor.Reserved=nullptr;
-	return NewColor;
+	return
+	{
+		FCF_FG_4BIT | FCF_BG_4BIT | FCF_INHERIT_STYLE | (Color & FCF_RAWATTR_MASK),
+		{ opaque(index_bits(Color >> ConsoleFgShift)) },
+		{ opaque(index_bits(Color >> ConsoleBgShift)) }
+	};
 }
 
+COLORREF ConsoleIndexToTrueColor(COLORREF const Color)
+{
+	return alpha_bits(Color) | console_palette()[index_value(Color)];
+}
 
 const FarColor& PaletteColorToFarColor(PaletteColors ColorIndex)
 {
@@ -253,65 +412,44 @@ const FarColor* StoreColor(const FarColor& Value)
 	return &*ColorSet.emplace(Value).first;
 }
 
-static COLORREF ARGB2ABGR(COLORREF Color)
+COLORREF ARGB2ABGR(int Color)
 {
-	return (Color & 0xFF000000) | ((Color & 0x00FF0000) >> 16) | (Color & 0x0000FF00) | ((Color & 0x000000FF) << 16);
+	return (Color & 0xFF00FF00) | ((Color & 0x00FF0000) >> 16) | ((Color & 0x000000FF) << 16);
 }
 
-static const wchar_t* ExtractColor(const wchar_t* Color, COLORREF& Target, FARCOLORFLAGS& TargetFlags, FARCOLORFLAGS SetFlag)
+static bool ExtractColor(string_view const Str, COLORREF& Target, FARCOLORFLAGS& TargetFlags, FARCOLORFLAGS SetFlag)
 {
-	// Empty string - default color
-	if (!*Color)
-		return Color;
+	const auto IsTrueColour = Str.front() == L'T';
 
-	const auto& Convert = [](const wchar_t*& Ptr, COLORREF& Result)
-	{
-		wchar_t* EndPtr;
-		const auto Value = std::wcstoul(Ptr, &EndPtr, 16);
-		if (EndPtr == Ptr)
-		{
-			return false;
-		}
-		Result = Value;
-		Ptr = EndPtr;
-		return true;
-	};
+	if (!from_string(Str.substr(IsTrueColour? 1 : 0), Target, nullptr, 16))
+		return false;
 
-	if (upper(Color[0]) == L'T')
+	if (IsTrueColour)
 	{
-		auto NewPtr = Color + 1;
-		if (!Convert(NewPtr, Target))
-		{
-			return Color;
-		}
-		Color = NewPtr;
 		Target = ARGB2ABGR(Target);
 		TargetFlags &= ~SetFlag;
 	}
 	else
 	{
-		if (!Convert(Color, Target))
-		{
-			return Color;
-		}
 		TargetFlags |= SetFlag;
 	}
-	return Color;
+
+	return true;
 }
 
-string_view::const_iterator ExtractColorInNewFormat(string_view::const_iterator const Begin, string_view::const_iterator const End, FarColor& Color, bool& Stop)
+string_view ExtractColorInNewFormat(string_view const Str, FarColor& Color, bool& Stop)
 {
 	Stop = false;
 
-	if (*Begin != L'(')
-		return Begin;
+	if (!starts_with(Str, L'('))
+		return Str;
 
-	const auto FgColorBegin = Begin + 1;
-	const auto ColorEnd = std::find(FgColorBegin, End, L')');
-	if (ColorEnd == End)
+	const auto FgColorBegin = Str.cbegin() + 1;
+	const auto ColorEnd = std::find(FgColorBegin, Str.cend(), L')');
+	if (ColorEnd == Str.cend())
 	{
 		Stop = true;
-		return Begin;
+		return Str;
 	}
 
 	const auto FgColorEnd = std::find(FgColorBegin, ColorEnd, L':');
@@ -319,14 +457,130 @@ string_view::const_iterator ExtractColorInNewFormat(string_view::const_iterator 
 	const auto BgColorEnd = ColorEnd;
 
 	auto NewColor = Color;
-	if ((FgColorBegin == FgColorEnd || ExtractColor(&*FgColorBegin, NewColor.ForegroundColor, NewColor.Flags, FCF_FG_4BIT)) &&
-		(BgColorBegin == BgColorEnd || ExtractColor(&*BgColorBegin, NewColor.BackgroundColor, NewColor.Flags, FCF_BG_4BIT)))
+	if (
+		(FgColorBegin == FgColorEnd || ExtractColor(make_string_view(FgColorBegin, FgColorEnd), NewColor.ForegroundColor, NewColor.Flags, FCF_FG_4BIT)) &&
+		(BgColorBegin == BgColorEnd || ExtractColor(make_string_view(BgColorBegin, BgColorEnd), NewColor.BackgroundColor, NewColor.Flags, FCF_BG_4BIT))
+	)
 	{
 		Color = NewColor;
-		return ColorEnd + 1;
+		return make_string_view(ColorEnd + 1, Str.cend());
 	}
 
-	return Begin;
+	return Str;
 }
 
 }
+
+#ifdef ENABLE_TESTS
+
+#include "testing.hpp"
+
+TEST_CASE("colors.COLORREF")
+{
+	static const struct
+	{
+		COLORREF Src, Alpha, Color, ABGR, Index;
+		bool Opaque, Transparent;
+
+	}
+	Tests[]
+	{
+		{ 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00, false, true  },
+		{ 0x00000001, 0x00000000, 0x00000001, 0x00010000, 0x01, false, true  },
+		{ 0x01000000, 0x01000000, 0x00000000, 0x01000000, 0x00, false, false },
+		{ 0xFF000000, 0xFF000000, 0x00000000, 0xFF000000, 0x00, true,  false },
+		{ 0x00ABCDEF, 0x00000000, 0x00ABCDEF, 0x00EFCDAB, 0x0F, false, true  },
+		{ 0xFFFFFFFF, 0xFF000000, 0x00FFFFFF, 0xFFFFFFFF, 0x0F, true,  false },
+	};
+
+	for (const auto& i: Tests)
+	{
+		REQUIRE(colors::alpha_bits(i.Src) == i.Alpha);
+		REQUIRE(colors::color_bits(i.Src) == i.Color);
+		REQUIRE(colors::index_bits(i.Src) == i.Index);
+		REQUIRE(colors::is_opaque(i.Src) == i.Opaque);
+		REQUIRE(colors::is_transparent(i.Src) == i.Transparent);
+		REQUIRE(colors::is_opaque(colors::opaque(i.Src)));
+		REQUIRE(colors::is_transparent(colors::transparent(i.Src)));
+		REQUIRE(colors::ARGB2ABGR(i.Src) == i.ABGR);
+	}
+}
+
+TEST_CASE("colors.merge")
+{
+	static const struct
+	{
+		FarColor Bottom, Top, Merged;
+	}
+	Tests[]
+	{
+		{ { 0, {0x00000000}, {0x00000000} }, { 0, {0x00000000}, {0x00000000} }, { 0, {0x00000000}, {0x00000000} } },
+		{ { 0, {0xFF123456}, {0xFF654321} }, { 0, {0xFFABCDEF}, {0xFFFEDCBA} }, { 0, {0xFFABCDEF}, {0xFFFEDCBA} } },
+		{ { 0, {0x80000000}, {0xFF000000} }, { 0, {0x80000000}, {0x01000000} }, { 0, {0xBF000000}, {0xFF000000} } },
+		{ { 0, {0xFFFFFFFF}, {0xFF000000} }, { 0, {0x80000000}, {0x80FFFFFF} }, { 0, {0xFF7F7F7F}, {0xFF808080} } },
+		{ { 0, {0xFF00D5FF}, {0xFFBB5B00} }, { 0, {0x800000FF}, {0x80000000} }, { 0, {0xFF006AFF}, {0xFF5D2D00} } },
+	};
+
+	for (const auto& i: Tests)
+	{
+		const auto Color = colors::merge(i.Bottom, i.Top);
+		REQUIRE(Color == i.Merged);
+	}
+}
+
+TEST_CASE("colors.parser")
+{
+	static const struct
+	{
+		string_view Input;
+		FarColor Color;
+	}
+	ValidTests[]
+	{
+		{ L"(E)"sv,               { FCF_FG_4BIT, {0xE}, {0} } },
+		{ L"(:F)"sv,              { FCF_BG_4BIT, {0}, {0xF} } },
+		{ L"(B:C)"sv,             { FCF_FG_4BIT | FCF_BG_4BIT, {0xB}, {0xC} } },
+		{ L"()"sv,                { } },
+		{ L"(T00CCCC:TE34234)"sv, { 0, {0x00CCCC00}, {0x003442E3} } },
+	};
+
+	for (const auto& i: ValidTests)
+	{
+		FarColor Color{};
+		bool Stop = false;
+		const auto Tail = colors::ExtractColorInNewFormat(i.Input, Color, Stop);
+		REQUIRE(Color == i.Color);
+		REQUIRE(Tail.empty());
+		REQUIRE(!Stop);
+	}
+
+	static const struct
+	{
+		string_view Input;
+		bool Stop;
+	}
+	InvalidTests[]
+	{
+		{ {},            false },
+		{ L"("sv,        true  },
+		{ L"(z"sv,       true  },
+		{ L"(z)"sv,      false },
+		{ L"(0:z)"sv,    false },
+		{ L"(z:0)"sv,    false },
+		{ L"(Tz)"sv,     false },
+		{ L"( )"sv,      false },
+		{ L"( 0)"sv,     false },
+		{ L"( -0)"sv,    false },
+		{ L"( +0)"sv,    false },
+	};
+
+	for (const auto& i: InvalidTests)
+	{
+		FarColor Color{};
+		bool Stop = false;
+		const auto Tail = colors::ExtractColorInNewFormat(i.Input, Color, Stop);
+		REQUIRE(Tail.size() == i.Input.size());
+		REQUIRE(Stop == i.Stop);
+	}
+}
+#endif

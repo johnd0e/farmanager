@@ -1,3 +1,4 @@
+-- coding: utf-8
 -- started: 2012-04-20
 
 -- This plugin does not support reloading the default script on the fly.
@@ -39,7 +40,7 @@ end
 function coroutine.resume(co, ...) return yield_resume(co, co_resume(co, ...)) end
 
 local ErrMsg = function(msg, title, buttons, flags)
-  if type(msg)=="string" and not msg:utf8valid() then
+  if type(msg)=="string" and not msg:utf8valid() and string.sub(msg,1,3)~="..." then
     local wstr = win.MultiByteToWideChar(msg, win.GetACP(), "e")
     msg = wstr and win.Utf16ToUtf8(wstr) or msg
   end
@@ -208,24 +209,6 @@ local function postmacro (f, ...)
   return false
 end
 
-local function MacroInit (Id)
-  local chunk, params
-  if Id.action then
-    chunk = Id.action
-  elseif Id.code then
-    chunk, params = loadmacro(Id.language, Id.code)
-  elseif Id.HasFunction then
-    chunk, params = Id[1], Id[2] -- макросы, запускаемые посредством MSSC_POST или с командной строки
-  else
-    chunk, params = Id[1], function() return unpack(Id,2,Id.n) end -- макросы, запускаемые через mf.postmacro
-  end
-  if chunk then
-    return { coro=coroutine.create(chunk), params=params, _store=nil }
-  else
-    ErrMsg(params)
-  end
-end
-
 local function FixReturn (handle, ok, ...)
   local ret1, ret_type = ...
   if ok then
@@ -237,9 +220,9 @@ local function FixReturn (handle, ok, ...)
       return F.MPRT_NORMALFINISH, pack(true, ...)
     end
   else
-    ret1 = type(ret1)=="string" and ret1 or "(error object is not a string)"
-    ret1 = debug.traceback(handle.coro, ret1):gsub("\n\t","\n   ")
-    ErrMsg(ret1)
+    local msg = type(ret1)=="string" and ret1 or "(error object is not a string)"
+    msg = string.gsub(debug.traceback(handle.coro, msg), "\n\t", "\n   ")
+    ErrMsg(msg)
     return F.MPRT_ERRORFINISH
   end
 end
@@ -251,12 +234,17 @@ local function MacroStep (handle, ...)
       if handle.params then
         local params = handle.params
         handle.params = nil
-        local tt = pack(xpcall(params, debug.traceback))
-        if tt[1] then
-          return FixReturn(handle, co_resume(handle.coro, unpack(tt,2,tt.n)))
-        else
-          ErrMsg(tt[2])
-          return F.MPRT_ERRORFINISH
+        local tp = type(params)
+        if tp == "function" then
+          local tt = pack(xpcall(params, debug.traceback))
+          if tt[1] then
+            return FixReturn(handle, co_resume(handle.coro, unpack(tt,2,tt.n)))
+          else
+            ErrMsg(tt[2])
+            return F.MPRT_ERRORFINISH
+          end
+        elseif tp == "table" then
+          return FixReturn(handle, co_resume(handle.coro, params))
         end
       else
         return FixReturn(handle, co_resume(handle.coro, ...))
@@ -265,7 +253,7 @@ local function MacroStep (handle, ...)
       ErrMsg("Step: called on macro in "..status.." status") -- debug only: should not be here
     end
   else
-    ErrMsg(("Step: handle %d does not exist"):format(handle)) -- debug only: should not be here
+    ErrMsg("Step: handle does not exist") -- debug only: should not be here
   end
 end
 
@@ -459,7 +447,7 @@ function export.Open (OpenFrom, guid, ...)
     for _,mod in ipairs(utils.GetPanelModules()) do
       if type(mod.Open) == "function" then
         local obj = mod.Open(OpenFrom, guid, ...)
-        return obj and { module=mod; object=obj }
+        if obj then return { module=mod; object=obj } end
       end
     end
 
@@ -506,26 +494,11 @@ function export.Configure (guid)
   if items[guid] then items[guid].action() end
 end
 
--- Add function unicode.utf8.cfind:
--- same as find, but offsets are in characters rather than bytes
-local function AddCfindFunction()
-  local usub, ssub = unicode.utf8.sub, string.sub
-  local ulen, slen = unicode.utf8.len, string.len
-  local ufind = unicode.utf8.find
-  unicode.utf8.cfind = function(s, patt, init, plain)
-    init = init and slen(usub(s, 1, init-1)) + 1
-    local t = { ufind(s, patt, init, plain) }
-    if t[1] == nil then return nil end
-    return ulen(ssub(s, 1, t[1]-1)) + 1, ulen(ssub(s, 1, t[2])), unpack(t, 3)
-  end
-end
-
 local function Init()
   Shared = {
     ErrMsg            = ErrMsg,
     ExpandEnv         = ExpandEnv,
     GetLastParseError = GetLastParseError,
-    MacroInit         = MacroInit,
     MacroStep         = MacroStep,
     checkarg          = checkarg,
     loadmacro         = loadmacro,
@@ -582,7 +555,6 @@ local function Init()
 
   utils.FixInitialModules()
   utils.InitMacroSystem()
-  AddCfindFunction()
   local macros = win.GetEnv("farprofile").."\\Macros\\"
   local modules = macros .. "modules\\"
   package.path = modules.."?.lua;"..modules.."?\\init.lua;"..package.path
@@ -611,12 +583,12 @@ function export.GetOpenPanelInfo (wrapped_obj, handle, ...)
   local mod, obj = wrapped_obj.module, wrapped_obj.object
   if type(mod.GetOpenPanelInfo) == "function" then
     local op_info = mod.GetOpenPanelInfo(obj, handle, ...)
-    if type(op_info) == "table" and
-       type(mod.Info) == "table" and
-       type(mod.Info.Guid) == "string"
-    then
-      if type(op_info.ShortcutData) == "string" then
-        op_info.ShortcutData = win.Uuid(mod.Info.Guid) .. "/" .. op_info.ShortcutData
+    if type(op_info) == "table" then
+      if type(op_info.ShortcutData) == "string"
+         and type(mod.Info) == "table"
+         and type(mod.Info.Guid) == "string"
+      then
+        op_info._ModuleShortcutData = win.Uuid(mod.Info.Guid) .. "/" .. op_info.ShortcutData
       end
       return op_info
     end

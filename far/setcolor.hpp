@@ -35,9 +35,19 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
+
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
+
 struct FarColor;
 
 void SetColors();
-bool GetColorDialogInternal(FarColor& Color,bool bCentered=false,bool bAddTransparent=false);
+bool GetColorDialogInternal(FarColor& Color, bool bCentered, const FarColor* BaseColor);
 
 #endif // SETCOLOR_HPP_6E3A8440_946E_46AA_AAE1_372CAD23A7E6

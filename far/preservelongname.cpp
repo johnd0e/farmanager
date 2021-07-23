@@ -31,47 +31,57 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "preservelongname.hpp"
 
-#include "pathmix.hpp"
+// Internal:
+#include "exception.hpp"
+#include "log.hpp"
 
+// Platform:
 #include "platform.fs.hpp"
 
-PreserveLongName::PreserveLongName(string_view const ShortName, bool Preserve):
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
+
+PreserveLongName::PreserveLongName(string_view const Name, bool Preserve):
 	m_Preserve(Preserve)
 {
-	if (Preserve)
+	if (!Preserve)
+		return;
+
+	os::fs::find_data FindData;
+	if (!os::fs::get_find_data(Name, FindData))
 	{
-		assign(m_SaveShortName, ShortName);
-
-		os::fs::find_data FindData;
-
-		if (os::fs::get_find_data(m_SaveShortName, FindData))
-			m_SaveLongName = FindData.FileName;
-		else
-			m_SaveLongName.clear();
+		m_Preserve = false;
+		return;
 	}
+
+	m_SaveLongName = FindData.FileName;
+	m_SaveShortName = FindData.AlternateFileName();
 }
 
 
 PreserveLongName::~PreserveLongName()
 {
-	if (m_Preserve && os::fs::exists(m_SaveShortName))
+	if (!m_Preserve || os::fs::exists(m_SaveLongName) || !os::fs::exists(m_SaveShortName))
+		return;
+
+	os::fs::find_data FindData;
+	const auto LongNameLost = os::fs::get_find_data(m_SaveShortName, FindData) && FindData.FileName != m_SaveLongName;
+
+	if (!LongNameLost)
+		return;
+
+	// BUGBUG check result
+	if (!os::fs::move_file(m_SaveShortName, m_SaveLongName))
 	{
-		os::fs::find_data FindData;
-
-		if (!os::fs::get_find_data(m_SaveShortName, FindData) || m_SaveLongName != FindData.FileName)
-		{
-			auto strNewName = m_SaveShortName;
-
-			if (CutToSlash(strNewName,true))
-			{
-				append(strNewName, L'\\', m_SaveLongName);
-			}
-			else
-				strNewName = m_SaveLongName;
-
-			os::fs::move_file(m_SaveShortName, strNewName);
-		}
+		LOGWARNING(L"move_file({}, {}): {}"sv, m_SaveShortName, m_SaveLongName, last_error());
 	}
 }

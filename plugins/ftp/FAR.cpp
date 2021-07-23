@@ -1,4 +1,4 @@
-#include <all_far.h>
+﻿#include <all_far.h>
 #pragma hdrstop
 
 #include "Int.h"
@@ -59,7 +59,7 @@ int WINAPI PluginUsed(void)
 }
 
 //------------------------------------------------------------------------
-void _cdecl CloseUp(void)
+void __cdecl CloseUp(void)
 {
 	int n;
 

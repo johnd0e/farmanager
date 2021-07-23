@@ -35,17 +35,26 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
+
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
+
 enum
 {
-	XC_QUIT                = -777,
-	XC_OPEN_ERROR          = 0,
-	XC_MODIFIED            = 1,
-	XC_NOT_MODIFIED        = 2,
-	XC_LOADING_INTERRUPTED = 3,
-	XC_EXISTS              = 4,
-	XC_ALREADY_EXISTS      = 5,
-	XC_OPEN_NEWINSTANCE    = 6,
-	XC_RELOAD              = 7,
+	XC_QUIT = -777,    // For horrendous reasons this must not be -1. TODO: fix window::m_ExitCode{ -1 } before changing it
+	XC_OPEN_ERROR = 0, // For horrendous reasons this must be 0. TODO: fix all the places like "if (Editor->GetExitCode())" before changing it
+	XC_MODIFIED,
+	XC_NOT_MODIFIED,
+	XC_LOADING_INTERRUPTED,
+	XC_EXISTS,
+	XC_OPEN_NEWINSTANCE,
+	XC_RELOAD,
 };
 
 #endif // EXITCODE_HPP_FE67089F_1E83_43FB_B26D_E640FDED6A53

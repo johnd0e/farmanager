@@ -31,22 +31,37 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "clipboard.hpp"
 
+// Internal:
 #include "console.hpp"
 #include "encoding.hpp"
+#include "eol.hpp"
+#include "exception.hpp"
+#include "log.hpp"
 
+// Platform:
+#include "platform.chrono.hpp"
+
+// Common:
 #include "common/enum_substrings.hpp"
 #include "common/singleton.hpp"
+#include "common/string_utils.hpp"
 
-clipboard_mode default_clipboard_mode::m_Mode = clipboard_mode::system;
+// External:
 
-void default_clipboard_mode::set(clipboard_mode Mode)
+//----------------------------------------------------------------------------
+
+void default_clipboard_mode::set(clipboard_mode Mode) noexcept
 {
 	m_Mode = Mode;
 }
 
-clipboard_mode default_clipboard_mode::get()
+clipboard_mode default_clipboard_mode::get() noexcept
 {
 	return m_Mode;
 }
@@ -67,7 +82,7 @@ enum class clipboard::clipboard_format
 //-----------------------------------------------------------------------------
 class system_clipboard: public clipboard, public singleton<system_clipboard>
 {
-	IMPLEMENTS_SINGLETON(system_clipboard);
+	IMPLEMENTS_SINGLETON;
 
 public:
 	~system_clipboard() override
@@ -82,21 +97,34 @@ public:
 		if (m_Opened)
 			return false;
 
-		if (!OpenClipboard(console.GetWindow()))
-			return false;
+		// Clipboard is a shared resource
+		const size_t Attempts = 5;
 
-		m_Opened = true;
-		return true;
+		for (size_t i = 0; i != Attempts; ++i)
+		{
+			if (OpenClipboard(console.GetWindow()))
+			{
+				m_Opened = true;
+				return true;
+			}
+
+			os::chrono::sleep_for((i + 1) * 50ms);
+		}
+
+		return false;
 	}
 
-	bool Close() override
+	bool Close() noexcept override
 	{
 		// Closing already closed buffer is OK
 		if (!m_Opened)
 			return true;
 
 		if (!CloseClipboard())
+		{
+			LOGWARNING(L"CloseClipboard(): {}"sv, last_error());
 			return false;
+		}
 
 		m_Opened = false;
 		return true;
@@ -119,23 +147,18 @@ private:
 		return GetClipboardData(uFormat);
 	}
 
-	bool SetData(unsigned uFormat, os::memory::global::ptr&& hMem) override
+	bool SetData(unsigned const Format, os::memory::global::ptr&& Data) override
 	{
 		assert(m_Opened);
 
-		if (!SetClipboardData(uFormat, hMem.get()))
+		if (!SetClipboardData(Format, Data.get()))
+		{
+			LOGWARNING(L"SetClipboardData(): {}"sv, last_error());
 			return false;
+		}
 
-		hMem.release();
-
-		auto Locale = os::memory::global::copy(GetUserDefaultLCID());
-		if (!Locale)
-			return false;
-
-		if (!SetClipboardData(CF_LOCALE, Locale.get()))
-			return false;
-
-		Locale.release();
+		// Owned by the OS now
+		(void)Data.release();
 		return true;
 	}
 
@@ -153,24 +176,28 @@ private:
 
 		static_assert(std::size(FormatNames) == static_cast<size_t>(clipboard_format::count));
 		assert(Format < clipboard_format::count);
-		auto& FormatData = FormatNames[static_cast<unsigned>(Format)];
-		if (!FormatData.second)
+		auto& [FormatName, FormatId] = FormatNames[static_cast<unsigned>(Format)];
+		if (!FormatId)
 		{
-			FormatData.second = RegisterClipboardFormat(FormatData.first);
+			FormatId = RegisterClipboardFormat(FormatName);
+			if (!FormatId)
+			{
+				LOGWARNING(L"RegisterClipboardFormat(): {}"sv, last_error());
+			}
 		}
-		return FormatData.second;
+		return FormatId;
 	}
 
 	bool IsFormatAvailable(unsigned Format) const override
 	{
-		return IsClipboardFormatAvailable(Format) != FALSE;
+		return Format && IsClipboardFormatAvailable(Format);
 	}
 };
 
 //-----------------------------------------------------------------------------
 class internal_clipboard: public clipboard, public singleton<internal_clipboard>
 {
-	IMPLEMENTS_SINGLETON(internal_clipboard);
+	IMPLEMENTS_SINGLETON;
 
 public:
 	static auto CreateInstance()
@@ -194,7 +221,7 @@ public:
 		return true;
 	}
 
-	bool Close() override
+	bool Close() noexcept override
 	{
 		// Closing already closed buffer is OK
 		m_Opened = false;
@@ -254,7 +281,7 @@ private:
 //-----------------------------------------------------------------------------
 static thread_local clipboard* OverridenInternalClipboard;
 
-void clipboard_restorer::operator()(const clipboard* Clip) const
+void clipboard_restorer::operator()(const clipboard* Clip) const noexcept
 {
 	OverridenInternalClipboard = nullptr;
 	delete Clip;
@@ -283,7 +310,7 @@ bool clipboard::SetText(const string_view Str)
 	if (!Clear())
 		return false;
 
-	auto hData = os::memory::global::copy(Str.data(), Str.size());
+	auto hData = os::memory::global::copy(Str);
 	if (!hData)
 		return false;
 
@@ -292,7 +319,12 @@ bool clipboard::SetText(const string_view Str)
 
 	// 'Notepad++ binary text length'
 	// return value is ignored - non-critical feature
-	SetData(RegisterFormat(clipboard_format::notepad_plusplus_binary_text_length), os::memory::global::copy(static_cast<uint32_t>(Str.size())));
+	if (const auto Format = RegisterFormat(clipboard_format::notepad_plusplus_binary_text_length))
+		SetData(Format, os::memory::global::copy(static_cast<uint32_t>(Str.size())));
+
+	// return value is ignored - non-critical feature
+	if (auto Locale = os::memory::global::copy(GetUserDefaultLCID()))
+		SetData(CF_LOCALE, std::move(Locale));
 
 	return true;
 }
@@ -303,20 +335,21 @@ bool clipboard::SetVText(const string_view Str)
 		return false;
 
 	const auto FarVerticalBlock = RegisterFormat(clipboard_format::vertical_block_unicode);
-
 	if (!FarVerticalBlock)
 		return false;
 
-	if (!SetData(FarVerticalBlock, nullptr))
+	if (!SetData(FarVerticalBlock, os::memory::global::copy(0)))
 		return false;
 
 	// 'Borland IDE Block Type'
 	// return value is ignored - non-critical feature
-	SetData(RegisterFormat(clipboard_format::borland_ide_dev_block), os::memory::global::copy('\x02'));
+	if (const auto Format = RegisterFormat(clipboard_format::borland_ide_dev_block))
+		SetData(Format, os::memory::global::copy('\x02'));
 
 	// 'MSDEVColumnSelect'
 	// return value is ignored - non-critical feature
-	SetData(RegisterFormat(clipboard_format::ms_dev_column_select), nullptr);
+	if (const auto Format = RegisterFormat(clipboard_format::ms_dev_column_select))
+		SetData(Format, os::memory::global::copy(0));
 
 	return true;
 }
@@ -339,7 +372,7 @@ bool clipboard::SetHDROP(const string_view NamesData, const bool bMoved)
 	Drop->pt.y = 0;
 	Drop->fNC = TRUE;
 	Drop->fWide = TRUE;
-	*std::copy(ALL_CONST_RANGE(NamesData), reinterpret_cast<wchar_t*>(Drop.get() + 1)) = 0;
+	*copy_string(NamesData, static_cast<wchar_t*>(static_cast<void*>(Drop.get() + 1))) = {};
 
 	if (!Clear() || !SetData(CF_HDROP, std::move(Memory)))
 		return false;
@@ -351,7 +384,10 @@ bool clipboard::SetHDROP(const string_view NamesData, const bool bMoved)
 	if (!hMemoryMove)
 		return false;
 
-	return SetData(RegisterFormat(clipboard_format::preferred_drop_effect), std::move(hMemoryMove));
+	if (const auto Format = RegisterFormat(clipboard_format::preferred_drop_effect))
+		return SetData(Format, std::move(hMemoryMove));
+
+	return false;
 }
 
 bool clipboard::GetText(string& Data) const
@@ -364,9 +400,13 @@ bool clipboard::GetText(string& Data) const
 	if (!ClipAddr)
 		return false;
 
-	const auto& GetBinaryTextLength = [this]
+	const auto GetBinaryTextLength = [this]
 	{
-		const auto hClipDataLen = GetData(RegisterFormat(clipboard_format::notepad_plusplus_binary_text_length));
+		const auto Format = RegisterFormat(clipboard_format::notepad_plusplus_binary_text_length);
+		if (!Format)
+			return string::npos;
+
+		const auto hClipDataLen = GetData(Format);
 		if (!hClipDataLen)
 			return string::npos;
 
@@ -391,33 +431,39 @@ bool clipboard::GetHDROPAsText(string& data) const
 
 	const auto StartA=reinterpret_cast<const char*>(Files.get()) + Files->pFiles;
 
+	const auto Eol = eol::system.str();
 	if (Files->fWide)
 	{
 		const auto Start = reinterpret_cast<const wchar_t*>(StartA);
+
 		for (const auto& i: enum_substrings(Start))
 		{
-			append(data, i, L"\r\n"sv);
+			append(data, i, Eol);
 		}
 	}
 	else
 	{
 		for (const auto& i: enum_substrings(StartA))
 		{
-			append(data, encoding::ansi::get_chars(i), L"\r\n"sv);
+			append(data, encoding::ansi::get_chars(i), Eol);
 		}
 	}
 
 	return true;
 }
 
-bool clipboard::GetVText(string& data) const
+bool clipboard::GetVText(string& Data) const
 {
-	const auto& IsBorlandVerticalBlock = [this]
+	const auto IsBorlandVerticalBlock = [this]
 	{
-		const auto hClipData = GetData(RegisterFormat(clipboard_format::borland_ide_dev_block));
+		const auto Format = RegisterFormat(clipboard_format::borland_ide_dev_block);
+		if (!Format)
+			return false;
+
+		const auto hClipData = GetData(Format);
 		if (!hClipData)
 			return false;
-		
+
 		const auto ClipAddr = os::memory::global::lock<const char*>(hClipData);
 		return ClipAddr && *ClipAddr == 0x02;
 	};
@@ -426,10 +472,14 @@ bool clipboard::GetVText(string& data) const
 	    IsFormatAvailable(RegisterFormat(clipboard_format::ms_dev_column_select)) ||
 	    IsBorlandVerticalBlock())
 	{
-		return GetText(data);
+		return GetText(Data);
 	}
 
-	const auto hClipData = GetData(RegisterFormat(clipboard_format::vertical_block_oem));
+	const auto Format = RegisterFormat(clipboard_format::vertical_block_oem);
+	if (!Format)
+		return false;
+
+	const auto hClipData = GetData(Format);
 	if (!hClipData)
 		return false;
 
@@ -437,7 +487,7 @@ bool clipboard::GetVText(string& data) const
 	if (!OemData)
 		return false;
 
-	data = encoding::oem::get_chars(OemData.get());
+	encoding::oem::get_chars(OemData.get(), Data);
 	return true;
 }
 
@@ -493,3 +543,105 @@ bool CopyData(const clipboard_accessor& From, const clipboard_accessor& To)
 
 	return false;
 }
+
+#ifdef ENABLE_TESTS
+
+#include "testing.hpp"
+
+class clipboard_guard
+{
+public:
+	NONCOPYABLE(clipboard_guard);
+
+	clipboard_guard()
+	{
+		const clipboard_accessor Clip(clipboard_mode::system);
+		if (!Clip->Open())
+			return;
+
+		m_Data.reserve(CountClipboardFormats());
+
+		for (auto i = EnumClipboardFormats(0); i; i = EnumClipboardFormats(i))
+		{
+			if (i == CF_BITMAP || i == CF_ENHMETAFILE)
+				continue;
+
+			m_Data.emplace_back(i, os::memory::global::copy(GetClipboardData(i)));
+		}
+	}
+
+	~clipboard_guard()
+	{
+		if (m_Data.empty())
+			return;
+
+		const clipboard_accessor Clip(clipboard_mode::system);
+		if (!Clip->Open())
+			return;
+
+		for (auto& [Format, Data]: m_Data)
+		{
+			SetClipboardData(Format, Data.release());
+		}
+	}
+
+private:
+	std::vector<std::pair<unsigned, os::memory::global::ptr>> m_Data;
+};
+
+TEST_CASE("clipboard.stream")
+{
+	SCOPED_ACTION(clipboard_guard);
+
+	const auto Baseline = L"\0 Comfortably Numb \0"sv;
+	string Str;
+
+	const auto Mode = default_clipboard_mode::get();
+
+	const std::array Types
+	{
+		std::pair{&SetClipboardText, &GetClipboardText},
+		std::pair{&SetClipboardVText, &GetClipboardVText},
+	};
+
+	for (const auto i: { clipboard_mode::system, clipboard_mode::internal })
+	{
+		default_clipboard_mode::set(i);
+
+		for (const auto& [Set, Get]: Types)
+		{
+			REQUIRE(Set(Baseline));
+			REQUIRE(Get(Str));
+			REQUIRE(Str == Baseline);
+
+			REQUIRE(ClearClipboard());
+			REQUIRE(!Get(Str));
+		}
+	}
+
+	default_clipboard_mode::set(Mode);
+}
+
+TEST_CASE("clipboard.accessors")
+{
+	SCOPED_ACTION(clipboard_guard);
+
+	const auto Baseline = L"\0 Hey Macarena \0"sv;
+	string Str;
+
+	const clipboard_accessor
+		ClipSystem(clipboard_mode::system),
+		ClipInternal(clipboard_mode::internal);
+
+	REQUIRE(ClipSystem->Open());
+	REQUIRE(ClipSystem->SetText(Baseline));
+	REQUIRE(ClipInternal->Open());
+	REQUIRE(CopyData(ClipSystem, ClipInternal));
+	REQUIRE(ClipSystem->Clear());
+	REQUIRE(ClipSystem->Close());
+	REQUIRE(ClipInternal->GetText(Str));
+	REQUIRE(ClipInternal->Clear());
+	REQUIRE(ClipInternal->Close());
+	REQUIRE(Str == Baseline);
+}
+#endif

@@ -35,22 +35,45 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "window.hpp"
 #include "viewer.hpp"
+
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
 
 class FileViewer:public window,public ViewerContainer
 {
 	struct private_tag {};
 public:
-	static fileviewer_ptr create(const string& Name, bool EnableSwitch = false, bool DisableHistory = false,
-		bool DisableEdit = false, long long ViewStartPos = -1, const wchar_t* PluginData = nullptr,
-		NamesList* ViewNamesList = nullptr, bool ToSaveAs = false, uintptr_t aCodePage = CP_DEFAULT,
-		const wchar_t* Title = nullptr, int DeleteOnClose = 0, window_ptr Update = nullptr);
+	static fileviewer_ptr create(
+		const string& Name,
+		bool EnableSwitch = false,
+		bool DisableHistory = false,
+		bool DisableEdit = false,
+		long long ViewStartPos = -1,
+		string_view PluginData = {},
+		NamesList* ViewNamesList = nullptr,
+		bool ToSaveAs = false,
+		uintptr_t aCodePage = CP_DEFAULT,
+		string_view Title = {},
+		int DeleteOnClose = 0,
+		window_ptr Update = nullptr);
 
-	static fileviewer_ptr create(const string& Name, bool EnableSwitch, bool DisableHistory,
-		const wchar_t *Title, int X1, int Y1, int X2, int Y2, uintptr_t aCodePage = CP_DEFAULT);
+	static fileviewer_ptr create(
+		const string& Name,
+		bool EnableSwitch,
+		bool DisableHistory,
+		string_view Title,
+		rectangle Position,
+		uintptr_t aCodePage = CP_DEFAULT);
 
-	FileViewer(private_tag, int DisableEdit, const wchar_t *Title);
+	FileViewer(private_tag, bool DisableEdit, string_view Title);
 	~FileViewer() override;
 
 	void InitKeyBar() override;
@@ -74,15 +97,15 @@ public:
 	   содержащий (если каталог пуст). По умолчанию - TRUE (получаем
 	   поведение SetTempViewName такое же, как и раньше)
 	*/
-	void SetTempViewName(const string& Name, bool DeleteFolder = true);
-	void SetEnableF6(int AEnable) { DisableEdit = !AEnable; InitKeyBar(); }
+	void SetTempViewName(string_view Name, bool DeleteFolder = true);
+	void SetEnableF6(int AEnable) { m_DisableEdit = !AEnable; InitKeyBar(); }
 	/* $ 17.08.2001 KM
 		Добавлено для поиска по AltF7. При редактировании найденного файла из
 		архива для клавиши F2 сделать вызов ShiftF2.
 	*/
-	void SetSaveToSaveAs(bool ToSaveAs) { SaveToSaveAs=ToSaveAs; InitKeyBar(); }
+	void SetSaveToSaveAs(bool ToSaveAs) { m_SaveToSaveAs=ToSaveAs; InitKeyBar(); }
 	int  ViewerControl(int Command, intptr_t Param1, void *Param2) const;
-	bool IsFullScreen() const {return FullScreen;}
+	bool IsFullScreen() const {return m_FullScreen;}
 	long long GetViewFileSize() const;
 	long long GetViewFilePos() const;
 	void ShowStatus() const;
@@ -94,19 +117,34 @@ private:
 	void Show() override;
 	void DisplayObject() override;
 
-	void Init(const string& Name, bool EnableSwitch, int DisableHistory, long long ViewStartPos, const wchar_t *PluginData, NamesList *ViewNamesList, bool ToSaveAs, uintptr_t aCodePage, window_ptr Update = nullptr);
+	void Init(
+		const string& Name,
+		bool EnableSwitch,
+		bool DisableHistory,
+		long long ViewStartPos,
+		string_view PluginData,
+		NamesList *ViewNamesList,
+		bool ToSaveAs,
+		uintptr_t aCodePage,
+		window_ptr Update = nullptr);
 
 	std::unique_ptr<Viewer> m_View;
-	int RedrawTitle;
-	bool F3KeyOnly;
-	bool m_bClosing;
-	bool FullScreen;
-	int DisableEdit;
-	int DisableHistory;
+	bool m_RedrawTitle{};
+	bool m_bClosing{};
+	bool m_FullScreen{true};
+	bool m_DisableEdit;
+	bool m_DisableHistory{};
 	string m_Name;
-	bool SaveToSaveAs;
-	int delete_on_close;
-	string str_title;
+	bool m_SaveToSaveAs{};
+	int m_DeleteOnClose{};
+	string m_StrTitle;
+
+	class f3_key_timer;
+	std::unique_ptr<f3_key_timer> m_F3Timer;
+
+	class reload_timer;
+	std::unique_ptr<reload_timer> m_ReloadTimer;
+
 };
 
 #endif // FILEVIEW_HPP_BC5E36F0_1E01_45AE_A121_A8D6EED6A14C

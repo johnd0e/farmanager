@@ -29,43 +29,147 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "platform.chrono.hpp"
 
+// Internal:
+#include "imports.hpp"
+
+// Platform:
 #include "platform.hpp"
+
+// Common:
+#include "common/range.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 namespace os::chrono
 {
 	nt_clock::time_point nt_clock::now() noexcept
 	{
 		FILETIME Time;
-		GetSystemTimeAsFileTime(&Time);
+		(imports.GetSystemTimePreciseAsFileTime? imports.GetSystemTimePreciseAsFileTime : GetSystemTimeAsFileTime)(&Time);
 		return from_filetime(Time);
 	}
 
-	static nt_clock::duration posix_shift()
+	static constexpr nt_clock::duration posix_shift()
 	{
-		return std::chrono::seconds{ 11644473600 };
+		return 3234576h;
 	}
 
-	time_t nt_clock::to_time_t(const time_point& Time) noexcept
+	std::time_t nt_clock::to_time_t(time_point const Time) noexcept
 	{
-		return std::chrono::duration_cast<std::chrono::seconds>(Time.time_since_epoch() - posix_shift()).count();
+		return (Time.time_since_epoch() - posix_shift()) / 1s;
 	}
 
-	time_point nt_clock::from_time_t(time_t Time) noexcept
+	time_point nt_clock::from_time_t(std::time_t const Time) noexcept
 	{
 		return time_point(posix_shift() + std::chrono::seconds(Time));
 	}
 
-	FILETIME nt_clock::to_filetime(const time_point& Time) noexcept
+	FILETIME nt_clock::to_filetime(time_point const Time) noexcept
 	{
-		const auto Count = Time.time_since_epoch().count();
+		const auto Count = to_hectonanoseconds(Time);
 		return { static_cast<DWORD>(Count), static_cast<DWORD>(Count >> 32) };
 	}
 
-	time_point nt_clock::from_filetime(FILETIME Time) noexcept
+	time_point nt_clock::from_filetime(FILETIME const Time) noexcept
 	{
-		return time_point(duration(static_cast<unsigned long long>(Time.dwHighDateTime) << 32 | Time.dwLowDateTime));
+		return from_hectonanoseconds(static_cast<unsigned long long>(Time.dwHighDateTime) << 32 | Time.dwLowDateTime);
+	}
+
+	time_point nt_clock::from_hectonanoseconds(int64_t const Time) noexcept
+	{
+		return time_point(hectonanoseconds(Time));
+	}
+
+	int64_t nt_clock::to_hectonanoseconds(time_point const Time) noexcept
+	{
+		return to_hectonanoseconds(Time.time_since_epoch());
+	}
+
+	int64_t nt_clock::to_hectonanoseconds(duration const Duration) noexcept
+	{
+		return Duration / 1_hns;
+	}
+
+	bool utc_to_local(time_point UtcTime, SYSTEMTIME& LocalTime)
+	{
+		const auto FileTime = nt_clock::to_filetime(UtcTime);
+		SYSTEMTIME SystemTime;
+		return FileTimeToSystemTime(&FileTime, &SystemTime) && SystemTimeToTzSpecificLocalTime(nullptr, &SystemTime, &LocalTime);
+	}
+
+	static bool local_to_utc(const SYSTEMTIME& lst, SYSTEMTIME& ust)
+	{
+		if (imports.TzSpecificLocalTimeToSystemTime && imports.TzSpecificLocalTimeToSystemTime(nullptr, &lst, &ust))
+			return true;
+
+		TIME_ZONE_INFORMATION Tz;
+		if (GetTimeZoneInformation(&Tz) != TIME_ZONE_ID_INVALID)
+		{
+			Tz.Bias = -Tz.Bias;
+			Tz.StandardBias = -Tz.StandardBias;
+			Tz.DaylightBias = -Tz.DaylightBias;
+			if (SystemTimeToTzSpecificLocalTime(&Tz, &lst, &ust))
+				return true;
+		}
+
+		std::tm ltm
+		{
+			lst.wSecond,
+			lst.wMinute,
+			lst.wHour,
+			lst.wDay,
+			lst.wMonth - 1,
+			lst.wYear - 1900,
+			lst.wDayOfWeek,
+			-1,
+			-1
+		};
+
+		if (const auto gtim = std::mktime(&ltm); gtim != static_cast<time_t>(-1))
+		{
+			if (const auto ptm = std::gmtime(&gtim))
+			{
+				ust.wYear = ptm->tm_year + 1900;
+				ust.wMonth = ptm->tm_mon + 1;
+				ust.wDay = ptm->tm_mday;
+				ust.wHour = ptm->tm_hour;
+				ust.wMinute = ptm->tm_min;
+				ust.wSecond = ptm->tm_sec;
+				ust.wDayOfWeek = ptm->tm_wday;
+				ust.wMilliseconds = lst.wMilliseconds;
+				return true;
+			}
+		}
+
+		FILETIME lft, uft;
+		return SystemTimeToFileTime(&lst, &lft) && LocalFileTimeToFileTime(&lft, &uft) && FileTimeToSystemTime(&uft, &ust);
+	}
+
+	bool local_to_utc(const SYSTEMTIME& LocalTime, time_point& UtcTime)
+	{
+		SYSTEMTIME SystemUtcTime;
+		if (!local_to_utc(LocalTime, SystemUtcTime))
+			return false;
+
+		FILETIME FileUtcTime;
+		if (!SystemTimeToFileTime(&SystemUtcTime, &FileUtcTime))
+			return false;
+
+		UtcTime = nt_clock::from_filetime(FileUtcTime);
+		return true;
+	}
+
+	void sleep_for(std::chrono::milliseconds const Duration)
+	{
+		Sleep(static_cast<DWORD>(Duration / 1ms));
 	}
 
 	bool get_process_creation_time(HANDLE Process, time_point& CreationTime)
@@ -78,24 +182,19 @@ namespace os::chrono
 		return true;
 	}
 
-	duration process_uptime()
+	string format_time(time_point const Time)
 	{
-		static const auto ProcessCreationTime = []
+		SYSTEMTIME LocalTime;
+		if (!utc_to_local(Time, LocalTime))
 		{
-			time_point CreationTime;
-			get_process_creation_time(GetCurrentProcess(), CreationTime);
-			return CreationTime;
-		}();
+			return {};
+		}
 
-		return nt_clock::now() - ProcessCreationTime;
-	}
-
-	string format_time()
-	{
 		string Value;
-		os::detail::ApiDynamicErrorBasedStringReceiver(ERROR_INSUFFICIENT_BUFFER, Value, [&](range<wchar_t*> Buffer)
+		// BUGBUG check result
+		(void)os::detail::ApiDynamicErrorBasedStringReceiver(ERROR_INSUFFICIENT_BUFFER, Value, [&](span<wchar_t> Buffer)
 		{
-			const auto ReturnedSize = ::GetTimeFormat(LOCALE_USER_DEFAULT, TIME_NOSECONDS, nullptr, nullptr, Buffer.data(), static_cast<int>(Buffer.size()));
+			const auto ReturnedSize = ::GetTimeFormat(LOCALE_USER_DEFAULT, TIME_NOSECONDS, &LocalTime, nullptr, Buffer.data(), static_cast<int>(Buffer.size()));
 			return ReturnedSize? ReturnedSize - 1 : 0;
 		});
 		return Value;

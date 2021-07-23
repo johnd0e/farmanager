@@ -33,11 +33,19 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "configdb.hpp"
 #include "windowsfwd.hpp"
 
-#include "common/range.hpp"
+// Platform:
+
+// Common:
 #include "common/singleton.hpp"
+#include "common/view/select.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 // Тип выбранной таблицы символов
 enum CPSelectType
@@ -52,32 +60,38 @@ enum
 };
 
 class Dialog;
-struct FarDialogBuilderListItem2;
+class DialogBuilderListItem;
 class VMenu2;
 enum CodePagesCallbackCallSource: int;
+struct cp_info;
 
 class codepages: public singleton<codepages>
 {
-	IMPLEMENTS_SINGLETON(codepages);
+	IMPLEMENTS_SINGLETON;
 
 public:
 	NONCOPYABLE(codepages);
 	~codepages();
 
-	bool SelectCodePage(uintptr_t& CodePage, bool bShowUnicode, bool ViewOnly, bool bShowAutoDetect);
-	UINT FillCodePagesList(Dialog* Dlg, UINT controlId, uintptr_t codePage, bool allowAuto, bool allowAll, bool allowDefault, bool allowChecked, bool bViewOnly);
-	void FillCodePagesList(std::vector<FarDialogBuilderListItem2> &List, bool allowAuto, bool allowAll, bool allowDefault, bool allowChecked, bool bViewOnly);
+	bool SelectCodePage(uintptr_t& CodePage, bool ViewOnly, bool bShowAutoDetect);
+	size_t FillCodePagesList(Dialog* Dlg, size_t controlId, uintptr_t codePage, bool allowAuto, bool allowAll, bool allowDefault, bool allowChecked, bool bViewOnly);
+	void FillCodePagesList(std::vector<DialogBuilderListItem> &List, bool allowAuto, bool allowAll, bool allowDefault, bool allowChecked, bool bViewOnly);
 
 	static bool IsCodePageSupported(uintptr_t CodePage, size_t MaxCharSize = size_t(-1));
-	static void FormatCodePageName(uintptr_t CodePage, string& CodePageName);
+	static std::optional<cp_info> GetInfo(uintptr_t CodePage);
+	static string FormatName(uintptr_t CodePage);
+	static string UnsupportedCharacterMessage(wchar_t Char);
 	static long long GetFavorite(uintptr_t cp);
 	static void SetFavorite(uintptr_t cp, long long value);
 	static void DeleteFavorite(uintptr_t cp);
 	static auto GetFavoritesEnumerator()
 	{
-		return select(ConfigProvider().GeneralCfg()->ValuesEnumerator<long long>(FavoriteCodePagesKey()), [](const auto& i)
+		return select(ConfigProvider().GeneralCfg()->ValuesEnumerator<long long>(FavoriteCodePagesKey()),
+			[t = std::pair<unsigned long, long long>{}](const auto& i) mutable -> auto&
 		{
-			return std::make_pair(std::stoul(i.first), i.second);
+			// All this magic is to keep reference semantics to make analysers happy.
+			t = { std::stoul(i.first), i.second };
+			return t;
 		});
 	}
 
@@ -86,33 +100,33 @@ private:
 
 	codepages();
 
-	static void FormatCodePageName(uintptr_t CodePage, string& CodePageName, bool &IsCodePageNameCustom);
+	static bool GetCodePageCustomName(uintptr_t CodePage, string& CodePageName);
 	size_t GetMenuItemCodePage(size_t Position = -1) const;
 	size_t GetListItemCodePage(size_t Position) const;
-	bool IsPositionStandard(UINT position) const;
-	bool IsPositionFavorite(UINT position) const;
-	bool IsPositionNormal(UINT position) const;
-	string FormatCodePageString(uintptr_t CodePage, const string& CodePageName, bool IsCodePageNameCustom) const;
-	void AddCodePage(const string& codePageName, uintptr_t codePage, size_t position, bool enabled, bool checked, bool IsCodePageNameCustom) const;
-	void AddStandardCodePage(const string& codePageName, uintptr_t codePage, int position = -1, bool enabled = true) const;
+	bool IsPositionStandard(size_t position) const;
+	bool IsPositionFavorite(size_t position) const;
+	bool IsPositionNormal(size_t position) const;
+	string FormatCodePageString(uintptr_t CodePage, string_view CodePageName, bool IsCodePageNameCustom) const;
+	void AddCodePage(string_view codePageName, uintptr_t codePage, size_t position, bool enabled, bool checked, bool IsCodePageNameCustom) const;
+	void AddStandardCodePage(string_view codePageName, uintptr_t codePage, int position = -1, bool enabled = true) const;
 	void AddSeparator(const string& Label, size_t position = -1) const;
 	size_t size() const;
 	size_t GetCodePageInsertPosition(uintptr_t codePage, size_t start, size_t length);
 	void AddCodePages(DWORD codePages);
 	void SetFavorite(bool State);
-	void FillCodePagesVMenu(bool bShowUnicode, bool bViewOnly, bool bShowAutoDetect);
+	void FillCodePagesVMenu(bool bViewOnly, bool bShowAutoDetect);
 	intptr_t EditDialogProc(Dialog* Dlg, intptr_t Msg, intptr_t Param1, void* Param2);
 	void EditCodePageName();
 
 	static string_view FavoriteCodePagesKey();
 
-	Dialog* dialog;
-	UINT control;
-	std::vector<FarDialogBuilderListItem2> *DialogBuilderList;
-	vmenu2_ptr CodePagesMenu;
-	uintptr_t currentCodePage;
-	int favoriteCodePages, normalCodePages;
-	bool selectedCodePages;
+	Dialog* dialog{};
+	size_t control{};
+	std::vector<DialogBuilderListItem> *DialogBuilderList{};
+	vmenu2_ptr CodePagesMenu{};
+	uintptr_t currentCodePage{};
+	int favoriteCodePages{}, normalCodePages{};
+	bool selectedCodePages{};
 	CodePagesCallbackCallSource CallbackCallSource;
 };
 
@@ -122,11 +136,10 @@ public:
 	explicit F8CP(bool viewer = false);
 
 	uintptr_t NextCP(uintptr_t cp) const;
-	const string& NextCPname(uintptr_t cp) const;
+	string NextCPname(uintptr_t cp) const;
 
 private:
 	string m_AcpName, m_OemName, m_UtfName;
-	mutable string m_Number;
 	std::vector<uintptr_t> m_F8CpOrder;
 };
 

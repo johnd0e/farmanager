@@ -1,8 +1,8 @@
 !include ../makefile_vc_base
 
 NAME = Compare
+
 LINK_OBJS = $(OBJDIR)\Compare.obj
-DOCS = CmpEng.hlf CmpRus.hlf CompEng.lng CompRus.lng CompSky.lng CompSpa.lng AdvCompare.CompareBufferSize.farconfig
 
 !include ..\makefile_vc_def_inc
 

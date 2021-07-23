@@ -30,8 +30,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "console_session.hpp"
 
+// Internal:
 #include "desktop.hpp"
 #include "global.hpp"
 #include "manager.hpp"
@@ -43,7 +48,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "scrbuf.hpp"
 #include "ctrlobj.hpp"
 #include "cmdline.hpp"
-#include "global.hpp"
+
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
 
 class context: noncopyable, public i_context
 {
@@ -73,7 +85,7 @@ public:
 		--Global->SuppressIndicators;
 	}
 
-	void DrawCommand(const string& Command) override
+	void DrawCommand(string_view const Command) override
 	{
 		Global->CtrlObject->CmdLine()->DrawFakeCommand(Command);
 		ScrollScreen(1);
@@ -90,7 +102,7 @@ public:
 			return;
 		m_Consolised = true;
 
-		Global->ScrBuf->MoveCursor(0, WhereY());
+		Global->ScrBuf->MoveCursor({ 0, WhereY() });
 		SetInitialCursorType();
 
 		if (!m_Command.empty())
@@ -140,10 +152,12 @@ public:
 			m_Consolised = false;
 		}
 
-		if (Scroll)
+		if (Scroll && DoWeReallyHaveToScroll(Global->Opt->ShowKeyBar? 3 : 2))
 		{
 			ScrollScreen(1);
 		}
+
+		console.ResetViewportPosition();
 
 		Global->WindowManager->Desktop()->TakeSnapshot();
 
@@ -165,7 +179,8 @@ private:
 
 void console_session::EnterPluginContext(bool Scroll)
 {
-	if (!m_PluginContextInvocations)
+	++m_PluginContextInvocations;
+	if (1 == m_PluginContextInvocations)
 	{
 		m_PluginContext = GetContext();
 		m_PluginContext->Activate();
@@ -177,8 +192,6 @@ void console_session::EnterPluginContext(bool Scroll)
 
 	m_PluginContext->DoPrologue();
 	m_PluginContext->Consolise(!m_PluginContextInvocations);
-
-	++m_PluginContextInvocations;
 }
 
 void console_session::LeavePluginContext(bool Scroll)

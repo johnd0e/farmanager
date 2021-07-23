@@ -1,8 +1,8 @@
 !include ../makefile_vc_base
 
 NAME = Align
+
 LINK_OBJS = $(OBJDIR)\Align.obj
-DOCS = AlignEng.lng AlignRus.lng AlignSky.lng AlignSpa.lng
 
 !include ..\makefile_vc_def_inc
 

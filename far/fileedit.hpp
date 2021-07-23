@@ -35,13 +35,21 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "window.hpp"
 #include "editor.hpp"
 #include "plugin.hpp"
 #include "namelist.hpp"
 #include "codepage_selection.hpp"
 
+// Platform:
 #include "platform.fs.hpp"
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
 
 struct error_state_ex;
 
@@ -55,22 +63,22 @@ enum
 
 enum FFILEEDIT_FLAGS
 {
-	FFILEEDIT_NEW                   = 0x00010000,  // Этот файл СОВЕРШЕННО! новый или его успели стереть! Нету такого и все тут.
-	FFILEEDIT_REDRAWTITLE           = 0x00020000,  // Нужно редравить заголовок?
-	FFILEEDIT_FULLSCREEN            = 0x00040000,  // Полноэкранный режим?
-	FFILEEDIT_DISABLEHISTORY        = 0x00080000,  // Запретить запись в историю?
-	FFILEEDIT_ENABLEF6              = 0x00100000,  // Переключаться во вьювер можно?
-	FFILEEDIT_SAVETOSAVEAS          = 0x00200000,  // $ 17.08.2001 KM  Добавлено для поиска по AltF7.
+	FFILEEDIT_NEW                   = 16_bit,  // Этот файл СОВЕРШЕННО! новый или его успели стереть! Нету такого и все тут.
+	FFILEEDIT_REDRAWTITLE           = 17_bit,  // Нужно редравить заголовок?
+	FFILEEDIT_FULLSCREEN            = 18_bit,  // Полноэкранный режим?
+	FFILEEDIT_DISABLEHISTORY        = 19_bit,  // Запретить запись в историю?
+	FFILEEDIT_ENABLEF6              = 20_bit,  // Переключаться во вьювер можно?
+	FFILEEDIT_SAVETOSAVEAS          = 21_bit,  // $ 17.08.2001 KM  Добавлено для поиска по AltF7.
 	//   При редактировании найденного файла из архива для
 	//   клавиши F2 сделать вызов ShiftF2.
-	FFILEEDIT_SAVEWQUESTIONS        = 0x00400000,  // сохранить без вопросов
-	FFILEEDIT_LOCKED                = 0x00800000,  // заблокировать?
-	FFILEEDIT_OPENFAILED            = 0x01000000,  // файл открыть не удалось
-	FFILEEDIT_DELETEONCLOSE         = 0x02000000,  // удалить в деструкторе файл вместе с каталогом (если тот пуст)
-	FFILEEDIT_DELETEONLYFILEONCLOSE = 0x04000000,  // удалить в деструкторе только файл
-	FFILEEDIT_DISABLESAVEPOS        = 0x08000000,  // не сохранять позицию для файла
-	FFILEEDIT_CANNEWFILE            = 0x10000000,  // допускается новый файл?
-	FFILEEDIT_SERVICEREGION         = 0x20000000,  // используется сервисная область
+	FFILEEDIT_SAVEWQUESTIONS        = 22_bit,  // сохранить без вопросов
+	FFILEEDIT_LOCKED                = 23_bit,  // заблокировать?
+	FFILEEDIT_OPENFAILED            = 24_bit,  // файл открыть не удалось
+	FFILEEDIT_DELETEONCLOSE         = 25_bit,  // удалить в деструкторе файл вместе с каталогом (если тот пуст)
+	FFILEEDIT_DELETEONLYFILEONCLOSE = 26_bit,  // удалить в деструкторе только файл
+	FFILEEDIT_DISABLESAVEPOS        = 27_bit,  // не сохранять позицию для файла
+	FFILEEDIT_CANNEWFILE            = 28_bit,  // допускается новый файл?
+	FFILEEDIT_SERVICEREGION         = 29_bit,  // используется сервисная область
 };
 
 class FileEditor: public window,public EditorContainer
@@ -79,9 +87,9 @@ class FileEditor: public window,public EditorContainer
 
 public:
 	static fileeditor_ptr create(string_view Name, uintptr_t codepage, DWORD InitFlags, int StartLine = -1, int StartChar = -1, const string* PluginData = nullptr, EDITOR_FLAGS OpenModeExstFile = EF_OPENMODE_QUERY);
-	static fileeditor_ptr create(string_view Name, uintptr_t codepage, DWORD InitFlags, int StartLine, int StartChar, const string* Title, int X1, int Y1, int X2, int Y2, int DeleteOnClose = 0, const window_ptr& Update = nullptr, EDITOR_FLAGS OpenModeExstFile = EF_OPENMODE_QUERY);
+	static fileeditor_ptr create(string_view Name, uintptr_t codepage, DWORD InitFlags, int StartLine, int StartChar, const string* Title, rectangle Position, int DeleteOnClose = 0, const window_ptr& Update = nullptr, EDITOR_FLAGS OpenModeExstFile = EF_OPENMODE_QUERY);
 
-	explicit FileEditor(private_tag) {}
+	explicit FileEditor(private_tag);
 	~FileEditor() override;
 
 	bool IsFileModified() const override { return m_editor->IsFileModified(); }
@@ -137,11 +145,11 @@ private:
 	bool LoadFile(const string& Name, int &UserBreak, error_state_ex& ErrorState);
 	bool ReloadFile(uintptr_t codepage);
 	//TextFormat, Codepage и AddSignature используются ТОЛЬКО, если bSaveAs = true!
-	int SaveFile(const string& Name, int Ask, bool bSaveAs, error_state_ex& ErrorState, eol::type Eol = eol::type::none, uintptr_t Codepage = CP_UNICODE, bool AddSignature = false);
+	int SaveFile(const string& Name, int Ask, bool bSaveAs, error_state_ex& ErrorState, eol Eol = eol::none, uintptr_t Codepage = CP_UNICODE, bool AddSignature = false);
 	void SetTitle(const string* Title);
 	bool SetFileName(string_view NewFileName);
 	int ProcessEditorInput(const INPUT_RECORD& Rec);
-	DWORD EditorGetFileAttributes(const string& Name);
+	os::fs::attributes EditorGetFileAttributes(string_view Name);
 	void SetPluginData(const string* PluginData);
 	const string& GetPluginData() const { return strPluginData; }
 	bool LoadFromCache(EditorPosCache &pc) const;
@@ -154,7 +162,6 @@ private:
 
 	std::unique_ptr<Editor> m_editor;
 	NamesList EditNamesList;
-	bool F4KeyOnly{};
 	string strFileName;
 	string strFullFileName;
 	string strStartDir;
@@ -163,8 +170,7 @@ private:
 	string strPluginData;
 	os::fs::find_data FileInfo;
 	wchar_t AttrStr[4]{};            // 13.02.2001 IS - Сюда запомним буквы атрибутов, чтобы не вычислять их много раз
-	DWORD m_FileAttributes{};          // 12.02.2001 IS - сюда запомним атрибуты файла при открытии, пригодятся где-нибудь...
-	bool FileAttributesModified{};  // 04.11.2003 SKV - надо ли восстанавливать аттрибуты при save
+	os::fs::attributes m_FileAttributes{};          // 12.02.2001 IS - сюда запомним атрибуты файла при открытии, пригодятся где-нибудь...
 	bool m_bClosing{};               // 28.04.2005 AY: true когда редактор закрываеться (т.е. в деструкторе)
 	bool bEE_READ_Sent{};
 	bool bLoaded{};
@@ -173,6 +179,9 @@ private:
 	uintptr_t m_codepage{CP_DEFAULT}; //BUGBUG
 
 	F8CP f8cps;
+
+	class f4_key_timer;
+	std::unique_ptr<f4_key_timer> m_F4Timer;
 };
 
 bool dlgOpenEditor(string &strFileName, uintptr_t &codepage);

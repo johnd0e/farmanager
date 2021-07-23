@@ -29,25 +29,35 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "preservestyle.hpp"
 
+// Internal:
 #include "string_utils.hpp"
 
+// Platform:
+
+// Common:
 #include "common/range.hpp"
+#include "common/string_utils.hpp"
+#include "common/utility.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 enum PreserveStyleType
 {
+	UNKNOWN = -1,
+
 	UPPERCASE_ALL,
 	LOWERCASE_ALL,
 	UPPERCASE_FIRST,
-	UNKNOWN
-};
 
-struct PreserveStyleToken
-{
-	string Token;
-	wchar_t PrependChar{};
-	int TypeMask{};
+	COUNT
 };
 
 static bool IsPreserveStyleTokenSeparator(wchar_t C)
@@ -55,89 +65,108 @@ static bool IsPreserveStyleTokenSeparator(wchar_t C)
 	return contains(L"_-."sv, C);
 }
 
-static int GetPeserveCaseStyleMask(const string_view strStr)
+static int GetPreserveCaseStyleMask(const string_view Str)
 {
-	int Result = 15;
+	std::bitset<PreserveStyleType::COUNT> Result;
+	Result.set();
 
-	for (size_t I = 0; I < strStr.size(); I++)
+	for (size_t i = 0; i != Str.size(); ++i)
 	{
-		const auto Upper = is_upper(strStr[I]);
-		const auto Lower = is_lower(strStr[I]);
+		const auto Upper = is_upper(Str[i]);
+		const auto Lower = !Upper && is_lower(Str[i]);
+
 		if (!Upper)
-			Result &= ~(1 << UPPERCASE_ALL);
-		if (!Lower)
-			Result &= ~(1 << LOWERCASE_ALL);
-		if ((!Upper || !is_alpha(strStr[I])) && I == 0)
-			Result &= ~(1 << UPPERCASE_FIRST);
-		if (!Lower && I > 0)
-			Result &= ~(1 << UPPERCASE_FIRST);
-	}
-
-	return Result;
-}
-
-static auto InternalPreserveStyleTokenize(const string_view strStr, size_t From, size_t Length)
-{
-	std::list<PreserveStyleToken> Result;
-
-	std::vector<bool> Seps(Length, false);
-	for (size_t I = From+1; I+1 < From+Length; I++)
-	{
-		if (IsPreserveStyleTokenSeparator(strStr[I])
-				&& !IsPreserveStyleTokenSeparator(strStr[I-1])
-				&& !IsPreserveStyleTokenSeparator(strStr[I+1]))
 		{
-			Seps[I-From] = true;
+			Result[UPPERCASE_ALL] = false;
+
+			if (!i)
+				Result[UPPERCASE_FIRST] = false;
+		}
+
+		if (!Lower)
+		{
+			Result[LOWERCASE_ALL] = false;
+
+			if (i > 0)
+				Result[UPPERCASE_FIRST] = false;
 		}
 	}
 
-	size_t L = From;
-	for (size_t I = From+1; I < From+Length; I++)
+	return Result.to_ulong();
+}
+
+struct PreserveStyleToken
+{
+	PreserveStyleToken() = default;
+
+	explicit PreserveStyleToken(string_view const Str, wchar_t const Char):
+		Token(Str),
+		PrependChar(Char),
+		TypeMask(GetPreserveCaseStyleMask(Token))
 	{
-		if (Seps[I-From])
+	}
+
+	string Token;
+	wchar_t PrependChar{};
+	int TypeMask{};
+};
+
+static auto PreserveStyleTokenize(string_view const Str)
+{
+	std::vector<PreserveStyleToken> Result;
+	std::vector<bool> Seps(Str.size(), false);
+
+	for (size_t i = 0, Size = Str.size(); i + 2 < Size; ++i)
+	{
+		if (
+			!IsPreserveStyleTokenSeparator(Str[i]) &&
+			IsPreserveStyleTokenSeparator(Str[i + 1]) &&
+			!IsPreserveStyleTokenSeparator(Str[i + 2])
+		)
 		{
-			PreserveStyleToken T;
-			assign(T.Token, strStr.substr(L, I - L));
-			if (L >= From + 1 && Seps[L-1-From])
-				T.PrependChar = strStr[L-1];
-			Result.emplace_back(T);
-			L = I+1;
-			I++;
+			Seps[i + 1] = true;
+			++i;
+		}
+	}
+
+	size_t L = 0;
+
+	const auto prepend_char = [&]
+	{
+		return L >= 1 && Seps[L - 1]? Str[L - 1] : 0;
+	};
+
+	for (size_t i = 0, Size = Str.size(); i + 2 < Size; ++i)
+	{
+		if (Seps[i + 1])
+		{
+			Result.emplace_back(Str.substr(L, i + 1 - L), prepend_char());
+			L = i + 2;
+			++i;
 			continue;
 		}
 
-		if (!Seps[I-From-1] && is_lower(strStr[I-1]) && is_upper(strStr[I]))
+		if (!Seps[i] && is_lower(Str[i]) && is_upper(Str[i + 1]))
 		{
-			PreserveStyleToken T;
-			assign(T.Token, strStr.substr(L, I - L));
-			if (L >= From + 1 && Seps[L-1-From])
-				T.PrependChar = strStr[L-1];
-			Result.emplace_back(T);
-			L = I;
+			Result.emplace_back(Str.substr(L, i + 1 - L), prepend_char());
+			L = i + 1;
 		}
 	}
 
-	if (L < From+Length)
+	if (L < Str.size())
 	{
-		PreserveStyleToken T;
-		assign(T.Token, strStr.substr(L, From + Length - L));
-		if (L >= From + 1 && Seps[L-1-From])
-			T.PrependChar = strStr[L-1];
-		Result.emplace_back(T);
+		Result.emplace_back(Str.substr(L), prepend_char());
 	}
 
 	if (Result.size() > 1)
 	{
-		const auto PrependChar = std::next(Result.cbegin())->PrependChar;
-		for (const auto& i: make_range(std::next(Result.cbegin(), 2), Result.cend()))
+		const auto PrependChar = Result[1].PrependChar;
+		for (const auto& i: span(Result).subspan(2))
 		{
 			if (PrependChar != i.PrependChar)
 			{
 				Result.clear();
-				PreserveStyleToken T;
-				assign(T.Token, strStr.substr(From, Length));
-				T.TypeMask = 1 << UNKNOWN;
-				Result.emplace_back(T);
+				Result.emplace_back(Str, 0);
 				return Result;
 			}
 		}
@@ -146,112 +175,85 @@ static auto InternalPreserveStyleTokenize(const string_view strStr, size_t From,
 	return Result;
 }
 
-static auto PreserveStyleTokenize(const string_view strStr, size_t From, size_t Length)
-{
-	auto Tokens = InternalPreserveStyleTokenize(strStr, From, Length);
-
-	std::for_each(RANGE(Tokens, i)
-	{
-		i.TypeMask = GetPeserveCaseStyleMask(i.Token);
-	});
-
-	return Tokens;
-}
-
 static void ToPreserveStyleType(string& strStr, PreserveStyleType type)
 {
-	std::function<void(size_t)> Handler;
-
 	switch (type)
 	{
 	case UPPERCASE_ALL:
-		Handler = [&strStr](size_t I) { strStr[I] = upper(strStr[I]); };
+		inplace::upper(strStr);
 		break;
-	case LOWERCASE_ALL:
-		Handler = [&strStr](size_t I) { strStr[I] = lower(strStr[I]); };
-		break;
-	case UPPERCASE_FIRST:
-		Handler = [&strStr](size_t I) { strStr[I] = I? lower(strStr[I]) : upper(strStr[I]); };
-		break;
-	case UNKNOWN:
-		break;
-	}
 
-	if (Handler)
-	{
-		for_each_cnt(RANGE(strStr, i, size_t index)
-		{
-			Handler(index);
-		});
+	case LOWERCASE_ALL:
+		inplace::lower(strStr);
+		break;
+
+	case UPPERCASE_FIRST:
+		inplace::upper(strStr, 0, 1);
+		inplace::lower(strStr, 1);
+		break;
+
+	default:
+		break;
 	}
 }
 
-static PreserveStyleType ChoosePreserveStyleType(int Mask)
+static auto ChoosePreserveStyleType(unsigned Mask)
 {
-	if (Mask == (1 << UNKNOWN))
+	if (!Mask)
 		return UNKNOWN;
-	
-	PreserveStyleType Result = UNKNOWN;
-	for (int Style = 0; UPPERCASE_ALL+Style < UNKNOWN; Style++)
-		if ((Mask & (1 << Style)) != 0)
-			Result = PreserveStyleType(UPPERCASE_ALL+Style);
 
-	return Result;
+	for (int Style = COUNT; Style != UNKNOWN; --Style)
+		if (Mask & bit(Style))
+			return PreserveStyleType(Style);
+
+	return UNKNOWN;
 }
 
 static void FindStyleTypeMaskAndPrependCharByExpansion(const string_view Source, const int Begin, const int End, int& TypeMask, wchar_t& PrependChar)
 {
 	// Try to expand to the right.
+	if (int Right = End; static_cast<size_t>(Right) < Source.size() && (is_alphanumeric(Source[Right]) || IsPreserveStyleTokenSeparator(Source[Right])))
 	{
-		int Right = End;
+		Right++;
 
-		if (static_cast<size_t>(Right) < Source.size() && (is_alphanumeric(Source[Right]) || IsPreserveStyleTokenSeparator(Source[Right])))
+		while (static_cast<size_t>(Right) < Source.size())
 		{
+			if (!is_alphanumeric(Source[Right]) || (is_lower(Source[Right-1]) && is_upper(Source[Right])))
+				break;
 			Right++;
-			
-			while (static_cast<size_t>(Right) < Source.size())
-			{
-				if (!is_alphanumeric(Source[Right]) || (is_lower(Source[Right-1]) && is_upper(Source[Right])))
-					break;
-				Right++;
-			}
+		}
 
-			const auto SegmentTokens = PreserveStyleTokenize(Source, Begin, Right-Begin);
+		const auto SegmentTokens = PreserveStyleTokenize(Source.substr(Begin, Right-Begin));
 
-			if (SegmentTokens.size() > 1)
-			{
-				TypeMask = SegmentTokens.back().TypeMask;
-				PrependChar = SegmentTokens.back().PrependChar;
-				return;
-			}
+		if (SegmentTokens.size() > 1)
+		{
+			TypeMask = SegmentTokens.back().TypeMask;
+			PrependChar = SegmentTokens.back().PrependChar;
+			return;
 		}
 	}
 
 	// Try to expand to the left.
+	if (int Left = Begin - 1; Left >= 1 && (is_alphanumeric(Source[Left]) || IsPreserveStyleTokenSeparator(Source[Left])))
 	{
-		int Left = Begin - 1;
+		Left--;
 
-		if (Left >= 1 && (is_alphanumeric(Source[Left]) || IsPreserveStyleTokenSeparator(Source[Left])))
+		while (Left >= 0)
 		{
+			if (!is_alphanumeric(Source[Left]) || (is_lower(Source[Left]) && is_upper(Source[Left + 1])))
+				break;
 			Left--;
+		}
 
-			while (Left >= 0)
-			{
-				if (!is_alphanumeric(Source[Left]) || (is_lower(Source[Left]) && is_upper(Source[Left + 1])))
-					break;
-				Left--;
-			}
+		Left++;
 
-			Left++;
+		const auto SegmentTokens = PreserveStyleTokenize(Source.substr(Left, End-Left));
 
-			const auto SegmentTokens = PreserveStyleTokenize(Source, Left, End-Left);
-
-			if (SegmentTokens.size() > 1)
-			{
-				TypeMask = SegmentTokens.back().TypeMask;
-				PrependChar = SegmentTokens.back().PrependChar;
-				return;
-			}
+		if (SegmentTokens.size() > 1)
+		{
+			TypeMask = SegmentTokens.back().TypeMask;
+			PrependChar = SegmentTokens.back().PrependChar;
+			return;
 		}
 	}
 }
@@ -273,9 +275,7 @@ bool PreserveStyleReplaceString(
 
 	if (Reverse)
 	{
-		Position--;
-
-		Position = std::min(Position, static_cast<int>(Source.size() - 1));
+		Position = std::min(Position - 1, static_cast<int>(Source.size() - 1));
 
 		if (Position<0)
 			return false;
@@ -284,12 +284,11 @@ bool PreserveStyleReplaceString(
 	if (static_cast<size_t>(Position) >= Source.size() || Str.empty() || ReplaceStr.empty())
 		return false;
 
+	const auto StrTokens = PreserveStyleTokenize(Str);
 
-	const auto StrTokens = PreserveStyleTokenize(Str, 0, Str.size());
-
-	const auto& BlankOrWordDiv = [&WordDiv](wchar_t Ch)
+	const auto BlankOrWordDiv = [&WordDiv](wchar_t Ch)
 	{
-		return std::iswblank(Ch) || WordDiv.find(Ch) != WordDiv.npos;
+		return std::iswblank(Ch) || contains(WordDiv, Ch);
 	};
 
 	for (int I=Position; (Reverse && I>=0) || (!Reverse && static_cast<size_t>(I) < Source.size()); Reverse? I-- : I++)
@@ -305,10 +304,9 @@ bool PreserveStyleReplaceString(
 		auto j = StrTokens.cbegin();
 		auto LastItem = StrTokens.cend();
 		--LastItem;
-		while (((j != LastItem) || (j == LastItem && T < j->Token.size()))
-			&& Source[Idx])
+		while (((j != LastItem) || (j == LastItem && T < j->Token.size())) && Source[Idx])
 		{
-			bool Sep = (static_cast<size_t>(I) < Idx && Source[I+1] && IsPreserveStyleTokenSeparator(Source[Idx])
+			bool Sep = (static_cast<size_t>(I) < Idx && static_cast<size_t>(I + 1) != Source.size() && IsPreserveStyleTokenSeparator(Source[Idx])
 					&& !IsPreserveStyleTokenSeparator(Source[Idx-1])
 					&& !IsPreserveStyleTokenSeparator(Source[Idx+1]));
 
@@ -371,92 +369,188 @@ bool PreserveStyleReplaceString(
 
 		if (WholeWords && Idx < Source.size() && !BlankOrWordDiv(Source[Idx]))
 			continue;
-		
-		if (Matched && T == j->Token.size() && j == LastItem)
+
+		if (!Matched || T != j->Token.size() || j != LastItem)
+			continue;
+
+		const auto SourceTokens = PreserveStyleTokenize(Source.substr(I, Idx - I));
+
+		if (!std::equal(ALL_CONST_RANGE(SourceTokens), ALL_CONST_RANGE(StrTokens), [](const auto& a, const auto& b)
 		{
-			const auto SourceTokens = PreserveStyleTokenize(Source, I, Idx - I);
+			return a.Token.size() == b.Token.size();
+		}))
+			continue;
 
-			if (SourceTokens.size() == StrTokens.size() && std::equal(ALL_CONST_RANGE(SourceTokens), StrTokens.cbegin(), [](const auto& a, const auto& b)
+		auto ReplaceStrTokens = PreserveStyleTokenize(ReplaceStr);
+
+		if (ReplaceStrTokens.size() == SourceTokens.size())
+		{
+			int CommonTypeMask = -1;
+
+			for (const auto& i: SourceTokens)
 			{
-				return a.Token.size() == b.Token.size();
-			}))
-			{
-				auto ReplaceStrTokens = PreserveStyleTokenize(ReplaceStr, 0, ReplaceStr.size());
-
-				if (ReplaceStrTokens.size() == SourceTokens.size())
-				{
-					int CommonTypeMask = -1;
-					std::for_each(CONST_RANGE(SourceTokens, i)
-					{
-						if (CommonTypeMask == -1)
-							CommonTypeMask = i.TypeMask;
-						else
-							CommonTypeMask &= i.TypeMask;
-					});
-
-					PreserveStyleType CommonType = ChoosePreserveStyleType(CommonTypeMask);
-					if (CommonTypeMask != -1 && CommonType == UNKNOWN)
-						CommonTypeMask = -1;
-
-					auto SourceI = SourceTokens.cbegin();
-					std::for_each(RANGE(ReplaceStrTokens, i)
-					{
-						ToPreserveStyleType(i.Token, CommonTypeMask != -1 ? CommonType : ChoosePreserveStyleType(SourceI->TypeMask));
-						i.PrependChar = SourceI->PrependChar;
-						++SourceI;
-					});
-				}
+				if (CommonTypeMask == -1)
+					CommonTypeMask = i.TypeMask;
 				else
-				{
-					ToPreserveStyleType(ReplaceStrTokens.front().Token, ChoosePreserveStyleType(SourceTokens.front().TypeMask));
-					ReplaceStrTokens.front().PrependChar = SourceTokens.front().PrependChar;
+					CommonTypeMask &= i.TypeMask;
+			}
 
-					if (!SourceTokens.empty())
-					{
-						int AfterFirstCommonTypeMask = -1;
-						wchar_t PrependChar = SourceTokens.back().PrependChar;
+			const auto CommonType = ChoosePreserveStyleType(CommonTypeMask);
+			if (CommonTypeMask != -1 && CommonType == UNKNOWN)
+				CommonTypeMask = -1;
 
-						for (const auto& SourceI: make_range(std::next(SourceTokens.cbegin()), SourceTokens.cend()))
-						{
-							if (AfterFirstCommonTypeMask == -1)
-								AfterFirstCommonTypeMask = SourceI.TypeMask;
-							else
-								AfterFirstCommonTypeMask &= SourceI.TypeMask;
-						}
+			auto SourceI = SourceTokens.cbegin();
 
-						if (AfterFirstCommonTypeMask == -1)
-							FindStyleTypeMaskAndPrependCharByExpansion(Source, I, static_cast<int>(Idx), AfterFirstCommonTypeMask, PrependChar);
-
-						if (AfterFirstCommonTypeMask == -1)
-						{
-							AfterFirstCommonTypeMask = SourceTokens.front().TypeMask;
-							PrependChar = ReplaceStrTokens.back().PrependChar;
-						}
-
-						for (auto& ReplaceI: make_range(std::next(ReplaceStrTokens.begin()), ReplaceStrTokens.end()))
-						{
-							ToPreserveStyleType(ReplaceI.Token, ChoosePreserveStyleType(AfterFirstCommonTypeMask));
-							ReplaceI.PrependChar = PrependChar;
-						}
-					}
-
-				}
-
-				ReplaceStr.clear();
-				std::for_each(CONST_RANGE(ReplaceStrTokens, i)
-				{
-					if (i.PrependChar)
-						ReplaceStr += i.PrependChar;
-					ReplaceStr += i.Token;
-				});
-
-				CurPos = I;
-				SearchLength = static_cast<int>(Idx-I);
-
-				return true;
+			for (auto& i: ReplaceStrTokens)
+			{
+				ToPreserveStyleType(i.Token, CommonTypeMask != -1 ? CommonType : ChoosePreserveStyleType(SourceI->TypeMask));
+				i.PrependChar = SourceI->PrependChar;
+				++SourceI;
 			}
 		}
+		else
+		{
+			ToPreserveStyleType(ReplaceStrTokens.front().Token, ChoosePreserveStyleType(SourceTokens.front().TypeMask));
+			ReplaceStrTokens.front().PrependChar = SourceTokens.front().PrependChar;
+
+			if (!SourceTokens.empty())
+			{
+				int AfterFirstCommonTypeMask = -1;
+				wchar_t PrependChar = SourceTokens.back().PrependChar;
+
+				for (const auto& SourceI: span(SourceTokens).subspan(1))
+				{
+					if (AfterFirstCommonTypeMask == -1)
+						AfterFirstCommonTypeMask = SourceI.TypeMask;
+					else
+						AfterFirstCommonTypeMask &= SourceI.TypeMask;
+				}
+
+				if (AfterFirstCommonTypeMask == -1)
+					FindStyleTypeMaskAndPrependCharByExpansion(Source, I, static_cast<int>(Idx), AfterFirstCommonTypeMask, PrependChar);
+
+				if (AfterFirstCommonTypeMask == -1)
+				{
+					AfterFirstCommonTypeMask = SourceTokens.front().TypeMask;
+					PrependChar = ReplaceStrTokens.back().PrependChar;
+				}
+
+				for (auto& ReplaceI: span(ReplaceStrTokens).subspan(1))
+				{
+					ToPreserveStyleType(ReplaceI.Token, ChoosePreserveStyleType(AfterFirstCommonTypeMask));
+					ReplaceI.PrependChar = PrependChar;
+				}
+			}
+
+		}
+
+		ReplaceStr.clear();
+
+		for (const auto& i: ReplaceStrTokens)
+		{
+			if (i.PrependChar)
+				ReplaceStr += i.PrependChar;
+			ReplaceStr += i.Token;
+		}
+
+		CurPos = I;
+		SearchLength = static_cast<int>(Idx-I);
+
+		return true;
 	}
 
 	return false;
 }
+
+#ifdef ENABLE_TESTS
+
+#include "testing.hpp"
+
+TEST_CASE("PreserveStyleReplaceString")
+{
+	static const struct
+	{
+		string_view Find, Replace;
+	}
+	Patterns[]
+	{
+		{ {},                     {},                   },
+		{ {},                     L"la"sv,              },
+		{ L"na"sv,                {},                   },
+		{ L"na"sv,                L"la"sv,              },
+		{ L"abc-def-ghi"sv,       L"pq.RST.Xyz"sv,      },
+		{ L"AA-B-C"sv,            L"xxx.Yy.ZZ"sv,       },
+		{ L"abc-def-ghi"sv,       L"pq.RST.uvw.Xyz"sv,  },
+		{ L"A-B-C"sv,             L"aa.Bb.cc.DD"sv,     },
+		{ L"ijk"sv,               L"MnoPqrStu"sv,       },
+		{ L"ab.cd"sv,             L"wx-yz"sv,           },
+	};
+
+	static const struct
+	{
+		size_t PatternIndex;
+		string_view Src, ResultStr;
+		bool Result;
+		int Position, Size;
+	}
+	Tests[]
+	{
+		{ 0, {},                   {},                      false, 0, 0,  },
+		{ 0, L"LaLaNaLa"sv,        {},                      false, 0, 0,  },
+
+		{ 1, {},                   {},                      false, 0, 0,  },
+		{ 1, L"LaLaNaLa"sv,        {},                      false, 0, 0,  },
+
+		{ 2, {},                   {},                      false, 0, 0,  },
+		{ 2, L"LaLaNaLa"sv,        {},                      false, 0, 0,  },
+
+		{ 3, {},                   {},                      false, 0, 0,  },
+		{ 3, L"LaLaNaLa"sv,        L"La"sv,                 true,  4, 2,  },
+
+		{ 4, L"AbcDefGhi"sv,       L"PqRstXyz"sv,           true,  0, 9,  },
+		{ 4, L"ABC_DEF_GHI"sv,     L"PQ_RST_XYZ"sv,         true,  0, 11, },
+		{ 4, L"abc.def.ghi"sv,     L"pq.rst.xyz"sv,         true,  0, 11, },
+		{ 4, L"abcDefGhi"sv,       L"pqRstXyz"sv,           true,  0, 9,  },
+		{ 4, L"ABC_Def_Ghi"sv,     L"PQ_Rst_Xyz"sv,         true,  0, 11, },
+
+		{ 5, L"Aa_B_C"sv,          L"Xxx_Yy_Zz"sv,          true,  0, 6,  },
+		{ 5, L"aa-b-c"sv,          L"xxx-yy-zz"sv,          true,  0, 6,  },
+		{ 5, L"AA_B_C"sv,          L"XXX_YY_ZZ"sv,          true,  0, 6,  },
+		{ 5, L"aa.B.C"sv,          L"xxx.Yy.Zz"sv,          true,  0, 6,  },
+		{ 5, L"Aa.B.c"sv,          L"Xxx.Yy.zz"sv,          true,  0, 6,  },
+
+		{ 6, L"Abc.def.ghi"sv,     L"Pq.rst.uvw.xyz"sv,     true,  0, 11, },
+		{ 6, L"ABC.Def.Ghi"sv,     L"PQ.Rst.Uvw.Xyz"sv,     true,  0, 11, },
+		{ 6, L"abc.Def.ghi"sv,     L"pq.RST.uvw.Xyz"sv,     true,  0, 11, },
+		{ 6, L"ABC.DEF.ghi"sv,     L"PQ.RST.uvw.Xyz"sv,     true,  0, 11, },
+
+		{ 7, L"A_B_C"sv,           L"Aa_Bb_Cc_Dd"sv,        true,  0, 5,  },
+		{ 7, L"a-b-c"sv,           L"aa-bb-cc-dd"sv,        true,  0, 5,  },
+		{ 7, L"A.B.c"sv,           L"Aa.Bb.cc.DD"sv,        true,  0, 5,  },
+
+		{ 8, L"ijk.Zzz"sv,         L"mno.Pqr.Stu"sv,        true,  0, 3,  },
+		{ 8, L"AAA-ijk"sv,         L"mno-pqr-stu"sv,        true,  4, 3,  },
+		{ 8, L"aaa-ijk_ZZZ"sv,     L"mno_PQR_STU"sv,        true,  4, 3,  },
+		{ 8, L"AaaIjk"sv,          L"MnoPqrStu"sv,          true,  3, 3,  },
+		{ 8, L"0_ijk_9"sv,         L"mno_Pqr_Stu"sv,        true,  2, 3,  },
+		{ 8, L">ijk<"sv,           L"mnopqrstu"sv,          true,  1, 3,  },
+
+		{ 9, L"Ab.cD"sv,           {},                      false, 0, 0,  },
+	};
+
+	string ResultStr;
+	for (const auto& i: Tests)
+	{
+		int Position = 0;
+		int Size;
+		ResultStr = Patterns[i.PatternIndex].Replace;
+		REQUIRE(i.Result == PreserveStyleReplaceString(i.Src, Patterns[i.PatternIndex].Find, ResultStr, Position, false, false, {}, false, Size));
+		if (i.Result)
+		{
+			REQUIRE(i.ResultStr == ResultStr);
+			REQUIRE(i.Position == Position);
+			REQUIRE(i.Size == Size);
+		}
+	}
+}
+#endif

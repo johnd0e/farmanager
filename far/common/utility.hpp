@@ -32,21 +32,42 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-template<typename container>
-void reserve_exp_noshrink(container& Container, size_t Capacity)
+#include "preprocessor.hpp"
+
+//----------------------------------------------------------------------------
+
+template<typename T>
+class base: public T
+{
+protected:
+	using T::T;
+	using base_ctor = base;
+	using base_type = T;
+};
+
+inline size_t grow_exp_noshrink(size_t const Current, size_t const Desired)
 {
 	// Unlike vector, string is allowed to shrink (another splendid design decision from the committee):
 	// "Calling reserve() with a res_arg argument less than capacity() is in effect a non-binding shrink request." (21.4.4 basic_string capacity)
 	// gcc decided to go mental and made that a _binding_ shrink request.
-	const auto CurrentCapacity = Container.capacity();
-	if (Capacity <= CurrentCapacity)
-		return;
+	if (Desired < Current)
+		return Current;
 
 	// For vector reserve typically allocates exactly the requested amount instead of exponential growth.
 	// This can be really bad if called in a loop.
-	Capacity = std::max(static_cast<size_t>(CurrentCapacity * 1.5), Capacity);
+	return std::max(Current + Current / 2, Desired);
+}
 
-	Container.reserve(Capacity);
+template<typename container>
+void reserve_exp_noshrink(container& Container, size_t const DesiredCapacity)
+{
+	Container.reserve(grow_exp_noshrink(Container.capacity(), DesiredCapacity));
+}
+
+template<typename container>
+void resize_exp_noshrink(container& Container, size_t const DesiredSize)
+{
+	Container.resize(grow_exp_noshrink(Container.size(), DesiredSize), {});
 }
 
 
@@ -91,6 +112,15 @@ void hash_combine(size_t& Seed, const type& Value)
 	Seed ^= make_hash(Value) + MagicValue + (Seed << 6) + (Seed >> 2);
 }
 
+template<typename... args>
+size_t hash_combine_all(const args&... Args)
+{
+	size_t Seed = 0;
+	(..., hash_combine(Seed, Args));
+	return Seed;
+}
+
+
 template<typename iterator>
 [[nodiscard]]
 size_t hash_range(iterator First, iterator Last)
@@ -116,6 +146,13 @@ void hash_range(size_t& Seed, iterator First, iterator Last)
 
 template<typename T>
 [[nodiscard]]
+constexpr auto as_signed(T Value)
+{
+	return static_cast<std::make_signed_t<T>>(Value);
+}
+
+template<typename T>
+[[nodiscard]]
 constexpr auto as_unsigned(T Value)
 {
 	return static_cast<std::make_unsigned_t<T>>(Value);
@@ -129,37 +166,70 @@ constexpr auto as_underlying_type(T Value)
 }
 
 [[nodiscard]]
-constexpr auto bit(size_t Number)
+constexpr auto bit(size_t const Number)
 {
 	return 1ull << Number;
 }
 
-template<typename value_type, typename bits_type>
-constexpr void bit_set(value_type& Value, bits_type Bits)
+[[nodiscard]]
+constexpr auto operator ""_bit(unsigned long long const Number)
 {
-	Value |= Bits;
+	return bit(Number);
 }
 
-template<typename value_type, typename bits_type>
-constexpr void bit_clear(value_type& Value, bits_type Bits)
+namespace flags
 {
-	Value &= ~static_cast<value_type>(Bits);
-}
+	template<typename value_type, typename flags_type>
+	constexpr bool check_any(const value_type& Value, flags_type Bits)
+	{
+		return (Value & Bits) != 0;
+	}
 
-template<typename value_type, typename bits_type>
-constexpr void bit_change(value_type& Value, bits_type Bits, bool Set)
-{
-	Set? bit_set(Value, Bits) : bit_clear(Value, Bits);
-}
+	template<typename value_type, typename flags_type>
+	constexpr bool check_all(const value_type& Value, flags_type Bits)
+	{
+		return static_cast<flags_type>(Value & Bits) == Bits;
+	}
 
+	template<typename value_type, typename flags_type>
+	constexpr void set(value_type& Value, flags_type Bits)
+	{
+		Value |= Bits;
+	}
+
+	template<typename value_type, typename flags_type>
+	constexpr void clear(value_type& Value, flags_type Bits)
+	{
+		Value &= ~static_cast<value_type>(Bits);
+	}
+
+	template<typename value_type, typename flags_type>
+	constexpr void invert(value_type& Value, flags_type Bits)
+	{
+		Value ^= Bits;
+	}
+
+	template<typename value_type, typename flags_type>
+	constexpr void change(value_type& Value, flags_type Bits, bool Set)
+	{
+		Set? set(Value, Bits) : clear(Value, Bits);
+	}
+
+	template<typename value_type, typename mask_type, typename flags_type>
+	constexpr void copy(value_type& Value, mask_type Mask, flags_type Bits)
+	{
+		clear(Value, Mask);
+		set(Value, Bits & Mask);
+	}
+}
 
 [[nodiscard]]
-constexpr size_t aligned_size(size_t Size, size_t Alignment = MEMORY_ALLOCATION_ALIGNMENT)
+constexpr size_t aligned_size(size_t Size, size_t Alignment = alignof(std::max_align_t))
 {
 	return (Size + (Alignment - 1)) & ~(Alignment - 1);
 }
 
-template<typename T, int Alignment = MEMORY_ALLOCATION_ALIGNMENT>
+template<typename T, size_t Alignment = alignof(std::max_align_t)>
 [[nodiscard]]
 constexpr auto aligned_sizeof()
 {
@@ -176,39 +246,68 @@ namespace enum_helpers
 	}
 }
 
-namespace detail
-{
-	template<class... args>
-	struct overload_t;
-
-	template<typename arg>
-	struct overload_t<arg>: arg
-	{
-		using type = arg;
-		using arg::operator();
-	};
-
-	template<typename arg, typename... args>
-	struct overload_t<arg, args...>: arg, overload_t<args...>::type
-	{
-		using type = overload_t;
-
-		explicit overload_t(arg&& Arg, args&&... Args):
-			arg(FWD(Arg)),
-			args(FWD(Args))...
-		{
-		}
-
-		using arg::operator();
-		using overload_t<args...>::type::operator();
-	};
-}
 
 template<typename... args>
-[[nodiscard]]
-auto overload(args&&... Args)
+struct [[nodiscard]] overload: args...
 {
-	return detail::overload_t<args...>(FWD(Args)...);
+	explicit overload(args&&... Args):
+		args(FWD(Args))...
+	{
+	}
+
+	using args::operator()...;
+};
+
+template<typename... args> overload(args&&...) -> overload<args...>;
+
+
+namespace detail
+{
+	template<typename T>
+	using is_void_or_trivially_copyable = std::disjunction<std::is_void<T>, std::is_trivially_copyable<T>>;
+}
+
+template<typename src_type, typename dst_type>
+void copy_memory(const src_type* Source, dst_type* Destination, size_t const Size) noexcept
+{
+	static_assert(std::conjunction_v<
+		detail::is_void_or_trivially_copyable<src_type>,
+		detail::is_void_or_trivially_copyable<dst_type>
+	>);
+
+	if (Size) // paranoid gcc null checks are paranoid
+		std::memmove(Destination, Source, Size);
+}
+
+template<typename T>
+decltype(auto) view_as(void const* const BaseAddress, size_t const Offset = 0)
+{
+	static_assert(std::is_trivially_copyable_v<T>);
+
+	const auto Ptr = static_cast<void const*>(static_cast<char const*>(BaseAddress) + Offset);
+
+	if constexpr (std::is_pointer_v<T>)
+	{
+		return static_cast<T>(Ptr);
+	}
+	else
+	{
+		return *static_cast<T const*>(Ptr);
+	}
+}
+
+template<typename T>
+decltype(auto) view_as(unsigned long long const Address)
+{
+	return view_as<T>(reinterpret_cast<void const*>(Address));
+}
+
+template<typename T, typename container>
+auto view_as_if(container const& Buffer, size_t const Offset = 0)
+{
+	static_assert(std::is_trivially_copyable_v<T>);
+
+	return Buffer.size() >= Offset + sizeof(T)? view_as<T const*>(Buffer.data() + Offset) : nullptr;
 }
 
 #endif // UTILITY_HPP_D8E934C7_BF30_4CEB_B80C_6E508DF7A1BC

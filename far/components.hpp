@@ -34,50 +34,37 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "string_sort.hpp"
 
-#include "common/enumerator.hpp"
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
 
 namespace components
 {
+	using components_map = std::map<string_view, string, string_sort::less_t>;
+	using info = components_map::value_type;
+
 	class component
 	{
 	public:
-		using info = std::pair<string, string>;
 		using get_info = info(*)();
 
-		explicit component(get_info getInfo);
+		explicit component(get_info GetInfo);
 
 	private:
 		friend class components_list;
 
-		get_info m_getInfo;
-		component* m_next;
+		get_info m_GetInfo;
+		component* m_Next{};
 	};
 
-	class components_list:public enumerator<components_list, component::get_info>
-	{
-		IMPLEMENTS_ENUMERATOR(components_list);
-
-	public:
-		void add(component* item);
-		bool empty() const { return list != nullptr; }
-		size_t size() const { return m_size; }
-
-	private:
-		friend components_list& GetComponentsList();
-
-		bool get(bool Reset, value_type& value) const;
-
-		components_list() = default;
-
-		component* list{};
-		component* ptr{};
-		mutable component* enum_ptr{};
-		size_t m_size{};
-	};
-
-	const std::map<string, string, string_sort::less_t>& GetComponentsInfo();
+	const components_map& GetComponentsInfo();
 }
 
 #endif // COMPONENTS_HPP_5EB4061D_47B2_4941_8B57_FE405EBD3D83

@@ -35,7 +35,17 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "platform.memory.hpp"
+
+// Platform:
+
+// Common:
+#include "common/noncopyable.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 enum class clipboard_mode
 {
@@ -46,11 +56,11 @@ enum class clipboard_mode
 class default_clipboard_mode
 {
 public:
-	static void set(clipboard_mode Mode);
-	static clipboard_mode get();
+	static void set(clipboard_mode Mode) noexcept;
+	static clipboard_mode get() noexcept;
 
 private:
-	static clipboard_mode m_Mode;
+	static inline clipboard_mode m_Mode = clipboard_mode::system;
 };
 
 class clipboard
@@ -60,15 +70,15 @@ public:
 	virtual ~clipboard() = default;
 
 	virtual bool Open() = 0;
-	virtual bool Close() = 0;
+	virtual bool Close() noexcept = 0;
 	virtual bool Clear() = 0;
 
 	bool SetText(string_view Str);
 	bool SetVText(string_view Str);
 	bool SetHDROP(string_view NamesData, bool bMoved);
 
-	bool GetText(string& data) const;
-	bool GetVText(string& data) const;
+	bool GetText(string& Data) const;
+	bool GetVText(string& Data) const;
 
 protected:
 	enum class clipboard_format;
@@ -89,7 +99,7 @@ class clipboard_accessor:noncopyable
 public:
 	explicit clipboard_accessor(clipboard_mode Mode = default_clipboard_mode::get()): m_Clipboard(clipboard::GetInstance(Mode)) {}
 	~clipboard_accessor() { m_Clipboard.Close(); }
-	auto operator->() const { return &m_Clipboard; }
+	auto operator->() const noexcept { return &m_Clipboard; }
 
 private:
 	clipboard& m_Clipboard;
@@ -110,7 +120,7 @@ bool CopyData(const clipboard_accessor& From, const clipboard_accessor& To);
 
 struct clipboard_restorer
 {
-	void operator()(const clipboard* Clip) const;
+	void operator()(const clipboard* Clip) const noexcept;
 };
 
 std::unique_ptr<clipboard, clipboard_restorer> OverrideClipboard();

@@ -1,4 +1,4 @@
-enum
+﻿enum
 {
 	MOk,
 	MCancel,
@@ -46,7 +46,6 @@ enum
 	MConfigTitle,
 	MConfigAddToDisksMenu,
 	MConfigAddToPluginMenu,
-	MConfigDisksMenuDigit,
 	MConfigLocalNetwork,
 	MConfigShares,
 	MConfigSharesFullPath,

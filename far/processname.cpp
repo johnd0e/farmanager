@@ -31,117 +31,136 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "processname.hpp"
 
+// Internal:
 #include "pathmix.hpp"
 #include "string_utils.hpp"
+
+// Platform:
+
+// Common:
+#include "common/string_utils.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 /* $ 09.10.2000 IS
     Генерация нового имени по маске
     (взял из ShellCopy::ShellCopyConvertWildcards)
 */
-// На основе имени файла (Src) и маски (Dest) генерируем новое имя
+// На основе имени файла (SrcName) и маски (Mask) генерируем новое имя
 // SelectedFolderNameLength - длина каталога. Например, есть
 // каталог dir1, а в нем файл file1. Нужно сгенерировать имя по маске для dir1.
 // Параметры могут быть следующими: Src="dir1", SelectedFolderNameLength=0
 // или Src="dir1\\file1", а SelectedFolderNameLength=4 (длина "dir1")
-bool ConvertWildcards(const string& SrcName, string &strDest, int const SelectedFolderNameLength)
+string ConvertWildcards(string_view const SrcName, string_view const Mask)
 {
-	size_t DestNamePos = strDest.size() - PointToName(strDest).size();
+	const auto WildName = PointToName(Mask);
+	if (WildName.find_first_of(L"*?"sv) == WildName.npos)
+		return string(Mask);
 
-	if (strDest.find_first_of(L"*?", DestNamePos) == string::npos)
+	auto SrcNamePart = PointToName(SrcName);
+
+	string Result;
+	Result.reserve(SrcName.size());
+	Result = Mask.substr(0, Mask.size() - WildName.size());
+
+	const auto BeforeNameLength = Result.empty()? 0 : SrcName.size() - SrcNamePart.size();
+
+	auto WildPtr = WildName;
+
+	// https://superuser.com/questions/475874/how-does-the-windows-rename-command-interpret-wildcards
+
+	while (!WildPtr.empty())
 	{
-		return false;
-	}
-
-	const string strWildName = strDest.substr(DestNamePos);
-
-	const auto strSrc = SelectedFolderNameLength? SrcName.substr(0, SelectedFolderNameLength) : SrcName;
-	const auto Src = strSrc.c_str();
-	auto SrcNamePtr = PointToName(strSrc);
-
-	strDest.resize(strDest.size() + SrcName.size());
-
-	const auto BeforeNameLength = DestNamePos? 0 : strSrc.size() - SrcNamePtr.size();
-
-	const auto SrcNameRDot = std::find(ALL_CONST_REVERSE_RANGE(SrcNamePtr), L'.');
-	const auto SrcNameDot = SrcNameRDot == SrcNamePtr.crend()? SrcNamePtr.cend() : (SrcNameRDot + 1).base();
-
-	auto CurWildPtr = strWildName.c_str();
-	while (*CurWildPtr)
-	{
-		switch (*CurWildPtr)
+		switch (WildPtr.front())
 		{
 		case L'?':
-			CurWildPtr++;
+			WildPtr.remove_prefix(1);
 
-			if (!SrcNamePtr.empty())
+			if (!SrcNamePart.empty() && SrcNamePart.front() != L'.')
 			{
-				strDest[DestNamePos] = SrcNamePtr[0];
-				++DestNamePos;
-				SrcNamePtr.remove_prefix(1);
+				Result.push_back(SrcNamePart.front());
+				SrcNamePart.remove_prefix(1);
 			}
 			break;
 
 		case L'*':
-			CurWildPtr++;
-			while (!SrcNamePtr.empty())
 			{
-				if (*CurWildPtr == L'.' && SrcNameDot != SrcNamePtr.cend() && !contains(CurWildPtr + 1, L'.'))
+				WildPtr.remove_prefix(1);
+				if (!WildPtr.empty())
 				{
-					if (SrcNamePtr.cbegin() == SrcNameDot)
-						break;
+					const auto Char = WildPtr.front();
+					WildPtr.remove_prefix(1);
+					size_t LastCharPos;
+					if (Char == L'?')
+						LastCharPos = SrcNamePart.size();
+					else
+					{
+						LastCharPos = SrcNamePart.rfind(Char);
+						if (LastCharPos == SrcNamePart.npos)
+							LastCharPos = SrcNamePart.size();
+					}
+					std::copy_n(SrcNamePart.cbegin(), LastCharPos, std::back_inserter(Result));
+					if (Char != L'?')
+						Result.push_back(Char);
+					SrcNamePart.remove_prefix(LastCharPos);
+					if (!SrcNamePart.empty())
+						SrcNamePart.remove_prefix(1);
 				}
-				else if (SrcNamePtr[0] == *CurWildPtr)
+				else
 				{
-					break;
+					append(Result, SrcNamePart);
 				}
-
-				strDest[DestNamePos] = SrcNamePtr[0];
-				++DestNamePos;
-				SrcNamePtr.remove_prefix(1);
 			}
 			break;
 
 		case L'.':
-			CurWildPtr++;
-			strDest[DestNamePos++] = L'.';
+			{
+				WildPtr.remove_prefix(1);
+				Result.push_back(L'.');
 
-			if (wcspbrk(CurWildPtr,L"*?"))
-				while (!SrcNamePtr.empty())
-				{
-					const auto Char = SrcNamePtr[0];
-					SrcNamePtr.remove_prefix(1);
-					if (Char == L'.')
-						break;
-				}
+				auto FirstDotPos = SrcNamePart.find(L'.');
+				if (FirstDotPos == SrcNamePart.npos)
+					FirstDotPos = SrcNamePart.size();
+				else
+					++FirstDotPos;
+
+				SrcNamePart.remove_prefix(FirstDotPos);
+			}
 			break;
 
 		default:
-			strDest[DestNamePos++] = *(CurWildPtr++);
-			if (!SrcNamePtr.empty() && SrcNamePtr[0] != L'.')
-				SrcNamePtr.remove_prefix(1);
+			Result.push_back(WildPtr.front());
+			WildPtr.remove_prefix(1);
+			if (!SrcNamePart.empty() && SrcNamePart.front() != L'.')
+				SrcNamePart.remove_prefix(1);
 			break;
 		}
 	}
-	strDest.resize(DestNamePos);
 
-	if (!strDest.empty() && strDest.back() == L'.')
-		strDest.pop_back();
+	if (ends_with(Result, L'.'))
+		Result.pop_back();
 
-	strDest.insert(0, Src, BeforeNameLength);
+	Result.insert(0, SrcName.data(), BeforeNameLength);
 
-	if (SelectedFolderNameLength)
-	{
-		strDest += SrcName.substr(SelectedFolderNameLength); //BUGBUG???, was src in 1.7x
-	}
-
-	return true;
+	return Result;
 }
 
-bool CmpName(string_view pattern, string_view str, const bool skippath, const bool CmpNameSearchMode)
+bool CmpName(string_view pattern, string_view str, const bool skippath, const bool CmpNameLegacyMode)
 {
 	// BUGBUG rewrite
+
+	// Special case for these simplest and most common masks:
+	if (pattern == L"*"sv || (CmpNameLegacyMode && pattern == L"*.*"sv))
+		return true;
+
 	if (pattern.empty() || str.empty())
 		return false;
 
@@ -197,7 +216,7 @@ bool CmpName(string_view pattern, string_view str, const bool skippath, const bo
 
 			for(;;)
 			{
-				if(CmpName(pattern,str,false,CmpNameSearchMode))
+				if(CmpName(pattern, str, false, CmpNameLegacyMode))
 					return true;
 
 				if (str.empty())
@@ -265,12 +284,193 @@ bool CmpName(string_view pattern, string_view str, const bool skippath, const bo
 		default:
 			if (patternc != stringc)
 			{
-				if (patternc==L'.' && !stringc && !CmpNameSearchMode)
-					return pattern[0] != L'.' && CmpName(pattern, str, true, CmpNameSearchMode);
-
-				return false;
+				return CmpNameLegacyMode && str.empty() && patternc == L'.' && pattern == L"*"sv;
 			}
 			break;
 		}
 	}
 }
+
+string exclude_sets(string_view const Str)
+{
+	string Result;
+	Result.reserve(Str.size());
+
+	for (const auto i: Str)
+	{
+		switch (i)
+		{
+		case L'[':
+		case L']':
+			append(Result, L'[', i, L']');
+			break;
+
+		default:
+			Result.push_back(i);
+			break;
+		}
+	}
+
+	return Result;
+}
+
+#ifdef ENABLE_TESTS
+
+#include "testing.hpp"
+
+static const string_view Masks[]
+{
+	L"*"sv,
+	L"A?Z*"sv,
+	L"*.txt"sv,
+	L"*?.bak"sv,
+	L"?????.?????"sv,
+	L"*_NEW.*"sv,
+	L"?x.????999.*rForTheCourse"sv,
+	L"*.*.2"sv,
+};
+
+TEST_CASE("ConvertWildcards")
+{
+	static const struct
+	{
+		size_t Mask;
+		string_view Src, Expected;
+	}
+	Tests[]
+	{
+		{ 0, {},                            {} },
+		{ 0, L"whatever"sv,                 L"whatever"sv },
+
+		{ 1, L"1"sv,                        L"AZ"sv },
+		{ 1, L"12"sv,                       L"A2Z"sv },
+		{ 1, L"1.txt"sv,                    L"AZ.txt"sv },
+		{ 1, L"12.txt"sv,                   L"A2Z.txt"sv },
+		{ 1, L"123"sv,                      L"A2Z"sv },
+		{ 1, L"123.txt"sv,                  L"A2Z.txt"sv },
+		{ 1, L"1234"sv,                     L"A2Z4"sv },
+		{ 1, L"1234.txt"sv,                 L"A2Z4.txt"sv },
+
+		{ 2, L"a"sv,                        L"a.txt"sv },
+		{ 2, L"b.dat"sv,                    L"b.txt"sv },
+		{ 2, L"c.x.y"sv,                    L"c.x.txt"sv },
+
+		{ 3, L"a"sv,                        L"a.bak"sv },
+		{ 3, L"b.dat"sv,                    L"b.dat.bak"sv },
+		{ 3, L"c.x.y"sv,                    L"c.x.y.bak"sv },
+
+		{ 4, L"a"sv,                        L"a"sv },
+		{ 4, L"a.b"sv,                      L"a.b"sv },
+		{ 4, L"a.b.c"sv,                    L"a.b"sv },
+		{ 4, L"part1.part2.part3"sv,        L"part1.part2"sv },
+		{ 4, L"123456.123456.123456"sv,     L"12345.12345"sv },
+
+		{ 5, L"abcd_12345.txt"sv,           L"abcd_NEW.txt"sv },
+		{ 5, L"abc_newt_1.dat"sv,           L"abc_newt_NEW.dat"sv },
+		{ 5, L"abcd_123.a_b"sv,             L"abcd_123.a_NEW"sv },
+
+		{ 6, L"part1.part2"sv,              L"px.part999.rForTheCourse"sv },
+		{ 6, L"part1.part2.part3"sv,        L"px.part999.parForTheCourse"sv },
+		{ 6, L"a.b.c"sv,                    L"ax.b999.crForTheCourse"sv },
+		{ 6, L"a.b.CarPart3BEER"sv,         L"ax.b999.CarParForTheCourse"sv },
+
+		{ 7, L"1.1.1"sv,                    L"1.1.1.2"sv },
+	};
+
+	for (const auto& i: Tests)
+	{
+		REQUIRE(i.Expected == ConvertWildcards(i.Src, Masks[i.Mask]));
+	}
+}
+
+TEST_CASE("CmpName")
+{
+	static const struct
+	{
+		size_t Mask;
+		string_view Src;
+		bool Match;
+	}
+	Tests[]
+	{
+		{ 0, {},                             true  },
+		{ 0, L"."sv,                         true  },
+		{ 0, L"whatever"sv,                  true  },
+
+		{ 1, {},                             false },
+		{ 1, L"1"sv,                         false },
+		{ 1, L"AZ"sv,                        false },
+		{ 1, L"ALZ"sv,                       true  },
+		{ 1, L"ALZA1"sv,                     true  },
+
+		{ 2, {},                             false },
+		{ 2, L"foo.bar"sv,                   false },
+		{ 2, L"foo.txt"sv,                   true  },
+		{ 2, L".txt"sv,                      true  },
+		{ 2, L"foo.txt1"sv,                  false },
+
+		{ 3, {},                             false },
+		{ 3, L"foo.bar"sv,                   false },
+		{ 3, L"1.bak"sv,                     true  },
+		{ 3, L"foo.bak"sv,                   true  },
+		{ 3, L"foo.bak1"sv,                  false },
+
+		{ 4, {},                             false },
+		{ 4, L"12345.1234"sv,                false },
+		{ 4, L"12345.12345"sv,               true  },
+		{ 4, L"1.234.123.4"sv,               true  },
+		{ 4, L"..........."sv,               true  },
+		{ 4, L"123456.12345"sv,              false },
+
+		{ 5, {},                             false },
+		{ 5, L"1"sv,                         false },
+		{ 5, L"_NEW"sv,                      true  },
+		{ 5, L"1_NEW"sv,                     true  },
+		{ 5, L"1_NEW."sv,                    true  },
+		{ 5, L"1_NEW.2"sv,                   true  },
+		{ 5, L"1_NEW2"sv,                    false },
+
+		{ 6, {},                             false },
+		{ 6, L"1"sv,                         false },
+		{ 6, L"Rx.1234999.rForTheCourse"sv,  true  },
+		{ 6, L"Rx.1234999.QrForTheCourse"sv, true  },
+		{ 6, L"Rx.999.rForTheCourse"sv,      false },
+
+		{ 7, {},                             false },
+		{ 7, L".bar.2"sv,                    true  },
+		{ 7, L"..2"sv,                       true  },
+		{ 7, L"foo..2"sv,                    true  },
+		{ 7, L"foo.bar.2"sv,                 true  },
+		{ 7, L"foo.bar."sv,                  false },
+	};
+
+	for (const auto& i: Tests)
+	{
+		REQUIRE(i.Match == CmpName(Masks[i.Mask], i.Src));
+	}
+}
+
+TEST_CASE("exclude_sets")
+{
+	static const struct
+	{
+		string_view Src, Result;
+	}
+	Tests[]
+	{
+		{ L""sv,          L""sv                   },
+		{ L"-"sv,         L"-"sv                  },
+		{ L"["sv,         L"[[]"sv                },
+		{ L"]"sv,         L"[]]"sv                },
+		{ L"[]"sv,        L"[[][]]"sv             },
+		{ L"[[]]"sv,      L"[[][[][]][]]"sv       },
+		{ L"[a[b]c]"sv,   L"[[]a[[]b[]]c[]]"sv    },
+		{ L"[]]]"sv,      L"[[][]][]][]]"sv       },
+	};
+
+	for (const auto& i: Tests)
+	{
+		REQUIRE(exclude_sets(i.Src) == i.Result);
+	}
+}
+#endif

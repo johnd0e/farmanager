@@ -1,4 +1,4 @@
-/*
+﻿/*
 TMPCLASS.HPP
 
 Temporary panel plugin class header file
@@ -18,6 +18,7 @@ class TmpPanel
 		int LastOwnersRead;
 		int LastLinksRead;
 		int UpdateNotNeeded;
+		wchar_t* HostFile;
 
 	private:
 		void RemoveDups();
@@ -34,7 +35,7 @@ class TmpPanel
 		bool IsCurrentFileCorrect(wchar_t **pCurFileName);
 
 	public:
-		TmpPanel();
+		TmpPanel(const wchar_t *pHostFile=nullptr);
 		~TmpPanel();
 
 	public:
@@ -56,7 +57,7 @@ class TmpPanel
 		int SetFindList(const struct PluginPanelItem *PanelItem,size_t ItemsNumber);
 		int ProcessEvent(intptr_t Event,void *Param);
 		int ProcessKey(const INPUT_RECORD *Rec);
-		void IfOptCommonPanel(void);
+		void IfOptCommonPanel();
 
 		static bool GetFileInfoAndValidate(const wchar_t *FilePath, PluginPanelItem* FindData, int Any);
 };

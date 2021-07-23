@@ -1,4 +1,4 @@
-#include "msg.h"
+﻿#include "msg.h"
 #include "utils.hpp"
 #include "sysutils.hpp"
 #include "farutils.hpp"
@@ -9,31 +9,31 @@
 class ArchiveTester: public IArchiveExtractCallback, public ICryptoGetTextPassword, public ComBase, public ProgressMonitor {
 private:
   UInt32 src_dir_index;
-  shared_ptr<Archive> archive;
+  std::shared_ptr<Archive> archive;
 
-  wstring file_path;
-  unsigned __int64 completed;
-  unsigned __int64 total;
-  virtual void do_update_ui() {
+  std::wstring file_path;
+  UInt64 completed;
+  UInt64 total;
+  void do_update_ui() override {
     const unsigned c_width = 60;
 
     percent_done = calc_percent(completed, total);
 
-    unsigned __int64 speed;
+    UInt64 speed;
     if (time_elapsed() == 0)
       speed = 0;
     else
       speed = al_round(static_cast<double>(completed) / time_elapsed() * ticks_per_sec());
 
-    wostringstream st;
+    std::wostringstream st;
     st << fit_str(file_path, c_width) << L'\n';
-    st << setw(7) << format_data_size(completed, get_size_suffixes()) << L" / " << format_data_size(total, get_size_suffixes()) << L" @ " << setw(9) << format_data_size(speed, get_speed_suffixes()) << L'\n';
+    st << std::setw(7) << format_data_size(completed, get_size_suffixes()) << L" / " << format_data_size(total, get_size_suffixes()) << L" @ " << std::setw(9) << format_data_size(speed, get_speed_suffixes()) << L'\n';
     st << Far::get_progress_bar_str(c_width, percent_done, 100) << L'\n';
     progress_text = st.str();
   }
 
 public:
-  ArchiveTester(UInt32 src_dir_index, shared_ptr<Archive> archive): ProgressMonitor(Far::get_msg(MSG_PROGRESS_TEST)), src_dir_index(src_dir_index), archive(archive), completed(0), total(0) {
+  ArchiveTester(UInt32 src_dir_index, std::shared_ptr<Archive> archive): ProgressMonitor(Far::get_msg(MSG_PROGRESS_TEST)), src_dir_index(src_dir_index), archive(archive), completed(0), total(0) {
   }
 
   UNKNOWN_IMPL_BEGIN
@@ -42,14 +42,14 @@ public:
   UNKNOWN_IMPL_ITF(ICryptoGetTextPassword)
   UNKNOWN_IMPL_END
 
-  STDMETHODIMP SetTotal(UInt64 total) {
+  STDMETHODIMP SetTotal(UInt64 total_value) noexcept override {
     COM_ERROR_HANDLER_BEGIN
-    this->total = total;
+    total = total_value;
     update_ui();
     return S_OK;
     COM_ERROR_HANDLER_END
   }
-  STDMETHODIMP SetCompleted(const UInt64 *completeValue) {
+  STDMETHODIMP SetCompleted(const UInt64 *completeValue) noexcept override {
     COM_ERROR_HANDLER_BEGIN
     if (completeValue) {
       completed = *completeValue;
@@ -59,31 +59,31 @@ public:
     COM_ERROR_HANDLER_END
   }
 
-  STDMETHODIMP GetStream(UInt32 index, ISequentialOutStream **outStream,  Int32 askExtractMode) {
+  STDMETHODIMP GetStream(UInt32 index, ISequentialOutStream **outStream,  Int32 askExtractMode) noexcept override {
     COM_ERROR_HANDLER_BEGIN
     const ArcFileInfo& file_info = archive->file_list[index];
     file_path = file_info.name;
     UInt32 parent_index = file_info.parent;
     while (parent_index != src_dir_index) {
-      const ArcFileInfo& file_info = archive->file_list[parent_index];
-      file_path.insert(0, 1, L'\\').insert(0, file_info.name);
-      parent_index = file_info.parent;
+      const ArcFileInfo& parent_file_info = archive->file_list[parent_index];
+      file_path.insert(0, 1, L'\\').insert(0, parent_file_info.name);
+      parent_index = parent_file_info.parent;
     }
     update_ui();
     *outStream = nullptr;
     return S_OK;
     COM_ERROR_HANDLER_END
   }
-  STDMETHODIMP PrepareOperation(Int32 askExtractMode) {
+  STDMETHODIMP PrepareOperation(Int32 askExtractMode) noexcept override {
     COM_ERROR_HANDLER_BEGIN
     return S_OK;
     COM_ERROR_HANDLER_END
   }
-  STDMETHODIMP SetOperationResult(Int32 resultEOperationResult) {
+  STDMETHODIMP SetOperationResult(Int32 resultEOperationResult) noexcept override {
     COM_ERROR_HANDLER_BEGIN
     if (resultEOperationResult == NArchive::NExtract::NOperationResult::kOK)
       return S_OK;
-    bool encrypted = !archive->password.empty();
+    bool encrypted = !archive->m_password.empty();
     Error error;
     error.code = E_MESSAGE;
     if (resultEOperationResult == NArchive::NExtract::NOperationResult::kUnsupportedMethod)
@@ -100,25 +100,25 @@ public:
     COM_ERROR_HANDLER_END
   }
 
-  STDMETHODIMP CryptoGetTextPassword(BSTR *password) {
+  STDMETHODIMP CryptoGetTextPassword(BSTR *password) noexcept override {
     COM_ERROR_HANDLER_BEGIN
-    if (archive->password.empty()) {
+    if (archive->m_password.empty()) {
       ProgressSuspend ps(*this);
-      if (!password_dialog(archive->password, archive->arc_path))
+      if (!password_dialog(archive->m_password, archive->arc_path))
         FAIL(E_ABORT);
     }
-    BStr(archive->password).detach(password);
+    BStr(archive->m_password).detach(password);
     return S_OK;
     COM_ERROR_HANDLER_END
   }
 };
 
-void Archive::prepare_test(UInt32 file_index, list<UInt32>& indices) {
+void Archive::prepare_test(UInt32 file_index, std::list<UInt32>& indices) {
   const ArcFileInfo& file_info = file_list[file_index];
   if (file_info.is_dir) {
     FileIndexRange dir_list = get_dir_list(file_index);
-    for_each(dir_list.first, dir_list.second, [&] (UInt32 file_index) {
-      prepare_test(file_index, indices);
+    std::for_each(dir_list.first, dir_list.second, [&] (UInt32 item) {
+      prepare_test(item, indices);
     });
   }
   else {
@@ -126,18 +126,18 @@ void Archive::prepare_test(UInt32 file_index, list<UInt32>& indices) {
   }
 }
 
-void Archive::test(UInt32 src_dir_index, const vector<UInt32>& src_indices) {
+void Archive::test(UInt32 src_dir_index, const std::vector<UInt32>& src_indices) {
   DisableSleepMode dsm;
 
-  list<UInt32> file_indices;
+  std::list<UInt32> file_indices;
   for (unsigned i = 0; i < src_indices.size(); i++) {
     prepare_test(src_indices[i], file_indices);
   }
 
-  vector<UInt32> indices;
+  std::vector<UInt32> indices;
   indices.reserve(file_indices.size());
-  copy(file_indices.begin(), file_indices.end(), back_insert_iterator<vector<UInt32>>(indices));
-  sort(indices.begin(), indices.end());
+  std::copy(file_indices.begin(), file_indices.end(), std::back_insert_iterator<std::vector<UInt32>>(indices));
+  std::sort(indices.begin(), indices.end());
 
   ComObject<IArchiveExtractCallback> tester(new ArchiveTester(src_dir_index, shared_from_this()));
   COM_ERROR_CHECK(in_arc->Extract(indices.data(), static_cast<UInt32>(indices.size()), 1, tester));

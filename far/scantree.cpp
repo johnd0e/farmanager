@@ -32,21 +32,54 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// BUGBUG
+#include "platform.headers.hpp"
+
+// Self:
 #include "scantree.hpp"
 
-#include "syslog.hpp"
+// Internal:
 #include "config.hpp"
 #include "pathmix.hpp"
 #include "cvtname.hpp"
 #include "global.hpp"
+#include "exception.hpp"
+#include "log.hpp"
 
+// Platform:
 #include "platform.fs.hpp"
 
-struct ScanTree::scantree_item
+// Common:
+#include "common/string_utils.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
+
+enum tree_flags
+{
+	// TREE_RETUPDIR causes GetNextName() to return every directory twice:
+	// 1. when scanning its parent directory
+	// 2. after directory scan is finished
+	TREE_RETUPDIR      = 0_bit, // = FRS_RETUPDIR
+	TREE_RECUR         = 1_bit, // = FRS_RECUR
+	TREE_SCANSYMLINK   = 2_bit, // = FRS_SCANSYMLINK
+	TREE_FILESFIRST    = 3_bit, // Сканирование каталога за два прохода. Сначала файлы, затем каталоги
+	TREE_SECONDDIRNAME = 4_bit, // set when FSCANTREE_RETUPDIR is enabled and directory scan is finished
+};
+
+enum tree_item_flags
+{
+	TREE_ITEM_SECONDPASS           = 0_bit, // то, что раньше было было SecondPass[]
+	TREE_ITEM_INSIDE_REPARSE_POINT = 1_bit, // For Copy: we don't want to delete anything from any reparse points
+};
+
+
+class ScanTree::scantree_item
 {
 public:
 	NONCOPYABLE(scantree_item);
-	MOVABLE(scantree_item);
+	MOVE_CONSTRUCTIBLE(scantree_item);
 
 	scantree_item() = default;
 
@@ -57,27 +90,28 @@ public:
 	std::unordered_set<string> ActiveDirectories;
 };
 
-ScanTree::ScanTree(bool RetUpDir, bool Recurse, int ScanJunction)
+ScanTree::ScanTree(bool RetUpDir, bool Recurse, int ScanJunction, bool FilesFirst)
 {
-	Flags.Change(FSCANTREE_RETUPDIR,RetUpDir);
-	Flags.Change(FSCANTREE_RECUR,Recurse);
-	Flags.Change(FSCANTREE_SCANSYMLINK, ScanJunction == -1? Global->Opt->ScanJunction.Get() : ScanJunction != 0);
+	Flags.Change(TREE_RETUPDIR, RetUpDir);
+	Flags.Change(TREE_RECUR, Recurse);
+	Flags.Change(TREE_SCANSYMLINK, ScanJunction == -1? Global->Opt->ScanJunction.Get() : ScanJunction != 0);
+	Flags.Change(TREE_FILESFIRST, FilesFirst);
 }
 
 ScanTree::~ScanTree() = default;
 
-void ScanTree::SetFindPath(const string& Path, string_view const Mask, const DWORD NewScanFlags)
+void ScanTree::SetFindPath(string_view const Path, string_view const Mask)
 {
 	ScanItems.clear();
 
-	Flags.Clear(FSCANTREE_FILESFIRST);
-
-	assign(strFindMask, Mask);
+	strFindMask = Mask;
 
 	strFindPathOriginal = Path;
 	AddEndSlash(strFindPathOriginal);
 
-	strFindPath = NTPath(ConvertNameToReal(Path));
+	const auto FullPath = NTPath(ConvertNameToFull(Path));
+
+	strFindPath = NTPath(ConvertNameToReal(FullPath));
 
 	scantree_item Item;
 	Item.RealPath = strFindPath;
@@ -85,7 +119,10 @@ void ScanTree::SetFindPath(const string& Path, string_view const Mask, const DWO
 
 	path::append(strFindPath, strFindMask);
 
-	Flags.Set((Flags.Flags()&0x0000FFFF)|(NewScanFlags&0xFFFF0000));
+	if (os::fs::is_directory_reparse_point(os::fs::get_file_attributes(FullPath)))
+	{
+		Item.Flags.Set(TREE_ITEM_INSIDE_REPARSE_POINT);
+	}
 
 	ScanItems.emplace_back(std::move(Item));
 }
@@ -96,7 +133,7 @@ bool ScanTree::GetNextName(os::fs::find_data& fdata,string &strFullName)
 		return false;
 
 	bool Done=false;
-	Flags.Clear(FSCANTREE_SECONDDIRNAME);
+	Flags.Clear(TREE_SECONDDIRNAME);
 
 	{
 		scantree_item& LastItem = ScanItems.back();
@@ -124,9 +161,9 @@ bool ScanTree::GetNextName(os::fs::find_data& fdata,string &strFullName)
 				fdata = *ScanItems.back().Iterator;
 			}
 
-			if (Flags.Check(FSCANTREE_FILESFIRST))
+			if (Flags.Check(TREE_FILESFIRST))
 			{
-				if (LastItem.Flags.Check(FSCANTREE_SECONDPASS))
+				if (LastItem.Flags.Check(TREE_ITEM_SECONDPASS))
 				{
 					if (!Done && !(fdata.Attributes & FILE_ATTRIBUTE_DIRECTORY))
 						continue;
@@ -139,7 +176,7 @@ bool ScanTree::GetNextName(os::fs::find_data& fdata,string &strFullName)
 					if (Done)
 					{
 						LastItem.Find.reset();
-						LastItem.Flags.Set(FSCANTREE_SECONDPASS);
+						LastItem.Flags.Set(TREE_ITEM_SECONDPASS);
 						continue;
 					}
 				}
@@ -157,25 +194,26 @@ bool ScanTree::GetNextName(os::fs::find_data& fdata,string &strFullName)
 			return false;
 		else
 		{
-			if (ScanItems.back().Flags.Check(FSCANTREE_INSIDEJUNCTION))
-				Flags.Clear(FSCANTREE_INSIDEJUNCTION);
-
 			CutToSlash(strFindPath,true);
 			CutToSlash(strFindPathOriginal,true);
 
-			if (Flags.Check(FSCANTREE_RETUPDIR))
+			if (Flags.Check(TREE_RETUPDIR))
 			{
 				strFullName = strFindPathOriginal;
-				os::fs::get_find_data(strFindPath, fdata);
+				// BUGBUG check result
+				if (!os::fs::get_find_data(strFindPath, fdata))
+				{
+					LOGWARNING(L"get_find_data({}): {}"sv, strFindPath, last_error());
+				}
+
 			}
 
 			CutToSlash(strFindPath);
 			strFindPath += strFindMask;
-			_SVS(SysLog(L"1. FullName='%s'",strFullName.c_str()));
 
-			if (Flags.Check(FSCANTREE_RETUPDIR))
+			if (Flags.Check(TREE_RETUPDIR))
 			{
-				Flags.Set(FSCANTREE_SECONDDIRNAME);
+				Flags.Set(TREE_SECONDDIRNAME);
 				return true;
 			}
 
@@ -185,7 +223,7 @@ bool ScanTree::GetNextName(os::fs::find_data& fdata,string &strFullName)
 	else
 	{
 		const auto is_link = os::fs::is_directory_symbolic_link(fdata);
-		if ((fdata.Attributes&FILE_ATTRIBUTE_DIRECTORY) && Flags.Check(FSCANTREE_RECUR) && (!is_link || Flags.Check(FSCANTREE_SCANSYMLINK)))
+		if ((fdata.Attributes&FILE_ATTRIBUTE_DIRECTORY) && Flags.Check(TREE_RECUR) && (!is_link || Flags.Check(TREE_SCANSYMLINK)))
 		{
 			auto RealPath = path::join(ScanItems.back().RealPath, fdata.FileName);
 
@@ -196,7 +234,7 @@ bool ScanTree::GetNextName(os::fs::find_data& fdata,string &strFullName)
 			if (!ScanItems.back().ActiveDirectories.count(RealPath))
 			{
 				CutToSlash(strFindPath);
-				append(strFindPath, fdata.FileName, L'\\', strFindMask);
+				path::append(strFindPath, fdata.FileName, strFindMask);
 
 				CutToSlash(strFindPathOriginal);
 				strFindPathOriginal += fdata.FileName;
@@ -206,16 +244,15 @@ bool ScanTree::GetNextName(os::fs::find_data& fdata,string &strFullName)
 
 				scantree_item Data;
 				Data.Flags = ScanItems.back().Flags; // наследуем флаг
-				Data.Flags.Clear(FSCANTREE_SECONDPASS);
+				Data.Flags.Clear(TREE_ITEM_SECONDPASS);
 				Data.RealPath = RealPath;
 				Data.ActiveDirectories = ScanItems.back().ActiveDirectories;
-				if (Flags.Check(FSCANTREE_SCANSYMLINK))
+				if (Flags.Check(TREE_SCANSYMLINK))
 					Data.ActiveDirectories.emplace(RealPath);
 
-				if (is_link)
+				if (os::fs::is_directory_reparse_point(fdata.Attributes))
 				{
-					Data.Flags.Set(FSCANTREE_INSIDEJUNCTION);
-					Flags.Set(FSCANTREE_INSIDEJUNCTION);
+					Data.Flags.Set(TREE_ITEM_INSIDE_REPARSE_POINT);
 				}
 				ScanItems.emplace_back(std::move(Data));
 
@@ -238,7 +275,7 @@ void ScanTree::SkipDir()
 
 	{
 		const auto& Current = ScanItems.back();
-		if (!Flags.Check(FSCANTREE_SCANSYMLINK) &&
+		if (!Flags.Check(TREE_SCANSYMLINK) &&
 			Current.Find &&
 			Current.Iterator != Current.Find->end() &&
 			os::fs::is_directory_symbolic_link(*Current.Iterator)
@@ -256,12 +293,22 @@ void ScanTree::SkipDir()
 	if (ScanItems.empty())
 		return;
 
-	if (!ScanItems.back().Flags.Check(FSCANTREE_INSIDEJUNCTION))
-		Flags.Clear(FSCANTREE_INSIDEJUNCTION);
-
 	CutToSlash(strFindPath,true);
 	CutToSlash(strFindPathOriginal,true);
 	CutToSlash(strFindPath);
 	CutToSlash(strFindPathOriginal);
 	strFindPath += strFindMask;
+}
+
+bool ScanTree::IsDirSearchDone() const
+{
+	return Flags.Check(TREE_SECONDDIRNAME);
+}
+
+bool ScanTree::InsideReparsePoint() const
+{
+	return std::any_of(ALL_CONST_RANGE(ScanItems), [](scantree_item const& i)
+	{
+		return i.Flags.Check(TREE_ITEM_INSIDE_REPARSE_POINT);
+	});
 }

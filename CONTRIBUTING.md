@@ -50,37 +50,27 @@ cd far
    not self-explanatory and won't be understood by "future generations".
 2. Recent changes go on top.
 3. Each entry starts with a header of the form:
->   warp 05.12.2006 01:39:38 +0300 - build 2149
+```
+--------------------------------------------------------------------------------
+warp 05.12.2006 01:39:38 +0300 - build 2149
+```
 4. Changes not always require a build increase (i.e. cosmetic or non code
    related changes).
-5. Sample macro to generate the header:  
-```lua
-   Macro {
-     area="Editor"; key="Ctrl`"; action = function()
-       Keys("CtrlHome End CtrlLeft")
-       build=mf.int(mf.substr(Editor.Value,Editor.RealPos-1))+1;
-       Keys("CtrlHome")
-       print(mf.date("name %d.%m0.%Y %H:%M:%S %z - build ")) print(build)
-       for RCounter=4,1,-1 do  Keys("Enter") end
-       Keys("Up Up 1 . Space")
-     end;
-   }
-```
+5. Sample macro to generate the header: [ChangelogHeader.lua](./misc/changelog/ChangelogHeader.lua)
 
 #### farversion.m4
 
 1. This file contains information used to generate Far version:
-   * `BUILDTYPE`, a string that defines the build type:
-      - '' (an empty string) - release version
-      - `alpha` - alpha version
-      - `beta` - beta version
-      - `RC` - release candidate
-      - `AnythingElse` - intended for Far versions which code has not been
+   * `SPECIAL_VERSION`, a string that, if set, marks the build as special.
+      - Intended for Far versions which code has not been
         committed yet to the repository so we and the users will not be confused.  
-        Far version will look something like that:  
-        `FarVersion alpha AnythingElse based on build BuildNumber`
-   * `MAJOR` - major Far version (i.e. 3).
-   * `MINOR` - minor Far version (i.e. 0).
+      - If not set, the build type will be defined by FARMANAGER_BUILD_TYPE environment 
+        variable. If the variable is not set, the build type will be Private.
+        For the supported build types see VERSION_STAGE enumeration in plugin.hpp.
+   * `VERSION_MAJOR` - major Far version (e.g. 3).
+   * `VERSION_MINOR` - minor Far version (e.g. 0).
+   * `VERSION_REVISION` - Far version revision (e.g. 0).
+   * `VERSION_BUILD` - set in `vbuild.m4` file.
 
 
 #### vbuild.m4

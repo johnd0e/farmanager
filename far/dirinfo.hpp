@@ -35,27 +35,43 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
+#include "common/function_ref.hpp"
+
+// Platform:
+
+// Common:
+#include "common/utility.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
+
 class FileFilter;
 struct PluginPanelItem;
 struct UserDataItem;
 
 enum GETDIRINFOFLAGS
 {
-	GETDIRINFO_ENHBREAK           =0x00000001,
-	GETDIRINFO_SCANSYMLINK        =0x00000004,
-	GETDIRINFO_SCANSYMLINKDEF     =0x00000008,
-	GETDIRINFO_USEFILTER          =0x00000010,
+	GETDIRINFO_ENHBREAK           = 0_bit,
+	GETDIRINFO_SCANSYMLINK        = 2_bit,
+	GETDIRINFO_SCANSYMLINKDEF     = 3_bit,
+	GETDIRINFO_USEFILTER          = 4_bit,
 };
 
-struct DirInfoData
+struct BasicDirInfoData
 {
-	unsigned long long FileSize;
-	unsigned long long AllocationSize;
-	unsigned long long FilesSlack;
-	unsigned long long MFTOverhead;
-	unsigned long long ClusterSize;
-	DWORD DirCount;
-	DWORD FileCount;
+	DWORD DirCount{};
+	DWORD FileCount{};
+	unsigned long long FileSize{};
+	unsigned long long AllocationSize{};
+};
+
+struct DirInfoData: public BasicDirInfoData
+{
+	unsigned long long FilesSlack{};
+	unsigned long long MFTOverhead{};
+	unsigned long long ClusterSize{};
 };
 
 enum getdirinfo_message_delay
@@ -65,15 +81,15 @@ enum getdirinfo_message_delay
 	getdirinfo_default_delay = 500, // ms
 };
 
-using dirinfo_callback = std::function<void(string_view Name, unsigned long long Items, unsigned long long Size)>;
-int GetDirInfo(const string& DirName, DirInfoData& Data, FileFilter *Filter, const dirinfo_callback& Callback, DWORD Flags = GETDIRINFO_SCANSYMLINKDEF);
+using dirinfo_callback = function_ref<void(string_view Name, unsigned long long Items, unsigned long long Size)>;
+int GetDirInfo(string_view DirName, DirInfoData& Data, FileFilter *Filter, dirinfo_callback Callback, DWORD Flags = GETDIRINFO_SCANSYMLINKDEF);
 void DirInfoMsg(string_view Title, string_view Name, unsigned long long Items, unsigned long long Size);
 
 class plugin_panel;
 
-bool GetPluginDirInfo(const plugin_panel* hPlugin,const string& DirName, const UserDataItem* UserData, unsigned long& DirCount, unsigned long& FileCount,unsigned long long& FileSize, unsigned long long& CompressedFileSize);
+bool GetPluginDirInfo(const plugin_panel* hPlugin, string_view DirName, const UserDataItem* UserData, BasicDirInfoData& Data, dirinfo_callback Callback);
 
-bool GetPluginDirList(class Plugin* PluginNumber, HANDLE hPlugin, const string& Dir, const UserDataItem* UserData, std::vector<PluginPanelItem>& Items);
+bool GetPluginDirList(class Plugin* PluginNumber, HANDLE hPlugin, string_view Dir, const UserDataItem* UserData, std::vector<PluginPanelItem>& Items, dirinfo_callback Callback);
 void FreePluginDirList(HANDLE hPlugin, std::vector<PluginPanelItem>& Items);
 
 #endif // DIRINFO_HPP_DA86BD11_D517_4EC9_8324_44EDF0CC7C9A

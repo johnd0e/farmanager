@@ -1,158 +1,140 @@
-#define NCOUNTERS 22
-#define MAX_USERNAME_LENGTH 128
+﻿#ifndef PERFTHREAD_HPP_319B828C_E001_4BB5_93EE_3A505C9A5ABF
+#define PERFTHREAD_HPP_319B828C_E001_4BB5_93EE_3A505C9A5ABF
 
-template <class T> class Array
+#pragma once
+
+#include <functional>
+#include <string>
+
+constexpr inline auto NCOUNTERS = 22;
+constexpr inline auto MAX_USERNAME_LENGTH = 128;
+
+extern const struct counters
 {
-	protected:
-		T *data;
-		DWORD size;
-		void Assign(T* src, DWORD cb)
-		{
-			//Clear();
-			data = new T[size=cb];
-			memcpy(data, src, cb*sizeof(T));
-		}
-	public:
-		Array() { data = 0; size = 0; }
-		Array(DWORD cbData) { data = new T[size=cbData]; memset(data,0,cbData*sizeof(T)); }
-		~Array() { delete [] data; }
-		void reserve(DWORD cNew)
-		{
-			if (cNew<=size) return;
-
-			T* newdata = new T[cNew];
-			memcpy(newdata, data, sizeof(T)*size);
-			memset(newdata+size, 0, sizeof(T)*(cNew-size));
-			delete data;
-			data = newdata;
-			size = cNew;
-		}
-		operator T*() const { return data; }
-		DWORD length() const { return size; }
-};
-
-extern struct _Counters
-{
-	const wchar_t* Name; DWORD idName; DWORD idCol;
-} Counters[NCOUNTERS];
+	const wchar_t* Name;
+	DWORD idName;
+	DWORD idCol;
+}
+Counters[NCOUNTERS];
 
 struct ProcessPerfData
 {
-	DWORD       dwProcessId;
-	DWORD       dwProcessPriority;
-	DWORD       dwThreads;
-	DWORD       dwCreatingPID;
-	DWORD       dwElapsedTime;
-	LONGLONG    qwCounters[NCOUNTERS];
-	LONGLONG    qwResults[NCOUNTERS];
+	DWORD       dwProcessId{};
+	DWORD       dwProcessPriority{};
+	DWORD       dwThreads{};
+	DWORD       dwCreatingPID{};
+	uint64_t    dwElapsedTime{};
+	LONGLONG    qwCounters[NCOUNTERS]{};
+	LONGLONG    qwResults[NCOUNTERS]{};
 
-	wchar_t       ProcessName[MAX_PATH];
-	wchar_t       FullPath[MAX_PATH];
-	wchar_t       Owner[MAX_USERNAME_LENGTH];
-	wchar_t       CommandLine[MAX_CMDLINE];
-	FILETIME    ftCreation;
-	DWORD       dwGDIObjects, dwUSERObjects;
-	int         Bitness;
+	std::wstring ProcessName;
+	std::wstring FullPath;
+	std::wstring Owner;
+	std::wstring CommandLine;
+	bool FullPathRead{};
+	bool OwnerRead{};
+	bool CommandLineRead{};
+	FILETIME    ftCreation{};
+	DWORD       dwGDIObjects{}, dwUSERObjects{};
+	int         Bitness{};
 };
 
 struct PerfLib
 {
-	wchar_t szSubKey[1024];
-	DWORD dwProcessIdTitle;
-	DWORD dwPriorityTitle;
-	DWORD dwThreadTitle;
-	DWORD dwCreatingPIDTitle;
-	DWORD dwElapsedTitle;
-	DWORD dwCounterTitles[ARRAYSIZE(Counters)];
-	DWORD CounterTypes[ARRAYSIZE(Counters)];
+	std::wstring SubKey;
+	DWORD dwProcessIdTitle{};
+	DWORD dwPriorityTitle{};
+	DWORD dwThreadTitle{};
+	DWORD dwCreatingPIDTitle{};
+	DWORD dwElapsedTitle{};
+	DWORD dwCounterTitles[std::size(Counters)]{};
+	DWORD CounterTypes[std::size(Counters)]{};
 };
 
 struct IWbemServices;
 
 class WMIConnection
 {
+public:
+	WMIConnection();
+	~WMIConnection();
+	explicit operator bool() const { return pIWbemServices != nullptr; }
+	bool Connect(const wchar_t* pMachineName, const wchar_t* pUser = {}, const wchar_t* pPassword = {});
+	void Disconnect();
+	DWORD GetProcessPriority(DWORD Pid);
+	int SetProcessPriority(DWORD dwPID, DWORD dwPri);
+	int TerminateProcess(DWORD dwPID);
+	std::wstring GetProcessOwner(DWORD dwPID, std::wstring* pDomain = {});
+	std::wstring GetProcessUserSid(DWORD dwPID);
+	DWORD GetProcessSessionId(DWORD Pid);
+	std::wstring GetProcessExecutablePath(DWORD Pid);
+	std::wstring GetProcessCommandLine(DWORD Pid);
+	int AttachDebuggerToProcess(DWORD dwPID) { return ExecMethod(dwPID, L"AttachDebugger"); }
+	HRESULT GetLastHResult() const { return hrLast; }
 
-		DebugToken token;
-		IWbemServices *pIWbemServices;
-		int ExecMethod(DWORD dwPID, PCWSTR wsMethod, PCWSTR wsParamName=0, DWORD dwParam=0);
-		HRESULT hrLast;
+private:
+	int ExecMethod(DWORD dwPID, const wchar_t* wsMethod, const wchar_t* wsParamName = {}, DWORD dwParam = 0);
 
-	public:
+	bool GetProcessProperty(DWORD Pid, const wchar_t* Name, const std::function<void(const VARIANT&)>& Getter);
+	DWORD GetProcessInt(DWORD Pid, const wchar_t* Name);
+	std::wstring GetProcessString(DWORD Pid, const wchar_t* Name);
 
-		WMIConnection();
-		~WMIConnection();
-		operator bool () { return pIWbemServices!=0; }
-		bool Connect(LPCTSTR pMachineName, LPCTSTR pUser=0, LPCTSTR pPassword=0);
-		void Disconnect();
-		IWbemServices *GetIWbemServices() { return pIWbemServices; }
-		DWORD GetProcessPriority(DWORD dwPID);
-		int SetProcessPriority(DWORD dwPID, DWORD dwPri);
-		int TerminateProcess(DWORD dwPID);
-		void GetProcessOwner(DWORD dwPID, wchar_t* pUser, wchar_t* pDomain=0);
-		void GetProcessUserSid(DWORD dwPID, wchar_t* pUserSid);
-		int GetProcessSessionId(DWORD dwPID);
-		void GetProcessExecutablePath(DWORD dwPID, wchar_t* pPath);
-		int AttachDebuggerToProcess(DWORD dwPID) { return ExecMethod(dwPID, L"AttachDebugger"); }
-		HRESULT GetLastHResult() { return hrLast; }
+	DebugToken token;
+	IWbemServices* pIWbemServices{};
+	HRESULT hrLast{};
 };
 
 class PerfThread
 {
-		friend class Lock;
-		int DefaultBitness;
-		static DWORD WINAPI ThreadProc(LPVOID lpParm);
-		DWORD WINAPI ThreadProc();
+public:
+	PerfThread(Plist* Owner, const wchar_t* hostname = {}, const wchar_t* pUser = {}, const wchar_t* pPasw = {});
+	~PerfThread();
 
-		HANDLE hThread;
-		HANDLE hEvtBreak, hEvtRefresh, hEvtRefreshDone;
-		DWORD dwThreadId;
-		Array<ProcessPerfData> *pData;
+	void lock();
+	void unlock();
 
-		DWORD dwLastTickCount;
-		bool bOK;
-		HKEY hHKLM, hPerf;
-		DWORD dwRefreshMsec, dwLastRefreshTicks;
-		wchar_t HostName[64];
-		HANDLE hMutex;
-		WMIConnection WMI;
+	auto& ProcessData() { return pData; }
+	ProcessPerfData* GetProcessData(DWORD dwPid, DWORD dwThreads);
+	const PerfLib* GetPerfLib() const { return &pf; }
+	void AsyncReread() const { SetEvent(hEvtRefresh.get()); }
+	void SyncReread();
+	void SmartReread() { if (dwLastRefreshTicks > 1000) AsyncReread(); else SyncReread(); }
+	bool IsOK() const { return bOK; }
+	const auto& HostName() const { return m_HostName; }
+	bool IsWMIConnected() const { return WMI.operator bool(); }
+	int GetDefaultBitness() const { return DefaultBitness; }
+	const auto& UserName() const { return m_UserName; }
+	const auto& Password() const { return m_Password; }
+private:
+	static DWORD WINAPI ThreadProc(void* Param);
+	void ThreadProc();
+	void Refresh();
+	void RefreshWMIData();
 
-		PerfLib pf;
-		bool bUpdated;
-		bool bConnectAttempted;
+	Plist* m_Owner;
+	int DefaultBitness;
+	handle hThread;
+	handle hEvtBreak, hEvtRefresh, hEvtRefreshDone;
+	DWORD dwThreadId{};
+	std::vector<ProcessPerfData> pData;
 
-		void Refresh();
-		void RefreshWMIData();
-
-		Plist& PlistPlugin;
-
-	public:
-		PerfThread(Plist& plist, LPCTSTR hostname=0, LPCTSTR pUser=0, LPCTSTR pPasw=0);
-		~PerfThread();
-		void GetProcessData(ProcessPerfData* &pd, DWORD &nProc) const
-		{
-			if (!pData) { nProc=0; pd=0; return; }
-
-			pd = *pData; nProc = pData->length();
-		}
-		ProcessPerfData* GetProcessData(DWORD dwPid, DWORD dwThreads) const;
-		const PerfLib* GetPerfLib() const { return &pf; }
-		void AsyncReread() { SetEvent(hEvtRefresh); }
-		void SyncReread();
-		void SmartReread() { if (dwLastRefreshTicks>1000) AsyncReread(); else SyncReread(); }
-		bool IsOK() const { return bOK; }
-		LPCTSTR GetHostName() const { return HostName; }
-		bool Updated() { bool bRet=bUpdated; bUpdated=false; return bRet; }
-		bool IsWMIConnected() { return WMI; }
-		int GetDefaultBitness() const { return DefaultBitness; }
-		wchar_t UserName[64];
-		wchar_t Password[64];
+	DWORD dwLastTickCount{};
+	bool bOK{};
+	HKEY hHKLM{}, hPerf{};
+	DWORD dwRefreshMsec{ 1000 }, dwLastRefreshTicks{};
+	std::wstring m_HostName;
+	handle hMutex;
+	WMIConnection WMI;
+	PerfLib pf;
+	bool bConnectAttempted{};
+	std::wstring m_UserName;
+	std::wstring m_Password;
 };
-class Lock
+
+enum
 {
-		HANDLE h;
-	public:
-		Lock(PerfThread* pth):h(pth?pth->hMutex:0) { if (h) WaitForSingleObject(h, INFINITE); }
-		~Lock() { if (h) ReleaseMutex(h); }
+	IDX_PAGEFILE = 4,
+	IDX_WORKINGSET = 6,
 };
 
-enum {IDX_PAGEFILE=4, IDX_WORKINGSET=6};
+#endif // PERFTHREAD_HPP_319B828C_E001_4BB5_93EE_3A505C9A5ABF

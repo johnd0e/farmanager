@@ -34,19 +34,29 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "exception.hpp"
+// Internal:
 
+// Platform:
 #include "platform.hpp"
+
+// Common:
+#include "common/noncopyable.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 namespace os::concurrency
 {
 	namespace detail
 	{
-		string make_name(string_view Namespace, const string& HashPart, string_view TextPart);
+		[[nodiscard]]
+		string make_name(string_view Namespace, string_view HashPart, string_view TextPart);
 	}
 
 	template<class T>
-	string make_name(const string& HashPart, string_view const TextPart)
+	[[nodiscard]]
+	string make_name(string_view const HashPart, string_view const TextPart)
 	{
 		return detail::make_name(T::get_namespace(), HashPart, TextPart);
 	}
@@ -67,29 +77,37 @@ namespace os::concurrency
 		CRITICAL_SECTION m_Object;
 	};
 
-	using critical_section_lock = std::lock_guard<critical_section>;
-
-
 	class thread: public handle
 	{
 	public:
 		NONCOPYABLE(thread);
 		MOVABLE(thread);
 
-		using mode = void (thread::*)();
+		enum class mode
+		{
+			join,
+			detach,
+		};
 
 		thread() = default;
 
 		template<typename callable, typename... args>
-		thread(mode Mode, callable&& Callable, args&&... Args): m_Mode(Mode)
+		explicit thread(mode Mode, callable&& Callable, args&&... Args): m_Mode(Mode)
 		{
-			starter(std::bind(FWD(Callable), FWD(Args)...));
+			starter([Callable = FWD(Callable), Args = std::make_tuple(FWD(Args)...)]() mutable // make_tuple for GCC 8.1
+			{
+				std::apply(FWD(Callable), FWD(Args));
+			});
 		}
 
 		~thread();
 
+		[[nodiscard]]
 		unsigned get_id() const;
+
+		[[nodiscard]]
 		bool joinable() const;
+
 		void detach();
 		void join();
 
@@ -100,18 +118,18 @@ namespace os::concurrency
 		void starter(T&& f)
 		{
 			auto Param = std::make_unique<T>(std::move(f));
-			reset(reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, wrapper<T>, Param.get(), 0, &m_ThreadId)));
-
-			if (!*this)
-				throw MAKE_FAR_EXCEPTION(L"Can't create thread"sv);
-
+			starter_impl(wrapper<T>, Param.get());
 			Param.release();
 		}
+
+		using proc_type = unsigned(WINAPI*)(void*);
+
+		void starter_impl(proc_type Proc, void* Param);
 
 		template<class T>
 		static unsigned int WINAPI wrapper(void* RawPtr)
 		{
-			std::invoke(*std::unique_ptr<T>(reinterpret_cast<T*>(RawPtr)));
+			std::invoke(*std::unique_ptr<T>(static_cast<T*>(RawPtr)));
 			return 0;
 		}
 
@@ -127,26 +145,16 @@ namespace os::concurrency
 
 		explicit mutex(string_view Name = {});
 
+		[[nodiscard]]
 		static string_view get_namespace();
 
-		bool lock() const;
-		bool unlock() const;
+		void lock() const;
+		void unlock() const;
 	};
 
 	namespace detail
 	{
-		class i_shared_mutex
-		{
-		public:
-			virtual ~i_shared_mutex() = default;
-
-			virtual void lock() = 0;
-			virtual bool try_lock() = 0;
-			virtual void unlock() = 0;
-			virtual void lock_shared() = 0;
-			virtual bool try_lock_shared() = 0;
-			virtual void unlock_shared() = 0;
-		};
+		class i_shared_mutex;
 	}
 
 	// Q: WTF is this, it's in the standard!
@@ -154,18 +162,19 @@ namespace os::concurrency
 	class shared_mutex
 	{
 	public:
+		NONCOPYABLE(shared_mutex);
+
 		shared_mutex();
+		~shared_mutex();
 
-		shared_mutex(const shared_mutex&) = delete;
-		shared_mutex& operator=(const shared_mutex&) = delete;
-
-		void lock() { m_Impl->lock(); }
-		[[nodiscard]] bool try_lock() { return m_Impl->try_lock(); }
-		void unlock() { m_Impl->unlock(); }
-
-		void lock_shared() { m_Impl->lock_shared(); }
-		[[nodiscard]] bool try_lock_shared() { return m_Impl->try_lock_shared(); }
-		void unlock_shared() { m_Impl->unlock_shared(); }
+		void lock();
+		[[nodiscard]]
+		bool try_lock();
+		void unlock();
+		void lock_shared();
+		[[nodiscard]]
+		bool try_lock_shared();
+		void unlock_shared();
 
 	private:
 		std::unique_ptr<detail::i_shared_mutex> m_Impl;
@@ -183,14 +192,49 @@ namespace os::concurrency
 		event() = default;
 		event(type Type, state InitialState, string_view Name = {});
 
+		[[nodiscard]]
 		static string_view get_namespace();
 
-		bool set() const;
-		bool reset() const;
+		void set() const;
+		void reset() const;
 		void associate(OVERLAPPED& o) const;
 
 	private:
 		void check_valid() const;
+	};
+
+	class timer
+	{
+	public:
+		NONCOPYABLE(timer);
+		MOVABLE(timer);
+
+		timer() = default;
+
+		template<typename callable, typename... args>
+		explicit timer(std::chrono::milliseconds const DueTime, std::chrono::milliseconds const Period, callable&& Callable, args&&... Args):
+			m_Callable(std::make_unique<std::function<void()>>([Callable = FWD(Callable), Args = std::make_tuple(FWD(Args)...)]() mutable // make_tuple for GCC 8.1
+			{
+				std::apply(FWD(Callable), FWD(Args));
+			}))
+		{
+			initialise_impl(DueTime, Period);
+		}
+
+	private:
+		void initialise_impl(std::chrono::milliseconds DueTime, std::chrono::milliseconds Period);
+
+		static void CALLBACK wrapper(void* Parameter, BOOLEAN);
+
+		// Indirection to have a permanent address for move
+		std::unique_ptr<std::function<void()>> m_Callable;
+
+		struct timer_closer
+		{
+			void operator()(HANDLE Handle) const;
+		};
+
+		os::detail::handle_t<timer_closer> m_Timer;
 	};
 
 	template<class T>
@@ -199,34 +243,30 @@ namespace os::concurrency
 	public:
 		using value_type = T;
 
+		[[nodiscard]]
 		bool empty() const
 		{
-			SCOPED_ACTION(critical_section_lock)(m_QueueCS);
+			SCOPED_ACTION(guard_t)(m_QueueCS);
 			return m_Queue.empty();
 		}
 
-		void push(const T& item)
-		{
-			SCOPED_ACTION(critical_section_lock)(m_QueueCS);
-			m_Queue.push(item);
-		}
-
 		template<typename... args>
-		void emplace(args... Args)
+		void emplace(args&&... Args)
 		{
-			SCOPED_ACTION(critical_section_lock)(m_QueueCS);
+			SCOPED_ACTION(guard_t)(m_QueueCS);
 			m_Queue.emplace(FWD(Args)...);
 		}
 
 		void push(T&& item)
 		{
-			SCOPED_ACTION(critical_section_lock)(m_QueueCS);
+			SCOPED_ACTION(guard_t)(m_QueueCS);
 			m_Queue.push(FWD(item));
 		}
 
+		[[nodiscard]]
 		bool try_pop(T& To)
 		{
-			SCOPED_ACTION(critical_section_lock)(m_QueueCS);
+			SCOPED_ACTION(guard_t)(m_QueueCS);
 
 			if (m_Queue.empty())
 				return false;
@@ -236,53 +276,41 @@ namespace os::concurrency
 			return true;
 		}
 
+		[[nodiscard]]
+		auto pop_all()
+		{
+			SCOPED_ACTION(guard_t)(m_QueueCS);
+			std::queue<T> All;
+			m_Queue.swap(All);
+			return All;
+		}
+
+		[[nodiscard]]
 		auto size() const
 		{
-			SCOPED_ACTION(critical_section_lock)(m_QueueCS);
+			SCOPED_ACTION(guard_t)(m_QueueCS);
 			return m_Queue.size();
 		}
 
 		void clear()
 		{
-			SCOPED_ACTION(critical_section_lock)(m_QueueCS);
+			SCOPED_ACTION(guard_t)(m_QueueCS);
 			clear_and_shrink(m_Queue);
 		}
 
-		auto scoped_lock() { return make_raii_wrapper(this, &synced_queue::lock, &synced_queue::unlock); }
+		[[nodiscard]]
+		auto scoped_lock() { return make_raii_wrapper<&synced_queue::lock, &synced_queue::unlock>(this); }
 
 	private:
+		// Q: Why not just use CTAD?
+		// A: To make Coverity and its compiler happy: 'Internal error #2688: assertion failed at: "edg/src/overload.c", line 27123'
+		using guard_t = std::lock_guard<critical_section>;
+
 		void lock() { return m_QueueCS.lock(); }
 		void unlock() { return m_QueueCS.unlock(); }
 
 		std::queue<T> m_Queue;
 		mutable critical_section m_QueueCS;
-	};
-
-	class multi_waiter: noncopyable
-	{
-	public:
-		enum class mode
-		{
-			any,
-			all
-		};
-
-		multi_waiter();
-
-		template<typename T>
-		multi_waiter(T Begin, T End)
-		{
-			std::for_each(Begin, End, [this](const auto& i){ this->add(i); });
-		}
-
-		void add(const handle& Object);
-		void add(HANDLE handle);
-		DWORD wait(mode Mode, std::chrono::milliseconds Timeout) const;
-		DWORD wait(mode Mode = mode::all) const;
-		void clear();
-
-	private:
-		std::vector<HANDLE> m_Objects;
 	};
 }
 
@@ -290,13 +318,11 @@ namespace os
 {
 	using concurrency::make_name;
 	using concurrency::critical_section;
-	using concurrency::critical_section_lock;
 	using concurrency::thread;
 	using concurrency::mutex;
 	using concurrency::shared_mutex;
 	using concurrency::event;
 	using concurrency::synced_queue;
-	using concurrency::multi_waiter;
 }
 
 #endif // PLATFORM_CONCURRENCY_HPP_ED4F0813_C518_409B_8576_F2E7CF4166CC

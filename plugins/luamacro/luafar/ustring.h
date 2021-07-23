@@ -1,8 +1,12 @@
-#ifndef _USTRING_H
+﻿#ifndef _USTRING_H
 #define _USTRING_H
 
 #include <windows.h>
 #include <stdint.h>
+
+#ifndef FILE_ATTRIBUTE_NO_SCRUB_DATA
+#define FILE_ATTRIBUTE_NO_SCRUB_DATA 0x20000
+#endif
 
 #define ARRSIZE(buff) (sizeof(buff)/sizeof(buff[0]))
 #define CAST(tp,expr) ((tp)(expr))
@@ -49,6 +53,7 @@ int  DecodeAttributes(const char* str);
 void PushAttrString(lua_State *L, int attr);
 void PutAttrToTable(lua_State *L, int attr);
 int  SetAttr(lua_State *L, const wchar_t* fname, unsigned attr);
+void SetAttrWords(const wchar_t* str, DWORD* incl, DWORD* excl);
 
 #ifdef __cplusplus
 }

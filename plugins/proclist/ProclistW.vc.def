@@ -3,7 +3,6 @@ EXPORTS
 	CompareW
 	ConfigureW
 	DeleteFilesW
-	ExitFARW
 	FreeFindDataW
 	GetFilesW
 	GetFindDataW
@@ -13,4 +12,5 @@ EXPORTS
 	OpenW
 	ProcessPanelEventW
 	ProcessPanelInputW
+	ProcessSynchroEventW
 	SetStartupInfoW

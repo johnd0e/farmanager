@@ -1,0 +1,148 @@
+.SILENT:
+
+THIS_MAKE = $(TOP_MAKEFILE)
+
+include project.ini
+USERLIBS = -loleaut32 -lversion -luuid
+include ../makefile_gcc_def_inc
+OUTDIR = $(BASEDIR)
+BOOTSTRAPDIR=$(OBJDIR)/include/bootstrap/
+
+ifndef FARDIR
+FAR_DIRECTORY=../../far
+else
+FAR_DIRECTORY=$(FARDIR)
+endif
+
+CPPFLAGS += -I $(BOOTSTRAPDIR) -I 7z/h -I "$(FAR_DIRECTORY)/common" -Wno-non-virtual-dtor
+
+DEPFILE = $(OBJDIR)/$(MODULE).dep
+
+
+.PHONY: all
+all:
+	$(MAKE) -f $(THIS_MAKE) $(MK_FLAGS) dirs
+	$(MAKE) -f $(THIS_MAKE) $(MK_FLAGS) copy preproc $(DEPFILE)
+	$(MAKE) -f $(THIS_MAKE) $(MK_FLAGS) build
+
+.PHONY: clean
+clean:
+	@echo cleaning
+	@$(RM) -rf $(BOOTSTRAPDIR) $(OBJDIR) $(OUTDIR)
+
+.PHONY: dirs
+dirs:
+	$(MKDIR) $(OUTDIR) $(OBJDIR) $(BOOTSTRAPDIR)
+
+#------------------------------------------------------------------------------
+SFXDIR = 7z/sfx
+SFXFILES = $(addprefix $(OUTDIR)/,$(notdir $(wildcard $(SFXDIR)/*.sfx)))
+HLFS = $(addprefix $(OUTDIR)/,$(notdir $(wildcard *.hlf)))
+
+.PHONY: copy
+copy: $(OUTDIR)/7z.dll $(SFXFILES) $(OUTDIR)/arclite.xml $(OUTDIR)/changelog $(HLFS)
+
+ifdef DEBUG_7Z
+ifeq (32,$(DIRBIT))
+_7Z = 7z/src/CPP/7zip/Bundles/Format7zF/Debug/7z.dll
+else
+_7Z = 7z/src/CPP/7zip/Bundles/Format7zF/x64/Debug/7z.dll
+endif
+else
+_7Z = 7z/dll/final.$(DIRBIT)W.vc/7z.dll
+endif
+
+$(OUTDIR)/arclite.xml: arclite.xml
+	@$(CP) $< $(OUTDIR)
+
+$(OUTDIR)/changelog: changelog
+	@$(CP) $< $(OUTDIR)
+
+$(OUTDIR)/7z.dll: $(_7Z)
+	@$(CP) $< $(OUTDIR)
+
+vpath %.sfx $(SFXDIR)
+$(OUTDIR)/%.sfx: %.sfx
+	@$(CP) $< $(OUTDIR)
+
+#------------------------------------------------------------------------------
+TOOL = $(WINE_CMD)$(strip $(call os_name, tools/tool.exe))
+
+MSGS = $(notdir $(wildcard *.msg))
+BOOTSTRAP_MSGS = $(addprefix $(BOOTSTRAPDIR), $(MSGS))
+LNGS = $(patsubst %.msg, $(OUTDIR)/$(MODULE)_%.lng, $(MSGS))
+
+.PHONY: preproc
+preproc: $(BOOTSTRAPDIR)far.ini $(BOOTSTRAPDIR)version.rc $(BOOTSTRAPDIR)plugin.h $(BOOTSTRAPDIR)msg.h $(LNGS)
+
+$(BOOTSTRAPDIR)far.ini: $(COMINC)/plugin.hpp
+	@echo Preprocessing $(@F)
+	$(TOOL) farver $(call os_name,$^ $@)
+
+$(BOOTSTRAPDIR)version.rc: project.ini $(BOOTSTRAPDIR)far.ini version.rc
+	@echo Preprocessing $(@F)
+	$(TOOL) preproc $(call os_name,$^ $@)
+
+$(BOOTSTRAPDIR)plugin.h: project.ini $(BOOTSTRAPDIR)far.ini plugin_h.h
+	@echo Preprocessing $(@F)
+	$(TOOL) preproc $(call os_name,$^ $@)
+
+$(BOOTSTRAPDIR)%.msg: project.ini %.msg
+	@echo Preprocessing $(@F)
+	$(TOOL) preproc $(call os_name,$^ $@)
+
+$(BOOTSTRAPDIR)msg.h $(LNGS): $(BOOTSTRAP_MSGS)
+	@echo Generating language files
+	$(TOOL) msgc -in $(call os_name,$(BOOTSTRAP_MSGS)) -out $(call os_name, $(BOOTSTRAPDIR)msg.h $(LNGS))
+
+$(OUTDIR)/%.hlf: %.hlf
+	@$(CP) $< $(OUTDIR)
+
+#------------------------------------------------------------------------------
+
+$(DEPFILE):
+	@echo Rebuilding dependencies
+	$(TOOL) gendep -gcc $(call os_name,-I7z/h -I$(COMINC) $(BOOTSTRAPDIR)) > $@
+
+ifeq ($(MAKECMDGOALS),build)
+ include $(DEPFILE)
+endif
+
+#------------------------------------------------------------------------------
+DLLFULLNAME := $(OUTDIR)/$(MODULE).$(EXT) # MODULE=arclite NAME=ArcLite
+MAPFULLNAME = $(patsubst %.$(EXT),%.map,$(DLLFULLNAME))
+
+.PHONY: build
+build: $(DLLFULLNAME)
+
+SRCS = $(wildcard *.cpp)
+OBJS = $(patsubst %.cpp,$(OBJDIR)/%.o,$(SRCS)) $(OBJDIR)/version.rc.o
+
+RCFLAGS = -I$(COMINC)
+ifeq (64,$(DIRBIT))
+RCFLAGS += -Dx64
+endif
+$(OBJDIR)/version.rc.o: $(BOOTSTRAPDIR)version.rc
+	@echo Compiling resource file
+	$(WINDRES) -i $< $(RCFLAGS) -o $@
+
+$(OBJDIR)/%.o: %.cpp
+	@echo $<
+	$(CXX) -c -include $(OBJDIR)/headers -include headers.hpp $(CPPFLAGS) -o $@ $<
+
+$(OBJS): $(OBJDIR)/headers.gch
+
+$(OBJDIR)/headers.gch: headers.cpp headers.hpp
+	@echo Making precompiled headers
+	$(CXX) -x c++-header -c $(CPPFLAGS) -o $@ $<
+
+ifeq ($(DIRBIT),32)
+DEFFILE = plugin.gcc.def
+else
+#for x64 vc.def is good enough
+DEFFILE = plugin.def
+endif
+
+$(DLLFULLNAME): $(OBJS) $(DEFFILE)
+	@echo linking $@
+	$(CXX) -o $@ $(DEFFILE) $(OBJS) $(LNKFLAGS) -Wl,--kill-at -shared -Xlinker -Map=$(MAPFULLNAME)

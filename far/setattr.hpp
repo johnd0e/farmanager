@@ -35,8 +35,18 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
+
+// Platform:
+
+// Common:
+
+// External:
+
+//----------------------------------------------------------------------------
+
 class Panel;
 
-bool ShellSetFileAttributes(Panel *SrcPanel, const string* Object=nullptr);
+void ShellSetFileAttributes(Panel* SrcPanel, const string* Object = nullptr);
 
 #endif // SETATTR_HPP_D50369FC_0EA6_4A01_8567_AA7CEDE94A04

@@ -35,9 +35,17 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Internal:
 #include "modal.hpp"
 
+// Platform:
+
+// Common:
 #include "common/range.hpp"
+
+// External:
+
+//----------------------------------------------------------------------------
 
 struct menu_item;
 
@@ -45,7 +53,7 @@ struct HMenuData
 {
 	string_view Name;
 	string_view SubMenuHelp;
-	range<menu_item*> SubMenu;
+	span<menu_item> SubMenu;
 	bool Selected;
 	int XPos;
 };
@@ -79,15 +87,15 @@ private:
 	void ShowMenu();
 	bool ProcessCurrentSubMenu();
 	bool ProcessPositioningKey(unsigned LocalKey);
-	wchar_t GetHighlights(const HMenuData& Item) const;
+	static wchar_t GetHighlights(const HMenuData& Item);
 	size_t CheckHighlights(WORD CheckSymbol, int StartPos = 0) const;
 	bool TestMouse(const MOUSE_EVENT_RECORD *MouseEvent) const;
 	void UpdateSelectPos();
 
-	range<HMenuData*> Item;
-	size_t SelectPos;
-	int m_VExitCode;
-	bool m_SubmenuOpened;
+	span<HMenuData> m_Item;
+	size_t m_SelectPos{};
+	int m_VExitCode{-1};
+	bool m_SubmenuOpened{};
 };
 
 #endif // HMENU_HPP_4850D545_465D_434F_B439_23DF6445EEFC

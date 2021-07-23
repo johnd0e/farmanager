@@ -189,6 +189,9 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
+    <CustomBuild Include="FtpBel.lng">
+      <Filter>Language Files</Filter>
+    </CustomBuild>
     <CustomBuild Include="FtpEng.lng">
       <Filter>Language Files</Filter>
     </CustomBuild>
@@ -200,6 +203,15 @@
     </CustomBuild>
     <CustomBuild Include="FtpRus.hlf">
       <Filter>Help Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="FtpPol.hlf">
+      <Filter>Help Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="FtpIta.lng">
+      <Filter>Language Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="FtpPol.lng">
+      <Filter>Language Files</Filter>
     </CustomBuild>
     <CustomBuild Include="TechInfo.reg">
       <Filter>Reg Files</Filter>
